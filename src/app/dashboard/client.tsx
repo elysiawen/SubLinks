@@ -335,7 +335,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                         {/* Add Form */}
                                         <div className="p-3 bg-white border-b border-gray-100 flex gap-2 items-center">
                                             <select
-                                                className="w-32 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
+                                                className="w-32 shrink-0 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
                                                 value={newRuleType}
                                                 onChange={e => setNewRuleType(e.target.value)}
                                             >
@@ -343,7 +343,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                             </select>
 
                                             <input
-                                                className="flex-1 text-xs border border-gray-200 rounded px-3 py-1.5 outline-none focus:border-blue-500"
+                                                className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-3 py-1.5 outline-none focus:border-blue-500"
                                                 placeholder={newRuleType === 'MATCH' ? '无需填写' : 'google.com'}
                                                 value={newRuleValue}
                                                 onChange={e => setNewRuleValue(e.target.value)}
@@ -351,7 +351,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                             />
 
                                             <select
-                                                className="w-24 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
+                                                className="w-28 shrink-0 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
                                                 value={newRulePolicy}
                                                 onChange={e => setNewRulePolicy(e.target.value)}
                                             >
@@ -360,7 +360,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
 
                                             <button
                                                 onClick={addRule}
-                                                className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition-colors"
+                                                className="shrink-0 bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                             </button>

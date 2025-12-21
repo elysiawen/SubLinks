@@ -9,5 +9,10 @@ export default async function AdminGroupsPage() {
     const defaultGroups = config ? (config['proxy-groups'] || []) : [];
     const customSets = await getGroupSets();
 
-    return <AdminGroupsClient defaultGroups={defaultGroups} customSets={customSets} />;
+    // Extract available proxy names
+    const availableProxies = config ? (config.proxies || []).map((p: any) => p.name) : [];
+    // Add common built-in options
+    const allProxies = ['DIRECT', 'REJECT', ...availableProxies];
+
+    return <AdminGroupsClient defaultGroups={defaultGroups} customSets={customSets} availableProxies={allProxies} />;
 }

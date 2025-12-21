@@ -7,6 +7,7 @@ import yaml from 'js-yaml';
 interface PageProps {
     defaultGroups: any[];
     customSets: ConfigSet[];
+    availableProxies: string[];
 }
 
 interface ProxyGroup {
@@ -16,7 +17,7 @@ interface ProxyGroup {
     proxies: string[];
 }
 
-export default function AdminGroupsClient({ defaultGroups, customSets }: PageProps) {
+export default function AdminGroupsClient({ defaultGroups, customSets, availableProxies }: PageProps) {
     const [editingSet, setEditingSet] = useState<ConfigSet | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -32,7 +33,7 @@ export default function AdminGroupsClient({ defaultGroups, customSets }: PagePro
     // New Group Form State
     const [newGroupName, setNewGroupName] = useState('');
     const [newGroupType, setNewGroupType] = useState('select');
-    const [newGroupProxies, setNewGroupProxies] = useState('');
+    const [selectedProxies, setSelectedProxies] = useState<string[]>([]);
 
     // Parse YAML to GUI
     const parseGroups = (yamlText: string): ProxyGroup[] => {
@@ -75,18 +76,17 @@ export default function AdminGroupsClient({ defaultGroups, customSets }: PagePro
 
     // Add Group
     const addGroup = () => {
-        if (!newGroupName) return;
-        const proxies = newGroupProxies.split('\n').map(p => p.trim()).filter(p => p);
+        if (!newGroupName || selectedProxies.length === 0) return;
         const newGroup: ProxyGroup = {
             id: Math.random().toString(36).substr(2, 9),
             name: newGroupName,
             type: newGroupType,
-            proxies
+            proxies: selectedProxies
         };
         const updated = [...guiGroups, newGroup];
         syncGuiToText(updated);
         setNewGroupName('');
-        setNewGroupProxies('');
+        setSelectedProxies([]);
     };
 
     // Remove Group
@@ -250,8 +250,29 @@ export default function AdminGroupsClient({ defaultGroups, customSets }: PagePro
                                                     </select>
                                                 </div>
                                                 <div className="col-span-4">
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">代理列表 (每行一个)</label>
-                                                    <textarea className="w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none focus:border-blue-500 resize-none" rows={2} placeholder="DIRECT&#10;♻️ Auto&#10;🇭🇰 HongKong" value={newGroupProxies} onChange={e => setNewGroupProxies(e.target.value)} />
+                                                    <label className="block text-xs font-medium text-gray-600 mb-1">选择代理节点</label>
+                                                    <div className="relative">
+                                                        <div className="w-full text-sm border border-gray-200 rounded px-3 py-2 bg-white max-h-20 overflow-y-auto">
+                                                            {availableProxies.map(proxy => (
+                                                                <label key={proxy} className="flex items-center gap-2 py-0.5 hover:bg-gray-50 cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selectedProxies.includes(proxy)}
+                                                                        onChange={e => {
+                                                                            if (e.target.checked) {
+                                                                                setSelectedProxies([...selectedProxies, proxy]);
+                                                                            } else {
+                                                                                setSelectedProxies(selectedProxies.filter(p => p !== proxy));
+                                                                            }
+                                                                        }}
+                                                                        className="rounded border-gray-300"
+                                                                    />
+                                                                    <span className="text-xs">{proxy}</span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1">已选 {selectedProxies.length} 个</div>
+                                                    </div>
                                                 </div>
                                                 <div className="col-span-1">
                                                     <button onClick={addGroup} className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors">
