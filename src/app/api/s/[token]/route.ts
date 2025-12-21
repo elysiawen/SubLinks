@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
+import yaml from 'js-yaml';
 
 // Runtime must be nodejs for ioredis
 export const runtime = 'nodejs';
@@ -49,35 +50,76 @@ export async function GET(
     let content = await redis.get('cache:subscription');
 
     if (!content) {
-        try {
-            const res = await fetch(upstreamUrl, {
-                headers: {
-                    'User-Agent': 'Clash/Vercel-Sub-Manager'
-                }
-            });
-            if (!res.ok) {
-                console.error(`Upstream Fetch Failed: ${res.status} ${res.statusText} for URL: ${upstreamUrl}`);
-                throw new Error(`Upstream error: ${res.status} ${res.statusText}`);
-            }
-            content = await res.text();
-            // Set Cache
-            await redis.set('cache:subscription', content, 'EX', cacheDuration);
-        } catch (e) {
-            console.error(e);
+        const { refreshUpstreamCache } = await import('@/lib/analysis');
+        const success = await refreshUpstreamCache();
+
+        if (success) {
+            content = await redis.get('cache:subscription');
+        } else {
             return new NextResponse('Failed to fetch upstream subscription', { status: 502 });
         }
     }
 
-    // 5. Apply User Rules (from Subscription)
-    let finalContent = content || '';
-    if (sub.customRules) {
-        finalContent += `\n${sub.customRules}`;
-    }
+    // 5. Merge Strategy (Custom Groups / Rules)
+    try {
+        const doc = yaml.load(content as string) as any;
 
-    return new NextResponse(finalContent, {
-        headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Subscription-Userinfo': 'upload=0; download=0; total=10737418240000000; expire=0',
+        // Handle Groups
+        if (sub.groupId && sub.groupId !== 'default') {
+            const groupSetStr = await redis.get(`custom:groups:${sub.groupId}`);
+            if (groupSetStr) {
+                const groupSet = JSON.parse(groupSetStr);
+                // Parse the YAML content of the custom set
+                const customGroups = yaml.load(groupSet.content);
+                if (Array.isArray(customGroups)) {
+                    doc['proxy-groups'] = customGroups;
+                }
+            }
         }
-    });
+
+        // Handle Rules
+        if (sub.ruleId && sub.ruleId !== 'default') {
+            const ruleSetStr = await redis.get(`custom:rules:${sub.ruleId}`);
+            if (ruleSetStr) {
+                const ruleSet = JSON.parse(ruleSetStr);
+                const customRules = yaml.load(ruleSet.content);
+                if (Array.isArray(customRules)) {
+                    doc.rules = customRules;
+                }
+            }
+        }
+
+        // Handle Subscription-specific Custom Rules Append
+        if (sub.customRules) {
+            const extraRules = sub.customRules.split('\n').map((line: string) => line.trim()).filter((line: string) => line && !line.startsWith('#'));
+            if (doc.rules && Array.isArray(doc.rules)) {
+                doc.rules.push(...extraRules);
+            } else {
+                doc.rules = extraRules;
+            }
+        }
+
+        const finalYaml = yaml.dump(doc);
+
+        return new NextResponse(finalYaml, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Subscription-Userinfo': 'upload=0; download=0; total=10737418240000000; expire=0',
+                'Profile-Update-Interval': '24'
+            }
+        });
+
+    } catch (e) {
+        console.error('YAML Merge Error:', e);
+        // Fallback to raw append if parsing fails
+        let finalContent = content || '';
+        if (sub.customRules) {
+            finalContent += `\n${sub.customRules}`;
+        }
+        return new NextResponse(finalContent, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+            }
+        });
+    }
 }

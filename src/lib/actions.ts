@@ -14,9 +14,25 @@ export async function login(prevState: any, formData: FormData) {
     if (!username || !password) return { error: '请输入用户名和密码' };
 
     // 1. Check for Admin Init (First Run)
-    const adminExists = await redis.exists('user:admin');
-    if (!adminExists) {
-        // Create default admin
+    // Check if ANY admin user exists (not just 'admin' username)
+    const allUsernames = await redis.smembers('users:index');
+    let hasAdmin = false;
+
+    if (allUsernames && allUsernames.length > 0) {
+        for (const uname of allUsernames) {
+            const uStr = await redis.get(`user:${uname}`);
+            if (uStr) {
+                const u = JSON.parse(uStr);
+                if (u.role === 'admin') {
+                    hasAdmin = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!hasAdmin) {
+        // Create default admin only if no admin exists
         if (username === 'admin' && password === 'admin') {
             const hashedPassword = await hashPassword('admin');
             await redis.set('user:admin', JSON.stringify({
@@ -27,7 +43,7 @@ export async function login(prevState: any, formData: FormData) {
             }));
             await redis.sadd('users:index', 'admin');
         } else {
-            return { error: '系统初始化中，请使用默认账号 admin/admin 登录' };
+            return { error: '系统初始化中,请使用默认账号 admin/admin 登录' };
         }
     }
 

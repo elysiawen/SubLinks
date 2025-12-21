@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { createUser, deleteUser, updateUserStatus, updateUserRules } from '../actions';
+import { createUser, deleteUser, updateUserStatus, updateUserRules, updateUser } from '../actions';
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
     const [loading, setLoading] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string } | null>(null);
 
     const handleCreateUser = async (formData: FormData) => {
         setLoading(true);
@@ -15,6 +16,25 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
             alert(res.error);
         } else {
             (document.getElementById('createUserForm') as HTMLFormElement).reset();
+        }
+    };
+
+    const handleUpdateUser = async () => {
+        if (!editingUser) return;
+
+        setLoading(true);
+        const res = await updateUser(
+            editingUser.username,
+            editingUser.newUsername,
+            editingUser.newPassword || undefined
+        );
+        setLoading(false);
+
+        if (res?.error) {
+            alert(res.error);
+        } else {
+            setEditingUser(null);
+            alert('用户信息已更新');
         }
     };
 
@@ -84,6 +104,12 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
+                                            onClick={() => setEditingUser({ username: user.username, newUsername: user.username, newPassword: '' })}
+                                            className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                                        >
+                                            编辑
+                                        </button>
+                                        <button
                                             onClick={async () => {
                                                 const newStatus = user.status === 'active' ? 'suspended' : 'active';
                                                 if (confirm(`确定要${newStatus === 'active' ? '启用' : '停用'}用户 ${user.username} 吗?`)) {
@@ -112,7 +138,56 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                 </div>
             </div>
 
-            {/* Edit Rules Modal (Removed) */}
+            {/* Edit User Modal */}
+            {editingUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-900">编辑用户</h3>
+                            <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-gray-600">
+                                <span className="text-2xl">&times;</span>
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">用户名</label>
+                                <input
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    value={editingUser.newUsername}
+                                    onChange={e => setEditingUser({ ...editingUser, newUsername: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">新密码</label>
+                                <input
+                                    type="password"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    value={editingUser.newPassword}
+                                    onChange={e => setEditingUser({ ...editingUser, newPassword: e.target.value })}
+                                    placeholder="留空则不修改密码"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 border border-gray-200"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleUpdateUser}
+                                disabled={loading}
+                                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                            >
+                                {loading ? '保存中...' : '保存'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

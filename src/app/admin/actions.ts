@@ -17,6 +17,13 @@ export async function updateGlobalConfig(formData: FormData) {
     const uaWhitelist = (formData.get('uaWhitelist') as string).split(',').map(s => s.trim()).filter(s => s);
 
     await redis.set('config:global', JSON.stringify({ upstreamUrl, cacheDuration, uaWhitelist }));
+
+    // Immediately cache the upstream subscription
+    if (upstreamUrl) {
+        const { refreshUpstreamCache } = await import('@/lib/analysis');
+        await refreshUpstreamCache();
+    }
+
     revalidatePath('/admin');
 }
 
@@ -107,6 +114,56 @@ export async function updateUserRules(username: string, rules: string) {
         await redis.set(`user:${username}`, JSON.stringify(data));
         revalidatePath('/admin');
     }
+}
+
+export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string) {
+    // Get existing user data
+    const dataStr = await redis.get(`user:${oldUsername}`);
+    if (!dataStr) return { error: 'User not found' };
+
+    const data = JSON.parse(dataStr);
+
+    // If username changed, check if new username exists
+    if (oldUsername !== newUsername) {
+        if (await redis.exists(`user:${newUsername}`)) {
+            return { error: '新用户名已存在' };
+        }
+
+        // Update username in index
+        await redis.srem('users:index', oldUsername);
+        await redis.sadd('users:index', newUsername);
+
+        // Delete old user key
+        await redis.del(`user:${oldUsername}`);
+
+        // Update all subscriptions
+        const subTokens = await redis.smembers(`user:${oldUsername}:subs`);
+        if (subTokens && subTokens.length > 0) {
+            for (const token of subTokens) {
+                const subStr = await redis.get(`sub:${token}`);
+                if (subStr) {
+                    const subData = JSON.parse(subStr);
+                    subData.username = newUsername;
+                    await redis.set(`sub:${token}`, JSON.stringify(subData));
+                }
+            }
+
+            // Move subscription set
+            await redis.rename(`user:${oldUsername}:subs`, `user:${newUsername}:subs`);
+        }
+    }
+
+    // Update password if provided
+    if (newPassword) {
+        data.password = await hashPassword(newPassword);
+    }
+
+    // Save updated user data
+    await redis.set(`user:${newUsername}`, JSON.stringify(data));
+
+    revalidatePath('/admin');
+    revalidatePath('/dashboard');
+    return { success: true };
 }
 
 export async function deleteUser(username: string) {

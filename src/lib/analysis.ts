@@ -35,13 +35,49 @@ export async function getParsedConfig(): Promise<ClashConfig | null> {
 
         // Basic validation/normalization
         return {
+            ...config,
             proxies: Array.isArray(config.proxies) ? config.proxies : [],
             'proxy-groups': Array.isArray(config['proxy-groups']) ? config['proxy-groups'] : [],
-            rules: Array.isArray(config.rules) ? config.rules : [],
-            ...config
+            rules: Array.isArray(config.rules) ? config.rules : []
         };
     } catch (e) {
         console.error('Failed to parse subscription cache:', e);
         return null;
+    }
+}
+
+export async function refreshUpstreamCache() {
+    try {
+        const configStr = await redis.get('config:global');
+        const config = configStr ? JSON.parse(configStr) : {};
+
+        const upstreamUrl = config.upstreamUrl;
+        // Default 24h
+        const cacheDuration = (config.cacheDuration || 24) * 3600;
+
+        if (!upstreamUrl) {
+            console.warn('No upstream URL configured, skipping refresh.');
+            return false;
+        }
+
+        const res = await fetch(upstreamUrl, {
+            headers: {
+                'User-Agent': 'Clash/Vercel-Sub-Manager'
+            }
+        });
+
+        if (!res.ok) {
+            console.error(`Upstream Fetch Failed: ${res.status}`);
+            return false;
+        }
+
+        const content = await res.text();
+        await redis.set('cache:subscription', content, 'EX', cacheDuration);
+        console.log('Upstream cache refreshed successfully.');
+        return true;
+
+    } catch (e) {
+        console.error('Failed to refresh upstream cache:', e);
+        return false;
     }
 }
