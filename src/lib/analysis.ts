@@ -115,120 +115,135 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
     }
 }
 
+
+let refreshPromise: Promise<boolean> | null = null;
+
 /**
  * Refresh all upstream sources
  */
 export async function refreshUpstreamCache() {
-    try {
-        const config = await db.getGlobalConfig();
-        const cacheDuration = (config.cacheDuration || 24) * 3600;
-
-        // Get upstream sources - support both new and legacy formats
-        let sources: { name: string; url: string }[] = [];
-
-        if (config.upstreamSources && Array.isArray(config.upstreamSources)) {
-            // New format with names
-            sources = config.upstreamSources;
-        } else if (config.upstreamUrl) {
-            // Legacy format - convert to sources
-            const urls = Array.isArray(config.upstreamUrl) ? config.upstreamUrl : [config.upstreamUrl];
-            sources = urls.map((url: string | { url: string }, i) => ({
-                name: `upstream_${i}`,
-                url: typeof url === 'string' ? url : url.url || ''
-            }));
-        }
-
-        if (sources.length === 0) {
-            console.warn('No upstream sources configured, skipping refresh.');
-            return false;
-        }
-
-        console.log(`📥 Fetching from ${sources.length} upstream source(s)...`);
-
-        let allContent = '';
-
-        // Fetch from all sources
-        for (let i = 0; i < sources.length; i++) {
-            const source = sources[i];
-            console.log(`   Fetching source ${i + 1}/${sources.length} [${source.name}]: ${source.url.substring(0, 50)}...`);
-
-            try {
-                // Clear existing data for this source before fetching new data
-                console.log(`   🗑️ Clearing old data for source [${source.name}]...`);
-                await db.clearProxies(source.name);
-                await db.clearProxyGroups(source.name);
-                await db.clearRules(source.name);
-
-                const res = await fetch(source.url, {
-                    headers: {
-                        'User-Agent': 'Clash/Vercel-Sub-Manager'
-                    }
-                });
-
-                if (!res.ok) {
-                    console.error(`   ❌ Source [${source.name}] failed: ${res.status}`);
-                    continue;
-                }
-
-                const content = await res.text();
-
-                // Parse and store with source name
-                await parseAndStoreUpstream(content, source.name);
-
-                // Keep first source as main cache for backward compatibility
-                if (i === 0) {
-                    allContent = content;
-                }
-
-                console.log(`   ✓ Source [${source.name}] parsed successfully`);
-            } catch (error) {
-                console.error(`   ❌ Source [${source.name}] error:`, error);
-            }
-        }
-
-        // Save raw cache (for backup/fallback) - use first source
-        if (allContent) {
-            await db.setCache('cache:subscription', allContent, cacheDuration);
-        }
-
-        console.log('✅ All upstream sources refreshed successfully.');
-
-        // Clear all subscription caches to force regeneration with new upstream data
-        console.log('🗑️ Clearing all subscription caches...');
-        await db.clearAllSubscriptionCaches();
-        console.log('✅ Subscription caches cleared.');
-
-        // Log system event
-        try {
-            await db.createSystemLog({
-                category: 'update',
-                message: `Upstream sources refreshed: ${sources.length} sources processed`,
-                status: 'success',
-                details: { sources: sources.map(s => s.name) },
-                timestamp: Date.now()
-            });
-        } catch (e) {
-            console.error('Failed to create system log:', e);
-        }
-
-        return true;
-
-    } catch (e) {
-        console.error('Failed to refresh upstream cache:', e);
-
-        // Log system error
-        try {
-            await db.createSystemLog({
-                category: 'error',
-                message: 'Failed to refresh upstream cache',
-                status: 'failure',
-                details: { error: String(e) },
-                timestamp: Date.now()
-            });
-        } catch (logError) {
-            console.error('Failed to create system log for error:', logError);
-        }
-
-        return false;
+    // If a refresh is already in progress, return the existing promise
+    if (refreshPromise) {
+        console.log('🔄 Upstream refresh already in progress, reusing existing promise...');
+        return refreshPromise;
     }
+
+    refreshPromise = (async () => {
+        try {
+            const config = await db.getGlobalConfig();
+            const cacheDuration = (config.cacheDuration || 24) * 3600;
+
+            // Get upstream sources - support both new and legacy formats
+            let sources: { name: string; url: string }[] = [];
+
+            if (config.upstreamSources && Array.isArray(config.upstreamSources)) {
+                // New format with names
+                sources = config.upstreamSources;
+            } else if (config.upstreamUrl) {
+                // Legacy format - convert to sources
+                const urls = Array.isArray(config.upstreamUrl) ? config.upstreamUrl : [config.upstreamUrl];
+                sources = urls.map((url: string | { url: string }, i) => ({
+                    name: `upstream_${i}`,
+                    url: typeof url === 'string' ? url : url.url || ''
+                }));
+            }
+
+            if (sources.length === 0) {
+                console.warn('No upstream sources configured, skipping refresh.');
+                return false;
+            }
+
+            console.log(`📥 Fetching from ${sources.length} upstream source(s)...`);
+
+            let allContent = '';
+
+            // Fetch from all sources
+            for (let i = 0; i < sources.length; i++) {
+                const source = sources[i];
+                console.log(`   Fetching source ${i + 1}/${sources.length} [${source.name}]: ${source.url.substring(0, 50)}...`);
+
+                try {
+                    // Clear existing data for this source before fetching new data
+                    console.log(`   🗑️ Clearing old data for source [${source.name}]...`);
+                    await db.clearProxies(source.name);
+                    await db.clearProxyGroups(source.name);
+                    await db.clearRules(source.name);
+
+                    const res = await fetch(source.url, {
+                        headers: {
+                            'User-Agent': 'Clash/Vercel-Sub-Manager'
+                        }
+                    });
+
+                    if (!res.ok) {
+                        console.error(`   ❌ Source [${source.name}] failed: ${res.status}`);
+                        continue;
+                    }
+
+                    const content = await res.text();
+
+                    // Parse and store with source name
+                    await parseAndStoreUpstream(content, source.name);
+
+                    // Keep first source as main cache for backward compatibility
+                    if (i === 0) {
+                        allContent = content;
+                    }
+
+                    console.log(`   ✓ Source [${source.name}] parsed successfully`);
+                } catch (error) {
+                    console.error(`   ❌ Source [${source.name}] error:`, error);
+                }
+            }
+
+            // Save raw cache (for backup/fallback) - use first source
+            if (allContent) {
+                await db.setCache('cache:subscription', allContent, cacheDuration);
+            }
+
+            console.log('✅ All upstream sources refreshed successfully.');
+
+            // Clear all subscription caches to force regeneration with new upstream data
+            console.log('🗑️ Clearing all subscription caches...');
+            await db.clearAllSubscriptionCaches();
+            console.log('✅ Subscription caches cleared.');
+
+            // Log system event
+            try {
+                await db.createSystemLog({
+                    category: 'update',
+                    message: `Upstream sources refreshed: ${sources.length} sources processed`,
+                    status: 'success',
+                    details: { sources: sources.map(s => s.name) },
+                    timestamp: Date.now()
+                });
+            } catch (e) {
+                console.error('Failed to create system log:', e);
+            }
+
+            return true;
+
+        } catch (e) {
+            console.error('Failed to refresh upstream cache:', e);
+
+            // Log system error
+            try {
+                await db.createSystemLog({
+                    category: 'error',
+                    message: 'Failed to refresh upstream cache',
+                    status: 'failure',
+                    details: { error: String(e) },
+                    timestamp: Date.now()
+                });
+            } catch (logError) {
+                console.error('Failed to create system log for error:', logError);
+            }
+
+            return false;
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
 }
