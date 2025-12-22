@@ -1,21 +1,11 @@
 'use server'
 
-import { redis } from '@/lib/redis';
+import { db } from '@/lib/db';
 import { generateToken } from '@/lib/utils';
 import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-
-interface SubData {
-    token: string;
-    username: string;
-    name: string;
-    customRules: string;
-    groupId?: string;
-    ruleId?: string;
-    enabled: boolean;
-    createdAt: number;
-}
+import { SubData } from './database/interface';
 
 // Helper to check user
 async function getCurrentSession() {
@@ -25,28 +15,23 @@ async function getCurrentSession() {
     return await getSession(sessionId);
 }
 
-export async function createSubscription(name: string, customRules: string, groupId: string = 'default', ruleId: string = 'default') {
+export async function createSubscription(remark: string, customRules: string, groupId: string = 'default', ruleId: string = 'default', selectedSources: string[] = []) {
     const session = await getCurrentSession();
     if (!session) return { error: 'Unauthorized' };
 
     const token = generateToken();
     const subData: SubData = {
-        token,
         username: session.username,
-        name: name || '未命名订阅',
+        remark: remark || '未命名订阅',
         customRules: customRules || '',
         groupId,
         ruleId,
+        selectedSources,
         enabled: true,
         createdAt: Date.now()
     };
 
-    await redis.set(`sub:${token}`, JSON.stringify(subData));
-    await redis.sadd(`user:${session.username}:subs`, token);
-
-    // Immediate Upstream Cache Refresh
-    const { refreshUpstreamCache } = await import('@/lib/analysis');
-    await refreshUpstreamCache();
+    await db.createSubscription(token, session.username, subData);
 
     revalidatePath('/dashboard');
     return { success: true };
@@ -57,38 +42,36 @@ export async function deleteSubscription(token: string) {
     if (!session) return { error: 'Unauthorized' };
 
     // Verify ownership
-    const isOwner = await redis.sismember(`user:${session.username}:subs`, token);
+    const isOwner = await db.isSubscriptionOwner(session.username, token);
     if (!isOwner) return { error: 'Forbidden' };
 
-    await redis.del(`sub:${token}`);
-    await redis.srem(`user:${session.username}:subs`, token);
+    await db.deleteSubscription(token, session.username);
 
     revalidatePath('/dashboard');
     return { success: true };
 }
 
-export async function updateSubscription(token: string, name: string, customRules: string, groupId: string = 'default', ruleId: string = 'default') {
+export async function updateSubscription(token: string, remark: string, customRules: string, groupId: string = 'default', ruleId: string = 'default', selectedSources: string[] = []) {
     const session = await getCurrentSession();
     if (!session) return { error: 'Unauthorized' };
 
     // Verify ownership
-    const isOwner = await redis.sismember(`user:${session.username}:subs`, token);
+    const isOwner = await db.isSubscriptionOwner(session.username, token);
     if (!isOwner) return { error: 'Forbidden' };
 
-    const subDataStr = await redis.get(`sub:${token}`);
-    if (!subDataStr) return { error: 'Not found' };
+    const subData = await db.getSubscription(token);
+    if (!subData) return { error: 'Not found' };
 
-    const subData = JSON.parse(subDataStr) as SubData;
-    subData.name = name;
+    subData.remark = remark;
     subData.customRules = customRules;
     subData.groupId = groupId;
     subData.ruleId = ruleId;
+    subData.selectedSources = selectedSources;
 
-    await redis.set(`sub:${token}`, JSON.stringify(subData));
+    await db.updateSubscription(token, subData);
 
-    // Immediate Upstream Cache Refresh
-    const { refreshUpstreamCache } = await import('@/lib/analysis');
-    await refreshUpstreamCache();
+    // Invalidate subscription cache
+    await db.deleteCache(`cache:subscription:${token}`);
 
     revalidatePath('/dashboard');
     return { success: true };
@@ -98,13 +81,7 @@ export async function getUserSubscriptions() {
     const session = await getCurrentSession();
     if (!session) return [];
 
-    const tokens = await redis.smembers(`user:${session.username}:subs`);
-    if (!tokens || tokens.length === 0) return [];
-
-    const subs = await Promise.all(tokens.map(async (token) => {
-        const data = await redis.get(`sub:${token}`);
-        return data ? JSON.parse(data) : null;
-    }));
-
-    return subs.filter(s => s !== null).sort((a, b) => b.createdAt - a.createdAt);
+    const subs = await db.getUserSubscriptions(session.username);
+    return subs.sort((a, b) => b.createdAt - a.createdAt);
 }
+

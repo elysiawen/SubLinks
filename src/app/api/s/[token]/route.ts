@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
-import yaml from 'js-yaml';
+import { db } from '@/lib/db';
+import { buildSubscriptionYaml } from '@/lib/subscription-builder';
 
-// Runtime must be nodejs for ioredis
+// Runtime must be nodejs for database clients
 export const runtime = 'nodejs';
 
 export async function GET(
@@ -11,120 +11,135 @@ export async function GET(
 ) {
     const { token } = await params;
 
-    // 1. Get Subscription (New Schema)
-    const subStr = await redis.get(`sub:${token}`);
-    const sub = subStr ? JSON.parse(subStr) : null;
+    // 1. Get Subscription
+    const sub = await db.getSubscription(token);
+
+    // Helper to log access
+    const logAccess = async (status: number) => {
+        if (!sub) return; // Only log if token correlates to a subscription
+        const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+        const ua = request.headers.get('user-agent') || 'Unknown';
+        try {
+            await db.createAPIAccessLog({
+                token,
+                username: sub.username,
+                ip,
+                ua,
+                status,
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.error('Failed to log API access:', e);
+        }
+    };
 
     if (!sub || sub.enabled === false) {
+        if (sub) await logAccess(403);
         return new NextResponse('Invalid Subscription Token. Please contact admin.', { status: 403 });
     }
 
     // Check User Status (Owner)
-    const userStr = await redis.get(`user:${sub.username}`);
-    const user = userStr ? JSON.parse(userStr) : null;
+    const user = await db.getUser(sub.username);
     if (!user || user.status !== 'active') {
+        await logAccess(403);
         return new NextResponse('User Account Suspended', { status: 403 });
     }
 
     // 2. Get Global Config
-    const configStr = await redis.get('config:global');
-    const config = configStr ? JSON.parse(configStr) : {};
-
+    const config = await db.getGlobalConfig();
     const upstreamUrl = config.upstreamUrl;
-    const cacheDuration = (config.cacheDuration || 24) * 3600; // seconds
+    const upstreamSources = config.upstreamSources || [];
 
-    if (!upstreamUrl) {
+    if (!upstreamUrl && upstreamSources.length === 0) {
+        await logAccess(500);
         return new NextResponse('Server Configuration Error: No Upstream URL Set', { status: 500 });
     }
 
-    // 3. User Agent Check (Strict Mode from Global Config)
-    if (config.uaWhitelist && Array.isArray(config.uaWhitelist) && config.uaWhitelist.length > 0) {
+    // 3. Calculate effective settings from selected sources
+    let effectiveCacheDuration = config.cacheDuration || 24;
+    let effectiveUaWhitelist = config.uaWhitelist || [];
+
+    const selectedSourceNames = sub.selectedSources || [];
+    if (selectedSourceNames.length > 0 && config.upstreamSources) {
+        const selectedSources = config.upstreamSources.filter(s => selectedSourceNames.includes(s.name));
+
+        // Use minimum cache duration from selected sources if available
+        const sourceDurations = selectedSources.map(s => s.cacheDuration).filter(d => d !== undefined) as number[];
+        if (sourceDurations.length > 0) {
+            effectiveCacheDuration = Math.min(...sourceDurations);
+        }
+
+        // Merge UA whitelists
+        const sourceWhitelists = selectedSources.flatMap(s => s.uaWhitelist || []);
+        if (sourceWhitelists.length > 0) {
+            effectiveUaWhitelist = Array.from(new Set([...effectiveUaWhitelist, ...sourceWhitelists]));
+        }
+    }
+
+    // 4. User Agent Check
+    if (effectiveUaWhitelist.length > 0) {
         const ua = request.headers.get('user-agent') || '';
-        const allowed = config.uaWhitelist.some((w: string) => ua.includes(w));
+        const allowed = effectiveUaWhitelist.some((w: string) => ua.includes(w));
         if (!allowed) {
+            await logAccess(403);
             return new NextResponse('Client Not Allowed', { status: 403 });
         }
     }
 
-    // 4. Cache Strategy
-    let content = await redis.get('cache:subscription');
+    // 5. Check cache with subscription-specific cache key and duration
+    const cacheDuration = effectiveCacheDuration;
+    const cacheKey = `cache:subscription:${token}`;
+    let cachedYaml = await db.getCache(cacheKey);
 
-    if (!content) {
+    if (cachedYaml) {
+        console.log(`✅ Serving cached subscription for token: ${token}`);
+        await logAccess(200);
+        return new NextResponse(cachedYaml, {
+            headers: {
+                'Content-Type': 'text/yaml; charset=utf-8',
+                'Content-Disposition': `attachment; filename="${encodeURIComponent(sub.username)}_${token}.yaml"`,
+                'Subscription-Userinfo': `upload=0; download=0; total=10737418240; expire=0`,
+                'X-Cache': 'HIT',
+            },
+        });
+    }
+
+    // 5. Ensure upstream data is cached and parsed
+    let upstreamCache = await db.getCache('cache:subscription');
+
+    if (!upstreamCache) {
         const { refreshUpstreamCache } = await import('@/lib/analysis');
         const success = await refreshUpstreamCache();
 
-        if (success) {
-            content = await redis.get('cache:subscription');
-        } else {
+        if (!success) {
+            await logAccess(502);
             return new NextResponse('Failed to fetch upstream subscription', { status: 502 });
         }
     }
 
-    // 5. Merge Strategy (Custom Groups / Rules)
+    // 6. Build subscription YAML from structured database data
     try {
-        const doc = yaml.load(content as string) as any;
+        const finalYaml = await buildSubscriptionYaml(sub);
 
-        // Handle Groups
-        if (sub.groupId && sub.groupId !== 'default') {
-            const groupSetStr = await redis.get(`custom:groups:${sub.groupId}`);
-            if (groupSetStr) {
-                const groupSet = JSON.parse(groupSetStr);
-                // Parse the YAML content of the custom set
-                const customGroups = yaml.load(groupSet.content);
-                if (Array.isArray(customGroups)) {
-                    doc['proxy-groups'] = customGroups;
-                }
-            }
-        }
+        // Cache the built YAML with subscription-specific duration (in hours)
+        const cacheExpireMs = cacheDuration * 60 * 60 * 1000; // Convert hours to milliseconds
+        await db.setCache(cacheKey, finalYaml, Date.now() + cacheExpireMs);
 
-        // Handle Rules
-        if (sub.ruleId && sub.ruleId !== 'default') {
-            const ruleSetStr = await redis.get(`custom:rules:${sub.ruleId}`);
-            if (ruleSetStr) {
-                const ruleSet = JSON.parse(ruleSetStr);
-                const customRules = yaml.load(ruleSet.content);
-                if (Array.isArray(customRules)) {
-                    doc.rules = customRules;
-                }
-            }
-        }
+        console.log(`✅ Built and cached subscription for token: ${token}, cache duration: ${cacheDuration}h`);
 
-        // Handle Subscription-specific Custom Rules Append
-        if (sub.customRules) {
-            const extraRules = sub.customRules.split('\n').map((line: string) => line.trim()).filter((line: string) => line && !line.startsWith('#'));
-            if (doc.rules && Array.isArray(doc.rules)) {
-                doc.rules.push(...extraRules);
-            } else {
-                doc.rules = extraRules;
-            }
-        }
-
-        const finalYaml = yaml.dump(doc);
-
-        // Generate profile name: username_token
-        const profileName = `${sub.username}_${token}`;
-
+        // Return YAML
+        await logAccess(200);
         return new NextResponse(finalYaml, {
             headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-                'Content-Disposition': `attachment; filename="${encodeURIComponent(profileName)}.yaml"`,
-                'Profile-Title': profileName,
-                'Subscription-Userinfo': 'upload=0; download=0; total=10737418240000000; expire=0',
-                'Profile-Update-Interval': '24'
-            }
+                'Content-Type': 'text/yaml; charset=utf-8',
+                'Content-Disposition': `attachment; filename="${encodeURIComponent(sub.username)}_${token}.yaml"`,
+                'Subscription-Userinfo': `upload=0; download=0; total=10737418240; expire=0`,
+                'X-Cache': 'MISS',
+            },
         });
-
-    } catch (e) {
-        console.error('YAML Merge Error:', e);
-        // Fallback to raw append if parsing fails
-        let finalContent = content || '';
-        if (sub.customRules) {
-            finalContent += `\n${sub.customRules}`;
-        }
-        return new NextResponse(finalContent, {
-            headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-            }
-        });
+    } catch (error) {
+        console.error('Failed to build subscription:', error);
+        await logAccess(500);
+        return new NextResponse('Internal Server Error', { status: 500 });
     }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createSubscription, deleteSubscription, updateSubscription } from '@/lib/sub-actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
@@ -11,6 +11,7 @@ interface Sub {
     customRules: string;
     groupId?: string;
     ruleId?: string;
+    selectedSources?: string[];
 }
 
 interface ConfigSets {
@@ -18,7 +19,7 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function DashboardClient({ initialSubs, username, baseUrl, configSets, defaultGroups = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets: ConfigSets, defaultGroups: string[] }) {
+export default function DashboardClient({ initialSubs, username, baseUrl, configSets, defaultGroups = [], availableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets: ConfigSets, defaultGroups: string[], availableSources: { name: string; url: string }[] }) {
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
     const [formRules, setFormRules] = useState('');
     const [formGroupId, setFormGroupId] = useState('default');
     const [formRuleId, setFormRuleId] = useState('default');
+    const [formSelectedSources, setFormSelectedSources] = useState<string[]>([]);
 
     // Calculate Dynamic Policies based on selected Group Config
     const availablePolicies = useMemo(() => {
@@ -38,12 +40,23 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         if (formGroupId === 'default') {
             extraGroups = defaultGroups;
         } else {
+            console.log('Configs:', configSets.groups);
             const selectedSet = configSets.groups.find(g => g.id === formGroupId);
+            console.log('Selected Set:', selectedSet);
             if (selectedSet) {
                 try {
                     const doc = yaml.load(selectedSet.content) as any;
+                    console.log('Parsed Doc:', doc);
                     if (Array.isArray(doc)) {
                         extraGroups = doc.map((g: any) => g.name);
+                    } else if (doc && typeof doc === 'object') {
+                        // Handle potential single object or dictionary format
+                        if (doc['proxy-groups'] && Array.isArray(doc['proxy-groups'])) {
+                            extraGroups = doc['proxy-groups'].map((g: any) => g.name);
+                        } else if (doc.name) {
+                            // Handle single group
+                            extraGroups = [doc.name];
+                        }
                     }
                 } catch (e) {
                     console.error('Failed to parse custom group set:', e);
@@ -53,6 +66,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
 
         // Deduplicate and filter
         const all = [...basePolicies, ...extraGroups];
+        console.log('Calculated Policies:', all);
         return Array.from(new Set(all));
     }, [formGroupId, configSets.groups, defaultGroups]);
 
@@ -63,9 +77,9 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
     const handleSubmit = async () => {
         setLoading(true);
         if (editingSub) {
-            await updateSubscription(editingSub.token, formName, formRules, formGroupId, formRuleId);
+            await updateSubscription(editingSub.token, formName, formRules, formGroupId, formRuleId, formSelectedSources);
         } else {
-            await createSubscription(formName, formRules, formGroupId, formRuleId);
+            await createSubscription(formName, formRules, formGroupId, formRuleId, formSelectedSources);
         }
         setLoading(false);
         closeModal();
@@ -108,6 +122,13 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
     const [newRuleValue, setNewRuleValue] = useState('');
     const [newRulePolicy, setNewRulePolicy] = useState('Proxy');
 
+    // Reset newRulePolicy if it's no longer valid when groups change
+    useEffect(() => {
+        if (!availablePolicies.includes(newRulePolicy)) {
+            setNewRulePolicy('Proxy');
+        }
+    }, [availablePolicies, newRulePolicy]);
+
     // Sync Text to GUI when opening modal or switching modes
     const syncTextToGui = (text: string) => {
         setGuiRules(parseRules(text));
@@ -148,6 +169,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setFormRules('');
         setFormGroupId('default');
         setFormRuleId('default');
+        setFormSelectedSources(availableSources.map(s => s.name)); // Default: select all
         setRuleMode('simple');
         setGuiRules([]);
         setIsModalOpen(true);
@@ -159,6 +181,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setFormRules(sub.customRules);
         setFormGroupId(sub.groupId || 'default');
         setFormRuleId(sub.ruleId || 'default');
+        setFormSelectedSources(sub.selectedSources || availableSources.map(s => s.name));
         setRuleMode('simple');
         syncTextToGui(sub.customRules);
         setIsModalOpen(true);
@@ -267,6 +290,33 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                 />
                             </div>
 
+                            {/* Upstream Source Selection */}
+                            {availableSources.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">选择上游源</label>
+                                    <div className="border border-gray-200 rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto bg-gray-50">
+                                        {availableSources.map(source => (
+                                            <label key={source.name} className="flex items-center gap-2 cursor-pointer hover:bg-white px-2 py-1 rounded transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formSelectedSources.includes(source.name)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setFormSelectedSources([...formSelectedSources, source.name]);
+                                                        } else {
+                                                            setFormSelectedSources(formSelectedSources.filter(s => s !== source.name));
+                                                        }
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700">{source.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">选择要使用的上游节点源,未选择则使用全部</p>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">策略组配置</label>
@@ -295,6 +345,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                     </select>
                                 </div>
                             </div>
+
 
                             <div>
                                 <div className="flex justify-between items-center mb-2">

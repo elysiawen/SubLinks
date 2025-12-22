@@ -37,6 +37,15 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <Link href="/admin/settings" className={linkClass('/admin/settings')}>
                     ⚙️ 全局设置
                 </Link>
+                <Link href="/admin/sources" className={linkClass('/admin/sources')}>
+                    📡 上游源管理
+                </Link>
+                <Link href="/admin/subscriptions" className={linkClass('/admin/subscriptions')}>
+                    📑 订阅管理
+                </Link>
+                <Link href="/admin/logs" className={linkClass('/admin/logs')}>
+                    📊 日志审计
+                </Link>
 
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅内容分析</div>
                 <Link href="/admin/proxies" className={linkClass('/admin/proxies')}>

@@ -1,13 +1,43 @@
-import { getParsedConfig } from '@/lib/analysis';
+import { db } from '@/lib/db';
 import { getRuleSets } from '@/lib/config-actions';
 import AdminRulesClient from './client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminRulesPage() {
-    const config = await getParsedConfig();
-    const defaultRules = config ? (config.rules || []) : [];
+    let rulesBySource: Record<string, string[]> = {};
+    let totalCount = 0;
+    let error: string | null = null;
+
+    try {
+        const allRules = await db.getRules();
+        totalCount = allRules.length;
+
+        // Group by source
+        for (const rule of allRules) {
+            const source = rule.source || 'unknown';
+            if (!rulesBySource[source]) {
+                rulesBySource[source] = [];
+            }
+            rulesBySource[source].push(rule.ruleText);
+        }
+    } catch (e: any) {
+        error = e.message;
+        console.error('Failed to get rules:', e);
+    }
+
     const customSets = await getRuleSets();
 
-    return <AdminRulesClient defaultRules={defaultRules} customSets={customSets} />;
+    if (error) {
+        return (
+            <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-800">⚡ 分流规则列表</h2>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-600">⚠️ 加载失败: {error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return <AdminRulesClient rulesBySource={rulesBySource} totalCount={totalCount} customSets={customSets} />;
 }

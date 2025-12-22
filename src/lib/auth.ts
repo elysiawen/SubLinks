@@ -1,4 +1,4 @@
-import { redis } from './redis';
+import { db } from './db';
 import { nanoid } from 'nanoid';
 import { SignJWT, jwtVerify } from 'jose';
 
@@ -9,18 +9,16 @@ const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 
 export async function createSession(username: string, role: string) {
     const sessionId = nanoid(32);
-    const sessionData = { username, role, createdAt: Date.now() };
-    await redis.set(`session:${sessionId}`, JSON.stringify(sessionData), 'EX', SESSION_TTL);
+    await db.createSession(sessionId, { username, role }, SESSION_TTL);
     return sessionId;
 }
 
 export async function getSession(sessionId: string) {
-    const data = await redis.get(`session:${sessionId}`);
-    return data ? JSON.parse(data) : null;
+    return await db.getSession(sessionId);
 }
 
 export async function destroySession(sessionId: string) {
-    await redis.del(`session:${sessionId}`);
+    await db.deleteSession(sessionId);
 }
 
 export async function hashPassword(password: string) {
@@ -33,3 +31,4 @@ export async function verifyPassword(password: string, hash: string) {
     const bcrypt = await import('bcryptjs');
     return bcrypt.compare(password, hash);
 }
+

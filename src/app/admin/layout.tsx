@@ -21,12 +21,12 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex font-sans">
+        <div className="h-screen bg-gray-50 flex font-sans overflow-hidden">
             <AdminSidebar username={session.username} />
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-8 max-w-5xl mx-auto">
+            <main className="flex-1 overflow-y-auto h-full">
+                <div className="p-8 max-w-6xl mx-auto">
                     {children}
                 </div>
             </main>

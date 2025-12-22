@@ -1,6 +1,6 @@
 'use server'
 
-import { redis } from '@/lib/redis';
+import { db } from '@/lib/db';
 import { createSession, verifyPassword, hashPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -14,46 +14,29 @@ export async function login(prevState: any, formData: FormData) {
     if (!username || !password) return { error: '请输入用户名和密码' };
 
     // 1. Check for Admin Init (First Run)
-    // Check if ANY admin user exists (not just 'admin' username)
-    const allUsernames = await redis.smembers('users:index');
-    let hasAdmin = false;
-
-    if (allUsernames && allUsernames.length > 0) {
-        for (const uname of allUsernames) {
-            const uStr = await redis.get(`user:${uname}`);
-            if (uStr) {
-                const u = JSON.parse(uStr);
-                if (u.role === 'admin') {
-                    hasAdmin = true;
-                    break;
-                }
-            }
-        }
-    }
+    const allUsers = await db.getAllUsers();
+    const hasAdmin = allUsers.some(u => u.role === 'admin');
 
     if (!hasAdmin) {
         // Create default admin only if no admin exists
         if (username === 'admin' && password === 'admin') {
             const hashedPassword = await hashPassword('admin');
-            await redis.set('user:admin', JSON.stringify({
+            await db.setUser('admin', {
                 password: hashedPassword,
                 role: 'admin',
                 status: 'active',
                 createdAt: Date.now()
-            }));
-            await redis.sadd('users:index', 'admin');
+            });
         } else {
             return { error: '系统初始化中,请使用默认账号 admin/admin 登录' };
         }
     }
 
     // 2. Verify User
-    const userStr = await redis.get(`user:${username}`);
-    if (!userStr) {
+    const user = await db.getUser(username);
+    if (!user) {
         return { error: '用户不存在' };
     }
-
-    const user = JSON.parse(userStr);
 
     // Check status
     if (user.status !== 'active') {
@@ -89,8 +72,9 @@ export async function logout() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(COOKIE_NAME)?.value;
     if (sessionId) {
-        await redis.del(`session:${sessionId}`);
+        await db.deleteSession(sessionId);
     }
     cookieStore.delete(COOKIE_NAME);
     redirect('/login');
 }
+
