@@ -105,15 +105,42 @@ export async function GET(
     }
 
     // 5. Ensure upstream data is cached and parsed
+    // 5. Ensure upstream data is cached and parsed, and check freshness
     let upstreamCache = await db.getCache('cache:subscription');
+    const upstreamLastUpdated = config.upstreamLastUpdated || 0;
 
-    if (!upstreamCache) {
+    // Check if upstream data is stale relative to THIS subscription's cache duration
+    // cacheDuration is in hours, so convert to ms
+    const maxAgeMs = cacheDuration * 60 * 60 * 1000;
+    const currentAge = Date.now() - upstreamLastUpdated;
+    const isStale = currentAge > maxAgeMs;
+
+    console.log(`🔍 Freshness Check:
+    - Token: ${token.substring(0, 6)}...
+    - CacheDuration: ${cacheDuration}h
+    - LastUpdated: ${new Date(upstreamLastUpdated).toISOString()}
+    - CurrentAge: ${(currentAge / 1000).toFixed(1)}s
+    - Threshold: ${(maxAgeMs / 1000).toFixed(1)}s
+    - IsStale: ${isStale}
+    - UpstreamCacheExists: ${!!upstreamCache}`);
+
+    if (!upstreamCache || isStale) {
+        console.log(`🔄 Upstream cache missing or stale. Triggering refresh...`);
         const { refreshUpstreamCache } = await import('@/lib/analysis');
         const success = await refreshUpstreamCache();
 
         if (!success) {
-            await logAccess(502);
-            return new NextResponse('Failed to fetch upstream subscription', { status: 502 });
+            // If refresh failed but we have old cache, maybe we can still use it?
+            // For now, strict behavior: if we can't get fresh data, we fail or warn.
+            // But if upstreamCache exists (just stale), we might want to fallback to it.
+            if (!upstreamCache) {
+                await logAccess(502);
+                return new NextResponse('Failed to fetch upstream subscription', { status: 502 });
+            }
+            console.warn('⚠️ Upstream refresh failed, serving stale data.');
+        } else {
+            // Refresh succeeded, get the new cache just to be sure (though we rely on DB mostly)
+            upstreamCache = await db.getCache('cache:subscription');
         }
     }
 

@@ -63,10 +63,6 @@ export interface UpstreamSource {
     url: string;
     cacheDuration?: number; // Cache duration in hours
     uaWhitelist?: string[]; // UA whitelist
-    refreshSchedule?: {
-        type: 'interval' | 'daily';
-        value: number; // hours for interval, hour of day (0-23) for daily
-    };
     isDefault?: boolean; // Mark as default source for new users/subscriptions
 }
 
@@ -77,6 +73,7 @@ export interface GlobalConfig {
     uaWhitelist?: string[];
     logRetentionDays?: number;
     maxUserSubscriptions?: number; // 0 means unlimited
+    upstreamLastUpdated?: number; // Timestamp of last upstream refresh
 }
 
 // Structured upstream data types

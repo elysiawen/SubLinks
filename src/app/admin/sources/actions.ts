@@ -103,8 +103,7 @@ export async function updateUpstreamSource(
     newName: string,
     url: string,
     cacheDuration: number = 24,
-    uaWhitelist: string[] = [],
-    refreshSchedule?: { type: 'interval' | 'daily'; value: number }
+    uaWhitelist: string[] = []
 ) {
     const globalConfig = await db.getGlobalConfig();
 
@@ -123,8 +122,7 @@ export async function updateUpstreamSource(
         name: newName,
         url,
         cacheDuration,
-        uaWhitelist,
-        refreshSchedule
+        uaWhitelist
     };
 
     await db.setGlobalConfig({

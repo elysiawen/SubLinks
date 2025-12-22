@@ -8,10 +8,6 @@ interface UpstreamSource {
     url: string;
     cacheDuration?: number;
     uaWhitelist?: string[];
-    refreshSchedule?: {
-        type: 'interval' | 'daily';
-        value: number;
-    };
     isDefault?: boolean;
 }
 
@@ -24,18 +20,16 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
     // Form state
     const [formName, setFormName] = useState('');
     const [formUrl, setFormUrl] = useState('');
+    const [formCacheDuration, setFormCacheDuration] = useState<string>('24');
+    const [formDurationUnit, setFormDurationUnit] = useState<'hours' | 'minutes'>('hours');
     const [formUaWhitelist, setFormUaWhitelist] = useState('');
-    const [formRefreshType, setFormRefreshType] = useState<'interval' | 'daily'>('interval');
-    const [formRefreshInterval, setFormRefreshInterval] = useState(24); // hours
-    const [formRefreshDaily, setFormRefreshDaily] = useState(3); // hour of day
 
     const resetForm = () => {
         setFormName('');
         setFormUrl('');
+        setFormCacheDuration('24');
+        setFormDurationUnit('hours');
         setFormUaWhitelist('');
-        setFormRefreshType('interval');
-        setFormRefreshInterval(24);
-        setFormRefreshDaily(3);
     };
 
     const validateForm = () => {
@@ -51,16 +45,9 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
             alert('订阅URL必须以 http:// 或 https:// 开头');
             return false;
         }
-        if (formRefreshType === 'interval') {
-            if (formRefreshInterval < 1 || formRefreshInterval > 168) {
-                alert('刷新间隔必须在 1-168 小时之间 (最长一周)');
-                return false;
-            }
-        } else if (formRefreshType === 'daily') {
-            if (formRefreshDaily < 0 || formRefreshDaily > 23) {
-                alert('刷新时间必须在 0-23 点之间');
-                return false;
-            }
+        if (!formUrl.startsWith('http://') && !formUrl.startsWith('https://')) {
+            alert('订阅URL必须以 http:// 或 https:// 开头');
+            return false;
         }
         return true;
     };
@@ -68,13 +55,18 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
     const openEditModal = (source: UpstreamSource) => {
         setFormName(source.name);
         setFormUrl(source.url);
-        setFormUaWhitelist((source.uaWhitelist || []).join(', '));
-        setFormRefreshType(source.refreshSchedule?.type || 'interval');
-        if (source.refreshSchedule?.type === 'daily') {
-            setFormRefreshDaily(source.refreshSchedule.value);
+
+        // Smart unit detection
+        const duration = source.cacheDuration || 24;
+        if (duration < 1 && duration > 0) {
+            setFormCacheDuration(String(Math.round(duration * 60)));
+            setFormDurationUnit('minutes');
         } else {
-            setFormRefreshInterval(source.refreshSchedule?.value || 24);
+            setFormCacheDuration(String(duration));
+            setFormDurationUnit('hours');
         }
+
+        setFormUaWhitelist((source.uaWhitelist || []).join(', '));
         setEditingSource(source);
         setIsAdding(false);
     };
@@ -89,7 +81,14 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
 
         setLoading(true);
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
-        await addUpstreamSource(formName.trim(), formUrl.trim(), 24, uaList);
+
+        let duration = parseFloat(formCacheDuration);
+        if (isNaN(duration) || duration <= 0) duration = 24;
+        if (formDurationUnit === 'minutes') {
+            duration = duration / 60;
+        }
+
+        await addUpstreamSource(formName.trim(), formUrl.trim(), duration, uaList);
         setLoading(false);
         resetForm();
         setIsAdding(false);
@@ -102,18 +101,19 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
 
         setLoading(true);
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
-        const refreshSchedule = {
-            type: formRefreshType,
-            value: formRefreshType === 'interval' ? formRefreshInterval : formRefreshDaily
-        };
+
+        let duration = parseFloat(formCacheDuration);
+        if (isNaN(duration) || duration <= 0) duration = 24;
+        if (formDurationUnit === 'minutes') {
+            duration = duration / 60;
+        }
 
         await updateUpstreamSource(
             editingSource.name,
             formName.trim(),
             formUrl.trim(),
-            24, // Keep default cache duration
-            uaList,
-            refreshSchedule
+            duration,
+            uaList
         );
 
         setLoading(false);
@@ -235,6 +235,31 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                             />
                         </div>
                         <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    value={formCacheDuration}
+                                    onChange={(e) => setFormCacheDuration(e.target.value)}
+                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    min="0.1"
+                                    step="0.1"
+                                />
+                                <select
+                                    value={formDurationUnit}
+                                    onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
+                                    className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                >
+                                    <option value="hours">小时</option>
+                                    <option value="minutes">分钟</option>
+                                </select>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                设置多久从上游源重新获取一次订阅数据
+                                (当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})
+                            </p>
+                        </div>
+                        <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">UA 白名单 (可选，逗号分隔)</label>
                             <input
                                 type="text"
@@ -244,74 +269,6 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                 placeholder="Clash, Shadowrocket"
                             />
                             <p className="text-xs text-gray-500 mt-1">留空表示不限制客户端类型</p>
-                        </div>
-
-                        {/* Refresh Schedule */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">上游刷新计划 *</label>
-                            <p className="text-xs text-gray-500 mb-3">设置多久从上游源重新获取一次订阅数据</p>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            value="interval"
-                                            checked={formRefreshType === 'interval'}
-                                            onChange={(e) => setFormRefreshType(e.target.value as 'interval')}
-                                            className="w-4 h-4 text-blue-600"
-                                        />
-                                        <span className="text-sm text-gray-700">每隔</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={formRefreshInterval}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            if (!isNaN(val)) {
-                                                setFormRefreshInterval(Math.max(1, Math.min(168, val)));
-                                            } else {
-                                                setFormRefreshInterval(val);
-                                            }
-                                        }}
-                                        disabled={formRefreshType !== 'interval'}
-                                        className="w-24 border border-gray-300 rounded px-3 py-1 text-sm disabled:bg-gray-100"
-                                        min="1"
-                                        max="168"
-                                    />
-                                    <span className="text-sm text-gray-700">小时刷新一次</span>
-                                    <span className="text-xs text-gray-400">(1-168小时)</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            value="daily"
-                                            checked={formRefreshType === 'daily'}
-                                            onChange={(e) => setFormRefreshType(e.target.value as 'daily')}
-                                            className="w-4 h-4 text-blue-600"
-                                        />
-                                        <span className="text-sm text-gray-700">每天</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={formRefreshDaily}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            if (!isNaN(val)) {
-                                                setFormRefreshDaily(Math.max(0, Math.min(23, val)));
-                                            } else {
-                                                setFormRefreshDaily(val);
-                                            }
-                                        }}
-                                        disabled={formRefreshType !== 'daily'}
-                                        className="w-24 border border-gray-300 rounded px-3 py-1 text-sm disabled:bg-gray-100"
-                                        min="0"
-                                        max="23"
-                                    />
-                                    <span className="text-sm text-gray-700">点刷新</span>
-                                    <span className="text-xs text-gray-400">(0-23点)</span>
-                                </div>
-                            </div>
                         </div>
 
                         <div className="flex gap-2">
@@ -357,17 +314,15 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                         )}
                                     </div>
                                     <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
-                                    <div className="flex flex-wrap gap-2 text-xs">
+                                    <div className="flex flex-wrap gap-2 text-xs mb-2">
+                                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
+                                            🕒 {(source.cacheDuration || 24) < 1
+                                                ? `${Math.round((source.cacheDuration || 0) * 60)}m`
+                                                : `${source.cacheDuration || 24}h`}
+                                        </span>
                                         {source.uaWhitelist && source.uaWhitelist.length > 0 && (
                                             <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
                                                 🔒 UA限制
-                                            </span>
-                                        )}
-                                        {source.refreshSchedule && (
-                                            <span className="bg-purple-50 text-purple-600 px-2 py-1 rounded">
-                                                🔄 {source.refreshSchedule.type === 'interval'
-                                                    ? `每${source.refreshSchedule.value}h`
-                                                    : `每天${source.refreshSchedule.value}:00`}
                                             </span>
                                         )}
                                     </div>

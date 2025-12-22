@@ -97,8 +97,14 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             category: 'update',
             message: `Upstream source added and cached: ${sourceName}`,
             status: 'success',
-            details: { source: sourceName },
             timestamp: Date.now()
+        });
+
+        // Update global config with last updated timestamp
+        const globalConfig = await db.getGlobalConfig();
+        await db.setGlobalConfig({
+            ...globalConfig,
+            upstreamLastUpdated: Date.now()
         });
 
         // Clear all subscription caches to ensure they pick up the new/updated source data
@@ -206,6 +212,13 @@ export async function refreshUpstreamCache() {
             }
 
             console.log('✅ All upstream sources refreshed successfully.');
+
+            // Update global config with last updated timestamp
+            const globalConfig = await db.getGlobalConfig();
+            await db.setGlobalConfig({
+                ...globalConfig,
+                upstreamLastUpdated: Date.now()
+            });
 
             // Clear all subscription caches to force regeneration with new upstream data
             console.log('🗑️ Clearing all subscription caches...');
