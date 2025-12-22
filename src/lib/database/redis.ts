@@ -223,6 +223,14 @@ export default class RedisDatabase implements IDatabase {
         await this.redis.del(key);
     }
 
+    async clearAllSubscriptionCaches(): Promise<void> {
+        // Get all keys matching the pattern
+        const keys = await this.redis.keys('cache:subscription:*');
+        if (keys.length > 0) {
+            await this.redis.del(...keys);
+        }
+    }
+
     // Structured upstream data operations
     // Proxies
     async saveProxies(proxies: Proxy[]): Promise<void> {
@@ -419,5 +427,12 @@ export default class RedisDatabase implements IDatabase {
 
     async getSystemLogs(limit: number, offset: number, search?: string): Promise<import('./interface').SystemLog[]> {
         return this.getLogs('logs:system', limit, offset, search, ['message', 'category']);
+    }
+
+    async cleanupLogs(retentionDays: number): Promise<void> {
+        // Redis uses capped lists (MAX_LOGS), so time-based retention is implicitly handled by capacity.
+        // Implementing precise time-based cleanup for Lists is inefficient.
+        // If strictly required, we could scan the list, but for now we rely on the 10k limit.
+        return;
     }
 }

@@ -310,18 +310,40 @@ export default class PostgresDatabase implements IDatabase {
 
     async getSession(sessionId: string): Promise<Session | null> {
         await this.ensureInitialized();
-        // Clean up expired sessions
-        await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
-        const result = await this.pool.query(
-            'SELECT username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
-            [sessionId, Date.now()]
-        );
-        if (result.rows.length === 0) return null;
-        return {
-            username: result.rows[0].username,
-            role: result.rows[0].role,
-        };
+        try {
+            // Clean up expired sessions
+            await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+
+            const result = await this.pool.query(
+                'SELECT username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                [sessionId, Date.now()]
+            );
+            if (result.rows.length === 0) return null;
+            return {
+                username: result.rows[0].username,
+                role: result.rows[0].role,
+            };
+        } catch (error) {
+            console.error('Error in getSession:', error);
+            // If connection error, try to reinitialize
+            if ((error as any).code === 'ECONNRESET' || (error as any).message?.includes('terminated')) {
+                console.log('Connection lost, reinitializing...');
+                this.initialized = false;
+                await this.ensureInitialized();
+                // Retry once
+                const result = await this.pool.query(
+                    'SELECT username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                    [sessionId, Date.now()]
+                );
+                if (result.rows.length === 0) return null;
+                return {
+                    username: result.rows[0].username,
+                    role: result.rows[0].role,
+                };
+            }
+            throw error;
+        }
     }
 
     async deleteSession(sessionId: string): Promise<void> {
@@ -554,6 +576,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async deleteCache(key: string): Promise<void> {
         await this.pool.query('DELETE FROM cache WHERE key = $1', [key]);
+    }
+
+    async clearAllSubscriptionCaches(): Promise<void> {
+        await this.pool.query("DELETE FROM cache WHERE key LIKE 'cache:subscription:%'");
     }
 
     // Structured upstream data operations
@@ -839,5 +865,14 @@ export default class PostgresDatabase implements IDatabase {
             status: row.status,
             timestamp: parseInt(row.timestamp)
         }));
+    }
+
+    async cleanupLogs(retentionDays: number): Promise<void> {
+        if (!retentionDays || retentionDays <= 0) return;
+        const cutoff = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+
+        await this.pool.query('DELETE FROM api_access_logs WHERE timestamp < $1', [cutoff]);
+        await this.pool.query('DELETE FROM web_access_logs WHERE timestamp < $1', [cutoff]);
+        await this.pool.query('DELETE FROM system_logs WHERE timestamp < $1', [cutoff]);
     }
 }

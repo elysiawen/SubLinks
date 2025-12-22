@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { createSubscription, deleteSubscription, updateSubscription } from '@/lib/sub-actions';
+import { changePassword } from '@/lib/user-actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 
@@ -24,6 +25,12 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
+
+    // Password change modal state
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     // Form State
     const [formName, setFormName] = useState('');
@@ -76,12 +83,20 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
 
     const handleSubmit = async () => {
         setLoading(true);
+        let result;
         if (editingSub) {
-            await updateSubscription(editingSub.token, formName, formRules, formGroupId, formRuleId, formSelectedSources);
+            result = await updateSubscription(editingSub.token, formName, formRules, formGroupId, formRuleId, formSelectedSources);
         } else {
-            await createSubscription(formName, formRules, formGroupId, formRuleId, formSelectedSources);
+            result = await createSubscription(formName, formRules, formGroupId, formRuleId, formSelectedSources);
         }
         setLoading(false);
+
+        // Check for errors
+        if (result && result.error) {
+            alert(result.error);
+            return;
+        }
+
         closeModal();
         refresh();
     };
@@ -192,6 +207,37 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setEditingSub(null);
     }
 
+    const handleChangePassword = async () => {
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            alert('请填写所有字段');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            alert('两次输入的新密码不一致');
+            return;
+        }
+
+        if (newPassword.length < 4) {
+            alert('新密码至少需要4个字符');
+            return;
+        }
+
+        setLoading(true);
+        const result = await changePassword(oldPassword, newPassword);
+        setLoading(false);
+
+        if (result.error) {
+            alert(`❌ ${result.error}`);
+        } else {
+            alert('✅ 密码修改成功！');
+            setIsPasswordModalOpen(false);
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-6 font-sans">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -199,6 +245,12 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                     <h1 className="text-2xl font-bold text-gray-800 tracking-tight">用户中心</h1>
                     <div className="flex items-center gap-4">
                         <span className="font-medium text-gray-600">{username}</span>
+                        <button
+                            onClick={() => setIsPasswordModalOpen(true)}
+                            className="text-xs text-blue-600 border border-blue-200 px-3 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
+                        >
+                            修改密码
+                        </button>
                         <form action={async () => {
                             const { logout } = await import('@/lib/actions');
                             await logout();
@@ -459,6 +511,71 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                 className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 transform active:scale-95"
                             >
                                 {loading ? '保存中...' : '保存'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Change Modal */}
+            {isPasswordModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">修改密码</h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">原密码</label>
+                                <input
+                                    type="password"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="请输入原密码"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="至少4个字符"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="再次输入新密码"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    setIsPasswordModalOpen(false);
+                                    setOldPassword('');
+                                    setNewPassword('');
+                                    setConfirmPassword('');
+                                }}
+                                className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={loading}
+                                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 transition-all"
+                            >
+                                {loading ? '修改中...' : '确认修改'}
                             </button>
                         </div>
                     </div>

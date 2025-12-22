@@ -63,6 +63,11 @@ export interface UpstreamSource {
     url: string;
     cacheDuration?: number; // Cache duration in hours
     uaWhitelist?: string[]; // UA whitelist
+    refreshSchedule?: {
+        type: 'interval' | 'daily';
+        value: number; // hours for interval, hour of day (0-23) for daily
+    };
+    isDefault?: boolean; // Mark as default source for new users/subscriptions
 }
 
 export interface GlobalConfig {
@@ -70,6 +75,8 @@ export interface GlobalConfig {
     upstreamSources?: UpstreamSource[];
     cacheDuration?: number;
     uaWhitelist?: string[];
+    logRetentionDays?: number;
+    maxUserSubscriptions?: number; // 0 means unlimited
 }
 
 // Structured upstream data types
@@ -142,6 +149,7 @@ export interface IDatabase {
     getCache(key: string): Promise<string | null>;
     setCache(key: string, value: string, ttl?: number): Promise<void>;
     deleteCache(key: string): Promise<void>;
+    clearAllSubscriptionCaches(): Promise<void>; // Clear all cache:subscription:* entries
 
     // Structured upstream data operations
     // Proxies
@@ -173,5 +181,8 @@ export interface IDatabase {
 
     createSystemLog(log: Omit<SystemLog, 'id'>): Promise<void>;
     getSystemLogs(limit: number, offset: number, search?: string): Promise<SystemLog[]>;
+
+    // Maintenance
+    cleanupLogs(retentionDays: number): Promise<void>;
 }
 

@@ -7,9 +7,9 @@ function SubmitButton() {
     return (
         <button
             type="submit"
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
         >
-            登录
+            🔐 登录
         </button>
     );
 }
@@ -18,53 +18,98 @@ export default function LoginPage() {
     const [state, formAction] = useActionState(login, null)
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        订阅管理系统
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+
+            <div className="max-w-md w-full relative z-10">
+                {/* Title */}
+                <div className="text-center mb-8">
+                    <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+                        SubLinks
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        请登录以继续
+                    <p className="mt-3 text-gray-600 font-medium">
+                        欢迎回来，请登录您的账户
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" action={formAction}>
-                    <div className="rounded-md shadow-sm -space-y-px">
-                        <div>
-                            <label htmlFor="username" className="sr-only">用户名</label>
-                            <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="用户名"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="password" className="sr-only">密码</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="密码"
-                            />
-                        </div>
-                    </div>
 
-                    {state?.error && (
-                        <div className="text-red-500 text-sm text-center">
-                            {state.error}
+                {/* Login Card */}
+                <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+                    <form className="space-y-6" action={formAction}>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    👤 用户名
+                                </label>
+                                <input
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    required
+                                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                                    placeholder="请输入用户名"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    🔑 密码
+                                </label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    required
+                                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                                    placeholder="请输入密码"
+                                />
+                            </div>
                         </div>
-                    )}
 
-                    <div>
-                        <SubmitButton />
-                    </div>
-                </form>
+                        {state?.error && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-shake">
+                                <span>⚠️</span>
+                                <span>{state.error}</span>
+                            </div>
+                        )}
+
+                        <div>
+                            <SubmitButton />
+                        </div>
+                    </form>
+                </div>
+
+                {/* Bottom decoration */}
+                <div className="mt-8 text-center text-sm text-gray-500">
+                    <p>Powered by Next.js • Secure & Fast</p>
+                </div>
             </div>
+
+            <style jsx>{`
+                @keyframes blob {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -50px) scale(1.1); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                }
+                .animate-blob {
+                    animation: blob 7s infinite;
+                }
+                .animation-delay-2000 {
+                    animation-delay: 2s;
+                }
+                .animation-delay-4000 {
+                    animation-delay: 4s;
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+                .animate-shake {
+                    animation: shake 0.5s;
+                }
+            `}</style>
         </div>
     )
 }

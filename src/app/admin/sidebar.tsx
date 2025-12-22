@@ -31,20 +31,21 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <Link href="/admin" className={linkClass('/admin')}>
                     📊 概览
                 </Link>
-                <Link href="/admin/users" className={linkClass('/admin/users')}>
-                    👤 用户管理
-                </Link>
                 <Link href="/admin/settings" className={linkClass('/admin/settings')}>
                     ⚙️ 全局设置
                 </Link>
+
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">用户</div>
+                <Link href="/admin/users" className={linkClass('/admin/users')}>
+                    👤 用户管理
+                </Link>
+
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅</div>
                 <Link href="/admin/sources" className={linkClass('/admin/sources')}>
                     📡 上游源管理
                 </Link>
                 <Link href="/admin/subscriptions" className={linkClass('/admin/subscriptions')}>
                     📑 订阅管理
-                </Link>
-                <Link href="/admin/logs" className={linkClass('/admin/logs')}>
-                    📊 日志审计
                 </Link>
 
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅内容分析</div>
@@ -56,6 +57,11 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 </Link>
                 <Link href="/admin/rules" className={linkClass('/admin/rules')}>
                     📝 分流规则
+                </Link>
+
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">日志</div>
+                <Link href="/admin/logs" className={linkClass('/admin/logs')}>
+                    📊 日志审计
                 </Link>
             </nav>
 

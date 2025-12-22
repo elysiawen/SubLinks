@@ -15,6 +15,8 @@ export async function updateGlobalConfig(formData: FormData) {
     const cacheDuration = parseInt(formData.get('cacheDuration') as string);
     const uaWhitelist = (formData.get('uaWhitelist') as string).split(',').map(s => s.trim()).filter(s => s);
 
+    const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
+
     // Parse upstream sources from JSON
     const upstreamSourcesJson = formData.get('upstreamSources') as string;
     let upstreamSources;
@@ -25,10 +27,32 @@ export async function updateGlobalConfig(formData: FormData) {
         return;
     }
 
-    await db.setGlobalConfig({ upstreamSources, cacheDuration, uaWhitelist });
+    // Include upstreamUrl in GlobalConfig if it exists in form (it might be managed elsewhere, but let's be safe)
+    // Actually, getGlobalConfig returns upstreamUrl, but this action overrides it if we don't include it. 
+    // Assuming existing implementation didn't overwrite upstreamUrl unintentionally, but it looks like it does `setGlobalConfig` with whatever is passed.
+    // Let's first get existing config to preserve upstreamUrl if not in form.
+    const existingConfig = await db.getGlobalConfig();
+    const upstreamUrl = existingConfig.upstreamUrl; // Preserve existing
 
-    // Immediately cache the upstream subscription
-    if (upstreamSources && upstreamSources.length > 0) {
+    await db.setGlobalConfig({
+        upstreamUrl, // Explicitly preserve
+        upstreamSources,
+        cacheDuration,
+        uaWhitelist,
+        logRetentionDays,
+        maxUserSubscriptions: parseInt(formData.get('maxUserSubscriptions') as string) || 0
+    });
+
+    // Trigger cleanup immediately
+    if (logRetentionDays > 0) {
+        await db.cleanupLogs(logRetentionDays);
+    }
+
+    // Immediately cache the upstream subscription if sources changed
+    const currentSources = existingConfig.upstreamSources || [];
+    const hasChanges = JSON.stringify(upstreamSources) !== JSON.stringify(currentSources);
+
+    if (hasChanges && upstreamSources && upstreamSources.length > 0) {
         const { refreshUpstreamCache } = await import('@/lib/analysis');
         await refreshUpstreamCache();
     }
@@ -70,6 +94,22 @@ export async function createUser(formData: FormData) {
         createdAt: Date.now()
     });
 
+    // Get default or first upstream source
+    const config = await db.getGlobalConfig();
+    const upstreamSources = config.upstreamSources || [];
+    let selectedSources: string[] = [];
+
+    if (upstreamSources.length > 0) {
+        // Find default source
+        const defaultSource = upstreamSources.find(s => s.isDefault);
+        if (defaultSource) {
+            selectedSources = [defaultSource.name];
+        } else {
+            // Use first source if no default
+            selectedSources = [upstreamSources[0].name];
+        }
+    }
+
     // 2. Create Default Subscription
     const token = generateToken();
     const subData: SubData = {
@@ -78,6 +118,7 @@ export async function createUser(formData: FormData) {
         customRules: rules || '',
         groupId: 'default',
         ruleId: 'default',
+        selectedSources, // Only default or first source
         enabled: true,
         createdAt: Date.now()
     };
@@ -140,7 +181,13 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
 }
 
 export async function deleteUser(username: string) {
-    await db.deleteUser(username);
-    revalidatePath('/admin');
-}
+    // Delete all subscriptions for this user first
+    const userSubs = await db.getUserSubscriptions(username);
+    for (const sub of userSubs) {
+        await db.deleteSubscription(sub.token, username);
+    }
 
+    // Then delete the user
+    await db.deleteUser(username);
+    revalidatePath('/admin/users');
+}

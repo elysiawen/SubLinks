@@ -1,5 +1,8 @@
-import { redirect } from 'next/navigation';
+import { getDashboardStats } from './dashboard-actions';
+import DashboardClient from './dashboard-client';
 
-export default function AdminPage() {
-    redirect('/admin/users');
+export default async function AdminDashboardPage() {
+    const stats = await getDashboardStats();
+
+    return <DashboardClient stats={stats} />;
 }

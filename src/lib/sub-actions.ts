@@ -19,6 +19,22 @@ export async function createSubscription(remark: string, customRules: string, gr
     const session = await getCurrentSession();
     if (!session) return { error: 'Unauthorized' };
 
+    // Check subscription limit (admins are exempt)
+    const user = await db.getUser(session.username);
+    const isAdmin = user?.role === 'admin';
+
+    if (!isAdmin) {
+        const config = await db.getGlobalConfig();
+        const maxSubs = config.maxUserSubscriptions || 0;
+
+        if (maxSubs > 0) {
+            const userSubs = await db.getUserSubscriptions(session.username);
+            if (userSubs.length >= maxSubs) {
+                return { error: `超过最大订阅数量限制 (${maxSubs}条)` };
+            }
+        }
+    }
+
     const token = generateToken();
     const subData: SubData = {
         username: session.username,
