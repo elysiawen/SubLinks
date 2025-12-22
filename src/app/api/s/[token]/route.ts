@@ -101,9 +101,14 @@ export async function GET(
 
         const finalYaml = yaml.dump(doc);
 
+        // Generate profile name: username_token
+        const profileName = `${sub.username}_${token}`;
+
         return new NextResponse(finalYaml, {
             headers: {
                 'Content-Type': 'text/plain; charset=utf-8',
+                'Content-Disposition': `attachment; filename="${encodeURIComponent(profileName)}.yaml"`,
+                'Profile-Title': profileName,
                 'Subscription-Userinfo': 'upload=0; download=0; total=10737418240000000; expire=0',
                 'Profile-Update-Interval': '24'
             }
