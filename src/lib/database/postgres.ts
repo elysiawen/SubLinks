@@ -875,4 +875,10 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM web_access_logs WHERE timestamp < $1', [cutoff]);
         await this.pool.query('DELETE FROM system_logs WHERE timestamp < $1', [cutoff]);
     }
+
+    async deleteAllLogs(): Promise<void> {
+        await this.pool.query('DELETE FROM api_access_logs');
+        await this.pool.query('DELETE FROM web_access_logs');
+        await this.pool.query('DELETE FROM system_logs');
+    }
 }

@@ -74,12 +74,29 @@ export default function AdminSettingsClient({ config }: { config: any }) {
 
                     <RetentionSelector initialValue={config.logRetentionDays || 30} />
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex gap-4">
                         <button
                             type="submit"
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                         >
                             保存设置
+                        </button>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (confirm('⚠️ 确定要立即删除系统中的所有日志吗？此操作无法撤销。')) {
+                                    const { clearLogs } = await import('../actions');
+                                    const res = await clearLogs(0);
+                                    if (res?.success) {
+                                        alert('所有日志已清理完成');
+                                    } else {
+                                        alert('清理失败');
+                                    }
+                                }
+                            }}
+                            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition"
+                        >
+                            立即清理
                         </button>
                     </div>
                 </form>

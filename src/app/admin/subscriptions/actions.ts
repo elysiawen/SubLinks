@@ -78,3 +78,24 @@ export async function updateAdminSubscription(
     revalidatePath('/admin/subscriptions');
     return { success: true };
 }
+
+export async function refreshSubscriptionCache(token: string) {
+    const session = await getAdminSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    // Invalidate cache
+    await db.deleteCache(`cache:subscription:${token}`);
+
+    return { success: true };
+}
+
+export async function refreshAllSubscriptionCaches() {
+    const session = await getAdminSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    // Clear all subscription caches
+    await db.clearAllSubscriptionCaches();
+
+    revalidatePath('/admin/subscriptions');
+    return { success: true };
+}

@@ -101,6 +101,10 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             timestamp: Date.now()
         });
 
+        // Clear all subscription caches to ensure they pick up the new/updated source data
+        console.log('🗑️ Clearing all subscription caches (triggered by single source update)...');
+        await db.clearAllSubscriptionCaches();
+
         return true;
     } catch (e) {
         console.error(`Failed to refresh upstream source [${sourceName}]:`, e);

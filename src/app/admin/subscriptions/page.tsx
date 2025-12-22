@@ -19,7 +19,6 @@ export default async function AdminSubscriptionsPage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">所有订阅管理</h1>
             <AdminSubsClient
                 initialSubs={subs}
                 configSets={{ groups: groupSets, rules: ruleSets }}

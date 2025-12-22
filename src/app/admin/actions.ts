@@ -65,6 +65,20 @@ export async function clearCache() {
     revalidatePath('/admin');
 }
 
+export async function clearLogs(days: number = 30) {
+    if (days < 0) return { error: 'Invalid retention days' };
+
+    if (days === 0) {
+        await db.deleteAllLogs();
+    } else {
+        await db.cleanupLogs(days);
+    }
+
+    revalidatePath('/admin/logs');
+    revalidatePath('/admin/settings');
+    return { success: true };
+}
+
 // User Management
 export async function getUsers() {
     return await db.getAllUsers();

@@ -184,5 +184,6 @@ export interface IDatabase {
 
     // Maintenance
     cleanupLogs(retentionDays: number): Promise<void>;
+    deleteAllLogs(): Promise<void>;
 }
 
