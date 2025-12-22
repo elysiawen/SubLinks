@@ -132,7 +132,7 @@ export async function refreshUpstreamCache() {
         } else if (config.upstreamUrl) {
             // Legacy format - convert to sources
             const urls = Array.isArray(config.upstreamUrl) ? config.upstreamUrl : [config.upstreamUrl];
-            sources = urls.map((url, i) => ({
+            sources = urls.map((url: string | { url: string }, i) => ({
                 name: `upstream_${i}`,
                 url: typeof url === 'string' ? url : url.url || ''
             }));
@@ -145,11 +145,6 @@ export async function refreshUpstreamCache() {
 
         console.log(`📥 Fetching from ${sources.length} upstream source(s)...`);
 
-        // Clear existing upstream data before fetching new
-        await db.clearProxies('upstream');
-        await db.clearProxyGroups('upstream');
-        await db.clearRules('upstream');
-
         let allContent = '';
 
         // Fetch from all sources
@@ -158,6 +153,12 @@ export async function refreshUpstreamCache() {
             console.log(`   Fetching source ${i + 1}/${sources.length} [${source.name}]: ${source.url.substring(0, 50)}...`);
 
             try {
+                // Clear existing data for this source before fetching new data
+                console.log(`   🗑️ Clearing old data for source [${source.name}]...`);
+                await db.clearProxies(source.name);
+                await db.clearProxyGroups(source.name);
+                await db.clearRules(source.name);
+
                 const res = await fetch(source.url, {
                     headers: {
                         'User-Agent': 'Clash/Vercel-Sub-Manager'

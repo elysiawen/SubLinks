@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createUser, deleteUser, updateUserStatus, updateUserRules, updateUser } from '../actions';
+import { createUser, deleteUser, updateUserStatus, updateUser } from '../actions';
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
     const [loading, setLoading] = useState(false);

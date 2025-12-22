@@ -733,7 +733,7 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async clearRules(source: string): Promise<void> {
-        await this.pool.query('DELETE FROM rules WHERE id = $1', [source]);
+        await this.pool.query('DELETE FROM rules WHERE source = $1', [source]);
     }
 
     // Upstream Config

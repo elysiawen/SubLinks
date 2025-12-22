@@ -1,93 +1,129 @@
-# Vercel Subscription Manager
+# SubLinks
 
-基于 Next.js 14+ 的 Clash 订阅管理系统,支持多种数据库后端。
+**强大的订阅链接管理与分发系统**
 
-## 数据库支持 / Database Support
+SubLinks 是一个现代化的订阅管理系统，专为 Clash 等代理工具设计，提供灵活的订阅链接管理、多上游源支持、自定义规则和策略组等功能。
 
-本项目支持三种数据库后端,可通过环境变量 `DATABASE_TYPE` 选择:
+## ✨ 主要特性
 
-- **Redis** - 推荐用于 Vercel 等无服务器环境 (默认)
-- **PostgreSQL** - 适合传统服务器部署,自动创建表结构
-- **MySQL** - 适合传统服务器部署,自动创建表结构
+- 🔐 **用户管理** - 多用户支持，角色权限控制
+- 📡 **上游源管理** - 支持多个上游订阅源，可设置默认源
+- 📝 **订阅管理** - 为每个用户创建和管理多个订阅
+- 🎨 **自定义配置** - 自定义策略组和分流规则
+- 📊 **数据分析** - 查看节点、策略组、规则等详细信息
+- 📜 **日志审计** - 完整的访问日志和系统日志
+- 🔄 **智能缓存** - 自动缓存失效和刷新机制
+- 🎯 **灵活刷新** - 支持定时刷新和手动刷新
 
-## 快速开始 / Quick Start
+## 🚀 快速开始
 
-### 1. 环境配置
+### 本地开发
 
-创建 `.env.local` 文件(参考 `ENV_CONFIG.md`):
-
-```env
-# 选择数据库类型
-DATABASE_TYPE=redis  # redis | postgres | mysql
-
-# Redis 配置
-REDIS_URL=redis://localhost:6379
-
-# PostgreSQL 配置
-POSTGRES_URL=postgresql://user:password@localhost:5432/clash_sub
-
-# MySQL 配置
-MYSQL_URL=mysql://user:password@localhost:3306/clash_sub
+1. **克隆项目**
+```bash
+git clone <your-repo-url>
+cd sublinks
 ```
 
-### 2. 安装依赖
-
+2. **安装依赖**
 ```bash
 npm install
 ```
 
-### 3. 运行开发服务器
+3. **配置环境变量**
 
+创建 `.env.local` 文件：
+```env
+DATABASE_TYPE=postgres
+POSTGRES_URL=postgresql://user:password@localhost:5432/sublinks
+JWT_SECRET=your-random-secret-key
+```
+
+4. **启动开发服务器**
 ```bash
 npm run dev
 ```
 
-### 4. 首次登录
+5. **访问应用**
+- 打开 http://localhost:3000
+- 使用 `admin/admin` 登录
 
-访问 `/login`,使用默认账号:
-- 用户名: `admin`
-- 密码: `admin`
+### 部署到 Vercel
 
-## 部署 / Deployment
+详见 [Vercel 部署指南](./vercel-deployment.md)
 
-### Vercel 部署 (推荐 Redis)
+## 📦 技术栈
 
-1. 在 Vercel 创建项目
-2. 在 Storage 标签页创建 Vercel KV (Redis)
-3. 设置环境变量:
-   - `DATABASE_TYPE=redis`
-   - `REDIS_URL` (自动配置)
+- **框架**: Next.js 16
+- **语言**: TypeScript
+- **样式**: Tailwind CSS
+- **数据库**: PostgreSQL / Redis
+- **认证**: JWT + bcrypt
+- **部署**: Vercel
 
-### 传统服务器部署 (PostgreSQL/MySQL)
+## 🗂️ 项目结构
 
-1. 准备 PostgreSQL 或 MySQL 数据库
-2. 设置环境变量:
-   - `DATABASE_TYPE=postgres` 或 `mysql`
-   - `POSTGRES_URL` 或 `MYSQL_URL`
-3. 首次运行时会自动创建所需表结构
+```
+sublinks/
+├── src/
+│   ├── app/              # Next.js App Router
+│   │   ├── admin/        # 管理后台
+│   │   ├── dashboard/    # 用户中心
+│   │   ├── login/        # 登录页面
+│   │   └── api/          # API 路由
+│   ├── lib/              # 核心逻辑
+│   │   ├── database/     # 数据库适配器
+│   │   ├── actions.ts    # Server Actions
+│   │   └── analysis.ts   # 订阅解析
+│   └── components/       # React 组件
+├── public/               # 静态资源
+└── vercel.json          # Vercel 配置
+```
 
-## 功能特性 / Features
+## 🔧 环境变量
 
-- ✅ **多数据库支持** - Redis / PostgreSQL / MySQL
-- ✅ **自动建表** - PostgreSQL 和 MySQL 自动初始化表结构
-- ✅ **管理面板** - `/admin` 用户管理、配置管理
-- ✅ **订阅管理** - `/dashboard` 用户订阅中心
-- ✅ **订阅API** - `/api/s/[token]` Clash 订阅接口
-- ✅ **UA 过滤** - 支持客户端白名单
-- ✅ **缓存机制** - 24小时默认缓存
-- ✅ **自定义规则** - 支持自定义代理组和分流规则
+| 变量名 | 说明 | 必需 |
+|--------|------|------|
+| `DATABASE_TYPE` | 数据库类型 (`postgres` 或 `redis`) | ✅ |
+| `POSTGRES_URL` | PostgreSQL 连接字符串 | 使用 PG 时 |
+| `REDIS_URL` | Redis 连接字符串 | 使用 Redis 时 |
+| `JWT_SECRET` | JWT 密钥 | ✅ |
+| `LOG_RETENTION_DAYS` | 日志保留天数 | ❌ |
+| `MAX_USER_SUBSCRIPTIONS` | 用户最大订阅数 | ❌ |
 
-## 技术栈 / Tech Stack
+## 📖 功能说明
 
-- Next.js 14+ (App Router)
-- TypeScript
-- Redis / PostgreSQL / MySQL
-- TailwindCSS
+### 管理后台
 
-## 文档 / Documentation
+- **概览** - 系统统计和快捷操作
+- **用户管理** - 创建、编辑、删除用户
+- **订阅管理** - 管理所有用户的订阅
+- **上游源管理** - 配置和刷新上游订阅源
+- **内容分析** - 查看节点、策略组、规则
+- **日志审计** - 访问日志和系统日志
 
-详细使用说明请查看 artifacts 中的 `walkthrough.md`。
+### 用户中心
 
-## License
+- **订阅管理** - 创建和配置个人订阅
+- **自定义规则** - 添加自定义分流规则
+- **修改密码** - 更改账户密码
 
-MIT
+## 🔒 安全建议
+
+1. 首次登录后立即修改默认密码
+2. 使用强密码策略
+3. 定期备份数据库
+4. 不要在代码中硬编码敏感信息
+5. 使用 HTTPS（Vercel 自动提供）
+
+## 📝 许可证
+
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 支持
+
+如有问题，请提交 Issue 或查看文档。
