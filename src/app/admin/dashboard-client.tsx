@@ -157,8 +157,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                         <span>{formatTimestamp(log.timestamp)}</span>
                                         <span className={`px-2 py-0.5 rounded ${log.status === 'success' ? 'bg-green-50 text-green-600' :
-                                                log.status === 'failure' ? 'bg-red-50 text-red-600' :
-                                                    'bg-gray-50 text-gray-600'
+                                            log.status === 'failure' ? 'bg-red-50 text-red-600' :
+                                                'bg-gray-50 text-gray-600'
                                             }`}>
                                             {log.category}
                                         </span>
@@ -183,18 +183,50 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     {stats.latestLogs.access.length === 0 ? (
                         <p className="text-gray-400 text-sm text-center py-4">暂无访问日志</p>
                     ) : (
-                        <div className="space-y-2">
-                            {stats.latestLogs.access.map((log, idx) => (
-                                <div key={idx} className="border-l-2 border-blue-200 pl-3 py-1">
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        <span>{formatTimestamp(log.timestamp)}</span>
-                                        <span className="text-blue-600">{log.username || '匿名'}</span>
+                        <div className="space-y-3">
+                            {stats.latestLogs.access.map((log: any, idx) => {
+                                // Simple User-Agent parser
+                                const ua = log.ua || log.userAgent || '';
+                                let clientName = '未知客户端';
+                                if (ua.includes('Clash')) clientName = 'Clash';
+                                else if (ua.includes('Shadowrocket')) clientName = 'Shadowrocket';
+                                else if (ua.includes('Quantumult')) clientName = 'Quantumult';
+                                else if (ua.includes('Surge')) clientName = 'Surge';
+                                else if (ua.includes('Stash')) clientName = 'Stash';
+                                else if (ua.includes('Mozilla') || ua.includes('Chrome') || ua.includes('Safari')) clientName = '浏览器';
+                                else if (ua.length > 0) clientName = ua.substring(0, 15) + '...';
+
+                                // Construct path if missing (for API logs)
+                                const displayPath = log.path || (log.token ? `/api/s/${log.token.substring(0, 8)}...` : 'API 请求');
+
+                                return (
+                                    <div key={idx} className="flex items-start justify-between border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-medium text-gray-900 text-sm truncate">
+                                                    {log.username || '匿名用户'}
+                                                </span>
+                                                <span className="text-xs text-gray-400">•</span>
+                                                <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {clientName}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                <span className="truncate max-w-[150px]" title={log.token || log.path}>{displayPath}</span>
+                                                {log.ip && (
+                                                    <>
+                                                        <span className="text-gray-300">|</span>
+                                                        <span>{log.ip}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                                            {formatTimestamp(log.timestamp).split(' ')[1]}
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-gray-700 mt-1">
-                                        {log.path} <span className="text-gray-400">• {log.userAgent?.substring(0, 30)}...</span>
-                                    </p>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
