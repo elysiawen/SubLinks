@@ -435,4 +435,8 @@ export default class RedisDatabase implements IDatabase {
         // If strictly required, we could scan the list, but for now we rely on the 10k limit.
         return;
     }
+
+    async deleteAllLogs(): Promise<void> {
+        await this.redis.del('logs:api', 'logs:web', 'logs:system');
+    }
 }
