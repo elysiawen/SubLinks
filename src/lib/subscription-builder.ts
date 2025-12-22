@@ -26,7 +26,61 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
             console.log(`   ✓ Filtered proxies to ${allProxies.length} from sources: ${sub.selectedSources.join(', ')}`);
         }
 
-        config.proxies = allProxies.map(p => p.config);
+        // Format proxies with proper field ordering
+        config.proxies = allProxies.map(p => {
+            const proxy = p.config;
+            const formatted: any = {};
+
+            // Always include name and type first
+            formatted.name = proxy.name;
+            formatted.type = proxy.type;
+
+            // Add common fields in standard order
+            if (proxy.server) formatted.server = proxy.server;
+            if (proxy.port) formatted.port = proxy.port;
+
+            // Type-specific fields
+            if (proxy.type === 'ss' || proxy.type === 'ssr') {
+                if (proxy.cipher) formatted.cipher = proxy.cipher;
+                if (proxy.password) formatted.password = proxy.password;
+            }
+
+            if (proxy.type === 'ssr') {
+                if (proxy.protocol) formatted.protocol = proxy.protocol;
+                if (proxy['protocol-param']) formatted['protocol-param'] = proxy['protocol-param'];
+                if (proxy.obfs) formatted.obfs = proxy.obfs;
+                if (proxy['obfs-param']) formatted['obfs-param'] = proxy['obfs-param'];
+            }
+
+            if (proxy.type === 'vmess') {
+                if (proxy.uuid) formatted.uuid = proxy.uuid;
+                if (proxy.alterId !== undefined) formatted.alterId = proxy.alterId;
+                if (proxy.cipher) formatted.cipher = proxy.cipher;
+            }
+
+            if (proxy.type === 'trojan') {
+                if (proxy.password) formatted.password = proxy.password;
+                if (proxy.sni) formatted.sni = proxy.sni;
+                if (proxy['skip-cert-verify'] !== undefined) formatted['skip-cert-verify'] = proxy['skip-cert-verify'];
+            }
+
+            if (proxy.type === 'vless') {
+                if (proxy.uuid) formatted.uuid = proxy.uuid;
+                if (proxy.flow) formatted.flow = proxy.flow;
+            }
+
+            // Add any remaining fields that weren't explicitly handled
+            for (const [key, value] of Object.entries(proxy)) {
+                if (!formatted.hasOwnProperty(key) && key !== 'name' && key !== 'type') {
+                    formatted[key] = value;
+                }
+            }
+
+            // UDP support (usually at the end)
+            if (proxy.udp !== undefined) formatted.udp = proxy.udp;
+
+            return formatted;
+        });
 
         // 3. Get Proxy Groups
         let groups;
@@ -50,12 +104,35 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
                 console.log(`   ✓ Filtered groups to ${upstreamGroups.length} from selected sources`);
             }
 
-            groups = upstreamGroups.map(g => ({
-                name: g.name,
-                type: g.type,
-                proxies: g.proxies,
-                ...g.config,
-            }));
+            // Deduplicate groups by name (in case multiple sources have same group names)
+            const groupMap = new Map<string, typeof upstreamGroups[0]>();
+            for (const group of upstreamGroups) {
+                if (!groupMap.has(group.name)) {
+                    groupMap.set(group.name, group);
+                }
+            }
+            const uniqueGroups = Array.from(groupMap.values());
+            console.log(`   ✓ Deduplicated to ${uniqueGroups.length} unique groups`);
+
+            groups = uniqueGroups.map(g => {
+                // Build group object with proper field order
+                const group: any = {
+                    name: g.name,
+                    type: g.type,
+                    proxies: g.proxies,
+                };
+
+                // Add other config fields (url, interval, etc.) but avoid duplicating name/type/proxies
+                if (g.config) {
+                    for (const [key, value] of Object.entries(g.config)) {
+                        if (key !== 'name' && key !== 'type' && key !== 'proxies') {
+                            group[key] = value;
+                        }
+                    }
+                }
+
+                return group;
+            });
         }
 
         config['proxy-groups'] = groups;
@@ -98,8 +175,22 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         config.rules = rules;
         console.log(`   ✓ Total rules: ${rules.length}`);
 
-        // 5. Generate YAML
-        return yaml.dump(config);
+        // Debug: Check for duplicates before YAML generation
+        const groupNames = config['proxy-groups'].map((g: any) => g.name);
+        const uniqueNames = new Set(groupNames);
+        console.log(`   📊 Groups before YAML: ${groupNames.length} total, ${uniqueNames.size} unique`);
+        if (groupNames.length !== uniqueNames.size) {
+            console.warn(`   ⚠️ WARNING: Duplicate groups detected before YAML generation!`);
+            console.warn(`   Duplicates:`, groupNames.filter((n: string, i: number) => groupNames.indexOf(n) !== i));
+        }
+
+        // 5. Generate YAML with proper options
+        return yaml.dump(config, {
+            indent: 2,
+            lineWidth: -1,
+            noRefs: true,
+            sortKeys: false
+        });
     } catch (error) {
         console.error('❌ Failed to build subscription YAML:', error);
         throw error;
