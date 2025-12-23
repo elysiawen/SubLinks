@@ -12,7 +12,6 @@ export async function getGlobalConfig() {
 }
 
 export async function updateGlobalConfig(formData: FormData) {
-    const cacheDuration = parseInt(formData.get('cacheDuration') as string);
     const uaWhitelist = (formData.get('uaWhitelist') as string).split(',').map(s => s.trim()).filter(s => s);
 
     const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
@@ -37,7 +36,6 @@ export async function updateGlobalConfig(formData: FormData) {
     await db.setGlobalConfig({
         upstreamUrl, // Explicitly preserve
         upstreamSources,
-        cacheDuration,
         uaWhitelist,
         logRetentionDays,
         maxUserSubscriptions: parseInt(formData.get('maxUserSubscriptions') as string) || 0
