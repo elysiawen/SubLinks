@@ -5,6 +5,7 @@ import AccessLogger from '@/components/AccessLogger';
 import ProgressBar from '@/components/ProgressBar';
 import { ToastProvider } from '@/components/ToastProvider';
 import { ConfirmProvider } from '@/components/ConfirmProvider';
+import { Suspense } from 'react';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,9 @@ export default function RootLayout({
         <ToastProvider>
           <ConfirmProvider>
             <AccessLogger />
-            <ProgressBar />
+            <Suspense fallback={null}>
+              <ProgressBar />
+            </Suspense>
             {children}
           </ConfirmProvider>
         </ToastProvider>

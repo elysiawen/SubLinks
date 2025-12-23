@@ -3,7 +3,13 @@ export default function AdminLoading() {
         <div className="animate-pulse space-y-6">
             {/* Page Header Skeleton */}
             <div className="flex justify-between items-center mb-6">
-                <div className="h-8 bg-gray-200 rounded w-48"></div>
+                <div className="flex items-center gap-4">
+                    <div className="h-8 bg-gray-200 rounded w-48"></div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                        <span className="text-xs text-gray-500 font-medium">数据加载中...</span>
+                    </div>
+                </div>
                 <div className="h-10 bg-gray-200 rounded-lg w-32"></div>
             </div>
 

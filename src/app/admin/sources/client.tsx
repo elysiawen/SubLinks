@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import Modal from '@/components/Modal';
 
 interface UpstreamSource {
     name: string;
@@ -213,94 +214,96 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
             </div>
 
             {/* Add/Edit Form Modal */}
-            {
-                (isAdding || editingSource) && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            {editingSource ? '编辑上游源' : '添加新的上游源'}
-                        </h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">上游源名称 *</label>
-                                <input
-                                    type="text"
-                                    value={formName}
-                                    onChange={(e) => setFormName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                    placeholder="例如：机场A、备用源"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
-                                <input
-                                    type="url"
-                                    value={formUrl}
-                                    onChange={(e) => setFormUrl(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                    placeholder="https://..."
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="number"
-                                        value={formCacheDuration}
-                                        onChange={(e) => setFormCacheDuration(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        min="0.1"
-                                        step="0.1"
-                                    />
-                                    <select
-                                        value={formDurationUnit}
-                                        onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
-                                        className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                                    >
-                                        <option value="hours">小时</option>
-                                        <option value="minutes">分钟</option>
-                                    </select>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    设置多久从上游源重新获取一次订阅数据
-                                    (当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})
-                                </p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">UA 白名单 (可选，逗号分隔)</label>
-                                <input
-                                    type="text"
-                                    value={formUaWhitelist}
-                                    onChange={(e) => setFormUaWhitelist(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                    placeholder="Clash, Shadowrocket"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">留空表示不限制客户端类型</p>
-                            </div>
-
+            <Modal
+                isOpen={isAdding || !!editingSource}
+                onClose={() => {
+                    resetForm();
+                    setEditingSource(null);
+                    setIsAdding(false);
+                }}
+                title={editingSource ? '编辑上游源' : '添加新的上游源'}
+            >
+                {(isAdding || editingSource) && (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">上游源名称 *</label>
+                            <input
+                                type="text"
+                                value={formName}
+                                onChange={(e) => setFormName(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="例如：机场A、备用源"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
+                            <input
+                                type="url"
+                                value={formUrl}
+                                onChange={(e) => setFormUrl(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="https://..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
                             <div className="flex gap-2">
-                                <button
-                                    onClick={editingSource ? handleUpdate : handleAdd}
-                                    disabled={loading}
-                                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+                                <input
+                                    type="number"
+                                    value={formCacheDuration}
+                                    onChange={(e) => setFormCacheDuration(e.target.value)}
+                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    min="0.1"
+                                    step="0.1"
+                                />
+                                <select
+                                    value={formDurationUnit}
+                                    onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
+                                    className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                                 >
-                                    {loading ? (editingSource ? '更新中...' : '添加中...') : (editingSource ? '确认更新' : '确认添加')}
-                                </button>
-                                {editingSource && (
-                                    <button
-                                        onClick={() => {
-                                            resetForm();
-                                            setEditingSource(null);
-                                        }}
-                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                                    >
-                                        取消
-                                    </button>
-                                )}
+                                    <option value="hours">小时</option>
+                                    <option value="minutes">分钟</option>
+                                </select>
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                设置多久从上游源重新获取一次订阅数据
+                                (当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})
+                            </p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">UA 白名单 (可选，逗号分隔)</label>
+                            <input
+                                type="text"
+                                value={formUaWhitelist}
+                                onChange={(e) => setFormUaWhitelist(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="Clash, Shadowrocket"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">留空表示不限制客户端类型</p>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={editingSource ? handleUpdate : handleAdd}
+                                disabled={loading}
+                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
+                            >
+                                {loading ? (editingSource ? '更新中...' : '添加中...') : (editingSource ? '确认更新' : '确认添加')}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    resetForm();
+                                    setEditingSource(null);
+                                    setIsAdding(false);
+                                }}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            >
+                                取消
+                            </button>
                         </div>
                     </div>
-                )
-            }
+                )}
+            </Modal>
 
             {
                 sources.length === 0 ? (

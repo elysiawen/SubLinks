@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Modal from '@/components/Modal';
 
 export default function AdminRulesClient({ rulesBySource, totalCount, customSets }: {
     rulesBySource: Record<string, string[]>,
@@ -75,42 +76,34 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
             </div>
 
             {/* Modal */}
-            {selectedSource && (
-                <div
-                    className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-                    onClick={() => setSelectedSource(null)}
-                >
-                    <div
-                        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                📡 {selectedSource}
-                                <span className="text-sm font-normal text-gray-500 bg-white px-2 py-1 rounded-full">
-                                    {selectedRules.length} 条规则
-                                </span>
-                            </h3>
-                            <button
-                                onClick={() => setSelectedSource(null)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                            >
-                                ×
-                            </button>
+            <Modal
+                isOpen={!!selectedSource}
+                onClose={() => setSelectedSource(null)}
+                title={
+                    selectedSource ? (
+                        <div className="flex items-center gap-2">
+                            <span>📡 {selectedSource}</span>
+                            <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                                {(selectedSource ? rulesBySource[selectedSource] : []).length} 条规则
+                            </span>
                         </div>
-                        <div className="overflow-auto max-h-[calc(90vh-80px)] p-6">
-                            <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-1">
-                                {selectedRules.map((rule, idx) => (
-                                    <div key={idx} className="text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors">
-                                        <span className="text-gray-400 mr-2">{idx + 1}.</span>
-                                        {rule}
-                                    </div>
-                                ))}
-                            </div>
+                    ) : ''
+                }
+                maxWidth="max-w-4xl"
+            >
+                {selectedSource && (
+                    <div className="overflow-auto max-h-[70vh]">
+                        <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-1">
+                            {selectedRules.map((rule, idx) => (
+                                <div key={idx} className="text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors">
+                                    <span className="text-gray-400 mr-2">{idx + 1}.</span>
+                                    {rule}
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
         </div>
     );
 }

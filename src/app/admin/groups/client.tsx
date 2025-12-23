@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Modal from '@/components/Modal';
 
 export default function AdminGroupsClient({ groupsBySource, totalCount, customSets }: {
     groupsBySource: Record<string, any[]>,
@@ -75,63 +76,55 @@ export default function AdminGroupsClient({ groupsBySource, totalCount, customSe
             </div>
 
             {/* Modal */}
-            {selectedSource && (
-                <div
-                    className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-                    onClick={() => setSelectedSource(null)}
-                >
-                    <div
-                        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                📡 {selectedSource}
-                                <span className="text-sm font-normal text-gray-500 bg-white px-2 py-1 rounded-full">
-                                    {selectedGroups.length} 个策略组
-                                </span>
-                            </h3>
-                            <button
-                                onClick={() => setSelectedSource(null)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                            >
-                                ×
-                            </button>
+            <Modal
+                isOpen={!!selectedSource}
+                onClose={() => setSelectedSource(null)}
+                title={
+                    selectedSource ? (
+                        <div className="flex items-center gap-2">
+                            <span>📡 {selectedSource}</span>
+                            <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                                {(selectedSource ? groupsBySource[selectedSource] : []).length} 个策略组
+                            </span>
                         </div>
-                        <div className="overflow-auto max-h-[calc(90vh-80px)] p-6 space-y-4">
-                            {selectedGroups.map((group, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-base font-semibold text-gray-800">{group.name}</h4>
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-                                            {group.type}
-                                        </span>
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                        <span className="font-medium">代理列表:</span>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            {group.proxies && group.proxies.length > 0 ? (
-                                                group.proxies.map((proxy: string, i: number) => (
-                                                    <span key={i} className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
-                                                        {proxy}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-gray-400 text-xs">无代理</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {group.url && (
-                                        <div className="mt-2 text-xs text-gray-500">
-                                            <span className="font-medium">URL:</span> {group.url}
-                                        </div>
-                                    )}
+                    ) : ''
+                }
+                maxWidth="max-w-4xl"
+            >
+                {selectedSource && (
+                    <div className="overflow-auto max-h-[70vh] space-y-4">
+                        {selectedGroups.map((group, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-base font-semibold text-gray-800">{group.name}</h4>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                                        {group.type}
+                                    </span>
                                 </div>
-                            ))}
-                        </div>
+                                <div className="text-sm text-gray-600">
+                                    <span className="font-medium">代理列表:</span>
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                        {group.proxies && group.proxies.length > 0 ? (
+                                            group.proxies.map((proxy: string, i: number) => (
+                                                <span key={i} className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                                                    {proxy}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-gray-400 text-xs">无代理</span>
+                                        )}
+                                    </div>
+                                </div>
+                                {group.url && (
+                                    <div className="mt-2 text-xs text-gray-500">
+                                        <span className="font-medium">URL:</span> {group.url}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
         </div>
     );
 }

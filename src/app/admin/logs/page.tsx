@@ -1,5 +1,7 @@
 import LogsClient from './client';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: '系统日志 - Admin Dashboard',
 };

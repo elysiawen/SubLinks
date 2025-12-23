@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { saveCustomGroup, deleteCustomGroup } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import Modal from '@/components/Modal';
 
 interface ConfigSet {
     id: string;
@@ -249,153 +250,149 @@ export default function CustomGroupsClient({
             </div>
 
             {/* Proxy Selector Modal */}
-            {showProxySelector && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                            <h3 className="font-semibold text-gray-800">选择节点</h3>
-                            <button
-                                onClick={() => setShowProxySelector(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                ✕
-                            </button>
+            <Modal
+                isOpen={showProxySelector}
+                onClose={() => setShowProxySelector(false)}
+                title="选择节点"
+                maxWidth="max-w-2xl"
+            >
+                <div className="flex flex-col h-[70vh]">
+                    <div className="p-4 border-b space-y-3 shrink-0">
+                        <input
+                            type="text"
+                            value={proxySearch}
+                            onChange={(e) => setProxySearch(e.target.value)}
+                            placeholder="搜索节点..."
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+
+                        {selectedProxies.length > 0 && (
+                            <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                                <span className="text-sm text-blue-700">
+                                    已选 {selectedProxies.length} 个节点
+                                </span>
+                                <button
+                                    onClick={addSelectedProxies}
+                                    className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                                >
+                                    确认添加
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="overflow-y-auto flex-1 p-4 space-y-6">
+                        {/* Special Proxies */}
+                        <div>
+                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">内置策略</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {['DIRECT', 'REJECT', '🚀 节点选择'].map(p => {
+                                    const isSelected = selectedProxies.includes(p);
+                                    const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p);
+
+                                    return (
+                                        <button
+                                            key={p}
+                                            onClick={() => {
+                                                if (isAdded) return;
+                                                toggleProxySelection(p);
+                                            }}
+                                            disabled={!!isAdded}
+                                            className={`text-left px-3 py-2 rounded-lg border transition-all text-sm font-medium flex items-center justify-between ${isAdded
+                                                ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                                : isSelected
+                                                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
+                                                }`}
+                                        >
+                                            <span>{p}</span>
+                                            {isAdded ? (
+                                                <span className="text-xs">已添加</span>
+                                            ) : isSelected && (
+                                                <span className="text-blue-600">✓</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
-                        <div className="p-4 border-b space-y-3">
-                            <input
-                                type="text"
-                                value={proxySearch}
-                                onChange={(e) => setProxySearch(e.target.value)}
-                                placeholder="搜索节点..."
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            />
+                        {/* Upstream Proxies */}
+                        {Object.entries(groupedProxies).map(([source, sourceProxies]) => (
+                            <div key={source}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                        {source}
+                                        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{sourceProxies.length}</span>
+                                    </h4>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const proxiesToAdd = sourceProxies
+                                                    .map(p => p.name)
+                                                    .filter(name => !guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(name));
 
-                            {selectedProxies.length > 0 && (
-                                <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
-                                    <span className="text-sm text-blue-700">
-                                        已选 {selectedProxies.length} 个节点
-                                    </span>
-                                    <button
-                                        onClick={addSelectedProxies}
-                                        className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 transition-colors font-medium"
-                                    >
-                                        确认添加
-                                    </button>
+                                                // Check if all available proxies are already selected
+                                                const allSelected = proxiesToAdd.every(name => selectedProxies.includes(name));
+
+                                                if (allSelected) {
+                                                    // Deselect all
+                                                    setSelectedProxies(prev => prev.filter(p => !proxiesToAdd.includes(p)));
+                                                } else {
+                                                    // Select all unselected
+                                                    const newSelected = new Set([...selectedProxies, ...proxiesToAdd]);
+                                                    setSelectedProxies(Array.from(newSelected));
+                                                }
+                                            }}
+                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                            全选/取消
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="overflow-y-auto flex-1 p-4 space-y-6">
-                            {/* Special Proxies */}
-                            <div>
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">内置策略</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                    {['DIRECT', 'REJECT', '🚀 节点选择'].map(p => {
-                                        const isSelected = selectedProxies.includes(p);
-                                        const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p);
+                                    {sourceProxies.map(p => {
+                                        const isSelected = selectedProxies.includes(p.name);
+                                        const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p.name);
 
                                         return (
                                             <button
-                                                key={p}
+                                                key={p.id}
                                                 onClick={() => {
                                                     if (isAdded) return;
-                                                    toggleProxySelection(p);
+                                                    toggleProxySelection(p.name);
                                                 }}
                                                 disabled={!!isAdded}
-                                                className={`text-left px-3 py-2 rounded-lg border transition-all text-sm font-medium flex items-center justify-between ${isAdded
+                                                className={`text-left px-3 py-2 rounded-lg border transition-all text-sm truncate flex items-center justify-between ${isAdded
                                                     ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
                                                     : isSelected
                                                         ? 'bg-blue-50 border-blue-500 text-blue-700'
                                                         : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
                                                     }`}
+                                                title={p.name}
                                             >
-                                                <span>{p}</span>
-                                                {isAdded ? (
-                                                    <span className="text-xs">已添加</span>
-                                                ) : isSelected && (
-                                                    <span className="text-blue-600">✓</span>
+                                                <span className="truncate">{p.name}</span>
+                                                {isSelected && !isAdded && (
+                                                    <span className="text-blue-600 ml-2 flex-shrink-0">✓</span>
                                                 )}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
-
-                            {/* Upstream Proxies */}
-                            {Object.entries(groupedProxies).map(([source, sourceProxies]) => (
-                                <div key={source}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                            {source}
-                                            <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{sourceProxies.length}</span>
-                                        </h4>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    const proxiesToAdd = sourceProxies
-                                                        .map(p => p.name)
-                                                        .filter(name => !guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(name));
-
-                                                    // Check if all available proxies are already selected
-                                                    const allSelected = proxiesToAdd.every(name => selectedProxies.includes(name));
-
-                                                    if (allSelected) {
-                                                        // Deselect all
-                                                        setSelectedProxies(prev => prev.filter(p => !proxiesToAdd.includes(p)));
-                                                    } else {
-                                                        // Select all unselected
-                                                        const newSelected = new Set([...selectedProxies, ...proxiesToAdd]);
-                                                        setSelectedProxies(Array.from(newSelected));
-                                                    }
-                                                }}
-                                                className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
-                                            >
-                                                全选/取消
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                        {sourceProxies.map(p => {
-                                            const isSelected = selectedProxies.includes(p.name);
-                                            const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p.name);
-
-                                            return (
-                                                <button
-                                                    key={p.id}
-                                                    onClick={() => {
-                                                        if (isAdded) return;
-                                                        toggleProxySelection(p.name);
-                                                    }}
-                                                    disabled={!!isAdded}
-                                                    className={`text-left px-3 py-2 rounded-lg border transition-all text-sm truncate flex items-center justify-between ${isAdded
-                                                        ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                                                        : isSelected
-                                                            ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                                            : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
-                                                        }`}
-                                                    title={p.name}
-                                                >
-                                                    <span className="truncate">{p.name}</span>
-                                                    {isSelected && !isAdded && (
-                                                        <span className="text-blue-600 ml-2 flex-shrink-0">✓</span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        ))}
                     </div>
                 </div>
-            )}
+            </Modal>
 
-            {isEditing && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        {editingId ? '编辑策略组' : '新建策略组'}
-                    </h3>
+            {/* Create/Edit Group Modal */}
+            <Modal
+                isOpen={isEditing}
+                onClose={() => setIsEditing(false)}
+                title={editingId ? '编辑策略组' : '新建策略组'}
+                maxWidth="max-w-4xl"
+            >
+                <div>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">配置名称</label>
@@ -554,7 +551,7 @@ export default function CustomGroupsClient({
                         </div>
                     </div>
                 </div>
-            )}
+            </Modal>
 
             {groups.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">

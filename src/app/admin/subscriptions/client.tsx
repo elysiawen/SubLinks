@@ -6,6 +6,7 @@ import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import Modal from '@/components/Modal';
 
 interface Sub {
     token: string;
@@ -365,16 +366,13 @@ export default function AdminSubsClient({
             )}
 
             {/* Edit Modal */}
-            {editingSub && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-gray-800">编辑订阅 - {editingSub.username}</h3>
-                            <button onClick={() => setEditingSub(null)} className="text-gray-400 hover:text-gray-600">
-                                &times;
-                            </button>
-                        </div>
-
+            <Modal
+                isOpen={!!editingSub}
+                onClose={() => setEditingSub(null)}
+                title={`编辑订阅 - ${editingSub?.username}`}
+            >
+                {editingSub && (
+                    <>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">备注名称</label>
@@ -541,9 +539,9 @@ export default function AdminSubsClient({
                                 {loading ? '保存中...' : '保存更改'}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </Modal>
         </div>
     );
 }

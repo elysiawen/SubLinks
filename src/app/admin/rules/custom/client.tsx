@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { saveCustomRule, deleteCustomRule } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import Modal from '@/components/Modal';
 
 interface ConfigSet {
     id: string;
@@ -148,11 +149,13 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
                 </div>
             </div>
 
-            {isEditing && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                        {editingId ? '编辑规则集' : '新建规则集'}
-                    </h3>
+            <Modal
+                isOpen={isEditing}
+                onClose={() => setIsEditing(false)}
+                title={editingId ? '编辑规则集' : '新建规则集'}
+                maxWidth="max-w-4xl"
+            >
+                {isEditing && (
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">名称</label>
@@ -292,8 +295,8 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             {rules.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">

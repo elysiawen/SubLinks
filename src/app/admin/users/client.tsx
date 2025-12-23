@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { createUser, deleteUser, updateUserStatus, updateUser } from '../actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import Modal from '@/components/Modal';
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [loading, setLoading] = useState(false);
+    const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
     const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string } | null>(null);
 
@@ -45,40 +47,83 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
 
     return (
         <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">用户管理</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    👥 用户管理
+                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{users.length}</span>
+                </h2>
+                <button
+                    onClick={() => setIsAddingUser(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm font-medium text-sm"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    添加新用户
+                </button>
+            </div>
 
-            {/* Create User Section */}
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-3 mb-4">添加新用户</h3>
-                <form id="createUserForm" action={handleCreateUser} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-                            <input name="username" className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
-                            <input name="password" type="password" className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">角色</label>
-                            <select name="role" className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
-                                <option value="user">普通用户</option>
-                                <option value="admin">管理员</option>
-                            </select>
-                        </div>
+            {/* Create User Modal */}
+            <Modal
+                isOpen={isAddingUser}
+                onClose={() => setIsAddingUser(false)}
+                title="添加新用户"
+            >
+                <form
+                    action={async (formData) => {
+                        await handleCreateUser(formData);
+                        setIsAddingUser(false);
+                    }}
+                    className="space-y-4"
+                >
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                        <input
+                            name="username"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="输入用户名"
+                            required
+                        />
                     </div>
-                    <div className="flex justify-end pt-2">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">密码</label>
+                        <input
+                            name="password"
+                            type="password"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="设置登录密码"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">角色</label>
+                        <select
+                            name="role"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        >
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm font-medium text-sm"
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                         >
-                            {loading ? '创建中...' : '创建用户'}
+                            {loading ? '创建中...' : '确认创建'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsAddingUser(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                        >
+                            取消
                         </button>
                     </div>
                 </form>
-            </div>
+            </Modal>
 
             {/* User List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -148,55 +193,52 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
             </div>
 
             {/* Edit User Modal */}
-            {editingUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-900">编辑用户</h3>
-                            <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-gray-600">
-                                <span className="text-2xl">&times;</span>
-                            </button>
+            <Modal
+                isOpen={!!editingUser}
+                onClose={() => setEditingUser(null)}
+                title="编辑用户"
+            >
+                {editingUser && (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                            <input
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50"
+                                value={editingUser.newUsername}
+                                disabled
+                                readOnly
+                            />
+                            <p className="text-xs text-gray-500 mt-1">用户名不可修改</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">新密码</label>
+                            <input
+                                type="password"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                value={editingUser.newPassword}
+                                onChange={e => setEditingUser({ ...editingUser, newPassword: e.target.value })}
+                                placeholder="留空则不修改密码"
+                            />
                         </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">用户名</label>
-                                <input
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                                    value={editingUser.newUsername}
-                                    onChange={e => setEditingUser({ ...editingUser, newUsername: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">新密码</label>
-                                <input
-                                    type="password"
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                                    value={editingUser.newPassword}
-                                    onChange={e => setEditingUser({ ...editingUser, newPassword: e.target.value })}
-                                    placeholder="留空则不修改密码"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                onClick={() => setEditingUser(null)}
-                                className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 border border-gray-200"
-                            >
-                                取消
-                            </button>
+                        <div className="flex gap-2 pt-2">
                             <button
                                 onClick={handleUpdateUser}
                                 disabled={loading}
-                                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                             >
-                                {loading ? '保存中...' : '保存'}
+                                {loading ? '保存中...' : '确认保存'}
+                            </button>
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            >
+                                取消
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
         </div>
     );
 }
