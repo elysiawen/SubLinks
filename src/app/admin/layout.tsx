@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import AdminSidebar from './sidebar';
+import AdminShell from './shell';
 
 export default async function AdminLayout({
     children,
@@ -21,15 +21,8 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="h-screen bg-gray-50 flex font-sans overflow-hidden">
-            <AdminSidebar username={session.username} />
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto h-full">
-                <div className="p-8 max-w-6xl mx-auto">
-                    {children}
-                </div>
-            </main>
-        </div>
+        <AdminShell username={session.username}>
+            {children}
+        </AdminShell>
     );
 }

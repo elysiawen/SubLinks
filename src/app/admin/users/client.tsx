@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 import { createUser, deleteUser, updateUserStatus, updateUser } from '../actions';
+import { useToast } from '@/components/ToastProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
+    const { success, error } = useToast();
+    const { confirm } = useConfirm();
     const [loading, setLoading] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
     const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string } | null>(null);
@@ -13,8 +17,9 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
         const res = await createUser(formData);
         setLoading(false);
         if (res?.error) {
-            alert(res.error);
+            error(res.error);
         } else {
+            success('用户创建成功');
             (document.getElementById('createUserForm') as HTMLFormElement).reset();
         }
     };
@@ -31,10 +36,10 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
         setLoading(false);
 
         if (res?.error) {
-            alert(res.error);
+            error(res.error);
         } else {
             setEditingUser(null);
-            alert('用户信息已更新');
+            success('用户信息已更新');
         }
     };
 
@@ -43,7 +48,7 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
             <h2 className="text-2xl font-bold text-gray-800">用户管理</h2>
 
             {/* Create User Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-3 mb-4">添加新用户</h3>
                 <form id="createUserForm" action={handleCreateUser} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -76,33 +81,35 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
             </div>
 
             {/* User List */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-3 mb-4">用户列表 ({users.length})</h3>
-                <div className="overflow-x-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-4 md:p-6 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800">用户列表 ({users.length})</h3>
+                </div>
+                <div className="w-full overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-100">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户名</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">角色</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
-                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">操作</th>
+                                <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户名</th>
+                                <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">角色</th>
+                                <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
+                                <th className="px-4 md:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">操作</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
                             {users.map((user) => (
                                 <tr key={user.username} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                             {user.role === 'admin' ? '管理员' : '用户'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                                             {user.status === 'active' ? '正常' : '已停用'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
+                                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
                                             onClick={() => setEditingUser({ username: user.username, newUsername: user.username, newPassword: '' })}
                                             className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
@@ -112,8 +119,9 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                                         <button
                                             onClick={async () => {
                                                 const newStatus = user.status === 'active' ? 'suspended' : 'active';
-                                                if (confirm(`确定要${newStatus === 'active' ? '启用' : '停用'}用户 ${user.username} 吗?`)) {
+                                                if (await confirm(`确定要${newStatus === 'active' ? '启用' : '停用'}用户 ${user.username} 吗?`)) {
                                                     await updateUserStatus(user.username, newStatus);
+                                                    success(`用户 ${user.username} 已${newStatus === 'active' ? '启用' : '停用'}`);
                                                 }
                                             }}
                                             className={`${user.status === 'active' ? 'text-orange-500 hover:text-orange-700' : 'text-green-600 hover:text-green-800'} font-medium transition-colors`}
@@ -122,8 +130,9 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                                         </button>
                                         <button
                                             onClick={async () => {
-                                                if (confirm(`确定要删除用户 ${user.username} 吗? 此操作不可恢复。`)) {
+                                                if (await confirm(`确定要删除用户 ${user.username} 吗? 此操作不可恢复。`, { confirmColor: 'red', confirmText: '彻底删除' })) {
                                                     await deleteUser(user.username);
+                                                    success(`用户 ${user.username} 已删除`);
                                                 }
                                             }}
                                             className="text-red-500 hover:text-red-700 font-medium transition-colors"
@@ -141,7 +150,7 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
             {/* Edit User Modal */}
             {editingUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-900">编辑用户</h3>
                             <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-gray-600">

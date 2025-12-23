@@ -49,9 +49,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Users Card */}
-                <Link href="/admin/users" className="block">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow cursor-pointer">
+                <Link href="/admin/users" className="block animate-slide-in-up">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">👥</span>
                             <span className="text-xs text-gray-400">用户</span>
@@ -64,9 +63,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     </div>
                 </Link>
 
-                {/* Subscriptions Card */}
-                <Link href="/admin/subscriptions" className="block">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow cursor-pointer">
+                <Link href="/admin/subscriptions" className="block animate-slide-in-up delay-100">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📝</span>
                             <span className="text-xs text-gray-400">订阅</span>
@@ -76,9 +74,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     </div>
                 </Link>
 
-                {/* Upstream Sources Card */}
-                <Link href="/admin/sources" className="block">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow cursor-pointer">
+                <Link href="/admin/sources" className="block animate-slide-in-up delay-200">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📡</span>
                             <span className="text-xs text-gray-400">上游源</span>
@@ -90,9 +87,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     </div>
                 </Link>
 
-                {/* Recent Access Card */}
-                <Link href="/admin/logs" className="block">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow cursor-pointer">
+                <Link href="/admin/logs" className="block animate-slide-in-up delay-300">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📈</span>
                             <span className="text-xs text-gray-400">访问量</span>

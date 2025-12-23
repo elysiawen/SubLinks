@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useToast } from '@/components/ToastProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 function RetentionSelector({ initialValue }: { initialValue: number }) {
     const isPreset = [30, 180, 365, 0].includes(initialValue);
@@ -46,6 +48,8 @@ function RetentionSelector({ initialValue }: { initialValue: number }) {
 
 
 export default function AdminSettingsClient({ config }: { config: any }) {
+    const { success, error } = useToast();
+    const { confirm } = useConfirm();
     return (
         <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">全局设置</h2>
@@ -84,13 +88,13 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                         <button
                             type="button"
                             onClick={async () => {
-                                if (confirm('⚠️ 确定要立即删除系统中的所有日志吗？此操作无法撤销。')) {
+                                if (await confirm('⚠️ 确定要立即删除系统中的所有日志吗？此操作无法撤销。', { confirmColor: 'red', confirmText: '清空日志' })) {
                                     const { clearLogs } = await import('../actions');
                                     const res = await clearLogs(0);
                                     if (res?.success) {
-                                        alert('所有日志已清理完成');
+                                        success('所有日志已清理完成');
                                     } else {
-                                        alert('清理失败');
+                                        error('清理失败');
                                     }
                                 }
                             }}

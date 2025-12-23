@@ -5,6 +5,8 @@ import { createSubscription, deleteSubscription, updateSubscription } from '@/li
 import { changePassword } from '@/lib/user-actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
+import { useToast } from '@/components/ToastProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface Sub {
     token: string;
@@ -21,6 +23,8 @@ interface ConfigSets {
 }
 
 export default function DashboardClient({ initialSubs, username, baseUrl, configSets, defaultGroups = [], availableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets: ConfigSets, defaultGroups: string[], availableSources: { name: string; url: string }[] }) {
+    const { success, error } = useToast();
+    const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,18 +96,22 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setLoading(false);
 
         // Check for errors
+        // Check for errors
         if (result && result.error) {
-            alert(result.error);
+            error(result.error);
             return;
         }
+
+        success(editingSub ? '订阅更新成功' : '订阅创建成功');
 
         closeModal();
         refresh();
     };
 
     const handleDelete = async (token: string) => {
-        if (confirm('确定删除此订阅?')) {
+        if (await confirm('确定删除此订阅?', { confirmColor: 'red', confirmText: '彻底删除' })) {
             await deleteSubscription(token);
+            success('订阅已删除');
             refresh();
         }
     }
@@ -209,17 +217,17 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
 
     const handleChangePassword = async () => {
         if (!oldPassword || !newPassword || !confirmPassword) {
-            alert('请填写所有字段');
+            error('请填写所有字段');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            alert('两次输入的新密码不一致');
+            error('两次输入的新密码不一致');
             return;
         }
 
         if (newPassword.length < 4) {
-            alert('新密码至少需要4个字符');
+            error('新密码至少需要4个字符');
             return;
         }
 
@@ -228,9 +236,9 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setLoading(false);
 
         if (result.error) {
-            alert(`❌ ${result.error}`);
+            error(`❌ ${result.error}`);
         } else {
-            alert('✅ 密码修改成功！');
+            success('✅ 密码修改成功！');
             setIsPasswordModalOpen(false);
             setOldPassword('');
             setNewPassword('');
@@ -270,11 +278,15 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                     </button>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
-                    {subs.map(sub => {
+                <div className="grid gap-5 grid-cols-1 animate-slide-in-up">
+                    {subs.map((sub, index) => {
                         const link = `${baseUrl}/api/s/${sub.token}`;
                         return (
-                            <div key={sub.token} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-all duration-200 group">
+                            <div
+                                key={sub.token}
+                                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-all duration-200 group animate-slide-in-up fill-mode-backwards"
+                                style={{ animationDelay: `${index * 100}ms` }}
+                            >
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -295,7 +307,7 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                                     <button
                                         onClick={() => {
                                             navigator.clipboard.writeText(link);
-                                            alert('复制成功');
+                                            success('复制成功');
                                         }}
                                         className="ml-3 text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200 transition-all shrink-0 font-medium"
                                     >

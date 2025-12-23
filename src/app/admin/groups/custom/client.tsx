@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { saveCustomGroup, deleteCustomGroup } from './actions';
+import { useToast } from '@/components/ToastProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface ConfigSet {
     id: string;
@@ -24,6 +26,8 @@ export default function CustomGroupsClient({
     customGroups: ConfigSet[],
     initialProxies: ProxyItem[]
 }) {
+    const { success, error } = useToast();
+    const { confirm } = useConfirm();
     const [groups, setGroups] = useState<ConfigSet[]>(initialGroups);
     const [proxies] = useState<ProxyItem[]>(initialProxies);
     const [isEditing, setIsEditing] = useState(false);
@@ -149,7 +153,7 @@ export default function CustomGroupsClient({
 
     const handleSave = async () => {
         if (!formName.trim() || !formContent.trim()) {
-            alert('请填写完整的名称和内容');
+            error('请填写完整的名称和内容');
             return;
         }
 
@@ -157,23 +161,25 @@ export default function CustomGroupsClient({
         await saveCustomGroup(editingId, formName.trim(), formContent.trim());
         setLoading(false);
         setIsEditing(false);
+        success(editingId ? '策略组更新成功' : '策略组创建成功');
         window.location.reload();
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`确定要删除自定义策略组 "${name}" 吗？`)) {
+        if (!await confirm(`确定要删除自定义策略组 "${name}" 吗？`, { confirmColor: 'red' })) {
             return;
         }
 
         setLoading(true);
         await deleteCustomGroup(id);
         setLoading(false);
+        success('策略组已删除');
         window.location.reload();
     };
 
     const addGuiGroup = () => {
         if (!newGroupName.trim()) {
-            alert('请填写策略组名称');
+            error('请填写策略组名称');
             return;
         }
         const newGroup = {

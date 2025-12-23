@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { saveCustomRule, deleteCustomRule } from './actions';
+import { useToast } from '@/components/ToastProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface ConfigSet {
     id: string;
@@ -11,6 +13,8 @@ interface ConfigSet {
 }
 
 export default function CustomRulesClient({ customRules: initialRules }: { customRules: ConfigSet[] }) {
+    const { success, error } = useToast();
+    const { confirm } = useConfirm();
     const [rules, setRules] = useState<ConfigSet[]>(initialRules);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,7 +82,7 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
 
     const handleSave = async () => {
         if (!formName.trim() || !formContent.trim()) {
-            alert('请填写完整的名称和内容');
+            error('请填写完整的名称和内容');
             return;
         }
 
@@ -86,23 +90,25 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
         await saveCustomRule(editingId, formName.trim(), formContent.trim());
         setLoading(false);
         setIsEditing(false);
+        success(editingId ? '规则集更新成功' : '规则集创建成功');
         window.location.reload();
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`确定要删除自定义规则集 "${name}" 吗？`)) {
+        if (!await confirm(`确定要删除自定义规则集 "${name}" 吗？`, { confirmColor: 'red' })) {
             return;
         }
 
         setLoading(true);
         await deleteCustomRule(id);
         setLoading(false);
+        success('规则集已删除');
         window.location.reload();
     };
 
     const addGuiRule = () => {
         if (!newRuleValue.trim()) {
-            alert('请填写规则值');
+            error('请填写规则值');
             return;
         }
         const newRule = {

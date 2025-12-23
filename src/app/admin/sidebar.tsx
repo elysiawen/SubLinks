@@ -14,9 +14,9 @@ export default function AdminSidebar({ username }: SidebarProps) {
     const isActive = (path: string) => pathname === path;
 
     const linkClass = (path: string) =>
-        `flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isActive(path)
-            ? 'bg-blue-50 text-blue-600 font-semibold'
-            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+        `flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 active:scale-95 ${isActive(path)
+            ? 'bg-blue-50 text-blue-600 font-semibold shadow-sm'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:translate-x-1'
         }`;
 
     return (
