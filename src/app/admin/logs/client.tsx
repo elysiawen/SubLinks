@@ -107,8 +107,8 @@ export default function LogsClient() {
                     <button
                         onClick={() => setActiveTab('api')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'api'
-                                ? 'bg-gray-900 text-white shadow-lg'
-                                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            ? 'bg-gray-900 text-white shadow-lg'
+                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
                         API访问日志
@@ -116,8 +116,8 @@ export default function LogsClient() {
                     <button
                         onClick={() => setActiveTab('web')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'web'
-                                ? 'bg-gray-900 text-white shadow-lg'
-                                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            ? 'bg-gray-900 text-white shadow-lg'
+                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
                         网站访问日志
@@ -125,8 +125,8 @@ export default function LogsClient() {
                     <button
                         onClick={() => setActiveTab('system')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'system'
-                                ? 'bg-gray-900 text-white shadow-lg'
-                                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            ? 'bg-gray-900 text-white shadow-lg'
+                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
                         系统日志
@@ -162,7 +162,8 @@ export default function LogsClient() {
             </div>
 
             <div className="bg-[#0f0f0f] rounded-xl border border-gray-800 shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-black/40 border-b border-gray-800 text-gray-400 text-sm">
@@ -233,6 +234,87 @@ export default function LogsClient() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-gray-800/50">
+                    {logs.map((log) => (
+                        <div key={log.id} className="p-4 hover:bg-white/[0.03] transition-colors">
+                            <div className="space-y-3">
+                                {/* Time and Status */}
+                                <div className="flex items-start justify-between">
+                                    <div className="text-xs text-gray-400">
+                                        {new Date(log.timestamp).toLocaleString('zh-CN')}
+                                        <div className="text-gray-500 mt-0.5">{formatTime(log.timestamp)}</div>
+                                    </div>
+                                    <span className={`text-xs font-medium ${getStatusColor(log.status)}`}>
+                                        {log.status}
+                                    </span>
+                                </div>
+
+                                {/* API Logs */}
+                                {activeTab === 'api' && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">Token:</span>
+                                            <span className="font-mono text-xs text-blue-400">{(log.token || '').substring(0, 8)}...</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">用户:</span>
+                                            <span className="text-sm text-gray-200">{log.username}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">IP:</span>
+                                            <span className="text-sm text-gray-300">{log.ip}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-600 break-all" title={log.ua}>
+                                            {log.ua}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Web Logs */}
+                                {activeTab === 'web' && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">用户:</span>
+                                            <span className="text-sm text-gray-200">{log.username || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">IP:</span>
+                                            <span className="text-sm text-gray-300">{log.ip}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">路径:</span>
+                                            <span className="text-sm text-emerald-400 font-mono break-all">{log.path}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-600 break-all" title={log.ua}>
+                                            {log.ua}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* System Logs */}
+                                {activeTab === 'system' && (
+                                    <div className="space-y-2">
+                                        <div>
+                                            <span className="px-2 py-1 rounded bg-gray-800 text-gray-300 text-xs border border-gray-700">
+                                                {log.category}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-300">
+                                            {log.message}
+                                        </div>
+                                        {log.details && (
+                                            <pre className="text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto">
+                                                {JSON.stringify(log.details, null, 2)}
+                                            </pre>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 {logs.length === 0 && !loading && (
