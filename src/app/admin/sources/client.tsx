@@ -159,10 +159,10 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
         setLoading(false);
 
         if (result.success) {
-            success('✅ 上游源刷新成功！');
+            success('上游源刷新成功！');
             window.location.reload();
         } else {
-            error('❌ 上游源刷新失败，请查看日志');
+            error('上游源刷新失败，请查看日志');
         }
     };
 
@@ -176,10 +176,10 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
         setLoading(false);
 
         if (result.success) {
-            success(`✅ 上游源 "${sourceName}" 刷新成功！`);
+            success(`上游源 "${sourceName}" 刷新成功！`);
             window.location.reload();
         } else {
-            error(`❌ 上游源 "${sourceName}" 刷新失败，请查看日志`);
+            error(`上游源 "${sourceName}" 刷新失败，请查看日志`);
         }
     };
 
@@ -190,14 +190,14 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
             setLoading(false);
 
             if (result.success) {
-                success(`✅ 已将 "${sourceName}" 设为默认源`);
+                success(`已将 "${sourceName}" 设为默认源`);
                 window.location.reload();
             } else {
-                error(`❌ 设置默认源失败`);
+                error(`设置默认源失败`);
             }
         } catch (e) {
             setLoading(false);
-            error(`❌ 设置默认源失败: ${e}`);
+            error(`设置默认源失败: ${e}`);
         }
     };
 

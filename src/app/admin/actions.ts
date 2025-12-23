@@ -16,15 +16,21 @@ export async function updateGlobalConfig(formData: FormData) {
 
     const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
 
-    // Get existing config to preserve upstreamUrl
+    // Get existing config to preserve upstreamUrl and maxUserSubscriptions
     const existingConfig = await db.getGlobalConfig();
     const upstreamUrl = existingConfig.upstreamUrl; // Preserve existing
+
+    // Parse maxUserSubscriptions, preserve existing value if not provided
+    const maxUserSubscriptionsStr = formData.get('maxUserSubscriptions') as string;
+    const maxUserSubscriptions = maxUserSubscriptionsStr
+        ? parseInt(maxUserSubscriptionsStr) || 0
+        : existingConfig.maxUserSubscriptions || 0;
 
     await db.setGlobalConfig({
         upstreamUrl, // Explicitly preserve
         uaWhitelist,
         logRetentionDays,
-        maxUserSubscriptions: parseInt(formData.get('maxUserSubscriptions') as string) || 0
+        maxUserSubscriptions
     });
 
     // Trigger cleanup immediately

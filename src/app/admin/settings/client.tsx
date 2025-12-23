@@ -73,6 +73,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
 
                     const { updateGlobalConfig } = await import('../actions');
                     await updateGlobalConfig(formData);
+                    success('日志清理设置已保存');
                 }} className="space-y-4">
 
                     <RetentionSelector initialValue={config.logRetentionDays || 30} />
@@ -122,6 +123,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
 
                     const { updateGlobalConfig } = await import('../actions');
                     await updateGlobalConfig(formData);
+                    success('用户限制设置已保存');
                 }} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">每个用户最大订阅数</label>

@@ -20,7 +20,7 @@ export default function AdminSidebar({ username }: SidebarProps) {
         }`;
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <aside className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
             <div className="p-6 border-b border-gray-100">
                 <h1 className="text-xl font-bold text-gray-800">管理后台</h1>
                 <p className="text-xs text-gray-400 mt-1">Version 3.0</p>

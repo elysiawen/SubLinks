@@ -236,9 +236,9 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
         setLoading(false);
 
         if (result.error) {
-            error(`❌ ${result.error}`);
+            error(`${result.error}`);
         } else {
-            success('✅ 密码修改成功！');
+            success('密码修改成功！');
             setIsPasswordModalOpen(false);
             setOldPassword('');
             setNewPassword('');
