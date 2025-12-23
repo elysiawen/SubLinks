@@ -439,4 +439,32 @@ export default class RedisDatabase implements IDatabase {
     async deleteAllLogs(): Promise<void> {
         await this.redis.del('logs:api', 'logs:web', 'logs:system');
     }
+
+    // Upstream Sources operations - Not fully implemented for Redis
+    // Redis users should use PostgreSQL for upstream source management
+    async getUpstreamSources(): Promise<Array<any>> {
+        console.warn('⚠️ Upstream sources are not fully supported with Redis. Please use PostgreSQL.');
+        return [];
+    }
+
+    async getUpstreamSource(name: string): Promise<any | null> {
+        console.warn('⚠️ Upstream sources are not fully supported with Redis. Please use PostgreSQL.');
+        return null;
+    }
+
+    async createUpstreamSource(source: any): Promise<void> {
+        throw new Error('Upstream sources are not supported with Redis. Please use PostgreSQL.');
+    }
+
+    async updateUpstreamSource(name: string, updates: Partial<any>): Promise<void> {
+        throw new Error('Upstream sources are not supported with Redis. Please use PostgreSQL.');
+    }
+
+    async deleteUpstreamSource(name: string): Promise<void> {
+        throw new Error('Upstream sources are not supported with Redis. Please use PostgreSQL.');
+    }
+
+    async setDefaultUpstreamSource(name: string): Promise<void> {
+        throw new Error('Upstream sources are not supported with Redis. Please use PostgreSQL.');
+    }
 }

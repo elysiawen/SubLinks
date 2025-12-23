@@ -252,55 +252,6 @@ export default class PostgresDatabase implements IDatabase {
                 console.warn('Migration failed (non-critical):', e);
             }
 
-            // ONE-TIME MIGRATION: Move upstreamSources from GlobalConfig to upstream_sources table
-            // This block can be safely deleted after migration is complete
-            try {
-                const configResult = await client.query('SELECT value FROM global_config WHERE key = $1', ['global']);
-                if (configResult.rows.length > 0) {
-                    const config = JSON.parse(configResult.rows[0].value);
-                    if (config && config.upstreamSources && Array.isArray(config.upstreamSources) && config.upstreamSources.length > 0) {
-                        console.log(`🔄 Migrating ${config.upstreamSources.length} upstream sources to dedicated table...`);
-
-                        const currentTime = Date.now();
-                        for (const source of config.upstreamSources) {
-                            try {
-                                await client.query(`
-                                    INSERT INTO upstream_sources (
-                                        name, url, cache_duration, ua_whitelist, is_default, 
-                                        last_updated, status, error, created_at, updated_at
-                                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                                    ON CONFLICT (name) DO NOTHING
-                                `, [
-                                    source.name,
-                                    source.url,
-                                    parseFloat(source.cacheDuration) || 24,
-                                    JSON.stringify(source.uaWhitelist || []),
-                                    source.isDefault || false,
-                                    source.lastUpdated || 0,
-                                    source.status || 'pending',
-                                    source.error || null,
-                                    currentTime,
-                                    currentTime
-                                ]);
-                            } catch (err) {
-                                console.warn(`Failed to migrate source "${source.name}":`, err);
-                            }
-                        }
-
-                        // Clean up upstreamSources from global_config
-                        delete config.upstreamSources;
-                        await client.query(
-                            'UPDATE global_config SET value = $1, updated_at = $2 WHERE key = $3',
-                            [JSON.stringify(config), Date.now(), 'global']
-                        );
-                        console.log('✅ Upstream sources migration completed and cleaned up from global_config');
-                    }
-                }
-            } catch (e) {
-                console.warn('Upstream sources migration failed (non-critical):', e);
-            }
-            // END OF ONE-TIME MIGRATION - DELETE THIS BLOCK AFTER SUCCESSFUL MIGRATION
-
         } finally {
             client.release();
         }

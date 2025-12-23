@@ -12,8 +12,7 @@ export async function getDashboardStats() {
     const allSubs = await db.getAllSubscriptions();
 
     // Get upstream sources
-    const config = await db.getGlobalConfig();
-    const upstreamSources = config.upstreamSources || [];
+    const upstreamSources = await db.getUpstreamSources();
     const defaultSource = upstreamSources.find(s => s.isDefault);
 
     // Get recent access logs (last 24 hours)
