@@ -168,6 +168,22 @@ export default class PostgresDatabase implements IDatabase {
                     timestamp BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_system_logs_timestamp ON system_logs(timestamp);
+
+                CREATE TABLE IF NOT EXISTS upstream_sources (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) UNIQUE NOT NULL,
+                    url TEXT NOT NULL,
+                    cache_duration NUMERIC DEFAULT 24,
+                    ua_whitelist JSONB DEFAULT '[]'::jsonb,
+                    is_default BOOLEAN DEFAULT false,
+                    last_updated BIGINT DEFAULT 0,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    error TEXT,
+                    created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000,
+                    updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000
+                );
+                CREATE INDEX IF NOT EXISTS idx_upstream_sources_name ON upstream_sources(name);
+                CREATE INDEX IF NOT EXISTS idx_upstream_sources_is_default ON upstream_sources(is_default);
             `);
 
             // Migrations - run separately to ensure they execute even if tables already exist
@@ -235,6 +251,55 @@ export default class PostgresDatabase implements IDatabase {
             } catch (e) {
                 console.warn('Migration failed (non-critical):', e);
             }
+
+            // ONE-TIME MIGRATION: Move upstreamSources from GlobalConfig to upstream_sources table
+            // This block can be safely deleted after migration is complete
+            try {
+                const configResult = await client.query('SELECT value FROM global_config WHERE key = $1', ['global']);
+                if (configResult.rows.length > 0) {
+                    const config = JSON.parse(configResult.rows[0].value);
+                    if (config && config.upstreamSources && Array.isArray(config.upstreamSources) && config.upstreamSources.length > 0) {
+                        console.log(`🔄 Migrating ${config.upstreamSources.length} upstream sources to dedicated table...`);
+
+                        const currentTime = Date.now();
+                        for (const source of config.upstreamSources) {
+                            try {
+                                await client.query(`
+                                    INSERT INTO upstream_sources (
+                                        name, url, cache_duration, ua_whitelist, is_default, 
+                                        last_updated, status, error, created_at, updated_at
+                                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                                    ON CONFLICT (name) DO NOTHING
+                                `, [
+                                    source.name,
+                                    source.url,
+                                    parseFloat(source.cacheDuration) || 24,
+                                    JSON.stringify(source.uaWhitelist || []),
+                                    source.isDefault || false,
+                                    source.lastUpdated || 0,
+                                    source.status || 'pending',
+                                    source.error || null,
+                                    currentTime,
+                                    currentTime
+                                ]);
+                            } catch (err) {
+                                console.warn(`Failed to migrate source "${source.name}":`, err);
+                            }
+                        }
+
+                        // Clean up upstreamSources from global_config
+                        delete config.upstreamSources;
+                        await client.query(
+                            'UPDATE global_config SET value = $1, updated_at = $2 WHERE key = $3',
+                            [JSON.stringify(config), Date.now(), 'global']
+                        );
+                        console.log('✅ Upstream sources migration completed and cleaned up from global_config');
+                    }
+                }
+            } catch (e) {
+                console.warn('Upstream sources migration failed (non-critical):', e);
+            }
+            // END OF ONE-TIME MIGRATION - DELETE THIS BLOCK AFTER SUCCESSFUL MIGRATION
 
         } finally {
             client.release();
@@ -879,5 +944,123 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM api_access_logs');
         await this.pool.query('DELETE FROM web_access_logs');
         await this.pool.query('DELETE FROM system_logs');
+    }
+
+    // Upstream source operations
+    async getUpstreamSources(): Promise<import('./interface').UpstreamSource[]> {
+        const result = await this.pool.query(
+            'SELECT * FROM upstream_sources ORDER BY created_at ASC'
+        );
+        return result.rows.map(row => ({
+            name: row.name,
+            url: row.url,
+            cacheDuration: row.cache_duration,
+            uaWhitelist: row.ua_whitelist,
+            isDefault: row.is_default,
+            lastUpdated: parseInt(row.last_updated),
+            status: row.status as 'pending' | 'success' | 'failure',
+            error: row.error
+        }));
+    }
+
+    async getUpstreamSource(name: string): Promise<import('./interface').UpstreamSource | null> {
+        const result = await this.pool.query(
+            'SELECT * FROM upstream_sources WHERE name = $1',
+            [name]
+        );
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+        return {
+            name: row.name,
+            url: row.url,
+            cacheDuration: row.cache_duration,
+            uaWhitelist: row.ua_whitelist,
+            isDefault: row.is_default,
+            lastUpdated: parseInt(row.last_updated),
+            status: row.status as 'pending' | 'success' | 'failure',
+            error: row.error
+        };
+    }
+
+    async createUpstreamSource(source: import('./interface').UpstreamSource): Promise<void> {
+        const currentTime = Date.now();
+        await this.pool.query(`
+            INSERT INTO upstream_sources (
+                name, url, cache_duration, ua_whitelist, is_default,
+                last_updated, status, error, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [
+            source.name,
+            source.url,
+            source.cacheDuration || 24,
+            JSON.stringify(source.uaWhitelist || []),
+            source.isDefault || false,
+            source.lastUpdated || 0,
+            source.status || 'pending',
+            source.error || null,
+            currentTime,
+            currentTime
+        ]);
+    }
+
+    async updateUpstreamSource(name: string, source: Partial<import('./interface').UpstreamSource>): Promise<void> {
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramIndex = 1;
+
+        if (source.name !== undefined) {
+            updates.push(`name = $${paramIndex++}`);
+            values.push(source.name);
+        }
+        if (source.url !== undefined) {
+            updates.push(`url = $${paramIndex++}`);
+            values.push(source.url);
+        }
+        if (source.cacheDuration !== undefined) {
+            updates.push(`cache_duration = $${paramIndex++}`);
+            values.push(source.cacheDuration);
+        }
+        if (source.uaWhitelist !== undefined) {
+            updates.push(`ua_whitelist = $${paramIndex++}`);
+            values.push(JSON.stringify(source.uaWhitelist));
+        }
+        if (source.isDefault !== undefined) {
+            updates.push(`is_default = $${paramIndex++}`);
+            values.push(source.isDefault);
+        }
+        if (source.lastUpdated !== undefined) {
+            updates.push(`last_updated = $${paramIndex++}`);
+            values.push(source.lastUpdated);
+        }
+        if (source.status !== undefined) {
+            updates.push(`status = $${paramIndex++}`);
+            values.push(source.status);
+        }
+        if (source.error !== undefined) {
+            updates.push(`error = $${paramIndex++}`);
+            values.push(source.error);
+        }
+
+        if (updates.length === 0) return;
+
+        updates.push(`updated_at = $${paramIndex++}`);
+        values.push(Date.now());
+
+        values.push(name);
+        await this.pool.query(
+            `UPDATE upstream_sources SET ${updates.join(', ')} WHERE name = $${paramIndex}`,
+            values
+        );
+    }
+
+    async deleteUpstreamSource(name: string): Promise<void> {
+        await this.pool.query('DELETE FROM upstream_sources WHERE name = $1', [name]);
+    }
+
+    async setDefaultUpstreamSource(name: string): Promise<void> {
+        // First, unset all defaults
+        await this.pool.query('UPDATE upstream_sources SET is_default = false');
+        // Then set the specified one as default
+        await this.pool.query('UPDATE upstream_sources SET is_default = true WHERE name = $1', [name]);
     }
 }

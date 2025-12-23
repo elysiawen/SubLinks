@@ -71,7 +71,6 @@ export interface UpstreamSource {
 
 export interface GlobalConfig {
     upstreamUrl?: string | string[];
-    upstreamSources?: UpstreamSource[];
     uaWhitelist?: string[];
     logRetentionDays?: number;
     maxUserSubscriptions?: number; // 0 means unlimited
@@ -143,6 +142,14 @@ export interface IDatabase {
     getCustomRule(id: string): Promise<ConfigSet | null>;
     saveCustomRule(id: string | null, name: string, content: string): Promise<void>;
     deleteCustomRule(id: string): Promise<void>;
+
+    // Upstream source operations
+    getUpstreamSources(): Promise<UpstreamSource[]>;
+    getUpstreamSource(name: string): Promise<UpstreamSource | null>;
+    createUpstreamSource(source: UpstreamSource): Promise<void>;
+    updateUpstreamSource(name: string, source: Partial<UpstreamSource>): Promise<void>;
+    deleteUpstreamSource(name: string): Promise<void>;
+    setDefaultUpstreamSource(name: string): Promise<void>;
 
     // Cache operations
     getCache(key: string): Promise<string | null>;

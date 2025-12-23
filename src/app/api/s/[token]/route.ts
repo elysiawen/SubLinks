@@ -45,10 +45,10 @@ export async function GET(
         return new NextResponse('User Account Suspended', { status: 403 });
     }
 
-    // 2. Get Global Config
+    // 2. Get Global Config and Upstream Sources
     const config = await db.getGlobalConfig();
     const upstreamUrl = config.upstreamUrl;
-    const upstreamSources = config.upstreamSources || [];
+    const upstreamSources = await db.getUpstreamSources();
 
     if (!upstreamUrl && upstreamSources.length === 0) {
         await logAccess(500);
@@ -68,8 +68,8 @@ export async function GET(
         return new NextResponse('Configuration Error: No Upstream Sources Selected. Please edit the subscription to select at least one source.', { status: 400 });
     }
 
-    if (selectedSourceNames.length > 0 && config.upstreamSources) {
-        const selectedSources = config.upstreamSources.filter(s => selectedSourceNames.includes(s.name));
+    if (selectedSourceNames.length > 0 && upstreamSources.length > 0) {
+        const selectedSources = upstreamSources.filter(s => selectedSourceNames.includes(s.name));
 
         // Use minimum cache duration from selected sources if available
         const sourceDurations = selectedSources.map(s => s.cacheDuration).filter(d => d !== undefined) as number[];
@@ -109,9 +109,9 @@ export async function GET(
     const cacheKey = `cache:subscription:${token}`;
 
     // Check freshness for each selected source individually
-    const sourcesToCheck = config.upstreamSources && selectedSourceNames.length > 0
-        ? config.upstreamSources.filter(s => selectedSourceNames.includes(s.name))
-        : (config.upstreamSources || []);
+    const sourcesToCheck = upstreamSources.length > 0 && selectedSourceNames.length > 0
+        ? upstreamSources.filter(s => selectedSourceNames.includes(s.name))
+        : upstreamSources;
 
     const now = Date.now();
     const staleSources: string[] = [];
@@ -127,16 +127,19 @@ export async function GET(
 
             const durationHours = source.cacheDuration;
 
-            if (durationHours === 0) {
+            // cacheDuration: 0 means never expire
+            if (durationHours === 0 || Number(durationHours) === 0) {
                 // Never expires, but we must ensure it has been fetched at least once
-                // If never updated (lastUpdated is 0 or undefined), we MUST check it.
-                if (source.lastUpdated && source.lastUpdated > 0) {
-                    continue;
+                // If never updated (lastUpdated is 0 or undefined), we MUST fetch it
+                if (!source.lastUpdated || source.lastUpdated === 0) {
+                    staleSources.push(source.name);
                 }
-                // If never updated, fall through to check logic (which will find it stale because lastUpdated is 0)
+                // If already fetched, skip freshness check entirely
+                continue;
             }
 
-            const effectiveDuration = durationHours || 24;
+            // For non-zero durations, check freshness
+            const effectiveDuration = durationHours ?? 24; // Use nullish coalescing to preserve 0
             const maxAgeMs = effectiveDuration * 60 * 60 * 1000;
             const lastUpdated = source.lastUpdated || 0;
             const currentAge = now - lastUpdated;
@@ -161,7 +164,7 @@ export async function GET(
 
             // Refresh stale sources in parallel
             await Promise.all(staleSources.map(async (sourceName) => {
-                const source = config.upstreamSources?.find(s => s.name === sourceName);
+                const source = upstreamSources.find(s => s.name === sourceName);
                 if (source) {
                     await refreshSingleUpstreamSource(sourceName, source.url);
                 }

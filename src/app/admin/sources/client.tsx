@@ -185,14 +185,19 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
 
     const handleSetDefault = async (sourceName: string) => {
         setLoading(true);
-        const result = await setDefaultUpstreamSource(sourceName);
-        setLoading(false);
+        try {
+            const result = await setDefaultUpstreamSource(sourceName);
+            setLoading(false);
 
-        if (result.success) {
-            success(`✅ 已将 "${sourceName}" 设为默认源`);
-            window.location.reload();
-        } else {
-            error(`❌ 设置默认源失败: ${result.error}`);
+            if (result.success) {
+                success(`✅ 已将 "${sourceName}" 设为默认源`);
+                window.location.reload();
+            } else {
+                error(`❌ 设置默认源失败`);
+            }
+        } catch (e) {
+            setLoading(false);
+            error(`❌ 设置默认源失败: ${e}`);
         }
     };
 
@@ -339,12 +344,12 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                         </div>
                                         <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
                                         <div className="flex flex-wrap gap-2 text-xs mb-2">
-                                            <span className={(source.cacheDuration === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
-                                                {(source.cacheDuration === 0)
+                                            <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
+                                                {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
                                                     ? '♾️ 永不失效'
-                                                    : `🕒 ${(source.cacheDuration || 24) < 1
-                                                        ? `${Math.round((source.cacheDuration || 0) * 60)}m`
-                                                        : `${source.cacheDuration || 24}h`}`
+                                                    : `🕒 ${(source.cacheDuration ?? 24) < 1
+                                                        ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
+                                                        : `${source.cacheDuration ?? 24}h`}`
                                                 }
                                             </span>
                                             {source.uaWhitelist && source.uaWhitelist.length > 0 && (

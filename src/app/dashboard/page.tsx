@@ -35,19 +35,7 @@ export default async function DashboardPage() {
         .map(g => g.name);
 
     // Get available upstream sources
-    const globalConfig = await db.getGlobalConfig();
-    let availableSources: { name: string; url: string }[] = [];
-
-    if (globalConfig.upstreamSources && Array.isArray(globalConfig.upstreamSources)) {
-        availableSources = globalConfig.upstreamSources;
-    } else if (globalConfig.upstreamUrl) {
-        // Legacy support
-        const urls = Array.isArray(globalConfig.upstreamUrl) ? globalConfig.upstreamUrl : [globalConfig.upstreamUrl];
-        availableSources = urls.map((url, i) => ({
-            name: `上游${i + 1}`,
-            url: typeof url === 'string' ? url : ''
-        }));
-    }
+    const availableSources = await db.getUpstreamSources();
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 

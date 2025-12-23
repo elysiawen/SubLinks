@@ -4,22 +4,18 @@ import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 export async function addUpstreamSource(name: string, url: string, cacheDuration: number = 24, uaWhitelist: string[] = []) {
-    const globalConfig = await db.getGlobalConfig();
-
-    let sources: { name: string; url: string; cacheDuration?: number; uaWhitelist?: string[] }[] = [];
-    if (globalConfig.upstreamSources && Array.isArray(globalConfig.upstreamSources)) {
-        sources = [...globalConfig.upstreamSources];
-    }
-
-    // Add new source with settings
-    sources.push({ name, url, cacheDuration, uaWhitelist });
-
-    await db.setGlobalConfig({
-        ...globalConfig,
-        upstreamSources: sources
+    // Create new upstream source in database
+    await db.createUpstreamSource({
+        name,
+        url,
+        cacheDuration,
+        uaWhitelist,
+        isDefault: false,
+        lastUpdated: 0,
+        status: 'pending'
     });
 
-    // Immediately fetch and cache only the new source
+    // Immediately fetch and cache the new source
     console.log(`🔄 Fetching new upstream source: ${name}`);
     const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
     await refreshSingleUpstreamSource(name, url);
@@ -35,19 +31,6 @@ export async function addUpstreamSource(name: string, url: string, cacheDuration
 }
 
 export async function deleteUpstreamSource(sourceName: string) {
-    const globalConfig = await db.getGlobalConfig();
-
-    // Remove from config
-    let sources: { name: string; url: string }[] = [];
-    if (globalConfig.upstreamSources && Array.isArray(globalConfig.upstreamSources)) {
-        sources = globalConfig.upstreamSources.filter(s => s.name !== sourceName);
-    }
-
-    await db.setGlobalConfig({
-        ...globalConfig,
-        upstreamSources: sources
-    });
-
     // Delete all data from this source
     console.log(`🗑️ Deleting all data from source: ${sourceName}`);
 
@@ -65,6 +48,9 @@ export async function deleteUpstreamSource(sourceName: string) {
     const rules = await db.getRules(sourceName);
     console.log(`   Deleting ${rules.length} rules...`);
     await db.clearRules(sourceName);
+
+    // Delete upstream source from database
+    await db.deleteUpstreamSource(sourceName);
 
     console.log(`✅ Successfully deleted source "${sourceName}" and all related data`);
 
@@ -103,32 +89,12 @@ export async function updateUpstreamSource(
     cacheDuration: number = 24,
     uaWhitelist: string[] = []
 ) {
-    const globalConfig = await db.getGlobalConfig();
-
-    let sources: any[] = [];
-    if (globalConfig.upstreamSources && Array.isArray(globalConfig.upstreamSources)) {
-        sources = [...globalConfig.upstreamSources];
-    }
-
-    // Find and update the source
-    const index = sources.findIndex(s => s.name === oldName);
-    if (index === -1) {
-        return { error: 'Source not found' };
-    }
-
-    // Preserve existing properties like isDefault, lastUpdated, status, error
-    const existingSource = sources[index];
-    sources[index] = {
-        ...existingSource,
+    // Update upstream source in database
+    await db.updateUpstreamSource(oldName, {
         name: newName,
         url,
         cacheDuration,
         uaWhitelist
-    };
-
-    await db.setGlobalConfig({
-        ...globalConfig,
-        upstreamSources: sources
     });
 
     // If name changed, we need to update the source tag in database
@@ -183,10 +149,8 @@ export async function forceRefreshUpstream() {
 }
 
 export async function refreshSingleSource(sourceName: string) {
-    const globalConfig = await db.getGlobalConfig();
-
-    // Find the source
-    const source = globalConfig.upstreamSources?.find(s => s.name === sourceName);
+    // Find the source from database
+    const source = await db.getUpstreamSource(sourceName);
     if (!source) {
         return { error: 'Source not found' };
     }
@@ -204,22 +168,8 @@ export async function refreshSingleSource(sourceName: string) {
 }
 
 export async function setDefaultUpstreamSource(sourceName: string) {
-    const globalConfig = await db.getGlobalConfig();
-
-    if (!globalConfig.upstreamSources || globalConfig.upstreamSources.length === 0) {
-        return { error: 'No upstream sources configured' };
-    }
-
-    // Clear all isDefault flags and set only the selected one
-    const updatedSources = globalConfig.upstreamSources.map(source => ({
-        ...source,
-        isDefault: source.name === sourceName
-    }));
-
-    await db.setGlobalConfig({
-        ...globalConfig,
-        upstreamSources: updatedSources
-    });
+    // Set default upstream source in database
+    await db.setDefaultUpstreamSource(sourceName);
 
     revalidatePath('/admin/sources');
     return { success: true };

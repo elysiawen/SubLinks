@@ -87,19 +87,11 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
                 });
 
                 // Update source status to failure
-                const globalConfig = await db.getGlobalConfig();
-                const updatedSources = globalConfig.upstreamSources?.map(s => {
-                    if (s.name === sourceName) {
-                        return {
-                            ...s,
-                            lastUpdated: Date.now(),
-                            status: 'failure' as const,
-                            error: `HTTP Error: ${res.status}`
-                        };
-                    }
-                    return s;
+                await db.updateUpstreamSource(sourceName, {
+                    lastUpdated: Date.now(),
+                    status: 'failure',
+                    error: `HTTP Error: ${res.status}`
                 });
-                await db.setGlobalConfig({ ...globalConfig, upstreamSources: updatedSources });
 
                 return false;
             }
@@ -125,24 +117,17 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
                 timestamp: Date.now()
             });
 
-            // Update global config with last updated timestamp
             // Update global config with last updated timestamp for specific source
-            const globalConfig = await db.getGlobalConfig();
-            const updatedSources = globalConfig.upstreamSources?.map(s => {
-                if (s.name === sourceName) {
-                    return {
-                        ...s,
-                        lastUpdated: Date.now(),
-                        status: 'success' as const,
-                        error: undefined
-                    };
-                }
-                return s;
+            await db.updateUpstreamSource(sourceName, {
+                lastUpdated: Date.now(),
+                status: 'success',
+                error: undefined
             });
 
+            // Update global last updated timestamp
+            const globalConfig = await db.getGlobalConfig();
             await db.setGlobalConfig({
                 ...globalConfig,
-                upstreamSources: updatedSources,
                 upstreamLastUpdated: Date.now() // Keep precise global tracking
             });
 
@@ -163,19 +148,11 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
 
             // Update source status to failure on exception
             try {
-                const globalConfig = await db.getGlobalConfig();
-                const updatedSources = globalConfig.upstreamSources?.map(s => {
-                    if (s.name === sourceName) {
-                        return {
-                            ...s,
-                            lastUpdated: Date.now(),
-                            status: 'failure' as const,
-                            error: String(e)
-                        };
-                    }
-                    return s;
+                await db.updateUpstreamSource(sourceName, {
+                    lastUpdated: Date.now(),
+                    status: 'failure',
+                    error: String(e)
                 });
-                await db.setGlobalConfig({ ...globalConfig, upstreamSources: updatedSources });
             } catch (dbError) {
                 console.error('Failed to update source failure status:', dbError);
             }
@@ -209,18 +186,21 @@ export async function refreshUpstreamCache() {
             // Default legacy cache check
             const cacheDuration = 24 * 3600;
 
-            // Get upstream sources - support both new and legacy formats
-            let sources: { name: string; url: string }[] = [];
+            // Get upstream sources from database
+            let sources = await db.getUpstreamSources();
 
-            if (config.upstreamSources && Array.isArray(config.upstreamSources)) {
-                // New format with names
-                sources = config.upstreamSources;
-            } else if (config.upstreamUrl) {
+            // Fallback to legacy format if no sources in database
+            if (sources.length === 0 && config.upstreamUrl) {
                 // Legacy format - convert to sources
                 const urls = Array.isArray(config.upstreamUrl) ? config.upstreamUrl : [config.upstreamUrl];
                 sources = urls.map((url: string | { url: string }, i) => ({
                     name: `upstream_${i}`,
-                    url: typeof url === 'string' ? url : url.url || ''
+                    url: typeof url === 'string' ? url : url.url || '',
+                    cacheDuration: 24,
+                    uaWhitelist: [],
+                    isDefault: i === 0,
+                    lastUpdated: 0,
+                    status: 'pending' as const
                 }));
             }
 
@@ -255,21 +235,11 @@ export async function refreshUpstreamCache() {
                         console.error(`   ❌ Source [${source.name}] failed: ${res.status}`);
 
                         // Update failure status
-                        const currentConfig = await db.getGlobalConfig();
-                        if (currentConfig.upstreamSources) {
-                            const updatedSources = currentConfig.upstreamSources.map(s => {
-                                if (s.name === source.name) {
-                                    return {
-                                        ...s,
-                                        lastUpdated: Date.now(),
-                                        status: 'failure' as const,
-                                        error: `HTTP Error: ${res.status}`
-                                    };
-                                }
-                                return s;
-                            });
-                            await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
-                        }
+                        await db.updateUpstreamSource(source.name, {
+                            lastUpdated: Date.now(),
+                            status: 'failure',
+                            error: `HTTP Error: ${res.status}`
+                        });
 
                         continue;
                     }
@@ -287,41 +257,21 @@ export async function refreshUpstreamCache() {
                     console.log(`   ✓ Source [${source.name}] parsed successfully`);
 
                     // Update success status
-                    const currentConfig = await db.getGlobalConfig();
-                    if (currentConfig.upstreamSources) {
-                        const updatedSources = currentConfig.upstreamSources.map(s => {
-                            if (s.name === source.name) {
-                                return {
-                                    ...s,
-                                    lastUpdated: Date.now(),
-                                    status: 'success' as const,
-                                    error: undefined
-                                };
-                            }
-                            return s;
-                        });
-                        await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
-                    }
+                    await db.updateUpstreamSource(source.name, {
+                        lastUpdated: Date.now(),
+                        status: 'success',
+                        error: undefined
+                    });
 
                 } catch (error) {
                     console.error(`   ❌ Source [${source.name}] error:`, error);
 
                     // Update failure status on exception
-                    const currentConfig = await db.getGlobalConfig();
-                    if (currentConfig.upstreamSources) {
-                        const updatedSources = currentConfig.upstreamSources.map(s => {
-                            if (s.name === source.name) {
-                                return {
-                                    ...s,
-                                    lastUpdated: Date.now(),
-                                    status: 'failure' as const,
-                                    error: String(error)
-                                };
-                            }
-                            return s;
-                        });
-                        await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
-                    }
+                    await db.updateUpstreamSource(source.name, {
+                        lastUpdated: Date.now(),
+                        status: 'failure',
+                        error: String(error)
+                    });
                 }
             }
 

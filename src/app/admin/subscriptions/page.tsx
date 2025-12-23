@@ -17,8 +17,7 @@ export default async function AdminSubscriptionsPage() {
         .filter(g => g.source !== 'custom')
         .map(g => g.name);
 
-    const config = await db.getGlobalConfig();
-    const availableSources = config.upstreamSources || [];
+    const availableSources = await db.getUpstreamSources();
 
     return (
         <div className="space-y-6">

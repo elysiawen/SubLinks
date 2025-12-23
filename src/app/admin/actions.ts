@@ -16,26 +16,12 @@ export async function updateGlobalConfig(formData: FormData) {
 
     const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
 
-    // Parse upstream sources from JSON
-    const upstreamSourcesJson = formData.get('upstreamSources') as string;
-    let upstreamSources;
-    try {
-        upstreamSources = JSON.parse(upstreamSourcesJson);
-    } catch (e) {
-        console.error('Failed to parse upstreamSources:', e);
-        return;
-    }
-
-    // Include upstreamUrl in GlobalConfig if it exists in form (it might be managed elsewhere, but let's be safe)
-    // Actually, getGlobalConfig returns upstreamUrl, but this action overrides it if we don't include it. 
-    // Assuming existing implementation didn't overwrite upstreamUrl unintentionally, but it looks like it does `setGlobalConfig` with whatever is passed.
-    // Let's first get existing config to preserve upstreamUrl if not in form.
+    // Get existing config to preserve upstreamUrl
     const existingConfig = await db.getGlobalConfig();
     const upstreamUrl = existingConfig.upstreamUrl; // Preserve existing
 
     await db.setGlobalConfig({
         upstreamUrl, // Explicitly preserve
-        upstreamSources,
         uaWhitelist,
         logRetentionDays,
         maxUserSubscriptions: parseInt(formData.get('maxUserSubscriptions') as string) || 0
@@ -44,15 +30,6 @@ export async function updateGlobalConfig(formData: FormData) {
     // Trigger cleanup immediately
     if (logRetentionDays > 0) {
         await db.cleanupLogs(logRetentionDays);
-    }
-
-    // Immediately cache the upstream subscription if sources changed
-    const currentSources = existingConfig.upstreamSources || [];
-    const hasChanges = JSON.stringify(upstreamSources) !== JSON.stringify(currentSources);
-
-    if (hasChanges && upstreamSources && upstreamSources.length > 0) {
-        const { refreshUpstreamCache } = await import('@/lib/analysis');
-        await refreshUpstreamCache();
     }
 
     revalidatePath('/admin');
@@ -107,8 +84,7 @@ export async function createUser(formData: FormData) {
     });
 
     // Get default or first upstream source
-    const config = await db.getGlobalConfig();
-    const upstreamSources = config.upstreamSources || [];
+    const upstreamSources = await db.getUpstreamSources();
     let selectedSources: string[] = [];
 
     if (upstreamSources.length > 0) {
