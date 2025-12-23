@@ -60,6 +60,14 @@ export async function GET(
     let effectiveUaWhitelist = config.uaWhitelist || [];
 
     const selectedSourceNames = sub.selectedSources || [];
+
+    // Enforce selection of at least one upstream source
+    if (selectedSourceNames.length === 0) {
+        console.warn(`[API] Subscription ${token} has no upstream sources selected.`);
+        await logAccess(400);
+        return new NextResponse('Configuration Error: No Upstream Sources Selected. Please edit the subscription to select at least one source.', { status: 400 });
+    }
+
     if (selectedSourceNames.length > 0 && config.upstreamSources) {
         const selectedSources = config.upstreamSources.filter(s => selectedSourceNames.includes(s.name));
 
@@ -107,41 +115,51 @@ export async function GET(
     // 5. Ensure upstream data is cached and parsed
     // 5. Ensure upstream data is cached and parsed, and check freshness
     let upstreamCache = await db.getCache('cache:subscription');
-    const upstreamLastUpdated = config.upstreamLastUpdated || 0;
 
-    // Check if upstream data is stale relative to THIS subscription's cache duration
-    // cacheDuration is in hours, so convert to ms
-    const maxAgeMs = cacheDuration * 60 * 60 * 1000;
-    const currentAge = Date.now() - upstreamLastUpdated;
-    const isStale = currentAge > maxAgeMs;
+    // Check freshness for each selected source individually
+    const sourcesToCheck = config.upstreamSources && selectedSourceNames.length > 0
+        ? config.upstreamSources.filter(s => selectedSourceNames.includes(s.name))
+        : (config.upstreamSources || []);
 
-    console.log(`🔍 Freshness Check:
-    - Token: ${token.substring(0, 6)}...
-    - CacheDuration: ${cacheDuration}h
-    - LastUpdated: ${new Date(upstreamLastUpdated).toISOString()}
-    - CurrentAge: ${(currentAge / 1000).toFixed(1)}s
-    - Threshold: ${(maxAgeMs / 1000).toFixed(1)}s
-    - IsStale: ${isStale}
-    - UpstreamCacheExists: ${!!upstreamCache}`);
+    // If no specific sources selected (unlikely given previous logic), check all default
 
-    if (!upstreamCache || isStale) {
-        console.log(`🔄 Upstream cache missing or stale. Triggering refresh...`);
-        const { refreshUpstreamCache } = await import('@/lib/analysis');
-        const success = await refreshUpstreamCache();
+    const now = Date.now();
+    const staleSources: string[] = [];
 
-        if (!success) {
-            // If refresh failed but we have old cache, maybe we can still use it?
-            // For now, strict behavior: if we can't get fresh data, we fail or warn.
-            // But if upstreamCache exists (just stale), we might want to fallback to it.
-            if (!upstreamCache) {
-                await logAccess(502);
-                return new NextResponse('Failed to fetch upstream subscription', { status: 502 });
-            }
-            console.warn('⚠️ Upstream refresh failed, serving stale data.');
-        } else {
-            // Refresh succeeded, get the new cache just to be sure (though we rely on DB mostly)
-            upstreamCache = await db.getCache('cache:subscription');
+    for (const source of sourcesToCheck) {
+        const durationHours = source.cacheDuration || config.cacheDuration || 24;
+        const maxAgeMs = durationHours * 60 * 60 * 1000;
+        const lastUpdated = source.lastUpdated || 0;
+        const currentAge = now - lastUpdated;
+
+        const isStale = currentAge > maxAgeMs || source.status === 'failure' || !source.lastUpdated;
+
+        console.log(`🔍 Freshness Check [${source.name}]:
+        - CacheDuration: ${durationHours}h
+        - LastUpdated: ${lastUpdated ? new Date(lastUpdated).toISOString() : 'Never'}
+        - CurrentAge: ${(currentAge / 1000).toFixed(1)}s
+        - Threshold: ${(maxAgeMs / 1000).toFixed(1)}s
+        - IsStale: ${isStale}`);
+
+        if (isStale) {
+            staleSources.push(source.name);
         }
+    }
+
+    if (staleSources.length > 0) {
+        console.log(`🔄 Found ${staleSources.length} stale sources: ${staleSources.join(', ')}. Triggering refresh...`);
+        const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+
+        // Refresh stale sources in parallel
+        await Promise.all(staleSources.map(async (sourceName) => {
+            const source = config.upstreamSources?.find(s => s.name === sourceName);
+            if (source) {
+                await refreshSingleUpstreamSource(sourceName, source.url);
+            }
+        }));
+
+        // Refresh succeeded (or tried to), get the new cache
+        upstreamCache = await db.getCache('cache:subscription');
     }
 
     // 6. Build subscription YAML from structured database data
@@ -149,8 +167,8 @@ export async function GET(
         const finalYaml = await buildSubscriptionYaml(sub);
 
         // Cache the built YAML with subscription-specific duration (in hours)
-        const cacheExpireMs = cacheDuration * 60 * 60 * 1000; // Convert hours to milliseconds
-        await db.setCache(cacheKey, finalYaml, Date.now() + cacheExpireMs);
+        const cacheExpireSeconds = Math.floor(cacheDuration * 60 * 60); // Convert hours to seconds
+        await db.setCache(cacheKey, finalYaml, cacheExpireSeconds);
 
         console.log(`✅ Built and cached subscription for token: ${token}, cache duration: ${cacheDuration}h`);
 

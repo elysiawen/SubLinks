@@ -17,12 +17,16 @@ export default async function AdminSubscriptionsPage() {
         .filter(g => g.source !== 'custom')
         .map(g => g.name);
 
+    const config = await db.getGlobalConfig();
+    const availableSources = config.upstreamSources || [];
+
     return (
         <div className="space-y-6">
             <AdminSubsClient
                 initialSubs={subs}
                 configSets={{ groups: groupSets, rules: ruleSets }}
                 defaultGroups={defaultGroups}
+                availableSources={availableSources}
             />
         </div>
     );

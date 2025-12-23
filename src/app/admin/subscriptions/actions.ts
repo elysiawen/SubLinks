@@ -70,6 +70,16 @@ export async function updateAdminSubscription(
         selectedSources: data.selectedSources ?? sub.selectedSources
     };
 
+    // Filter out any empty strings from selectedSources
+    if (updatedSub.selectedSources) {
+        updatedSub.selectedSources = updatedSub.selectedSources.filter(s => s.trim() !== '');
+    }
+
+    // Ensure at least one source is selected
+    if (!updatedSub.selectedSources || updatedSub.selectedSources.length === 0) {
+        return { error: 'At least one upstream source must be selected' };
+    }
+
     await db.updateSubscription(token, updatedSub);
 
     // Invalidate cache

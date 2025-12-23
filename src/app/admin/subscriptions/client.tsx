@@ -28,11 +28,13 @@ interface ConfigSets {
 export default function AdminSubsClient({
     initialSubs,
     configSets,
-    defaultGroups
+    defaultGroups,
+    availableSources
 }: {
     initialSubs: Sub[],
     configSets: ConfigSets,
-    defaultGroups: string[]
+    defaultGroups: string[],
+    availableSources: { name: string; url: string }[]
 }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
@@ -46,6 +48,7 @@ export default function AdminSubsClient({
     const [formGroupId, setFormGroupId] = useState('default');
     const [formRuleId, setFormRuleId] = useState('default');
     const [formCustomRules, setFormCustomRules] = useState('');
+    const [formSelectedSources, setFormSelectedSources] = useState<string[]>([]);
 
     // Rule Builder State
     const [ruleMode, setRuleMode] = useState<'simple' | 'advanced'>('simple');
@@ -159,6 +162,7 @@ export default function AdminSubsClient({
         setFormGroupId(sub.groupId || 'default');
         setFormRuleId(sub.ruleId || 'default');
         setFormCustomRules(sub.customRules);
+        setFormSelectedSources(sub.selectedSources || availableSources.map(s => s.name));
 
         // Initialize GUI state
         syncTextToGui(sub.customRules);
@@ -173,7 +177,8 @@ export default function AdminSubsClient({
             enabled: formEnabled,
             groupId: formGroupId,
             ruleId: formRuleId,
-            customRules: formCustomRules
+            customRules: formCustomRules,
+            selectedSources: formSelectedSources
         });
         setLoading(false);
         setEditingSub(null);
@@ -382,6 +387,33 @@ export default function AdminSubsClient({
                                     onChange={e => setFormRemark(e.target.value)}
                                 />
                             </div>
+
+                            {/* Upstream Source Selection */}
+                            {availableSources.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">选择上游源</label>
+                                    <div className="border border-gray-200 rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto bg-gray-50">
+                                        {availableSources.map(source => (
+                                            <label key={source.name} className="flex items-center gap-2 cursor-pointer hover:bg-white px-2 py-1 rounded transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formSelectedSources.includes(source.name)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setFormSelectedSources([...formSelectedSources, source.name]);
+                                                        } else {
+                                                            setFormSelectedSources(formSelectedSources.filter(s => s !== source.name));
+                                                        }
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700">{source.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">至少选择一个上游源</p>
+                                </div>
+                            )}
 
                             <div className="flex items-center gap-2">
                                 <label className="block text-sm font-medium text-gray-700">状态:</label>

@@ -64,6 +64,9 @@ export interface UpstreamSource {
     cacheDuration?: number; // Cache duration in hours
     uaWhitelist?: string[]; // UA whitelist
     isDefault?: boolean; // Mark as default source for new users/subscriptions
+    lastUpdated?: number; // Timestamp of last refresh
+    status?: 'pending' | 'success' | 'failure'; // Status of last refresh
+    error?: string; // Error message if failed
 }
 
 export interface GlobalConfig {

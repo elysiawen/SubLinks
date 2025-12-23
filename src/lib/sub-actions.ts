@@ -47,6 +47,13 @@ export async function createSubscription(remark: string, customRules: string, gr
         createdAt: Date.now()
     };
 
+    // Filter out empty strings
+    subData.selectedSources = subData.selectedSources?.filter(s => s.trim() !== '') || [];
+
+    if (!subData.selectedSources || subData.selectedSources.length === 0) {
+        return { error: '至少选择一个上游源' };
+    }
+
     await db.createSubscription(token, session.username, subData);
 
     revalidatePath('/dashboard');
@@ -82,7 +89,14 @@ export async function updateSubscription(token: string, remark: string, customRu
     subData.customRules = customRules;
     subData.groupId = groupId;
     subData.ruleId = ruleId;
-    subData.selectedSources = selectedSources;
+    subData.ruleId = ruleId;
+
+    // Filter and Validate selectedSources
+    const filteredSources = selectedSources.filter(s => s.trim() !== '');
+    if (filteredSources.length === 0) {
+        return { error: '至少选择一个上游源' };
+    }
+    subData.selectedSources = filteredSources;
 
     await db.updateSubscription(token, subData);
 

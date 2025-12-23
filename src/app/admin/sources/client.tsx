@@ -5,6 +5,8 @@ import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRef
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 interface UpstreamSource {
     name: string;
@@ -12,6 +14,9 @@ interface UpstreamSource {
     cacheDuration?: number;
     uaWhitelist?: string[];
     isDefault?: boolean;
+    lastUpdated?: number;
+    status?: 'pending' | 'success' | 'failure';
+    error?: string;
 }
 
 export default function UpstreamSourcesClient({ sources: initialSources }: { sources: UpstreamSource[] }) {
@@ -334,6 +339,17 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                             {source.uaWhitelist && source.uaWhitelist.length > 0 && (
                                                 <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
                                                     🔒 UA限制
+                                                </span>
+                                            )}
+                                            {source.lastUpdated && (
+                                                <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                                                    {source.status === 'failure' ? '❌' : '✅'}
+                                                    {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: zhCN })}
+                                                </span>
+                                            )}
+                                            {source.status === 'failure' && source.error && (
+                                                <span className="bg-red-50 text-red-600 px-2 py-1 rounded" title={source.error}>
+                                                    ⚠️ {source.error}
                                                 </span>
                                             )}
                                         </div>

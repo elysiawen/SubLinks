@@ -118,7 +118,10 @@ export async function updateUpstreamSource(
         return { error: 'Source not found' };
     }
 
+    // Preserve existing properties like isDefault, lastUpdated, status, error
+    const existingSource = sources[index];
     sources[index] = {
+        ...existingSource,
         name: newName,
         url,
         cacheDuration,

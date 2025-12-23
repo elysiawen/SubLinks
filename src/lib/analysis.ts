@@ -54,75 +54,140 @@ export async function getParsedConfig(): Promise<ClashConfig | null> {
     }
 }
 
+const runningRefreshes = new Map<string, Promise<boolean>>();
+
 /**
  * Refresh a single upstream source (used when adding new sources)
  */
 export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl: string) {
-    try {
-        console.log(`📥 Fetching from upstream source [${sourceName}]: ${sourceUrl.substring(0, 50)}...`);
+    // Check if refresh is already running for this source
+    if (runningRefreshes.has(sourceName)) {
+        console.log(`🔄 Refresh already in progress for [${sourceName}], joining...`);
+        return runningRefreshes.get(sourceName)!;
+    }
 
-        const res = await fetch(sourceUrl, {
-            headers: {
-                'User-Agent': 'Clash/Vercel-Sub-Manager'
+    const refreshTask = (async () => {
+        try {
+            console.log(`📥 Fetching from upstream source [${sourceName}]: ${sourceUrl.substring(0, 50)}...`);
+
+            const res = await fetch(sourceUrl, {
+                headers: {
+                    'User-Agent': 'Clash/Vercel-Sub-Manager'
+                }
+            });
+
+            if (!res.ok) {
+                console.error(`   ❌ Source [${sourceName}] failed: ${res.status}`);
+                await db.createSystemLog({
+                    category: 'error',
+                    message: `Failed to fetch upstream source: ${sourceName}`,
+                    status: 'failure',
+                    details: { status: res.status, url: sourceUrl },
+                    timestamp: Date.now()
+                });
+
+                // Update source status to failure
+                const globalConfig = await db.getGlobalConfig();
+                const updatedSources = globalConfig.upstreamSources?.map(s => {
+                    if (s.name === sourceName) {
+                        return {
+                            ...s,
+                            lastUpdated: Date.now(),
+                            status: 'failure' as const,
+                            error: `HTTP Error: ${res.status}`
+                        };
+                    }
+                    return s;
+                });
+                await db.setGlobalConfig({ ...globalConfig, upstreamSources: updatedSources });
+
+                return false;
             }
-        });
 
-        if (!res.ok) {
-            console.error(`   ❌ Source [${sourceName}] failed: ${res.status}`);
+            const content = await res.text();
+
+            // Clear existing data for this source before adding new data
+            console.log(`   🗑️ Clearing old data for source [${sourceName}]...`);
+            await db.clearProxies(sourceName);
+            await db.clearProxyGroups(sourceName);
+            await db.clearRules(sourceName);
+
+            // Parse and store with source name
+            await parseAndStoreUpstream(content, sourceName);
+
+            console.log(`✅ Source [${sourceName}] fetched and parsed successfully.`);
+
+            // Log success
             await db.createSystemLog({
-                category: 'error',
-                message: `Failed to fetch upstream source: ${sourceName}`,
-                status: 'failure',
-                details: { status: res.status, url: sourceUrl },
+                category: 'update',
+                message: `Upstream source added and cached: ${sourceName}`,
+                status: 'success',
                 timestamp: Date.now()
             });
+
+            // Update global config with last updated timestamp
+            // Update global config with last updated timestamp for specific source
+            const globalConfig = await db.getGlobalConfig();
+            const updatedSources = globalConfig.upstreamSources?.map(s => {
+                if (s.name === sourceName) {
+                    return {
+                        ...s,
+                        lastUpdated: Date.now(),
+                        status: 'success' as const,
+                        error: undefined
+                    };
+                }
+                return s;
+            });
+
+            await db.setGlobalConfig({
+                ...globalConfig,
+                upstreamSources: updatedSources,
+                upstreamLastUpdated: Date.now() // Keep precise global tracking
+            });
+
+            // Clear all subscription caches to ensure they pick up the new/updated source data
+            console.log('🗑️ Clearing all subscription caches (triggered by single source update)...');
+            await db.clearAllSubscriptionCaches();
+
+            return true;
+        } catch (e) {
+            console.error(`Failed to refresh upstream source [${sourceName}]:`, e);
+            await db.createSystemLog({
+                category: 'error',
+                message: `Failed to refresh upstream source: ${sourceName}`,
+                status: 'failure',
+                details: { error: String(e) },
+                timestamp: Date.now()
+            });
+
+            // Update source status to failure on exception
+            try {
+                const globalConfig = await db.getGlobalConfig();
+                const updatedSources = globalConfig.upstreamSources?.map(s => {
+                    if (s.name === sourceName) {
+                        return {
+                            ...s,
+                            lastUpdated: Date.now(),
+                            status: 'failure' as const,
+                            error: String(e)
+                        };
+                    }
+                    return s;
+                });
+                await db.setGlobalConfig({ ...globalConfig, upstreamSources: updatedSources });
+            } catch (dbError) {
+                console.error('Failed to update source failure status:', dbError);
+            }
+
             return false;
+        } finally {
+            runningRefreshes.delete(sourceName);
         }
+    })();
 
-        const content = await res.text();
-
-        // Clear existing data for this source before adding new data
-        console.log(`   🗑️ Clearing old data for source [${sourceName}]...`);
-        await db.clearProxies(sourceName);
-        await db.clearProxyGroups(sourceName);
-        await db.clearRules(sourceName);
-
-        // Parse and store with source name
-        await parseAndStoreUpstream(content, sourceName);
-
-        console.log(`✅ Source [${sourceName}] fetched and parsed successfully.`);
-
-        // Log success
-        await db.createSystemLog({
-            category: 'update',
-            message: `Upstream source added and cached: ${sourceName}`,
-            status: 'success',
-            timestamp: Date.now()
-        });
-
-        // Update global config with last updated timestamp
-        const globalConfig = await db.getGlobalConfig();
-        await db.setGlobalConfig({
-            ...globalConfig,
-            upstreamLastUpdated: Date.now()
-        });
-
-        // Clear all subscription caches to ensure they pick up the new/updated source data
-        console.log('🗑️ Clearing all subscription caches (triggered by single source update)...');
-        await db.clearAllSubscriptionCaches();
-
-        return true;
-    } catch (e) {
-        console.error(`Failed to refresh upstream source [${sourceName}]:`, e);
-        await db.createSystemLog({
-            category: 'error',
-            message: `Failed to refresh upstream source: ${sourceName}`,
-            status: 'failure',
-            details: { error: String(e) },
-            timestamp: Date.now()
-        });
-        return false;
-    }
+    runningRefreshes.set(sourceName, refreshTask);
+    return refreshTask;
 }
 
 
@@ -187,6 +252,24 @@ export async function refreshUpstreamCache() {
 
                     if (!res.ok) {
                         console.error(`   ❌ Source [${source.name}] failed: ${res.status}`);
+
+                        // Update failure status
+                        const currentConfig = await db.getGlobalConfig();
+                        if (currentConfig.upstreamSources) {
+                            const updatedSources = currentConfig.upstreamSources.map(s => {
+                                if (s.name === source.name) {
+                                    return {
+                                        ...s,
+                                        lastUpdated: Date.now(),
+                                        status: 'failure' as const,
+                                        error: `HTTP Error: ${res.status}`
+                                    };
+                                }
+                                return s;
+                            });
+                            await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
+                        }
+
                         continue;
                     }
 
@@ -201,8 +284,43 @@ export async function refreshUpstreamCache() {
                     }
 
                     console.log(`   ✓ Source [${source.name}] parsed successfully`);
+
+                    // Update success status
+                    const currentConfig = await db.getGlobalConfig();
+                    if (currentConfig.upstreamSources) {
+                        const updatedSources = currentConfig.upstreamSources.map(s => {
+                            if (s.name === source.name) {
+                                return {
+                                    ...s,
+                                    lastUpdated: Date.now(),
+                                    status: 'success' as const,
+                                    error: undefined
+                                };
+                            }
+                            return s;
+                        });
+                        await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
+                    }
+
                 } catch (error) {
                     console.error(`   ❌ Source [${source.name}] error:`, error);
+
+                    // Update failure status on exception
+                    const currentConfig = await db.getGlobalConfig();
+                    if (currentConfig.upstreamSources) {
+                        const updatedSources = currentConfig.upstreamSources.map(s => {
+                            if (s.name === source.name) {
+                                return {
+                                    ...s,
+                                    lastUpdated: Date.now(),
+                                    status: 'failure' as const,
+                                    error: String(error)
+                                };
+                            }
+                            return s;
+                        });
+                        await db.setGlobalConfig({ ...currentConfig, upstreamSources: updatedSources });
+                    }
                 }
             }
 
