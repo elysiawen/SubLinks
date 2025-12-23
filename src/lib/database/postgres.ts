@@ -551,19 +551,18 @@ export default class PostgresDatabase implements IDatabase {
 
     // Cache operations
     async getCache(key: string): Promise<string | null> {
-        // Clean up expired cache
-        await this.pool.query('DELETE FROM cache WHERE expires_at IS NOT NULL AND expires_at < $1', [Date.now()]);
-
+        // No expiration check needed as per new infinite cache strategy
         const result = await this.pool.query(
-            'SELECT value FROM cache WHERE key = $1 AND (expires_at IS NULL OR expires_at > $2)',
-            [key, Date.now()]
+            'SELECT value FROM cache WHERE key = $1',
+            [key]
         );
         if (result.rows.length === 0) return null;
         return result.rows[0].value;
     }
 
     async setCache(key: string, value: string, ttl?: number): Promise<void> {
-        const expiresAt = ttl ? Date.now() + ttl * 1000 : null;
+        // expires_at column is reused to store 'created_at' timestamp since we removed expiration logic.
+        const expiresAt = Date.now();
         await this.pool.query(
             `INSERT INTO cache (key, value, expires_at)
              VALUES ($1, $2, $3)

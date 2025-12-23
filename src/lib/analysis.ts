@@ -206,7 +206,8 @@ export async function refreshUpstreamCache() {
     refreshPromise = (async () => {
         try {
             const config = await db.getGlobalConfig();
-            const cacheDuration = (config.cacheDuration || 24) * 3600;
+            // Default legacy cache check
+            const cacheDuration = 24 * 3600;
 
             // Get upstream sources - support both new and legacy formats
             let sources: { name: string; url: string }[] = [];

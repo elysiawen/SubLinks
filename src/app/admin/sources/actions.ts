@@ -80,7 +80,6 @@ export async function deleteUpstreamSource(sourceName: string) {
 export async function updateSystemSettings(formData: FormData) {
     const globalConfig = await db.getGlobalConfig();
 
-    const cacheDuration = parseInt(formData.get('cacheDuration') as string) || 24;
     const uaWhitelistStr = formData.get('uaWhitelist') as string;
     const uaWhitelist = uaWhitelistStr
         ? uaWhitelistStr.split(',').map(s => s.trim()).filter(Boolean)
@@ -88,7 +87,6 @@ export async function updateSystemSettings(formData: FormData) {
 
     await db.setGlobalConfig({
         ...globalConfig,
-        cacheDuration,
         uaWhitelist
     });
 
@@ -158,6 +156,8 @@ export async function updateUpstreamSource(
     }
 
     // Note: We don't refresh upstream cache here - only when adding new sources or force refresh
+    // Editing just updates the configuration, actual data refresh happens on schedule or manual trigger
+
     // Editing just updates the configuration, actual data refresh happens on schedule or manual trigger
 
     revalidatePath('/admin/sources');

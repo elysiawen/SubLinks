@@ -60,7 +60,6 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">🗑️</span> 日志自动清理
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('cacheDuration', config.cacheDuration?.toString() || '24');
                     formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
 
@@ -113,7 +112,6 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">👤</span> 用户限制
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('cacheDuration', config.cacheDuration?.toString() || '24');
                     formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
                     formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');

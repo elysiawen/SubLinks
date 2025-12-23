@@ -64,13 +64,19 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
         setFormUrl(source.url);
 
         // Smart unit detection
-        const duration = source.cacheDuration || 24;
-        if (duration < 1 && duration > 0) {
-            setFormCacheDuration(String(Math.round(duration * 60)));
-            setFormDurationUnit('minutes');
-        } else {
-            setFormCacheDuration(String(duration));
+        const duration = source.cacheDuration;
+        if (duration === 0) {
+            setFormCacheDuration('0');
             setFormDurationUnit('hours');
+        } else {
+            const effectiveDuration = duration || 24;
+            if (effectiveDuration < 1 && effectiveDuration > 0) {
+                setFormCacheDuration(String(Math.round(effectiveDuration * 60)));
+                setFormDurationUnit('minutes');
+            } else {
+                setFormCacheDuration(String(effectiveDuration));
+                setFormDurationUnit('hours');
+            }
         }
 
         setFormUaWhitelist((source.uaWhitelist || []).join(', '));
@@ -90,7 +96,7 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
 
         let duration = parseFloat(formCacheDuration);
-        if (isNaN(duration) || duration <= 0) duration = 24;
+        if (isNaN(duration) || duration < 0) duration = 24;
         if (formDurationUnit === 'minutes') {
             duration = duration / 60;
         }
@@ -111,7 +117,7 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
 
         let duration = parseFloat(formCacheDuration);
-        if (isNaN(duration) || duration <= 0) duration = 24;
+        if (isNaN(duration) || duration < 0) duration = 24;
         if (formDurationUnit === 'minutes') {
             duration = duration / 60;
         }
@@ -271,8 +277,10 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                 </select>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                设置多久从上游源重新获取一次订阅数据
-                                (当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})
+                                设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
+                                {formCacheDuration !== '0' && (
+                                    <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
+                                )}
                             </p>
                         </div>
                         <div>
@@ -331,10 +339,13 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                         </div>
                                         <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
                                         <div className="flex flex-wrap gap-2 text-xs mb-2">
-                                            <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
-                                                🕒 {(source.cacheDuration || 24) < 1
-                                                    ? `${Math.round((source.cacheDuration || 0) * 60)}m`
-                                                    : `${source.cacheDuration || 24}h`}
+                                            <span className={(source.cacheDuration === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
+                                                {(source.cacheDuration === 0)
+                                                    ? '♾️ 永不失效'
+                                                    : `🕒 ${(source.cacheDuration || 24) < 1
+                                                        ? `${Math.round((source.cacheDuration || 0) * 60)}m`
+                                                        : `${source.cacheDuration || 24}h`}`
+                                                }
                                             </span>
                                             {source.uaWhitelist && source.uaWhitelist.length > 0 && (
                                                 <span className="bg-green-50 text-green-600 px-2 py-1 rounded">

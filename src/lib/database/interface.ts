@@ -72,7 +72,6 @@ export interface UpstreamSource {
 export interface GlobalConfig {
     upstreamUrl?: string | string[];
     upstreamSources?: UpstreamSource[];
-    cacheDuration?: number;
     uaWhitelist?: string[];
     logRetentionDays?: number;
     maxUserSubscriptions?: number; // 0 means unlimited

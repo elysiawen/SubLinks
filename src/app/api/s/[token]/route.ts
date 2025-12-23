@@ -56,7 +56,7 @@ export async function GET(
     }
 
     // 3. Calculate effective settings from selected sources
-    let effectiveCacheDuration = config.cacheDuration || 24;
+    let effectiveCacheDuration = 24; // Default to 24 hours if no specific source duration
     let effectiveUaWhitelist = config.uaWhitelist || [];
 
     const selectedSourceNames = sub.selectedSources || [];
@@ -73,8 +73,16 @@ export async function GET(
 
         // Use minimum cache duration from selected sources if available
         const sourceDurations = selectedSources.map(s => s.cacheDuration).filter(d => d !== undefined) as number[];
-        if (sourceDurations.length > 0) {
-            effectiveCacheDuration = Math.min(...sourceDurations);
+
+        // Handle infinite cache (0) mixed with finite durations
+        // If we have mixed 0 and non-0, the subscription should expire based on the SHORTEST finite duration.
+        // If all are 0, then it is infinite.
+        const finiteDurations = sourceDurations.filter(d => d > 0);
+
+        if (finiteDurations.length > 0) {
+            effectiveCacheDuration = Math.min(...finiteDurations);
+        } else if (sourceDurations.some(d => d === 0)) {
+            effectiveCacheDuration = 0; // All sources are infinite
         }
 
         // Merge UA whitelists
@@ -94,9 +102,83 @@ export async function GET(
         }
     }
 
-    // 5. Check cache with subscription-specific cache key and duration
+    // 5. Ensure upstream data is cached and parsed, and check freshness
+
+    // We check freshness FIRST. If fresh, we check if we have a compiled result.
     const cacheDuration = effectiveCacheDuration;
     const cacheKey = `cache:subscription:${token}`;
+
+    // Check freshness for each selected source individually
+    const sourcesToCheck = config.upstreamSources && selectedSourceNames.length > 0
+        ? config.upstreamSources.filter(s => selectedSourceNames.includes(s.name))
+        : (config.upstreamSources || []);
+
+    const now = Date.now();
+    const staleSources: string[] = [];
+
+    try {
+        for (const source of sourcesToCheck) {
+            // cacheDuration: 0 means never expire. If undefined, default to 24h as safety legacy fallback? 
+            // User requested "Must configure". Let's say if NOT 0 and NOT defined -> 24h default?
+            // User said: "must configure cache time, if 0 then cache does not expire"
+            // If it is undefined, we probably should treat it as "not configured" -> maybe default 24h or error?
+            // Given existing data might be missing it, defaulting to 24h for undefined is safer than 0.
+            // But if it IS 0, we skip check.
+
+            const durationHours = source.cacheDuration;
+
+            if (durationHours === 0) {
+                // Never expires, but we must ensure it has been fetched at least once
+                // If never updated (lastUpdated is 0 or undefined), we MUST check it.
+                if (source.lastUpdated && source.lastUpdated > 0) {
+                    continue;
+                }
+                // If never updated, fall through to check logic (which will find it stale because lastUpdated is 0)
+            }
+
+            const effectiveDuration = durationHours || 24;
+            const maxAgeMs = effectiveDuration * 60 * 60 * 1000;
+            const lastUpdated = source.lastUpdated || 0;
+            const currentAge = now - lastUpdated;
+
+            const isStale = currentAge > maxAgeMs || source.status === 'failure' || !source.lastUpdated;
+
+            console.log(`🔍 Freshness Check [${source.name}]:
+            - CacheDuration: ${durationHours}h
+            - LastUpdated: ${lastUpdated ? new Date(lastUpdated).toISOString() : 'Never'}
+            - CurrentAge: ${(currentAge / 1000).toFixed(1)}s
+            - Threshold: ${(maxAgeMs / 1000).toFixed(1)}s
+            - IsStale: ${isStale}`);
+
+            if (isStale) {
+                staleSources.push(source.name);
+            }
+        }
+
+        if (staleSources.length > 0) {
+            console.log(`🔄 Found ${staleSources.length} stale sources: ${staleSources.join(', ')}. Triggering refresh...`);
+            const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+
+            // Refresh stale sources in parallel
+            await Promise.all(staleSources.map(async (sourceName) => {
+                const source = config.upstreamSources?.find(s => s.name === sourceName);
+                if (source) {
+                    await refreshSingleUpstreamSource(sourceName, source.url);
+                }
+            }));
+
+            // If we successfully triggered refresh (even if some failed, they log errors themselves),
+            // we should assume new data might be available or attempted.
+            // We clear current subscription result cache to force a rebuild logic to run
+            await db.deleteCache(cacheKey);
+        }
+    } catch (e) {
+        console.error('Error during upstream freshness check:', e);
+        // Continue to serve whatever we have or try to build
+    }
+
+    // 6. Check cache with subscription-specific cache key and duration
+    // Note: We check this AFTER validity check. If validity check caused a refresh, cache would be missing.
     let cachedYaml = await db.getCache(cacheKey);
 
     if (cachedYaml) {
@@ -112,63 +194,15 @@ export async function GET(
         });
     }
 
-    // 5. Ensure upstream data is cached and parsed
-    // 5. Ensure upstream data is cached and parsed, and check freshness
-    let upstreamCache = await db.getCache('cache:subscription');
-
-    // Check freshness for each selected source individually
-    const sourcesToCheck = config.upstreamSources && selectedSourceNames.length > 0
-        ? config.upstreamSources.filter(s => selectedSourceNames.includes(s.name))
-        : (config.upstreamSources || []);
-
-    // If no specific sources selected (unlikely given previous logic), check all default
-
-    const now = Date.now();
-    const staleSources: string[] = [];
-
-    for (const source of sourcesToCheck) {
-        const durationHours = source.cacheDuration || config.cacheDuration || 24;
-        const maxAgeMs = durationHours * 60 * 60 * 1000;
-        const lastUpdated = source.lastUpdated || 0;
-        const currentAge = now - lastUpdated;
-
-        const isStale = currentAge > maxAgeMs || source.status === 'failure' || !source.lastUpdated;
-
-        console.log(`🔍 Freshness Check [${source.name}]:
-        - CacheDuration: ${durationHours}h
-        - LastUpdated: ${lastUpdated ? new Date(lastUpdated).toISOString() : 'Never'}
-        - CurrentAge: ${(currentAge / 1000).toFixed(1)}s
-        - Threshold: ${(maxAgeMs / 1000).toFixed(1)}s
-        - IsStale: ${isStale}`);
-
-        if (isStale) {
-            staleSources.push(source.name);
-        }
-    }
-
-    if (staleSources.length > 0) {
-        console.log(`🔄 Found ${staleSources.length} stale sources: ${staleSources.join(', ')}. Triggering refresh...`);
-        const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
-
-        // Refresh stale sources in parallel
-        await Promise.all(staleSources.map(async (sourceName) => {
-            const source = config.upstreamSources?.find(s => s.name === sourceName);
-            if (source) {
-                await refreshSingleUpstreamSource(sourceName, source.url);
-            }
-        }));
-
-        // Refresh succeeded (or tried to), get the new cache
-        upstreamCache = await db.getCache('cache:subscription');
-    }
-
     // 6. Build subscription YAML from structured database data
     try {
         const finalYaml = await buildSubscriptionYaml(sub);
 
-        // Cache the built YAML with subscription-specific duration (in hours)
-        const cacheExpireSeconds = Math.floor(cacheDuration * 60 * 60); // Convert hours to seconds
-        await db.setCache(cacheKey, finalYaml, cacheExpireSeconds);
+        // Cache the built YAML with NO expiration (infinite).
+        // It will only be invalidated if:
+        // 1. Subscription is edited (sub-actions.ts)
+        // 2. Upstream source is updated (analysis.ts)
+        await db.setCache(cacheKey, finalYaml);
 
         console.log(`✅ Built and cached subscription for token: ${token}, cache duration: ${cacheDuration}h`);
 
