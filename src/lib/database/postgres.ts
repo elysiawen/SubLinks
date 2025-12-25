@@ -19,31 +19,8 @@ export default class PostgresDatabase implements IDatabase {
             }
         });
 
-        // Start automatic cleanup of expired sessions every hour
-        this.startSessionCleanup();
-    }
-
-    private startSessionCleanup() {
-        // Clean up expired sessions every hour
-        this.cleanupTimer = setInterval(async () => {
-            try {
-                const result = await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
-                if (result.rowCount && result.rowCount > 0) {
-                    console.log(`🧹 Cleaned up ${result.rowCount} expired sessions`);
-                }
-            } catch (error) {
-                console.error('Session cleanup error:', error);
-            }
-        }, 60 * 60 * 1000); // Every hour
-
-        // Also run cleanup immediately on startup
-        this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()])
-            .then(result => {
-                if (result.rowCount && result.rowCount > 0) {
-                    console.log(`🧹 Initial cleanup: removed ${result.rowCount} expired sessions`);
-                }
-            })
-            .catch(err => console.error('Initial session cleanup error:', err));
+        // No background timer in serverless.
+        // Session cleanup is handled lazily in getSession, or use a Cron Job.
     }
 
     private async ensureInitialized() {

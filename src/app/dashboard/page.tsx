@@ -5,7 +5,7 @@ import DashboardClient from './client';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
-import { getParsedConfig } from '@/lib/analysis';
+
 
 export const dynamic = 'force-dynamic';
 
