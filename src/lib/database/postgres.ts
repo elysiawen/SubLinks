@@ -650,6 +650,9 @@ export default class PostgresDatabase implements IDatabase {
                 case 'upstreamUserAgent':
                     config.upstreamUserAgent = row.value;
                     break;
+                case 'customBackgroundUrl':
+                    config.customBackgroundUrl = row.value;
+                    break;
             }
         }
 
@@ -682,6 +685,10 @@ export default class PostgresDatabase implements IDatabase {
 
             if (data.upstreamUserAgent !== undefined) {
                 updates.push(['upstreamUserAgent', data.upstreamUserAgent]);
+            }
+
+            if (data.customBackgroundUrl !== undefined) {
+                updates.push(['customBackgroundUrl', data.customBackgroundUrl]);
             }
 
             for (const [key, value] of updates) {

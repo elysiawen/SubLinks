@@ -31,7 +31,8 @@ export async function updateGlobalConfig(formData: FormData) {
         uaWhitelist,
         refreshApiKey: existingConfig.refreshApiKey,
         upstreamLastUpdated: existingConfig.upstreamLastUpdated,
-        upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined
+        upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined,
+        customBackgroundUrl: (formData.get('customBackgroundUrl') as string) || undefined
     });
 
     // Trigger cleanup immediately

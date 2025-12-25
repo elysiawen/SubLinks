@@ -90,6 +90,7 @@ export interface GlobalConfig {
     upstreamLastUpdated?: number;
     updatedAt?: number;
     upstreamUserAgent?: string; // Custom User-Agent for fetching upstream
+    customBackgroundUrl?: string; // Custom background image URL for root page
 }
 
 // Structured upstream data types
