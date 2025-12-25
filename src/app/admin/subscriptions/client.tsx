@@ -6,6 +6,7 @@ import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import { SubmitButton } from '@/components/SubmitButton';
 import Modal from '@/components/Modal';
 
 interface Sub {
@@ -563,13 +564,11 @@ export default function AdminSubsClient({
                             >
                                 取消
                             </button>
-                            <button
+                            <SubmitButton
                                 onClick={handleSave}
-                                disabled={loading}
-                                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {loading ? '保存中...' : '保存更改'}
-                            </button>
+                                isLoading={loading}
+                                text="保存更改"
+                            />
                         </div>
                     </>
                 )}

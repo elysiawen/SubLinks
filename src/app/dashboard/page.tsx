@@ -23,19 +23,6 @@ export default async function DashboardPage() {
     }
 
     const subs = await getUserSubscriptions();
-    const groupSets = await getGroupSets();
-    const ruleSets = await getRuleSets();
-
-    // Fetch default groups for Rule Builder
-    // We fetch all groups that are NOT custom sets (source != 'custom')
-    // This includes 'upstream' and any other source names
-    const allGroups = await db.getProxyGroups();
-    const defaultGroups = allGroups
-        .filter(g => g.source !== 'custom') // Filter out custom sets if stored in same table, though they shouldn't be
-        .map(g => g.name);
-
-    // Get available upstream sources
-    const availableSources = await db.getUpstreamSources();
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
@@ -54,9 +41,6 @@ export default async function DashboardPage() {
             initialSubs={mappedSubs}
             username={user.username}
             baseUrl={baseUrl}
-            configSets={{ groups: groupSets, rules: ruleSets }}
-            defaultGroups={defaultGroups}
-            availableSources={availableSources}
         />
     );
 }

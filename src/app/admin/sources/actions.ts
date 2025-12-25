@@ -174,3 +174,9 @@ export async function setDefaultUpstreamSource(sourceName: string) {
     revalidatePath('/admin/sources');
     return { success: true };
 }
+
+// Wrapper for updateRefreshApiKey from config-actions
+export async function updateRefreshApiKey(apiKey: string | null) {
+    const { updateRefreshApiKey: updateKey } = await import('@/lib/config-actions');
+    return await updateKey(apiKey);
+}

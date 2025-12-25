@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 export default class PostgresDatabase implements IDatabase {
     private pool: Pool;
     private initialized: boolean = false;
+    private cleanupTimer?: NodeJS.Timeout;
 
     constructor() {
         if (!process.env.POSTGRES_URL) {
@@ -17,6 +18,32 @@ export default class PostgresDatabase implements IDatabase {
                 rejectUnauthorized: false // Accept self-signed certificates
             }
         });
+
+        // Start automatic cleanup of expired sessions every hour
+        this.startSessionCleanup();
+    }
+
+    private startSessionCleanup() {
+        // Clean up expired sessions every hour
+        this.cleanupTimer = setInterval(async () => {
+            try {
+                const result = await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+                if (result.rowCount && result.rowCount > 0) {
+                    console.log(`🧹 Cleaned up ${result.rowCount} expired sessions`);
+                }
+            } catch (error) {
+                console.error('Session cleanup error:', error);
+            }
+        }, 60 * 60 * 1000); // Every hour
+
+        // Also run cleanup immediately on startup
+        this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()])
+            .then(result => {
+                if (result.rowCount && result.rowCount > 0) {
+                    console.log(`🧹 Initial cleanup: removed ${result.rowCount} expired sessions`);
+                }
+            })
+            .catch(err => console.error('Initial session cleanup error:', err));
     }
 
     private async ensureInitialized() {
@@ -42,12 +69,15 @@ export default class PostgresDatabase implements IDatabase {
                 );
 
                 CREATE TABLE IF NOT EXISTS users (
-                    username VARCHAR(255) PRIMARY KEY,
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    username VARCHAR(255) UNIQUE NOT NULL,
                     password VARCHAR(255) NOT NULL,
                     role VARCHAR(50) NOT NULL,
                     status VARCHAR(50) NOT NULL,
+                    max_subscriptions INTEGER, -- null = follow global, number = custom limit
                     created_at BIGINT NOT NULL
                 );
+                CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
@@ -246,6 +276,95 @@ export default class PostgresDatabase implements IDatabase {
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rules' AND column_name='created_at') THEN
                             ALTER TABLE rules ADD COLUMN created_at BIGINT NOT NULL DEFAULT 0;
                         END IF;
+
+                        -- User UUID Migration
+                        -- Add id column if it doesn't exist
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='id') THEN
+                            ALTER TABLE users ADD COLUMN id UUID DEFAULT gen_random_uuid();
+                            -- Generate UUIDs for existing users
+                            UPDATE users SET id = gen_random_uuid() WHERE id IS NULL;
+                            -- Make id NOT NULL and PRIMARY KEY
+                            ALTER TABLE users ALTER COLUMN id SET NOT NULL;
+                            -- Drop old primary key constraint on username
+                            ALTER TABLE users DROP CONSTRAINT IF EXISTS users_pkey;
+                            -- Add new primary key on id
+                            ALTER TABLE users ADD PRIMARY KEY (id);
+                            -- Make username unique
+                            ALTER TABLE users ADD CONSTRAINT users_username_unique UNIQUE (username);
+                        END IF;
+
+                        -- Sessions: Add user_id column
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='user_id') THEN
+                            ALTER TABLE sessions ADD COLUMN user_id UUID;
+                            -- Populate user_id from username
+                            UPDATE sessions s SET user_id = u.id FROM users u WHERE s.username = u.username;
+                        END IF;
+
+                        -- Subscriptions: Add user_id column
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='user_id') THEN
+                            ALTER TABLE subscriptions ADD COLUMN user_id UUID;
+                            -- Populate user_id from username
+                            UPDATE subscriptions s SET user_id = u.id FROM users u WHERE s.username = u.username;
+                        END IF;
+
+                        -- Users: Add max_subscriptions column
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='max_subscriptions') THEN
+                            ALTER TABLE users ADD COLUMN max_subscriptions INTEGER;
+                            -- Default is NULL (follow global settings)
+                        END IF;
+
+                        -- GlobalConfig Migration: Single JSON row -> Multi-row Key-Value
+                        IF EXISTS (SELECT 1 FROM global_config WHERE key = 'global') THEN
+                            RAISE NOTICE '🔄 Migrating global_config from single JSON row to multi-row Key-Value...';
+                            
+                            DECLARE
+                                old_row RECORD;
+                                config_json JSONB;
+                            BEGIN
+                                -- Get the old global row
+                                SELECT * INTO old_row FROM global_config WHERE key = 'global';
+                                
+                                IF FOUND THEN
+                                    config_json := old_row.value::jsonb;
+                                    
+                                    -- Delete the old row
+                                    DELETE FROM global_config WHERE key = 'global';
+                                    
+                                    -- Insert individual keys
+                                    -- maxUserSubscriptions
+                                    IF config_json->>'maxUserSubscriptions' IS NOT NULL THEN
+                                        INSERT INTO global_config (key, value, updated_at)
+                                        VALUES ('maxUserSubscriptions', config_json->>'maxUserSubscriptions', old_row.updated_at);
+                                    END IF;
+                                    
+                                    -- logRetentionDays
+                                    IF config_json->>'logRetentionDays' IS NOT NULL THEN
+                                        INSERT INTO global_config (key, value, updated_at)
+                                        VALUES ('logRetentionDays', config_json->>'logRetentionDays', old_row.updated_at);
+                                    END IF;
+                                    
+                                    -- uaWhitelist (stored as JSON string)
+                                    IF config_json->'uaWhitelist' IS NOT NULL THEN
+                                        INSERT INTO global_config (key, value, updated_at)
+                                        VALUES ('uaWhitelist', (config_json->'uaWhitelist')::text, old_row.updated_at);
+                                    END IF;
+                                    
+                                    -- refreshApiKey
+                                    IF config_json->>'refreshApiKey' IS NOT NULL THEN
+                                        INSERT INTO global_config (key, value, updated_at)
+                                        VALUES ('refreshApiKey', config_json->>'refreshApiKey', old_row.updated_at);
+                                    END IF;
+                                    
+                                    -- upstreamLastUpdated
+                                    IF config_json->>'upstreamLastUpdated' IS NOT NULL THEN
+                                        INSERT INTO global_config (key, value, updated_at)
+                                        VALUES ('upstreamLastUpdated', config_json->>'upstreamLastUpdated', old_row.updated_at);
+                                    END IF;
+                                    
+                                    RAISE NOTICE '✅ Migration to multi-row completed!';
+                                END IF;
+                            END;
+                        END IF;
                     END $$;
                 `);
             } catch (e) {
@@ -261,28 +380,52 @@ export default class PostgresDatabase implements IDatabase {
     async getUser(username: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT password, role, status, created_at FROM users WHERE username = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, created_at FROM users WHERE username = $1',
             [username]
         );
         if (result.rows.length === 0) return null;
         const row = result.rows[0];
         return {
+            id: row.id,
+            username: row.username,
             password: row.password,
             role: row.role,
             status: row.status,
+            maxSubscriptions: row.max_subscriptions,
+            createdAt: parseInt(row.created_at),
+        };
+    }
+
+    async getUserById(id: string): Promise<User | null> {
+        await this.ensureInitialized();
+        const result = await this.pool.query(
+            'SELECT id, username, password, role, status, max_subscriptions, created_at FROM users WHERE id = $1',
+            [id]
+        );
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+        return {
+            id: row.id,
+            username: row.username,
+            password: row.password,
+            role: row.role,
+            status: row.status,
+            maxSubscriptions: row.max_subscriptions,
             createdAt: parseInt(row.created_at),
         };
     }
 
     async setUser(username: string, data: User): Promise<void> {
         await this.pool.query(
-            `INSERT INTO users (username, password, role, status, created_at)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO users (username, password, role, status, max_subscriptions, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (username) DO UPDATE SET
                  password = EXCLUDED.password,
                  role = EXCLUDED.role,
-                 status = EXCLUDED.status`,
-            [username, data.password, data.role, data.status, data.createdAt]
+                 status = EXCLUDED.status,
+                 max_subscriptions = EXCLUDED.max_subscriptions
+             RETURNING id`,
+            [username, data.password, data.role, data.status, data.maxSubscriptions, data.createdAt]
         );
     }
 
@@ -294,10 +437,12 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
         const result = await this.pool.query('SELECT * FROM users');
         return result.rows.map((row) => ({
+            id: row.id,
             username: row.username,
             password: row.password,
             role: row.role,
             status: row.status,
+            maxSubscriptions: row.max_subscriptions,
             createdAt: parseInt(row.created_at),
         }));
     }
@@ -313,14 +458,15 @@ export default class PostgresDatabase implements IDatabase {
         const expiresAt = Date.now() + ttl * 1000;
         const createdAt = Date.now();
         await this.pool.query(
-            `INSERT INTO sessions (session_id, username, role, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO sessions (session_id, user_id, username, role, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (session_id) DO UPDATE SET
+                 user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
                  role = EXCLUDED.role,
                  created_at = EXCLUDED.created_at,
                  expires_at = EXCLUDED.expires_at`,
-            [sessionId, data.username, data.role, createdAt, expiresAt]
+            [sessionId, data.userId, data.username, data.role, createdAt, expiresAt]
         );
     }
 
@@ -332,11 +478,12 @@ export default class PostgresDatabase implements IDatabase {
             await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
             const result = await this.pool.query(
-                'SELECT username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                'SELECT user_id, username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
                 [sessionId, Date.now()]
             );
             if (result.rows.length === 0) return null;
             return {
+                userId: result.rows[0].user_id,
                 username: result.rows[0].username,
                 role: result.rows[0].role,
             };
@@ -349,11 +496,12 @@ export default class PostgresDatabase implements IDatabase {
                 await this.ensureInitialized();
                 // Retry once
                 const result = await this.pool.query(
-                    'SELECT username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                    'SELECT user_id, username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
                     [sessionId, Date.now()]
                 );
                 if (result.rows.length === 0) return null;
                 return {
+                    userId: result.rows[0].user_id,
                     username: result.rows[0].username,
                     role: result.rows[0].role,
                 };
@@ -366,14 +514,24 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM sessions WHERE session_id = $1', [sessionId]);
     }
 
+    async cleanupExpiredSessions(): Promise<number> {
+        const result = await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        return result.rowCount || 0;
+    }
+
     // Subscription operations
     async createSubscription(token: string, username: string, data: SubData): Promise<void> {
+        // Get user_id from username
+        const user = await this.getUser(username);
+        const userId = user?.id || null;
+
         await this.pool.query(
-            `INSERT INTO subscriptions (token, username, remark, group_id, rule_id, custom_rules, selected_sources, enabled, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            `INSERT INTO subscriptions (token, username, user_id, remark, group_id, rule_id, custom_rules, selected_sources, enabled, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
             [
                 token,
                 username,
+                userId,
                 data.remark,
                 data.groupId,
                 data.ruleId,
@@ -470,20 +628,92 @@ export default class PostgresDatabase implements IDatabase {
     // Config operations
     async getGlobalConfig(): Promise<GlobalConfig> {
         await this.ensureInitialized();
-        const result = await this.pool.query('SELECT value FROM global_config WHERE key = $1', ['global']);
-        if (result.rows.length === 0) return {};
-        return JSON.parse(result.rows[0].value);
+        const result = await this.pool.query('SELECT key, value, updated_at FROM global_config');
+
+        // Default config
+        const config: GlobalConfig = {
+            maxUserSubscriptions: 10,
+            logRetentionDays: 30
+        };
+
+        let maxUpdatedAt = 0;
+
+        for (const row of result.rows) {
+            const updatedAt = parseInt(row.updated_at);
+            if (updatedAt > maxUpdatedAt) maxUpdatedAt = updatedAt;
+
+            switch (row.key) {
+                case 'maxUserSubscriptions':
+                    config.maxUserSubscriptions = parseInt(row.value);
+                    break;
+                case 'logRetentionDays':
+                    config.logRetentionDays = parseInt(row.value);
+                    break;
+                case 'uaWhitelist':
+                    try {
+                        config.uaWhitelist = JSON.parse(row.value);
+                    } catch (e) {
+                        console.warn('Failed to parse uaWhitelist:', e);
+                        config.uaWhitelist = [];
+                    }
+                    break;
+                case 'refreshApiKey':
+                    config.refreshApiKey = row.value;
+                    break;
+                case 'upstreamLastUpdated':
+                    config.upstreamLastUpdated = parseInt(row.value);
+                    break;
+            }
+        }
+
+        config.updatedAt = maxUpdatedAt > 0 ? maxUpdatedAt : undefined;
+        return config;
     }
 
     async setGlobalConfig(data: GlobalConfig): Promise<void> {
-        await this.pool.query(
-            `INSERT INTO global_config (key, value, updated_at)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (key) DO UPDATE SET
-                 value = EXCLUDED.value,
-                 updated_at = EXCLUDED.updated_at`,
-            ['global', JSON.stringify(data), Date.now()]
-        );
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const now = Date.now();
+            const updates: [string, string][] = [
+                ['maxUserSubscriptions', data.maxUserSubscriptions.toString()],
+                ['logRetentionDays', data.logRetentionDays.toString()]
+            ];
+
+            if (data.uaWhitelist !== undefined) {
+                updates.push(['uaWhitelist', JSON.stringify(data.uaWhitelist)]);
+            }
+
+            if (data.refreshApiKey !== undefined) {
+                updates.push(['refreshApiKey', data.refreshApiKey]);
+            }
+
+            if (data.upstreamLastUpdated !== undefined) {
+                updates.push(['upstreamLastUpdated', data.upstreamLastUpdated.toString()]);
+            }
+
+            for (const [key, value] of updates) {
+                await client.query(
+                    `INSERT INTO global_config (key, value, updated_at)
+                     VALUES ($1, $2, $3)
+                     ON CONFLICT (key) DO UPDATE SET
+                         value = EXCLUDED.value,
+                         updated_at = CASE 
+                             WHEN global_config.value != EXCLUDED.value THEN EXCLUDED.updated_at 
+                             ELSE global_config.updated_at 
+                         END`,
+                    [key, value, now]
+                );
+            }
+
+            await client.query('COMMIT');
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
     }
 
     async getCustomGroups(): Promise<ConfigSet[]> {
@@ -931,6 +1161,10 @@ export default class PostgresDatabase implements IDatabase {
             status: row.status as 'pending' | 'success' | 'failure',
             error: row.error
         };
+    }
+
+    async getUpstreamSourceByName(name: string): Promise<import('./interface').UpstreamSource | null> {
+        return this.getUpstreamSource(name); // Alias
     }
 
     async createUpstreamSource(source: import('./interface').UpstreamSource): Promise<void> {

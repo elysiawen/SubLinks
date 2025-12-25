@@ -70,7 +70,8 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
             >
                 {selectedSource && (
                     <div className="overflow-auto max-h-[70vh]">
-                        <table className="min-w-full divide-y divide-gray-100">
+                        {/* Desktop Table View */}
+                        <table className="min-w-full divide-y divide-gray-100 hidden md:table">
                             <thead className="bg-gray-50 sticky top-0">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">名称</th>
@@ -99,6 +100,36 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* Mobile Card View */}
+                        <div className="md:hidden space-y-3 p-4 bg-gray-50">
+                            {selectedProxies.map((proxy, idx) => (
+                                <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 space-y-2">
+                                    <div className="flex items-start justify-between">
+                                        <div className="font-medium text-gray-900 break-all pr-2">{proxy.name}</div>
+                                        <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            {proxy.type}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                                        <div className="bg-gray-50 p-2 rounded">
+                                            <div className="text-gray-400 mb-1">Server</div>
+                                            <div className="font-mono break-all">{proxy.server}</div>
+                                        </div>
+                                        <div className="bg-gray-50 p-2 rounded">
+                                            <div className="text-gray-400 mb-1">Port</div>
+                                            <div className="font-mono">{proxy.port}</div>
+                                        </div>
+                                    </div>
+                                    {(proxy.network || proxy.uuid || proxy.password) && (
+                                        <div className="text-xs text-gray-400 pt-2 border-t border-gray-100 flex gap-2">
+                                            {proxy.network && <span>Network: {proxy.network}</span>}
+                                            {(proxy.uuid || proxy.password) && <span>AUTH</span>}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </Modal>

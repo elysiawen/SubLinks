@@ -7,6 +7,8 @@ import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import { SubmitButton } from '@/components/SubmitButton';
+import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources } from '@/lib/config-actions';
 
 interface Sub {
     token: string;
@@ -22,10 +24,42 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function DashboardClient({ initialSubs, username, baseUrl, configSets, defaultGroups = [], availableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets: ConfigSets, defaultGroups: string[], availableSources: { name: string; url: string }[] }) {
+export default function DashboardClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: string[], availableSources?: { name: string; url: string }[] }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
+    // Data State
+    const [configSets, setConfigSets] = useState<{ groups: ConfigSet[], rules: ConfigSet[] }>(initialConfigSets || { groups: [], rules: [] });
+    const [defaultGroups, setDefaultGroups] = useState<string[]>(initialDefaultGroups || []);
+    const [availableSources, setAvailableSources] = useState<{ name: string; url: string }[]>(initialAvailableSources || []);
+    const [dataLoaded, setDataLoaded] = useState(!!initialConfigSets);
+
+    // Fetch additional data on mount if not provided
+    useEffect(() => {
+        if (!dataLoaded) {
+            Promise.all([
+                getGroupSets(),
+                getRuleSets(),
+                getProxyGroups(),
+                getUpstreamSources()
+            ]).then(([groups, rules, proxyGroups, sources]) => {
+                setConfigSets({ groups, rules });
+
+                // Filter and map default groups
+                const defaults = proxyGroups
+                    .filter(g => g.source !== 'custom')
+                    .map(g => g.name);
+                setDefaultGroups(defaults);
+
+                setAvailableSources(sources);
+                setDataLoaded(true);
+            }).catch(e => {
+                console.error("Failed to load dashboard data", e);
+                error("加载配置数据失败，部分功能可能不可用");
+            });
+        }
+    }, [dataLoaded]);
+
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
@@ -517,13 +551,12 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                             >
                                 取消
                             </button>
-                            <button
+                            <SubmitButton
                                 onClick={handleSubmit}
-                                disabled={loading}
-                                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 transform active:scale-95"
-                            >
-                                {loading ? '保存中...' : '保存'}
-                            </button>
+                                isLoading={loading}
+                                text="保存"
+                                className="px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-95"
+                            />
                         </div>
                     </div>
                 </div>
@@ -582,13 +615,12 @@ export default function DashboardClient({ initialSubs, username, baseUrl, config
                             >
                                 取消
                             </button>
-                            <button
+                            <SubmitButton
                                 onClick={handleChangePassword}
-                                disabled={loading}
-                                className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 transition-all"
-                            >
-                                {loading ? '修改中...' : '确认修改'}
-                            </button>
+                                isLoading={loading}
+                                text="确认修改"
+                                className="px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20"
+                            />
                         </div>
                     </div>
                 </div>

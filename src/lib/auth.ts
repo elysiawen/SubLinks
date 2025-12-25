@@ -9,7 +9,12 @@ const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 
 export async function createSession(username: string, role: string) {
     const sessionId = nanoid(32);
-    await db.createSession(sessionId, { username, role }, SESSION_TTL);
+    // Get user to obtain userId
+    const user = await db.getUser(username);
+    if (!user) {
+        throw new Error('User not found');
+    }
+    await db.createSession(sessionId, { userId: user.id, username, role }, SESSION_TTL);
     return sessionId;
 }
 

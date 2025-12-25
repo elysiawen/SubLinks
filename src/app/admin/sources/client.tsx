@@ -7,6 +7,8 @@ import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import RefreshApiModal from './RefreshApiModal';
+import { SubmitButton } from '@/components/SubmitButton';
 
 interface UpstreamSource {
     name: string;
@@ -19,13 +21,14 @@ interface UpstreamSource {
     error?: string;
 }
 
-export default function UpstreamSourcesClient({ sources: initialSources }: { sources: UpstreamSource[] }) {
+export default function UpstreamSourcesClient({ sources: initialSources, currentApiKey }: { sources: UpstreamSource[], currentApiKey?: string }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [sources, setSources] = useState<UpstreamSource[]>(initialSources);
     const [isAdding, setIsAdding] = useState(false);
     const [editingSource, setEditingSource] = useState<UpstreamSource | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showApiModal, setShowApiModal] = useState(false);
 
     // Form state
     const [formName, setFormName] = useState('');
@@ -210,6 +213,12 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                 </h2>
                 <div className="flex gap-2">
                     <button
+                        onClick={() => setShowApiModal(true)}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
+                    >
+                        🔗 刷新API
+                    </button>
+                    <button
                         onClick={handleForceRefresh}
                         disabled={loading}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium text-sm"
@@ -301,13 +310,12 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                         </div>
 
                         <div className="flex gap-2">
-                            <button
+                            <SubmitButton
                                 onClick={editingSource ? handleUpdate : handleAdd}
-                                disabled={loading}
-                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
-                            >
-                                {loading ? (editingSource ? '更新中...' : '添加中...') : (editingSource ? '确认更新' : '确认添加')}
-                            </button>
+                                isLoading={loading}
+                                text={editingSource ? '确认更新' : '确认添加'}
+                                className="flex-1"
+                            />
                             <button
                                 onClick={() => {
                                     resetForm();
@@ -346,7 +354,7 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                                         <div className="flex flex-wrap gap-2 text-xs mb-2">
                                             <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
                                                 {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
-                                                    ? '♾️ 永不失效'
+                                                    ? '♾️ 永不自动失效'
                                                     : `🕒 ${(source.cacheDuration ?? 24) < 1
                                                         ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
                                                         : `${source.cacheDuration ?? 24}h`}`
@@ -411,6 +419,16 @@ export default function UpstreamSourcesClient({ sources: initialSources }: { sou
                     </div >
                 )
             }
+            <RefreshApiModal
+                isOpen={showApiModal}
+                onClose={() => setShowApiModal(false)}
+                currentApiKey={currentApiKey}
+                sources={sources}
+                onSave={async (apiKey) => {
+                    const { updateRefreshApiKey } = await import('./actions');
+                    return await updateRefreshApiKey(apiKey);
+                }}
+            />
         </div >
     );
 }

@@ -46,3 +46,43 @@ export async function deleteRuleSet(id: string) {
     revalidatePath('/dashboard');
 }
 
+// --- Upstream Source Refresh ---
+
+export async function refreshUpstreamSource(sourceName: string) {
+    const source = await db.getUpstreamSourceByName(sourceName);
+    if (!source) {
+        throw new Error(`Source not found: ${sourceName}`);
+    }
+
+    // Call the actual refresh logic from analysis.ts
+    const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+    const success = await refreshSingleUpstreamSource(source.name, source.url);
+
+    revalidatePath('/admin/sources');
+    revalidatePath('/admin/proxies');
+    revalidatePath('/admin/groups');
+    revalidatePath('/admin/rules');
+
+    return { success };
+}
+
+// --- Refresh API Key Management ---
+
+export async function updateRefreshApiKey(apiKey: string | null) {
+    const config = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...config,
+        refreshApiKey: apiKey || undefined
+    });
+    revalidatePath('/admin/sources');
+    return { success: true };
+}
+// --- Data Fetching Helpers (for client-side loading) ---
+
+export async function getProxyGroups() {
+    return await db.getProxyGroups();
+}
+
+export async function getUpstreamSources() {
+    return await db.getUpstreamSources();
+}

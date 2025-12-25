@@ -23,7 +23,7 @@ export default function AdminSidebar({ username }: SidebarProps) {
         <aside className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
             <div className="p-6 border-b border-gray-100">
                 <h1 className="text-xl font-bold text-gray-800">管理后台</h1>
-                <p className="text-xs text-gray-400 mt-1">Version 3.0</p>
+                <p className="text-xs text-gray-400 mt-1">SubLinks</p>
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -56,7 +56,7 @@ export default function AdminSidebar({ username }: SidebarProps) {
                     🤖 策略组
                 </Link>
                 <Link href="/admin/rules" className={linkClass('/admin/rules')}>
-                    📝 分流规则
+                    ⚡ 分流规则
                 </Link>
 
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">日志</div>

@@ -3,16 +3,7 @@
 import { useActionState } from 'react';
 import { login } from '@/lib/actions';
 
-function SubmitButton() {
-    return (
-        <button
-            type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-        >
-            🔐 登录
-        </button>
-    );
-}
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default function LoginPage() {
     const [state, formAction] = useActionState(login, null)
@@ -75,7 +66,7 @@ export default function LoginPage() {
                         )}
 
                         <div>
-                            <SubmitButton />
+                            <SubmitButton text="🔐 登录" className="w-full py-3 rounded-xl shadow-lg shadow-blue-500/30" />
                         </div>
                     </form>
                 </div>

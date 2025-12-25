@@ -47,12 +47,11 @@ export async function GET(
 
     // 2. Get Global Config and Upstream Sources
     const config = await db.getGlobalConfig();
-    const upstreamUrl = config.upstreamUrl;
     const upstreamSources = await db.getUpstreamSources();
 
-    if (!upstreamUrl && upstreamSources.length === 0) {
+    if (upstreamSources.length === 0) {
         await logAccess(500);
-        return new NextResponse('Server Configuration Error: No Upstream URL Set', { status: 500 });
+        return new NextResponse('Server Configuration Error: No Upstream Sources Configured', { status: 500 });
     }
 
     // 3. Calculate effective settings from selected sources

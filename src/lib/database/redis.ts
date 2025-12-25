@@ -31,6 +31,11 @@ export default class RedisDatabase implements IDatabase {
         return data ? JSON.parse(data) : null;
     }
 
+    async getUserById(id: string): Promise<User | null> {
+        console.warn('⚠️ getUserById is not fully supported with Redis. Please use PostgreSQL.');
+        return null;
+    }
+
     async setUser(username: string, data: User): Promise<void> {
         await this.redis.set(`user:${username}`, JSON.stringify(data));
         await this.redis.sadd('users:index', username);
@@ -72,6 +77,11 @@ export default class RedisDatabase implements IDatabase {
 
     async deleteSession(sessionId: string): Promise<void> {
         await this.redis.del(`session:${sessionId}`);
+    }
+
+    async cleanupExpiredSessions(): Promise<number> {
+        // Redis handles TTL automatically, no manual cleanup needed
+        return 0;
     }
 
     // Subscription operations
@@ -129,13 +139,46 @@ export default class RedisDatabase implements IDatabase {
     }
 
     // Config operations
+    // Config operations
     async getGlobalConfig(): Promise<GlobalConfig> {
-        const data = await this.redis.get('config:global');
-        return data ? JSON.parse(data) : {};
+        const data = await this.redis.hgetall('config:global');
+
+        const config: GlobalConfig = {
+            maxUserSubscriptions: 10,
+            logRetentionDays: 30
+        };
+
+        if (Object.keys(data).length === 0) return config;
+
+        if (data.maxUserSubscriptions) config.maxUserSubscriptions = parseInt(data.maxUserSubscriptions);
+        if (data.logRetentionDays) config.logRetentionDays = parseInt(data.logRetentionDays);
+        if (data.refreshApiKey) config.refreshApiKey = data.refreshApiKey;
+        if (data.upstreamLastUpdated) config.upstreamLastUpdated = parseInt(data.upstreamLastUpdated);
+        if (data.updatedAt) config.updatedAt = parseInt(data.updatedAt);
+
+        if (data.uaWhitelist) {
+            try {
+                config.uaWhitelist = JSON.parse(data.uaWhitelist);
+            } catch {
+                config.uaWhitelist = [];
+            }
+        }
+
+        return config;
     }
 
     async setGlobalConfig(data: GlobalConfig): Promise<void> {
-        await this.redis.set('config:global', JSON.stringify(data));
+        const updates: Record<string, string> = {
+            maxUserSubscriptions: data.maxUserSubscriptions.toString(),
+            logRetentionDays: data.logRetentionDays.toString()
+        };
+
+        if (data.uaWhitelist) updates.uaWhitelist = JSON.stringify(data.uaWhitelist);
+        if (data.refreshApiKey) updates.refreshApiKey = data.refreshApiKey;
+        if (data.upstreamLastUpdated) updates.upstreamLastUpdated = data.upstreamLastUpdated.toString();
+        if (data.updatedAt) updates.updatedAt = data.updatedAt.toString();
+
+        await this.redis.hset('config:global', updates);
     }
 
     async getCustomGroups(): Promise<ConfigSet[]> {
@@ -450,6 +493,10 @@ export default class RedisDatabase implements IDatabase {
     async getUpstreamSource(name: string): Promise<any | null> {
         console.warn('⚠️ Upstream sources are not fully supported with Redis. Please use PostgreSQL.');
         return null;
+    }
+
+    async getUpstreamSourceByName(name: string): Promise<any | null> {
+        return this.getUpstreamSource(name); // Alias
     }
 
     async createUpstreamSource(source: any): Promise<void> {

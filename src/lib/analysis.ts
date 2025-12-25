@@ -189,21 +189,6 @@ export async function refreshUpstreamCache() {
             // Get upstream sources from database
             let sources = await db.getUpstreamSources();
 
-            // Fallback to legacy format if no sources in database
-            if (sources.length === 0 && config.upstreamUrl) {
-                // Legacy format - convert to sources
-                const urls = Array.isArray(config.upstreamUrl) ? config.upstreamUrl : [config.upstreamUrl];
-                sources = urls.map((url: string | { url: string }, i) => ({
-                    name: `upstream_${i}`,
-                    url: typeof url === 'string' ? url : url.url || '',
-                    cacheDuration: 24,
-                    uaWhitelist: [],
-                    isDefault: i === 0,
-                    lastUpdated: 0,
-                    status: 'pending' as const
-                }));
-            }
-
             if (sources.length === 0) {
                 console.warn('No upstream sources configured, skipping refresh.');
                 return false;

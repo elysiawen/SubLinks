@@ -5,6 +5,7 @@ import { saveCustomRule, deleteCustomRule } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
+import { SubmitButton } from '@/components/SubmitButton';
 
 interface ConfigSet {
     id: string;
@@ -280,13 +281,12 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
                         </div>
 
                         <div className="flex gap-2">
-                            <button
+                            <SubmitButton
                                 onClick={handleSave}
-                                disabled={loading}
-                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
-                            >
-                                {loading ? '保存中...' : '保存'}
-                            </button>
+                                isLoading={loading}
+                                text="保存"
+                                className="flex-1"
+                            />
                             <button
                                 onClick={() => setIsEditing(false)}
                                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

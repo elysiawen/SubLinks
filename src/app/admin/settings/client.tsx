@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
+import { SubmitButton } from '@/components/SubmitButton';
 
 function RetentionSelector({ initialValue }: { initialValue: number }) {
     const isPreset = [30, 180, 365, 0].includes(initialValue);
@@ -46,10 +47,10 @@ function RetentionSelector({ initialValue }: { initialValue: number }) {
     );
 }
 
-
 export default function AdminSettingsClient({ config }: { config: any }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+    const [isCleaning, setIsCleaning] = useState(false);
     return (
         <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">全局设置</h2>
@@ -79,12 +80,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <RetentionSelector initialValue={config.logRetentionDays || 30} />
 
                     <div className="pt-2 flex gap-4">
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                        >
-                            保存设置
-                        </button>
+                        <SubmitButton text="保存设置" />
                         <button
                             type="button"
                             onClick={async () => {
@@ -139,14 +135,38 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                         </div>
                     </div>
                     <div className="pt-2">
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                        >
-                            保存设置
-                        </button>
+                        <SubmitButton text="保存设置" />
                     </div>
                 </form>
+            </div>
+
+            {/* Session Cleanup */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span className="mr-2">🔐</span> Session 管理
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                    系统会每小时自动清理过期的 session。您也可以手动触发清理。
+                </p>
+                <SubmitButton
+                    onClick={async () => {
+                        setIsCleaning(true);
+                        try {
+                            const { cleanupSessions } = await import('../actions');
+                            const result = await cleanupSessions();
+                            if (result.count > 0) {
+                                success(`已清理 ${result.count} 个过期 session`);
+                            } else {
+                                success('没有过期的 session');
+                            }
+                        } finally {
+                            setIsCleaning(false);
+                        }
+                    }}
+                    isLoading={isCleaning}
+                    text="立即清理过期 Session"
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm"
+                />
             </div>
 
             {/* Other settings placeholder */}

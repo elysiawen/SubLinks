@@ -1,13 +1,17 @@
 // Database interface types
 export interface User {
+    id: string;          // UUID - primary identifier
+    username: string;    // Used for login
     password: string;
     role: string;
     status: string;
+    maxSubscriptions: number | null; // null = follow global, number = custom limit
     createdAt: number;
 }
 
 export interface Session {
-    username: string;
+    userId: string;      // UUID reference to User
+    username: string;    // Kept for backward compatibility
     role: string;
 }
 
@@ -70,11 +74,15 @@ export interface UpstreamSource {
 }
 
 export interface GlobalConfig {
-    upstreamUrl?: string | string[];
+    // Core settings with defaults
+    maxUserSubscriptions: number; // Default: 10
+    logRetentionDays: number; // Default: 30
+
+    // Optional settings
     uaWhitelist?: string[];
-    logRetentionDays?: number;
-    maxUserSubscriptions?: number; // 0 means unlimited
-    upstreamLastUpdated?: number; // Timestamp of last upstream refresh
+    refreshApiKey?: string;
+    upstreamLastUpdated?: number;
+    updatedAt?: number;
 }
 
 // Structured upstream data types
@@ -112,6 +120,7 @@ export interface Rule {
 export interface IDatabase {
     // User operations
     getUser(username: string): Promise<User | null>;
+    getUserById(id: string): Promise<User | null>;  // New: Get user by UUID
     setUser(username: string, data: User): Promise<void>;
     deleteUser(username: string): Promise<void>;
     getAllUsers(): Promise<Array<User & { username: string }>>;
@@ -121,6 +130,7 @@ export interface IDatabase {
     createSession(sessionId: string, data: Session, ttl: number): Promise<void>;
     getSession(sessionId: string): Promise<Session | null>;
     deleteSession(sessionId: string): Promise<void>;
+    cleanupExpiredSessions(): Promise<number>; // Returns count of deleted sessions
 
     // Subscription operations
     createSubscription(token: string, username: string, data: SubData): Promise<void>;
@@ -146,6 +156,7 @@ export interface IDatabase {
     // Upstream source operations
     getUpstreamSources(): Promise<UpstreamSource[]>;
     getUpstreamSource(name: string): Promise<UpstreamSource | null>;
+    getUpstreamSourceByName(name: string): Promise<UpstreamSource | null>; // Alias for getUpstreamSource
     createUpstreamSource(source: UpstreamSource): Promise<void>;
     updateUpstreamSource(name: string, source: Partial<UpstreamSource>): Promise<void>;
     deleteUpstreamSource(name: string): Promise<void>;

@@ -25,7 +25,8 @@ export async function createSubscription(remark: string, customRules: string, gr
 
     if (!isAdmin) {
         const config = await db.getGlobalConfig();
-        const maxSubs = config.maxUserSubscriptions || 0;
+        // Use user's custom limit if set, otherwise use global limit
+        const maxSubs = user?.maxSubscriptions ?? config.maxUserSubscriptions ?? 1;
 
         if (maxSubs > 0) {
             const userSubs = await db.getUserSubscriptions(session.username);
