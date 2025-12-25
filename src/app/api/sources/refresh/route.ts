@@ -152,7 +152,12 @@ async function handleRefresh(request: NextRequest, body: any) {
 
             // Trigger precaching (fire and forget)
             for (const sub of affectedSubs) {
-                fetch(`${baseUrl}/api/s/${sub.token}`)
+                // Pass a special header to identify this as an internal system request
+                fetch(`${baseUrl}/api/s/${sub.token}`, {
+                    headers: {
+                        'X-Internal-System-Precache': 'true'
+                    }
+                })
                     .then(() => precached++)
                     .catch(() => { });
             }

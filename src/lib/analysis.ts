@@ -70,9 +70,12 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
         try {
             console.log(`📥 Fetching from upstream source [${sourceName}]: ${sourceUrl.substring(0, 50)}...`);
 
+            const config = await db.getGlobalConfig();
+            const userAgent = config.upstreamUserAgent || 'Clash/Vercel-Sub-Manager';
+
             const res = await fetch(sourceUrl, {
                 headers: {
-                    'User-Agent': 'Clash/Vercel-Sub-Manager'
+                    'User-Agent': userAgent
                 }
             });
 
@@ -98,6 +101,34 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
 
             const content = await res.text();
 
+            // Parse traffic info from header
+            // Format: upload=123; download=456; total=789; expire=1234567890
+            const userInfo = res.headers.get('subscription-userinfo') || res.headers.get('Subscription-Userinfo');
+            let traffic = undefined;
+
+            if (userInfo) {
+                try {
+                    const pairs = userInfo.split(';').map(p => p.trim());
+                    const info: any = {};
+                    pairs.forEach(p => {
+                        const [key, value] = p.split('=');
+                        if (key && value) info[key] = parseInt(value);
+                    });
+
+                    if (info.upload !== undefined && info.download !== undefined && info.total !== undefined) {
+                        traffic = {
+                            upload: info.upload,
+                            download: info.download,
+                            total: info.total,
+                            expire: info.expire || 0
+                        };
+                        console.log(`📊 Parsed traffic info for [${sourceName}]:`, traffic);
+                    }
+                } catch (e) {
+                    console.warn(`Failed to parse Subscription-Userinfo for [${sourceName}]: ${userInfo}`, e);
+                }
+            }
+
             // Clear existing data for this source before adding new data
             console.log(`   🗑️ Clearing old data for source [${sourceName}]...`);
             await db.clearProxies(sourceName);
@@ -121,7 +152,8 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             await db.updateUpstreamSource(sourceName, {
                 lastUpdated: Date.now(),
                 status: 'success',
-                error: undefined
+                error: undefined, // Clear previous error
+                traffic: traffic
             });
 
             // Update global last updated timestamp

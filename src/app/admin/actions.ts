@@ -30,7 +30,8 @@ export async function updateGlobalConfig(formData: FormData) {
         logRetentionDays,
         uaWhitelist,
         refreshApiKey: existingConfig.refreshApiKey,
-        upstreamLastUpdated: existingConfig.upstreamLastUpdated
+        upstreamLastUpdated: existingConfig.upstreamLastUpdated,
+        upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined
     });
 
     // Trigger cleanup immediately

@@ -186,6 +186,7 @@ export default class PostgresDatabase implements IDatabase {
                     last_updated BIGINT DEFAULT 0,
                     status VARCHAR(20) DEFAULT 'pending',
                     error TEXT,
+                    traffic JSONB,
                     created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000,
                     updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000
                 );
@@ -341,6 +342,12 @@ export default class PostgresDatabase implements IDatabase {
                                     RAISE NOTICE '✅ Migration to multi-row completed!';
                                 END IF;
                             END;
+                        END IF;
+
+
+                        -- Upstream Sources: Add traffic column
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='upstream_sources' AND column_name='traffic') THEN
+                            ALTER TABLE upstream_sources ADD COLUMN traffic JSONB;
                         END IF;
                     END $$;
                 `);
@@ -640,6 +647,9 @@ export default class PostgresDatabase implements IDatabase {
                 case 'upstreamLastUpdated':
                     config.upstreamLastUpdated = parseInt(row.value);
                     break;
+                case 'upstreamUserAgent':
+                    config.upstreamUserAgent = row.value;
+                    break;
             }
         }
 
@@ -668,6 +678,10 @@ export default class PostgresDatabase implements IDatabase {
 
             if (data.upstreamLastUpdated !== undefined) {
                 updates.push(['upstreamLastUpdated', data.upstreamLastUpdated.toString()]);
+            }
+
+            if (data.upstreamUserAgent !== undefined) {
+                updates.push(['upstreamUserAgent', data.upstreamUserAgent]);
             }
 
             for (const [key, value] of updates) {
@@ -1117,7 +1131,8 @@ export default class PostgresDatabase implements IDatabase {
             isDefault: row.is_default,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
-            error: row.error
+            error: row.error,
+            traffic: row.traffic
         }));
     }
 
@@ -1136,7 +1151,8 @@ export default class PostgresDatabase implements IDatabase {
             isDefault: row.is_default,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
-            error: row.error
+            error: row.error,
+            traffic: row.traffic
         };
     }
 
@@ -1151,6 +1167,10 @@ export default class PostgresDatabase implements IDatabase {
                 name, url, cache_duration, ua_whitelist, is_default,
                 last_updated, status, error, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO upstream_sources (
+                name, url, cache_duration, ua_whitelist, is_default,
+                last_updated, status, error, traffic, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
             source.name,
             source.url,
@@ -1160,6 +1180,7 @@ export default class PostgresDatabase implements IDatabase {
             source.lastUpdated || 0,
             source.status || 'pending',
             source.error || null,
+            source.traffic ? JSON.stringify(source.traffic) : null,
             currentTime,
             currentTime
         ]);
@@ -1197,6 +1218,14 @@ export default class PostgresDatabase implements IDatabase {
         if (source.status !== undefined) {
             updates.push(`status = $${paramIndex++}`);
             values.push(source.status);
+        }
+        if (source.error !== undefined) {
+            updates.push(`error = $${paramIndex++}`);
+            values.push(source.error);
+        }
+        if (source.traffic !== undefined) {
+            updates.push(`traffic = $${paramIndex++}`);
+            values.push(source.traffic ? JSON.stringify(source.traffic) : null);
         }
         if (source.error !== undefined) {
             updates.push(`error = $${paramIndex++}`);

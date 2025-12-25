@@ -17,6 +17,27 @@ export async function GET(
     // Helper to log access
     const logAccess = async (status: number) => {
         if (!sub) return; // Only log if token correlates to a subscription
+
+        // Log internal system precache requests to System Log
+        if (request.headers.get('x-internal-system-precache') === 'true') {
+            try {
+                await db.createSystemLog({
+                    category: 'system',
+                    message: `Subscription Precache: ${sub.username}`,
+                    details: {
+                        token,
+                        ip: request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1',
+                        httpStatus: status
+                    },
+                    status: status === 200 ? 'success' : 'failure',
+                    timestamp: Date.now()
+                });
+            } catch (e) {
+                console.error('Failed to log system precache:', e);
+            }
+            return;
+        }
+
         const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
         const ua = request.headers.get('user-agent') || 'Unknown';
         try {
@@ -102,6 +123,30 @@ export async function GET(
     }
 
     // 5. Ensure upstream data is cached and parsed, and check freshness
+
+    // Calculate Traffic Stats for Header
+    let totalUpload = 0;
+    let totalDownload = 0;
+    let totalQuota = 0;
+    let minExpire = 0;
+
+    const activeSources = upstreamSources.filter(s => sub.selectedSources?.includes(s.name));
+
+    for (const source of activeSources) {
+        if (source.traffic) {
+            totalUpload += source.traffic.upload || 0;
+            totalDownload += source.traffic.download || 0;
+            totalQuota += source.traffic.total || 0;
+
+            if (source.traffic.expire) {
+                if (minExpire === 0 || source.traffic.expire < minExpire) {
+                    minExpire = source.traffic.expire;
+                }
+            }
+        }
+    }
+
+    const userInfoHeader = `upload=${totalUpload}; download=${totalDownload}; total=${totalQuota}; expire=${minExpire}`;
 
     // We check freshness FIRST. If fresh, we check if we have a compiled result.
     const cacheDuration = effectiveCacheDuration;
@@ -190,7 +235,7 @@ export async function GET(
             headers: {
                 'Content-Type': 'text/yaml; charset=utf-8',
                 'Content-Disposition': `attachment; filename="${encodeURIComponent(sub.username)}_${token}.yaml"`,
-                'Subscription-Userinfo': `upload=0; download=0; total=10737418240; expire=0`,
+                'Subscription-Userinfo': userInfoHeader,
                 'X-Cache': 'HIT',
             },
         });
@@ -214,7 +259,7 @@ export async function GET(
             headers: {
                 'Content-Type': 'text/yaml; charset=utf-8',
                 'Content-Disposition': `attachment; filename="${encodeURIComponent(sub.username)}_${token}.yaml"`,
-                'Subscription-Userinfo': `upload=0; download=0; total=10737418240; expire=0`,
+                'Subscription-Userinfo': userInfoHeader,
                 'X-Cache': 'MISS',
             },
         });

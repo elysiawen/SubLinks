@@ -19,7 +19,21 @@ interface UpstreamSource {
     lastUpdated?: number;
     status?: 'pending' | 'success' | 'failure';
     error?: string;
+    traffic?: {
+        upload: number;
+        download: number;
+        total: number;
+        expire: number;
+    };
 }
+
+const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 export default function UpstreamSourcesClient({ sources: initialSources, currentApiKey }: { sources: UpstreamSource[], currentApiKey?: string }) {
     const { success, error } = useToast();
@@ -377,6 +391,34 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                 </span>
                                             )}
                                         </div>
+
+                                        {source.traffic && (
+                                            <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs border border-gray-100">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-gray-500 font-medium">流量使用</span>
+                                                    <span className="text-blue-600 font-bold">
+                                                        {formatBytes(source.traffic.upload + source.traffic.download)} / {formatBytes(source.traffic.total)}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
+                                                    <div
+                                                        className="bg-blue-500 h-1.5 rounded-full"
+                                                        style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
+                                                    ></div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-gray-500">
+                                                    <div>
+                                                        ↑ {formatBytes(source.traffic.upload)}
+                                                        <span className="mx-1">|</span>
+                                                        ↓ {formatBytes(source.traffic.download)}
+                                                    </div>
+                                                    <div className="text-right text-gray-400">
+                                                        {source.traffic.expire ? `过期: ${new Date(source.traffic.expire * 1000).toLocaleDateString()}` : '无过期时间'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2">

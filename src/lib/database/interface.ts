@@ -71,6 +71,12 @@ export interface UpstreamSource {
     lastUpdated?: number; // Timestamp of last refresh
     status?: 'pending' | 'success' | 'failure'; // Status of last refresh
     error?: string; // Error message if failed
+    traffic?: {
+        upload: number;
+        download: number;
+        total: number;
+        expire: number;
+    };
 }
 
 export interface GlobalConfig {
@@ -83,6 +89,7 @@ export interface GlobalConfig {
     refreshApiKey?: string;
     upstreamLastUpdated?: number;
     updatedAt?: number;
+    upstreamUserAgent?: string; // Custom User-Agent for fetching upstream
 }
 
 // Structured upstream data types
