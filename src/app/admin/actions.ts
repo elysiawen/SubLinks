@@ -40,6 +40,13 @@ export async function updateGlobalConfig(formData: FormData) {
         await db.cleanupLogs(logRetentionDays);
     }
 
+    // Revalidate home page cache if background URL changed
+    const oldBg = existingConfig.customBackgroundUrl;
+    const newBg = (formData.get('customBackgroundUrl') as string) || undefined;
+    if (oldBg !== newBg) {
+        revalidatePath('/');
+    }
+
     revalidatePath('/admin');
 }
 

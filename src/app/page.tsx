@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 
+// Disable automatic revalidation - cache indefinitely
+// Cache will only be cleared when explicitly revalidated via API
+export const revalidate = false;
+
 export default async function Home() {
   const config = await db.getGlobalConfig();
   const customBg = config.customBackgroundUrl;

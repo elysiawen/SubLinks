@@ -5,5 +5,11 @@
     "framework": "nextjs",
     "regions": [
         "hnd1"
+    ],
+    "crons": [
+        {
+            "path": "/api/sources/refresh?precache=true",
+            "schedule": "0 17 * * *"
+        }
     ]
 }
