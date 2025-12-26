@@ -4,7 +4,7 @@
     "installCommand": "npm install",
     "framework": "nextjs",
     "regions": [
-        "hnd1"
+        "iad1"
     ],
     "crons": [
         {
