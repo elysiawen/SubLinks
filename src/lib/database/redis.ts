@@ -36,12 +36,48 @@ export default class RedisDatabase implements IDatabase {
         return null;
     }
 
+    async getUserByUuid(uuid: string): Promise<(User & { username: string }) | null> {
+        const username = await this.redis.get(`uuid:${uuid}`);
+        if (!username) return null;
+
+        const user = await this.getUser(username);
+        if (!user) return null;
+
+        return { ...user, username };
+    }
+
     async setUser(username: string, data: User): Promise<void> {
         await this.redis.set(`user:${username}`, JSON.stringify(data));
         await this.redis.sadd('users:index', username);
+
+        // Store UUID mapping if exists
+        if (data.id) {
+            await this.redis.set(`uuid:${data.id}`, username);
+        }
+    }
+
+    async updateUserUuid(username: string, uuid: string): Promise<void> {
+        const user = await this.getUser(username);
+        if (!user) throw new Error('User not found');
+
+        // Remove old UUID mapping if exists
+        if (user.id) {
+            await this.redis.del(`uuid:${user.id}`);
+        }
+
+        // Update user with new UUID
+        user.id = uuid;
+        await this.setUser(username, user);
     }
 
     async deleteUser(username: string): Promise<void> {
+        const user = await this.getUser(username);
+
+        // Remove UUID mapping if exists
+        if (user?.id) {
+            await this.redis.del(`uuid:${user.id}`);
+        }
+
         await this.redis.del(`user:${username}`);
         await this.redis.srem('users:index', username);
     }
@@ -155,6 +191,8 @@ export default class RedisDatabase implements IDatabase {
         if (data.refreshApiKey) config.refreshApiKey = data.refreshApiKey;
         if (data.upstreamLastUpdated) config.upstreamLastUpdated = parseInt(data.upstreamLastUpdated);
         if (data.updatedAt) config.updatedAt = parseInt(data.updatedAt);
+        if (data.customBackgroundUrl) config.customBackgroundUrl = data.customBackgroundUrl;
+        if (data.upstreamUserAgent) config.upstreamUserAgent = data.upstreamUserAgent;
 
         if (data.uaWhitelist) {
             try {
@@ -177,6 +215,8 @@ export default class RedisDatabase implements IDatabase {
         if (data.refreshApiKey) updates.refreshApiKey = data.refreshApiKey;
         if (data.upstreamLastUpdated) updates.upstreamLastUpdated = data.upstreamLastUpdated.toString();
         if (data.updatedAt) updates.updatedAt = data.updatedAt.toString();
+        if (data.customBackgroundUrl) updates.customBackgroundUrl = data.customBackgroundUrl;
+        if (data.upstreamUserAgent) updates.upstreamUserAgent = data.upstreamUserAgent;
 
         await this.redis.hset('config:global', updates);
     }

@@ -1172,10 +1172,6 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query(`
             INSERT INTO upstream_sources (
                 name, url, cache_duration, ua_whitelist, is_default,
-                last_updated, status, error, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            INSERT INTO upstream_sources (
-                name, url, cache_duration, ua_whitelist, is_default,
                 last_updated, status, error, traffic, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
