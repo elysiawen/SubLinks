@@ -46,7 +46,7 @@ npm run dev
 
 5. **访问应用**
 - 打开 http://localhost:3000
-- 使用 `admin/admin` 登录
+- 使用 `admin/admin` 来登录
 
 ### 部署到 Vercel
 

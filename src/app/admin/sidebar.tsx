@@ -34,6 +34,9 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <Link href="/admin/settings" className={linkClass('/admin/settings')}>
                     ⚙️ 全局设置
                 </Link>
+                <Link href="/admin/status" className={linkClass('/admin/status')}>
+                    🖥️ 服务器状态
+                </Link>
 
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">用户</div>
                 <Link href="/admin/users" className={linkClass('/admin/users')}>
