@@ -1230,10 +1230,6 @@ export default class PostgresDatabase implements IDatabase {
             updates.push(`traffic = $${paramIndex++}`);
             values.push(source.traffic ? JSON.stringify(source.traffic) : null);
         }
-        if (source.error !== undefined) {
-            updates.push(`error = $${paramIndex++}`);
-            values.push(source.error);
-        }
 
         if (updates.length === 0) return;
 

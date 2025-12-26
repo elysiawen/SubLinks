@@ -109,3 +109,47 @@ export async function refreshAllSubscriptionCaches() {
     revalidatePath('/admin/subscriptions');
     return { success: true };
 }
+
+export async function precacheAllSubscriptions() {
+    const session = await getAdminSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    try {
+        // Get all subscriptions
+        const allSubs = await db.getAllSubscriptions();
+
+        if (allSubs.length === 0) {
+            return { error: 'No subscriptions found' };
+        }
+
+        // Trigger cache generation for each subscription by making a request
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const results = await Promise.allSettled(
+            allSubs.map(async (sub) => {
+                try {
+                    const response = await fetch(`${baseUrl}/api/s/${sub.token}`, {
+                        method: 'HEAD', // Use HEAD to avoid downloading full content
+                        headers: {
+                            'User-Agent': 'SubLinks-Precache/1.0'
+                        }
+                    });
+                    return { token: sub.token, success: response.ok };
+                } catch (err) {
+                    return { token: sub.token, success: false, error: err };
+                }
+            })
+        );
+
+        const successful = results.filter(r => r.status === 'fulfilled').length;
+
+        return {
+            success: true,
+            message: `已缓存 ${successful}/${allSubs.length} 个订阅`,
+            total: allSubs.length,
+            cached: successful
+        };
+    } catch (error) {
+        console.error('Precache error:', error);
+        return { error: 'Failed to precache subscriptions' };
+    }
+}

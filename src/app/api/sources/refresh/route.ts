@@ -164,13 +164,23 @@ async function handleRefresh(request: NextRequest, body: any) {
         }
 
         // 8. Return response
+        const hasFailures = failed.length > 0;
+        const allFailed = failed.length === sources.length;
+
         return NextResponse.json({
-            success: true,
-            message: `已刷新 ${refreshed.length} 个上游源`,
+            success: !allFailed,
+            partialSuccess: hasFailures && !allFailed,
+            message: allFailed
+                ? `所有上游源刷新失败`
+                : hasFailures
+                    ? `已刷新 ${refreshed.length} 个上游源，${failed.length} 个失败`
+                    : `已刷新 ${refreshed.length} 个上游源`,
             refreshed,
-            failed: failed.length > 0 ? failed : undefined,
+            failed: hasFailures ? failed : undefined,
             cacheCleared,
             precached: precache ? affectedSubs.length : 0
+        }, {
+            status: allFailed ? 500 : 200
         });
 
     } catch (error) {

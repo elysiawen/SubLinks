@@ -13,8 +13,7 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
-    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string } | null>(null);
-    const [editingSubLimit, setEditingSubLimit] = useState<{ username: string, useGlobal: boolean, customLimit: number } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, useGlobalLimit: boolean, customLimit: number } | null>(null);
 
     const handleCreateUser = async (formData: FormData) => {
         setLoading(true);
@@ -32,11 +31,18 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
         if (!editingUser) return;
 
         setLoading(true);
+
+        // Update user info
         const res = await updateUser(
             editingUser.username,
             editingUser.newUsername,
             editingUser.newPassword || undefined
         );
+
+        // Update subscription limit
+        const maxSubs = editingUser.useGlobalLimit ? null : editingUser.customLimit;
+        await updateUserMaxSubscriptions(editingUser.username, maxSubs);
+
         setLoading(false);
 
         if (res?.error) {
@@ -47,16 +53,7 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
         }
     };
 
-    const handleUpdateSubLimit = async () => {
-        if (!editingSubLimit) return;
 
-        setLoading(true);
-        const maxSubs = editingSubLimit.useGlobal ? null : editingSubLimit.customLimit;
-        await updateUserMaxSubscriptions(editingSubLimit.username, maxSubs);
-        setLoading(false);
-        setEditingSubLimit(null);
-        success('订阅限制已更新');
-    };
 
     return (
         <div className="space-y-8">
@@ -168,27 +165,19 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        <div className="flex items-center gap-2">
-                                            <span>
-                                                {user.maxSubscriptions === null
-                                                    ? `跟随全局 (${globalMaxSubs})`
-                                                    : `自定义 (${user.maxSubscriptions})`}
-                                            </span>
-                                            <button
-                                                onClick={() => setEditingSubLimit({
-                                                    username: user.username,
-                                                    useGlobal: user.maxSubscriptions === null,
-                                                    customLimit: user.maxSubscriptions || globalMaxSubs
-                                                })}
-                                                className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                                            >
-                                                修改
-                                            </button>
-                                        </div>
+                                        {user.maxSubscriptions === null
+                                            ? `跟随全局 (${globalMaxSubs})`
+                                            : `自定义 (${user.maxSubscriptions})`}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
-                                            onClick={() => setEditingUser({ username: user.username, newUsername: user.username, newPassword: '' })}
+                                            onClick={() => setEditingUser({
+                                                username: user.username,
+                                                newUsername: user.username,
+                                                newPassword: '',
+                                                useGlobalLimit: user.maxSubscriptions === null,
+                                                customLimit: user.maxSubscriptions || globalMaxSubs
+                                            })}
                                             className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                                         >
                                             编辑
@@ -229,9 +218,9 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                         <div key={user.username} className="p-4 hover:bg-gray-50 transition-colors">
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between">
-                                    <div>
+                                    <div className="flex-1">
                                         <div className="font-medium text-gray-900 mb-1">{user.username}</div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                                 {user.role === 'admin' ? '管理员' : '用户'}
                                             </span>
@@ -239,11 +228,22 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                                                 {user.status === 'active' ? '正常' : '已停用'}
                                             </span>
                                         </div>
+                                        <div className="mt-2 text-xs text-gray-600">
+                                            订阅限制: <span className="font-medium text-gray-900">
+                                                {user.maxSubscriptions === null ? `${globalMaxSubs} (全局)` : user.maxSubscriptions}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 pt-2">
                                     <button
-                                        onClick={() => setEditingUser({ username: user.username, newUsername: user.username, newPassword: '' })}
+                                        onClick={() => setEditingUser({
+                                            username: user.username,
+                                            newUsername: user.username,
+                                            newPassword: '',
+                                            useGlobalLimit: user.maxSubscriptions === null,
+                                            customLimit: user.maxSubscriptions || globalMaxSubs
+                                        })}
                                         className="flex-1 text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-blue-50"
                                     >
                                         编辑
@@ -307,6 +307,46 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                             />
                         </div>
 
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">订阅限制</label>
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="radio"
+                                        checked={editingUser.useGlobalLimit}
+                                        onChange={() => setEditingUser({ ...editingUser, useGlobalLimit: true })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-900">使用全局限制</div>
+                                        <div className="text-xs text-gray-500">当前全局限制: {globalMaxSubs} 个订阅</div>
+                                    </div>
+                                </label>
+                                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="radio"
+                                        checked={!editingUser.useGlobalLimit}
+                                        onChange={() => setEditingUser({ ...editingUser, useGlobalLimit: false })}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-900">自定义限制</div>
+                                        {!editingUser.useGlobalLimit && (
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={editingUser.customLimit}
+                                                onChange={e => setEditingUser({ ...editingUser, customLimit: parseInt(e.target.value) || 0 })}
+                                                className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                placeholder="输入订阅数量"
+                                                onClick={e => e.stopPropagation()}
+                                            />
+                                        )}
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
                         <div className="flex gap-2 pt-2">
                             <SubmitButton
                                 onClick={handleUpdateUser}
@@ -325,73 +365,6 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                 )}
             </Modal>
 
-            {/* Edit Subscription Limit Modal */}
-            <Modal
-                isOpen={!!editingSubLimit}
-                onClose={() => setEditingSubLimit(null)}
-                title="修改订阅限制"
-            >
-                {editingSubLimit && (
-                    <div className="space-y-4">
-                        <div>
-                            <p className="text-sm text-gray-600 mb-4">
-                                用户：<span className="font-semibold text-gray-900">{editingSubLimit.username}</span>
-                            </p>
-                        </div>
-
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                <input
-                                    type="radio"
-                                    checked={editingSubLimit.useGlobal}
-                                    onChange={() => setEditingSubLimit({ ...editingSubLimit, useGlobal: true })}
-                                    className="w-4 h-4 text-blue-600"
-                                />
-                                <div>
-                                    <div className="font-medium text-gray-900">跟随全局设置</div>
-                                    <div className="text-xs text-gray-500">当前全局限制：{globalMaxSubs} 条</div>
-                                </div>
-                            </label>
-
-                            <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                <input
-                                    type="radio"
-                                    checked={!editingSubLimit.useGlobal}
-                                    onChange={() => setEditingSubLimit({ ...editingSubLimit, useGlobal: false })}
-                                    className="w-4 h-4 text-blue-600 mt-0.5"
-                                />
-                                <div className="flex-1">
-                                    <div className="font-medium text-gray-900 mb-2">自定义限制</div>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={editingSubLimit.customLimit}
-                                        onChange={e => setEditingSubLimit({ ...editingSubLimit, customLimit: parseInt(e.target.value) || 0 })}
-                                        disabled={editingSubLimit.useGlobal}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-                                        placeholder="输入订阅数量限制"
-                                    />
-                                </div>
-                            </label>
-                        </div>
-
-                        <div className="flex gap-2 pt-2">
-                            <SubmitButton
-                                onClick={handleUpdateSubLimit}
-                                isLoading={loading}
-                                text="保存"
-                                className="flex-1"
-                            />
-                            <button
-                                onClick={() => setEditingSubLimit(null)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                            >
-                                取消
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
         </div>
     );
 }

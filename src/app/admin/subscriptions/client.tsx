@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, refreshAllSubscriptionCaches } from './actions';
+import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, refreshAllSubscriptionCaches, precacheAllSubscriptions } from './actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
@@ -199,22 +199,45 @@ export default function AdminSubsClient({
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">所有订阅管理</h1>
-                <button
-                    onClick={async () => {
-                        if (await confirm('确定要刷新所有订阅的缓存吗？这可能会增加服务器负载。')) {
-                            const res = await refreshAllSubscriptionCaches();
-                            if (res?.error) {
-                                error(res.error);
-                            } else {
-                                success('所有订阅缓存已清除');
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={async () => {
+                            if (await confirm('确定要预缓存所有订阅吗？这将为所有订阅生成缓存，可能需要一些时间。')) {
+                                setLoading(true);
+                                const res = await precacheAllSubscriptions();
+                                setLoading(false);
+                                if (res?.error) {
+                                    error(res.error);
+                                } else if (res?.message) {
+                                    success(res.message);
+                                } else {
+                                    success('所有订阅已缓存');
+                                }
                             }
-                        }
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-green-200"
-                >
-                    <span>🔄</span>
-                    刷新所有订阅缓存
-                </button>
+                        }}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span>📦</span>
+                        缓存所有订阅
+                    </button>
+                    <button
+                        onClick={async () => {
+                            if (await confirm('确定要刷新所有订阅的缓存吗？这可能会增加服务器负载。')) {
+                                const res = await refreshAllSubscriptionCaches();
+                                if (res?.error) {
+                                    error(res.error);
+                                } else {
+                                    success('所有订阅缓存已清除');
+                                }
+                            }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-green-200"
+                    >
+                        <span>🔄</span>
+                        刷新所有订阅缓存
+                    </button>
+                </div>
             </div>
 
             {subs.length === 0 ? (
