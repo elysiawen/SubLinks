@@ -125,7 +125,10 @@ async function handleRefresh(request: NextRequest, body: any) {
 
         for (const source of sources) {
             try {
-                await refreshUpstreamSource(source.name);
+                await refreshUpstreamSource(source.name, {
+                    reason: 'API Request',
+                    trigger: 'api'
+                });
                 refreshed.push(source.name);
             } catch (error) {
                 console.error(`Failed to refresh source ${source.name}:`, error);

@@ -99,6 +99,36 @@ export async function refreshSubscriptionCache(token: string) {
     return { success: true };
 }
 
+export async function rebuildSubscriptionCache(token: string) {
+    const session = await getAdminSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    try {
+        // 1. Clear cache
+        await db.deleteCache(`cache:subscription:${token}`);
+
+        // 2. Precache (Fetch)
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/s/${token}`, {
+            method: 'HEAD',
+            headers: {
+                'User-Agent': 'SubLinks-Precache/1.0',
+                'x-internal-system-precache': 'true',
+                'x-force-refresh': 'true'
+            }
+        });
+
+        if (!response.ok) {
+            return { error: `Failed to rebuild: Server returned ${response.status}` };
+        }
+
+        return { success: true, message: '已重建订阅缓存' };
+    } catch (e) {
+        console.error('Rebuild error:', e);
+        return { error: 'Failed to rebuild cache' };
+    }
+}
+
 export async function refreshAllSubscriptionCaches() {
     const session = await getAdminSession();
     if (!session) return { error: 'Unauthorized' };
@@ -110,7 +140,7 @@ export async function refreshAllSubscriptionCaches() {
     return { success: true };
 }
 
-export async function precacheAllSubscriptions() {
+export async function precacheAllSubscriptions(force: boolean = false) {
     const session = await getAdminSession();
     if (!session) return { error: 'Unauthorized' };
 
@@ -122,15 +152,26 @@ export async function precacheAllSubscriptions() {
             return { error: 'No subscriptions found' };
         }
 
+        // If forced, clear all caches first (much faster than individual deletion)
+        if (force) {
+            await db.clearAllSubscriptionCaches();
+        }
+
         // Trigger cache generation for each subscription by making a request
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
         const results = await Promise.allSettled(
             allSubs.map(async (sub) => {
                 try {
+                    // Note: If force is true, we already cleared global cache above.
+                    // If force is false, we just visit. If cache exists, it returns 200 (Hit). If not, it builds (Miss).
+
                     const response = await fetch(`${baseUrl}/api/s/${sub.token}`, {
                         method: 'HEAD', // Use HEAD to avoid downloading full content
                         headers: {
-                            'User-Agent': 'SubLinks-Precache/1.0'
+                            'User-Agent': 'SubLinks-Precache/1.0',
+                            'x-internal-system-precache': 'true',
+                            // Add a custom header just in case we need it later, though global clear handles it
+                            ...(force ? { 'x-force-refresh': 'true' } : {})
                         }
                     });
                     return { token: sub.token, success: response.ok };
@@ -140,11 +181,13 @@ export async function precacheAllSubscriptions() {
             })
         );
 
-        const successful = results.filter(r => r.status === 'fulfilled').length;
+        const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
 
         return {
             success: true,
-            message: `已缓存 ${successful}/${allSubs.length} 个订阅`,
+            message: force
+                ? `已重建 ${successful}/${allSubs.length} 个订阅缓存`
+                : `已预热 ${successful}/${allSubs.length} 个订阅缓存`,
             total: allSubs.length,
             cached: successful
         };

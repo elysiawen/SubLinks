@@ -48,7 +48,10 @@ export async function deleteRuleSet(id: string) {
 
 // --- Upstream Source Refresh ---
 
-export async function refreshUpstreamSource(sourceName: string) {
+export async function refreshUpstreamSource(
+    sourceName: string,
+    options: { reason?: string; trigger?: 'manual' | 'api' | 'schedule' | 'auto' } = {}
+) {
     const source = await db.getUpstreamSourceByName(sourceName);
     if (!source) {
         throw new Error(`Source not found: ${sourceName}`);
@@ -56,7 +59,7 @@ export async function refreshUpstreamSource(sourceName: string) {
 
     // Call the actual refresh logic from analysis.ts
     const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
-    const success = await refreshSingleUpstreamSource(source.name, source.url);
+    const success = await refreshSingleUpstreamSource(source.name, source.url, undefined, options);
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/proxies');

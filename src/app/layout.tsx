@@ -3,8 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AccessLogger from '@/components/AccessLogger';
 import ProgressBar from '@/components/ProgressBar';
-import { ToastProvider } from '@/components/ToastProvider';
-import { ConfirmProvider } from '@/components/ConfirmProvider';
+import { Providers } from '@/components/Providers';
 import { Suspense } from 'react';
 
 const geistSans = Geist({
@@ -32,15 +31,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <ConfirmProvider>
-            <AccessLogger />
-            <Suspense fallback={null}>
-              <ProgressBar />
-            </Suspense>
-            {children}
-          </ConfirmProvider>
-        </ToastProvider>
+        <Providers>
+          <AccessLogger />
+          <Suspense fallback={null}>
+            <ProgressBar />
+          </Suspense>
+          {children}
+        </Providers>
       </body>
     </html >
   );

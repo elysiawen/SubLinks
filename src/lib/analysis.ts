@@ -56,19 +56,33 @@ export async function getParsedConfig(): Promise<ClashConfig | null> {
 
 const runningRefreshes = new Map<string, Promise<boolean>>();
 
+interface RefreshOptions {
+    reason?: string;
+    trigger?: 'manual' | 'api' | 'schedule' | 'auto';
+}
+
 /**
  * Refresh a single upstream source (used when adding new sources)
  */
-export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl: string) {
+export async function refreshSingleUpstreamSource(
+    sourceName: string,
+    sourceUrl: string,
+    logger?: (msg: string, type?: 'info' | 'success' | 'error') => void,
+    options: RefreshOptions = {}
+) {
     // Check if refresh is already running for this source
     if (runningRefreshes.has(sourceName)) {
-        console.log(`🔄 Refresh already in progress for [${sourceName}], joining...`);
+        const msg = `🔄 Refresh already in progress for [${sourceName}], joining...`;
+        console.log(msg);
+        if (logger) logger(msg, 'info');
         return runningRefreshes.get(sourceName)!;
     }
 
     const refreshTask = (async () => {
         try {
-            console.log(`📥 Fetching from upstream source [${sourceName}]: ${sourceUrl.substring(0, 50)}...`);
+            const msg = `📥 Fetching from upstream source [${sourceName}]: ${sourceUrl.substring(0, 50)}...`;
+            console.log(msg);
+            if (logger) logger(msg, 'info');
 
             const config = await db.getGlobalConfig();
             const userAgent = config.upstreamUserAgent || 'Clash/Vercel-Sub-Manager';
@@ -80,12 +94,15 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             });
 
             if (!res.ok) {
-                console.error(`   ❌ Source [${sourceName}] failed: ${res.status}`);
+                const errorMsg = `   ❌ Source [${sourceName}] failed: ${res.status}`;
+                console.error(errorMsg);
+                if (logger) logger(errorMsg, 'error');
+
                 await db.createSystemLog({
                     category: 'error',
-                    message: `Failed to fetch upstream source: ${sourceName}`,
+                    message: `Failed to fetch upstream source: ${sourceName} (${options.reason || 'Unknown Trigger'})`,
                     status: 'failure',
-                    details: { status: res.status, url: sourceUrl },
+                    details: { status: res.status, url: sourceUrl, trigger: options.trigger },
                     timestamp: Date.now()
                 });
 
@@ -130,21 +147,27 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             }
 
             // Clear existing data for this source before adding new data
-            console.log(`   🗑️ Clearing old data for source [${sourceName}]...`);
+            const clearMsg = `   🗑️ Clearing old data for source [${sourceName}]...`;
+            console.log(clearMsg);
+            if (logger) logger(clearMsg, 'info');
+
             await db.clearProxies(sourceName);
             await db.clearProxyGroups(sourceName);
             await db.clearRules(sourceName);
 
             // Parse and store with source name
-            await parseAndStoreUpstream(content, sourceName);
+            await parseAndStoreUpstream(content, sourceName, logger);
 
-            console.log(`✅ Source [${sourceName}] fetched and parsed successfully.`);
+            const successMsg = `✅ Source [${sourceName}] fetched and parsed successfully.`;
+            console.log(successMsg);
+            if (logger) logger(successMsg, 'success');
 
-            // Log success
+            // Log success with detail
             await db.createSystemLog({
                 category: 'update',
-                message: `Upstream source added and cached: ${sourceName}`,
+                message: `Upstream source added and cached: ${sourceName} [Trigger: ${options.reason || 'Unknown'}]`,
                 status: 'success',
+                details: { trigger: options.trigger },
                 timestamp: Date.now()
             });
 
@@ -164,17 +187,21 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
             });
 
             // Clear all subscription caches to ensure they pick up the new/updated source data
-            console.log('🗑️ Clearing all subscription caches (triggered by single source update)...');
+            const cacheMsg = '   🗑️ Clearing all subscription caches (triggered by single source update)...';
+            console.log(cacheMsg);
+            if (logger) logger(cacheMsg, 'info');
             await db.clearAllSubscriptionCaches();
 
             return true;
         } catch (e) {
-            console.error(`Failed to refresh upstream source [${sourceName}]:`, e);
+            const errorMsg = `Failed to refresh upstream source [${sourceName}]: ${String(e)}`;
+            console.error(errorMsg, e);
+            if (logger) logger(errorMsg, 'error');
             await db.createSystemLog({
                 category: 'error',
-                message: `Failed to refresh upstream source: ${sourceName}`,
+                message: `Failed to refresh upstream source: ${sourceName} (${options.reason || 'Unknown Trigger'})`,
                 status: 'failure',
-                details: { error: String(e) },
+                details: { error: String(e), trigger: options.trigger },
                 timestamp: Date.now()
             });
 
@@ -203,145 +230,62 @@ export async function refreshSingleUpstreamSource(sourceName: string, sourceUrl:
 let refreshPromise: Promise<boolean> | null = null;
 
 /**
- * Refresh all upstream sources
+ * Refresh all data from upstream (Proxies, Groups, Rules)
+ * This is a heavy operation!
  */
-export async function refreshUpstreamCache() {
+export async function refreshUpstreamCache(
+    logger?: (msg: string, type?: 'info' | 'success' | 'error') => void,
+    options: RefreshOptions = {}
+): Promise<boolean> {
     // If a refresh is already in progress, return the existing promise
     if (refreshPromise) {
-        console.log('🔄 Upstream refresh already in progress, reusing existing promise...');
+        const msg = '🔄 Upstream refresh already in progress, reusing existing promise...';
+        console.log(msg);
+        if (logger) logger(msg, 'info');
         return refreshPromise;
     }
 
     refreshPromise = (async () => {
         try {
-            const config = await db.getGlobalConfig();
-            // Default legacy cache check
-            const cacheDuration = 24 * 3600;
-
-            // Get upstream sources from database
-            let sources = await db.getUpstreamSources();
+            const sources = await db.getUpstreamSources();
 
             if (sources.length === 0) {
-                console.warn('No upstream sources configured, skipping refresh.');
+                const msg = 'No upstream sources configured, skipping refresh.';
+                console.warn(msg);
+                if (logger) logger(msg, 'info');
                 return false;
             }
 
-            console.log(`📥 Fetching from ${sources.length} upstream source(s)...`);
+            const msg = `📥 Fetching from ${sources.length} upstream source(s)... [Reason: ${options.reason || 'Unknown'}]`;
+            console.log(msg);
+            if (logger) logger(msg, 'info');
 
-            let allContent = '';
-
-            // Fetch from all sources
+            // Run sequentially to avoid overwhelming
             for (let i = 0; i < sources.length; i++) {
                 const source = sources[i];
-                console.log(`   Fetching source ${i + 1}/${sources.length} [${source.name}]: ${source.url.substring(0, 50)}...`);
+                const progressMsg = `   Processing source ${i + 1}/${sources.length} [${source.name}]...`;
+                console.log(progressMsg);
+                if (logger) logger(progressMsg, 'info');
 
-                try {
-                    // Clear existing data for this source before fetching new data
-                    console.log(`   🗑️ Clearing old data for source [${source.name}]...`);
-                    await db.clearProxies(source.name);
-                    await db.clearProxyGroups(source.name);
-                    await db.clearRules(source.name);
-
-                    const res = await fetch(source.url, {
-                        headers: {
-                            'User-Agent': 'Clash/Vercel-Sub-Manager'
-                        }
-                    });
-
-                    if (!res.ok) {
-                        console.error(`   ❌ Source [${source.name}] failed: ${res.status}`);
-
-                        // Update failure status
-                        await db.updateUpstreamSource(source.name, {
-                            lastUpdated: Date.now(),
-                            status: 'failure',
-                            error: `HTTP Error: ${res.status}`
-                        });
-
-                        continue;
-                    }
-
-                    const content = await res.text();
-
-                    // Parse and store with source name
-                    await parseAndStoreUpstream(content, source.name);
-
-                    // Keep first source as main cache for backward compatibility
-                    if (i === 0) {
-                        allContent = content;
-                    }
-
-                    console.log(`   ✓ Source [${source.name}] parsed successfully`);
-
-                    // Update success status
-                    await db.updateUpstreamSource(source.name, {
-                        lastUpdated: Date.now(),
-                        status: 'success',
-                        error: undefined
-                    });
-
-                } catch (error) {
-                    console.error(`   ❌ Source [${source.name}] error:`, error);
-
-                    // Update failure status on exception
-                    await db.updateUpstreamSource(source.name, {
-                        lastUpdated: Date.now(),
-                        status: 'failure',
-                        error: String(error)
-                    });
-                }
+                await refreshSingleUpstreamSource(source.name, source.url, logger, options);
             }
 
-            // Save raw cache (for backup/fallback) - use first source
-            if (allContent) {
-                await db.setCache('cache:subscription', allContent, cacheDuration);
-            }
-
-            console.log('✅ All upstream sources refreshed successfully.');
+            const successMsg = '✅ All upstream sources refreshed successfully.';
+            console.log(successMsg);
+            if (logger) logger(successMsg, 'success');
 
             // Update global config with last updated timestamp
-            const globalConfig = await db.getGlobalConfig();
+            const config = await db.getGlobalConfig();
             await db.setGlobalConfig({
-                ...globalConfig,
+                ...config,
                 upstreamLastUpdated: Date.now()
             });
 
-            // Clear all subscription caches to force regeneration with new upstream data
-            console.log('🗑️ Clearing all subscription caches...');
-            await db.clearAllSubscriptionCaches();
-            console.log('✅ Subscription caches cleared.');
-
-            // Log system event
-            try {
-                await db.createSystemLog({
-                    category: 'update',
-                    message: `Upstream sources refreshed: ${sources.length} sources processed`,
-                    status: 'success',
-                    details: { sources: sources.map(s => s.name) },
-                    timestamp: Date.now()
-                });
-            } catch (e) {
-                console.error('Failed to create system log:', e);
-            }
-
             return true;
-
         } catch (e) {
-            console.error('Failed to refresh upstream cache:', e);
-
-            // Log system error
-            try {
-                await db.createSystemLog({
-                    category: 'error',
-                    message: 'Failed to refresh upstream cache',
-                    status: 'failure',
-                    details: { error: String(e) },
-                    timestamp: Date.now()
-                });
-            } catch (logError) {
-                console.error('Failed to create system log for error:', logError);
-            }
-
+            const errorMsg = `Failed to refresh upstream sources: ${e}`;
+            console.error(errorMsg);
+            if (logger) logger(errorMsg, 'error');
             return false;
         } finally {
             refreshPromise = null;
@@ -350,3 +294,4 @@ export async function refreshUpstreamCache() {
 
     return refreshPromise;
 }
+

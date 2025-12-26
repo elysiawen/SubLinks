@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, refreshAllSubscriptionCaches, precacheAllSubscriptions } from './actions';
+import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, precacheAllSubscriptions } from './actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
@@ -202,40 +202,25 @@ export default function AdminSubsClient({
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={async () => {
-                            if (await confirm('确定要预缓存所有订阅吗？这将为所有订阅生成缓存，可能需要一些时间。')) {
+                            if (await confirm('确定要重建所有订阅缓存吗？\n\n这将清除所有现有缓存并立即重新生成它们。此操作可能需要一些时间，但能确保所有用户访问时无延迟。')) {
                                 setLoading(true);
-                                const res = await precacheAllSubscriptions();
+                                // Pass true to force clear before precache
+                                const res = await precacheAllSubscriptions(true);
                                 setLoading(false);
                                 if (res?.error) {
                                     error(res.error);
                                 } else if (res?.message) {
                                     success(res.message);
                                 } else {
-                                    success('所有订阅已缓存');
+                                    success('所有订阅缓存已重建');
                                 }
                             }
                         }}
                         disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <span>📦</span>
-                        缓存所有订阅
-                    </button>
-                    <button
-                        onClick={async () => {
-                            if (await confirm('确定要刷新所有订阅的缓存吗？这可能会增加服务器负载。')) {
-                                const res = await refreshAllSubscriptionCaches();
-                                if (res?.error) {
-                                    error(res.error);
-                                } else {
-                                    success('所有订阅缓存已清除');
-                                }
-                            }
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-green-200"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span>🔄</span>
-                        刷新所有订阅缓存
+                        重建所有缓存
                     </button>
                 </div>
             </div>
@@ -285,19 +270,20 @@ export default function AdminSubsClient({
                                             <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                                 <button
                                                     onClick={async () => {
-                                                        if (await confirm('确定要刷新此订阅的缓存吗？')) {
-                                                            const res = await refreshSubscriptionCache(sub.token);
+                                                        if (await confirm('确定要重建此订阅的缓存吗？')) {
+                                                            const { rebuildSubscriptionCache } = await import('./actions');
+                                                            const res = await rebuildSubscriptionCache(sub.token);
                                                             if (res?.error) {
                                                                 error(res.error);
                                                             } else {
-                                                                success('缓存已清除');
+                                                                success('订阅缓存已重建');
                                                             }
                                                         }
                                                     }}
-                                                    className="text-green-600 hover:text-green-800 font-medium"
-                                                    title="清除此订阅的缓存"
+                                                    className="text-green-600 hover:text-blue-800 font-medium"
+                                                    title="重建缓存 (清除并立即生成)"
                                                 >
-                                                    刷新
+                                                    重建
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(sub)}
@@ -364,15 +350,16 @@ export default function AdminSubsClient({
                                     <div className="flex gap-4 text-sm font-medium">
                                         <button
                                             onClick={async () => {
-                                                if (await confirm('确定要刷新此订阅的缓存吗？')) {
-                                                    const res = await refreshSubscriptionCache(sub.token);
+                                                if (await confirm('确定要重建此订阅的缓存吗？')) {
+                                                    const { rebuildSubscriptionCache } = await import('./actions');
+                                                    const res = await rebuildSubscriptionCache(sub.token);
                                                     if (res?.error) error(res.error);
-                                                    else success('缓存已清除');
+                                                    else success('订阅缓存已重建');
                                                 }
                                             }}
-                                            className="text-green-600 hover:text-green-800"
+                                            className="text-blue-600 hover:text-blue-800 font-medium"
                                         >
-                                            刷新
+                                            重建
                                         </button>
                                         <button
                                             onClick={() => handleEdit(sub)}
@@ -392,7 +379,8 @@ export default function AdminSubsClient({
                         ))}
                     </div>
                 </>
-            )}
+            )
+            }
 
             {/* Edit Modal */}
             <Modal
@@ -596,6 +584,6 @@ export default function AdminSubsClient({
                     </>
                 )}
             </Modal>
-        </div>
+        </div >
     );
 }

@@ -36,13 +36,72 @@ const formatBytes = (bytes: number) => {
 };
 
 export default function UpstreamSourcesClient({ sources: initialSources, currentApiKey }: { sources: UpstreamSource[], currentApiKey?: string }) {
-    const { success, error } = useToast();
+    const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
     const [sources, setSources] = useState<UpstreamSource[]>(initialSources);
     const [isAdding, setIsAdding] = useState(false);
     const [editingSource, setEditingSource] = useState<UpstreamSource | null>(null);
     const [loading, setLoading] = useState(false);
     const [showApiModal, setShowApiModal] = useState(false);
+
+    // Stream Refresh Logic
+    const handleStreamRefresh = async (sourceName?: string) => {
+        const toastId = addToast(
+            sourceName ? `正在刷新上游源 "${sourceName}"...` : '正在刷新所有上游源...',
+            'info',
+            Infinity // Persistent toast
+        );
+        setLoading(true);
+
+        try {
+            const params = sourceName ? `?name=${encodeURIComponent(sourceName)}` : '';
+            const res = await fetch(`/api/sources/stream-refresh${params}`, {
+                cache: 'no-store'
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.body) throw new Error('ReadableStream not supported');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Process all complete lines
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const data = JSON.parse(line);
+                        updateToast(toastId, data.message, data.type);
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                    }
+                }
+            }
+
+            // Final success state
+            // updateToast(toastId, 'Refresh completed', 'success');
+            // Allow user to see final message for a moment before removal
+            setTimeout(() => removeToast(toastId), 2000);
+            window.location.reload();
+
+        } catch (e) {
+            console.error('Refresh error:', e);
+            updateToast(toastId, `刷新失败: ${e}`, 'error');
+            // Keep error toast for a while
+            setTimeout(() => removeToast(toastId), 5000);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Form state
     const [formName, setFormName] = useState('');
@@ -170,34 +229,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         if (!await confirm('确定要强制刷新所有上游源吗？\n\n这将重新获取所有上游订阅数据并清空所有订阅缓存。')) {
             return;
         }
-
-        setLoading(true);
-        const result = await forceRefreshUpstream();
-        setLoading(false);
-
-        if (result.success) {
-            success('上游源刷新成功！');
-            window.location.reload();
-        } else {
-            error('上游源刷新失败，请查看日志');
-        }
+        await handleStreamRefresh();
     };
 
     const handleRefreshSingle = async (sourceName: string) => {
         if (!await confirm(`确定要刷新上游源 "${sourceName}" 吗？\n\n这将重新获取该上游源的订阅数据。`)) {
             return;
         }
-
-        setLoading(true);
-        const result = await refreshSingleSource(sourceName);
-        setLoading(false);
-
-        if (result.success) {
-            success(`上游源 "${sourceName}" 刷新成功！`);
-            window.location.reload();
-        } else {
-            error(`上游源 "${sourceName}" 刷新失败，请查看日志`);
-        }
+        await handleStreamRefresh(sourceName);
     };
 
     const handleSetDefault = async (sourceName: string) => {

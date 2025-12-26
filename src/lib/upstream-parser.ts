@@ -6,11 +6,17 @@ import type { Proxy, ProxyGroup, Rule } from './database/interface';
 /**
  * Parse upstream YAML content and store structured data to database
  */
-export async function parseAndStoreUpstream(yamlContent: string, sourceName: string = 'upstream'): Promise<void> {
+export async function parseAndStoreUpstream(
+    yamlContent: string,
+    sourceName: string = 'upstream',
+    logger?: (msg: string, type?: 'info' | 'success' | 'error') => void
+): Promise<void> {
     try {
         const config = yaml.load(yamlContent) as any;
 
-        console.log(`📦 Parsing upstream subscription data from [${sourceName}]...`);
+        const startMsg = `📦 Parsing upstream subscription data from [${sourceName}]...`;
+        console.log(startMsg);
+        if (logger) logger(startMsg, 'info');
 
         // Don't clear - allow merging from multiple sources
 
@@ -28,7 +34,9 @@ export async function parseAndStoreUpstream(yamlContent: string, sourceName: str
             }));
 
             await db.saveProxies(proxies);
-            console.log(`  ✓ Saved ${proxies.length} proxies from [${sourceName}]`);
+            const proxyMsg = `  ✓ Saved ${proxies.length} proxies from [${sourceName}]`;
+            console.log(proxyMsg);
+            if (logger) logger(proxyMsg, 'success');
         }
 
         // 2. Store Proxy Groups
@@ -48,7 +56,9 @@ export async function parseAndStoreUpstream(yamlContent: string, sourceName: str
             });
 
             await db.saveProxyGroups(groups);
-            console.log(`  ✓ Saved ${groups.length} proxy groups from [${sourceName}]`);
+            const groupMsg = `  ✓ Saved ${groups.length} proxy groups from [${sourceName}]`;
+            console.log(groupMsg);
+            if (logger) logger(groupMsg, 'success');
         }
 
         // 3. Store Rules
@@ -62,7 +72,9 @@ export async function parseAndStoreUpstream(yamlContent: string, sourceName: str
             }));
 
             await db.saveRules(rules);
-            console.log(`  ✓ Saved ${rules.length} rules from [${sourceName}]`);
+            const ruleMsg = `  ✓ Saved ${rules.length} rules from [${sourceName}]`;
+            console.log(ruleMsg);
+            if (logger) logger(ruleMsg, 'success');
         }
 
         // 4. Store Other Config Items (dns, tun, experimental, etc.)
@@ -73,9 +85,13 @@ export async function parseAndStoreUpstream(yamlContent: string, sourceName: str
             }
         }
 
-        console.log(`✅ Upstream data from [${sourceName}] parsed and stored successfully`);
+        const doneMsg = `Upstream data from [${sourceName}] parsed and stored successfully`;
+        console.log(doneMsg);
+        if (logger) logger(doneMsg, 'success');
     } catch (error) {
-        console.error(`❌ Failed to parse upstream data from [${sourceName}]:`, error);
+        const errorMsg = `Failed to parse upstream data from [${sourceName}]: ${error}`;
+        console.error(errorMsg);
+        if (logger) logger(errorMsg, 'error');
         throw error;
     }
 }

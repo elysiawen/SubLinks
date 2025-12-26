@@ -210,7 +210,10 @@ export async function GET(
             await Promise.all(staleSources.map(async (sourceName) => {
                 const source = upstreamSources.find(s => s.name === sourceName);
                 if (source) {
-                    await refreshSingleUpstreamSource(sourceName, source.url);
+                    await refreshSingleUpstreamSource(sourceName, source.url, undefined, {
+                        reason: 'Stale Auto-Refresh',
+                        trigger: 'auto'
+                    });
                 }
             }));
 
@@ -251,7 +254,7 @@ export async function GET(
         // 2. Upstream source is updated (analysis.ts)
         await db.setCache(cacheKey, finalYaml);
 
-        console.log(`✅ Built and cached subscription for token: ${token}, cache duration: ${cacheDuration}h`);
+        console.log(`✅ Built and cached subscription for token: ${token}`);
 
         // Return YAML
         await logAccess(200);
