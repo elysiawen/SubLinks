@@ -175,7 +175,7 @@ async function handleRefresh(request: NextRequest, body: any) {
         const cacheCleared = await db.clearAllSubscriptionCaches();
 
         // Get affected subscriptions for precaching
-        const allSubs = await db.getAllSubscriptions();
+        const { data: allSubs } = await db.getAllSubscriptions(1, 10000);
         const affectedSubs = allSubs.filter(sub => {
             const selectedSources = sub.selectedSources || [];
             return sources.some(source => selectedSources.includes(source.name));

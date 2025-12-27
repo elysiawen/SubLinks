@@ -19,11 +19,11 @@ async function getAdminSession() {
     return session;
 }
 
-export async function getAdminSubscriptions() {
+export async function getAdminSubscriptions(page: number = 1, limit: number = 10, search?: string) {
     const session = await getAdminSession();
-    if (!session) return [];
+    if (!session) return { data: [], total: 0 };
 
-    return await db.getAllSubscriptions();
+    return await db.getAllSubscriptions(page, limit, search);
 }
 
 export async function deleteAdminSubscription(token: string) {
@@ -146,7 +146,8 @@ export async function precacheAllSubscriptions(force: boolean = false) {
 
     try {
         // Get all subscriptions
-        const allSubs = await db.getAllSubscriptions();
+        // Get all subscriptions - for precache we want all, so use large limit
+        const { data: allSubs } = await db.getAllSubscriptions(1, 10000);
 
         if (allSubs.length === 0) {
             return { error: 'No subscriptions found' };

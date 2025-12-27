@@ -15,6 +15,11 @@ export interface Session {
     role: string;
 }
 
+export interface PaginatedResult<T> {
+    data: T[];
+    total: number;
+}
+
 export interface SubData {
     username: string;
     remark: string;
@@ -133,7 +138,7 @@ export interface IDatabase {
     getUserById(id: string): Promise<User | null>;  // New: Get user by UUID
     setUser(username: string, data: User): Promise<void>;
     deleteUser(username: string): Promise<void>;
-    getAllUsers(): Promise<Array<User & { username: string }>>;
+    getAllUsers(page?: number, limit?: number, search?: string): Promise<PaginatedResult<User & { username: string }>>;
     userExists(username: string): Promise<boolean>;
 
     // Session operations
@@ -148,7 +153,7 @@ export interface IDatabase {
     deleteSubscription(token: string, username: string): Promise<void>;
     updateSubscription(token: string, data: SubData): Promise<void>;
     getUserSubscriptions(username: string): Promise<Array<SubData & { token: string }>>;
-    getAllSubscriptions(): Promise<Array<SubData & { token: string }>>;
+    getAllSubscriptions(page?: number, limit?: number, search?: string): Promise<PaginatedResult<SubData & { token: string }>>;
     isSubscriptionOwner(username: string, token: string): Promise<boolean>;
 
     // Config operations

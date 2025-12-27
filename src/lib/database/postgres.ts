@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult } from './interface';
 import { nanoid } from 'nanoid';
 
 export default class PostgresDatabase implements IDatabase {
@@ -419,10 +419,31 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM users WHERE username = $1', [username]);
     }
 
-    async getAllUsers(): Promise<Array<User & { username: string }>> {
+    async getAllUsers(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<User & { username: string }>> {
         await this.ensureInitialized();
-        const result = await this.pool.query('SELECT * FROM users');
-        return result.rows.map((row) => ({
+        const offset = (page - 1) * limit;
+
+        let query = 'SELECT * FROM users';
+        let countQuery = 'SELECT COUNT(*) FROM users';
+        const params: any[] = [];
+        const countParams: any[] = [];
+
+        if (search) {
+            query += ' WHERE username ILIKE $1';
+            countQuery += ' WHERE username ILIKE $1';
+            params.push(`%${search}%`);
+            countParams.push(`%${search}%`);
+        }
+
+        const countResult = await this.pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
+
+        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+
+        const result = await this.pool.query(query, params);
+
+        const data = result.rows.map((row) => ({
             id: row.id,
             username: row.username,
             password: row.password,
@@ -431,6 +452,8 @@ export default class PostgresDatabase implements IDatabase {
             maxSubscriptions: row.max_subscriptions,
             createdAt: parseInt(row.created_at),
         }));
+
+        return { data, total };
     }
 
     async userExists(username: string): Promise<boolean> {
@@ -546,10 +569,32 @@ export default class PostgresDatabase implements IDatabase {
         };
     }
 
-    async getAllSubscriptions(): Promise<Array<SubData & { token: string }>> {
+    async getAllSubscriptions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
         await this.ensureInitialized();
-        const result = await this.pool.query('SELECT * FROM subscriptions ORDER BY created_at DESC');
-        return result.rows.map((row) => ({
+        const offset = (page - 1) * limit;
+
+        let query = 'SELECT * FROM subscriptions';
+        let countQuery = 'SELECT COUNT(*) FROM subscriptions';
+        const params: any[] = [];
+        const countParams: any[] = [];
+
+        if (search) {
+            const searchClause = ' WHERE username ILIKE $1 OR remark ILIKE $1 OR token ILIKE $1';
+            query += searchClause;
+            countQuery += searchClause;
+            params.push(`%${search}%`);
+            countParams.push(`%${search}%`);
+        }
+
+        const countResult = await this.pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
+
+        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+
+        const result = await this.pool.query(query, params);
+
+        const data = result.rows.map((row) => ({
             token: row.token,
             username: row.username,
             remark: row.remark,
@@ -560,6 +605,8 @@ export default class PostgresDatabase implements IDatabase {
             enabled: row.enabled,
             createdAt: parseInt(row.created_at),
         }));
+
+        return { data, total };
     }
 
     async deleteSubscription(token: string, username: string): Promise<void> {

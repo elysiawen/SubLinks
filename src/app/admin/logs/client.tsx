@@ -556,8 +556,8 @@ export default function LogsClient() {
                 {/* Mobile Card View */}
                 <div className="md:hidden divide-y divide-gray-800/50">
                     {processedLogs.map((log) => (
-                        <div key={log.id} className="p-4 hover:bg-white/[0.03] transition-colors">
-                            <div className="space-y-3">
+                        <div key={log.id} className="p-4 hover:bg-white/[0.03] transition-colors max-w-full overflow-hidden">
+                            <div className="space-y-3 max-w-full overflow-hidden">
                                 {/* Time and Status */}
                                 <div className="flex items-start justify-between">
                                     <div className="text-xs text-gray-400">
@@ -731,13 +731,21 @@ export default function LogsClient() {
 
                                             {/* Expanded System Logs Mobile */}
                                             {log.isMerged && expandedLogs.has(log.id) && log.mergedLogs && (
-                                                <div className="mt-2 pl-3 border-l-2 border-gray-700 space-y-2">
+                                                <div className="mt-2 pl-2 border-l-2 border-gray-700 space-y-2 w-full">
                                                     {log.mergedLogs.map((childLog: any) => (
-                                                        <div key={childLog.id} className="text-xs text-gray-400">
-                                                            <div className="flex justify-between">
-                                                                <span>{new Date(childLog.timestamp).toLocaleTimeString()}</span>
-                                                                <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
+                                                        <div key={childLog.id} className="text-xs bg-gray-900/50 p-1.5 rounded border border-gray-800 w-full min-w-0">
+                                                            <div className="flex justify-between mb-1 gap-2 min-w-0">
+                                                                <span className="text-gray-500 flex-shrink-0 text-[10px]">{new Date(childLog.timestamp).toLocaleTimeString()}</span>
+                                                                <span className={`${getStatusColor(childLog.status)} flex-shrink-0 text-[10px]`}>{childLog.status}</span>
                                                             </div>
+                                                            <div className="text-gray-300 break-words overflow-wrap-anywhere text-[11px] min-w-0">{childLog.message}</div>
+                                                            {childLog.details && (
+                                                                <div className="mt-1 text-gray-400 text-[10px] break-words overflow-wrap-anywhere min-w-0">
+                                                                    {typeof childLog.details === 'string'
+                                                                        ? childLog.details
+                                                                        : JSON.stringify(childLog.details)}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>

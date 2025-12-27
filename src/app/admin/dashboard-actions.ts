@@ -4,12 +4,12 @@ import { db } from '@/lib/db';
 
 export async function getDashboardStats() {
     // Get all users
-    const allUsers = await db.getAllUsers();
+    const { data: allUsers } = await db.getAllUsers(1, 10000);
     const activeUsers = allUsers.filter(u => u.status === 'active').length;
     const inactiveUsers = allUsers.filter(u => u.status === 'inactive').length;
 
     // Get all subscriptions
-    const allSubs = await db.getAllSubscriptions();
+    const { data: allSubs } = await db.getAllSubscriptions(1, 10000);
 
     // Get upstream sources
     const upstreamSources = await db.getUpstreamSources();

@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import RedisMock from 'ioredis-mock';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult } from './interface';
 import { nanoid } from 'nanoid';
 
 export default class RedisDatabase implements IDatabase {
@@ -82,19 +82,35 @@ export default class RedisDatabase implements IDatabase {
         await this.redis.srem('users:index', username);
     }
 
-    async getAllUsers(): Promise<Array<User & { username: string }>> {
+    async getAllUsers(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<User & { username: string }>> {
         const usernames = await this.redis.smembers('users:index');
-        if (!usernames || usernames.length === 0) return [];
+        let total = usernames.length;
+        if (!usernames || total === 0) return { data: [], total: 0 };
+
+        usernames.sort();
+
+        // 1. Fetch all requested users (or filter keys first if possible? No, user data might be needed)
+        // But for username search, we can filter keys directly!
+        let filteredUsernames = usernames;
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            filteredUsernames = usernames.filter(u => u.toLowerCase().includes(lowerSearch));
+            total = filteredUsernames.length;
+        }
+
+        const offset = (page - 1) * limit;
+        const pagedUsernames = filteredUsernames.slice(offset, offset + limit);
 
         const users = await Promise.all(
-            usernames.map(async (username) => {
+            pagedUsernames.map(async (username) => {
                 const data = await this.redis.get(`user:${username}`);
                 if (!data) return null;
                 return { username, ...JSON.parse(data) };
             })
         );
 
-        return users.filter((u) => u !== null) as Array<User & { username: string }>;
+        const data = users.filter((u) => u !== null) as Array<User & { username: string }>;
+        return { data, total };
     }
 
     async userExists(username: string): Promise<boolean> {
@@ -154,11 +170,11 @@ export default class RedisDatabase implements IDatabase {
         return subs.filter((s) => s !== null) as Array<SubData & { token: string }>;
     }
 
-    async getAllSubscriptions(): Promise<Array<SubData & { token: string }>> {
+    async getAllSubscriptions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
         const keys = await this.redis.keys('sub:*');
-        if (!keys || keys.length === 0) return [];
+        if (!keys || keys.length === 0) return { data: [], total: 0 };
 
-        const subs = await Promise.all(
+        let subs = await Promise.all(
             keys.map(async (key) => {
                 const token = key.replace('sub:', '');
                 const data = await this.redis.get(key);
@@ -166,8 +182,29 @@ export default class RedisDatabase implements IDatabase {
             })
         );
 
-        return (subs.filter((s) => s !== null) as Array<SubData & { token: string }>)
-            .sort((a, b) => b.createdAt - a.createdAt);
+        // Filter nulls
+        let validSubs = subs.filter((s) => s !== null) as Array<SubData & { token: string }>;
+
+        // Filter by search
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            validSubs = validSubs.filter(s =>
+                s.username.toLowerCase().includes(lowerSearch) ||
+                s.remark.toLowerCase().includes(lowerSearch) ||
+                s.token.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        const total = validSubs.length;
+
+        // Sort
+        validSubs.sort((a, b) => b.createdAt - a.createdAt);
+
+        // Pagination
+        const offset = (page - 1) * limit;
+        const data = validSubs.slice(offset, offset + limit);
+
+        return { data, total };
     }
 
     async isSubscriptionOwner(username: string, token: string): Promise<boolean> {

@@ -75,8 +75,8 @@ export async function clearLogs(days: number = 30) {
 }
 
 // User Management
-export async function getUsers() {
-    return await db.getAllUsers();
+export async function getUsers(page: number = 1, limit: number = 10, search?: string) {
+    return await db.getAllUsers(page, limit, search);
 }
 
 export async function createUser(formData: FormData) {

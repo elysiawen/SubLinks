@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, precacheAllSubscriptions } from './actions';
+import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache } from './actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 import Modal from '@/components/Modal';
+import Search from '@/components/Search';
+import Pagination from '@/components/Pagination';
 
 interface Sub {
     token: string;
@@ -28,22 +30,146 @@ interface ConfigSets {
 
 export default function AdminSubsClient({
     initialSubs,
+    total,
+    currentPage,
+    itemsPerPage,
     configSets,
     defaultGroups,
     availableSources
 }: {
     initialSubs: Sub[],
+    total: number,
+    itemsPerPage: number,
+    currentPage: number,
     configSets: ConfigSets,
     defaultGroups: string[],
     availableSources: { name: string; url: string }[]
 }) {
-    const { success, error } = useToast();
+    const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showRebuildModal, setShowRebuildModal] = useState(false);
+    const [rebuildBatchSize, setRebuildBatchSize] = useState<number>(0); // 0 = full concurrency
 
-    // Form state
+    // Update subs when initialSubs changes (e.g. page navigation)
+    useEffect(() => {
+        setSubs(initialSubs);
+    }, [initialSubs]);
+
+    // Stream Rebuild Logic
+    const handleStreamRebuild = async (batchSize: number = 0) => {
+        const toastId = addToast(
+            '正在重建所有订阅缓存...',
+            'info',
+            Infinity // Persistent toast
+        );
+        setLoading(true);
+
+        try {
+            const url = batchSize > 0
+                ? `/api/subscriptions/stream-rebuild?force=true&batchSize=${batchSize}`
+                : '/api/subscriptions/stream-rebuild?force=true';
+            const res = await fetch(url, {
+                cache: 'no-store'
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.body) throw new Error('ReadableStream not supported');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Process all complete lines
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const data = JSON.parse(line);
+                        updateToast(toastId, data.message, data.type);
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                    }
+                }
+            }
+
+            // Allow user to see final message for a moment before removal
+            setTimeout(() => removeToast(toastId), 2000);
+            window.location.reload();
+
+        } catch (e) {
+            console.error('Rebuild error:', e);
+            updateToast(toastId, `重建失败: ${e}`, 'error');
+            // Keep error toast for a while
+            setTimeout(() => removeToast(toastId), 5000);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Stream Single Rebuild Logic
+    const handleSingleRebuild = async (token: string, username: string, remark: string) => {
+        const toastId = addToast(
+            `正在重建 ${username} 的订阅...`,
+            'info',
+            Infinity
+        );
+
+        try {
+            const res = await fetch(`/api/subscriptions/stream-rebuild?token=${encodeURIComponent(token)}`, {
+                cache: 'no-store'
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.body) throw new Error('ReadableStream not supported');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const data = JSON.parse(line);
+                        updateToast(toastId, data.message, data.type);
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                    }
+                }
+            }
+
+            setTimeout(() => removeToast(toastId), 2000);
+            window.location.reload();
+
+        } catch (e) {
+            console.error('Rebuild error:', e);
+            updateToast(toastId, `重建失败: ${e}`, 'error');
+            setTimeout(() => removeToast(toastId), 5000);
+        }
+    };
+
+    // Form state and logic... (kept same)
+
+    // ... (keep state definitions)
     const [formRemark, setFormRemark] = useState('');
     const [formEnabled, setFormEnabled] = useState(true);
     const [formGroupId, setFormGroupId] = useState('default');
@@ -58,8 +184,9 @@ export default function AdminSubsClient({
     const [newRuleValue, setNewRuleValue] = useState('');
     const [newRulePolicy, setNewRulePolicy] = useState('Proxy');
 
+    // ... (keep useEffects and helpers)
+
     // Calculate Dynamic Policies based on selected Group Config
-    // Reused logic from DashboardClient for consistency
     const availablePolicies = useMemo(() => {
         const basePolicies = ['Proxy', 'DIRECT', 'REJECT', 'Auto', 'Global'];
         let extraGroups: string[] = [];
@@ -90,14 +217,12 @@ export default function AdminSubsClient({
         return Array.from(new Set(all));
     }, [formGroupId, configSets.groups, defaultGroups]);
 
-    // Reset newRulePolicy if it's no longer valid
     useEffect(() => {
         if (!availablePolicies.includes(newRulePolicy)) {
             setNewRulePolicy('Proxy');
         }
     }, [availablePolicies, newRulePolicy]);
 
-    // Helper to parse rules from text
     const parseRules = (text: string) => {
         if (!text) return [];
         return text.split('\n')
@@ -113,17 +238,14 @@ export default function AdminSubsClient({
             .filter(r => r !== null) as { type: string, value: string, policy: string, id: string }[];
     };
 
-    // Helper to stringify rules
     const stringifyRules = (rules: { type: string, value: string, policy: string }[]) => {
         return rules.map(r => `${r.type},${r.value},${r.policy}`).join('\n');
     };
 
-    // Sync Text to GUI
     const syncTextToGui = (text: string) => {
         setGuiRules(parseRules(text));
     };
 
-    // Sync GUI to Text
     const updateGuiRules = (newRules: typeof guiRules) => {
         setGuiRules(newRules);
         setFormCustomRules(stringifyRules(newRules));
@@ -165,7 +287,6 @@ export default function AdminSubsClient({
         setFormCustomRules(sub.customRules);
         setFormSelectedSources(sub.selectedSources || availableSources.map(s => s.name));
 
-        // Initialize GUI state
         syncTextToGui(sub.customRules);
         setRuleMode('simple');
     };
@@ -198,24 +319,13 @@ export default function AdminSubsClient({
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-2xl font-bold text-gray-800">所有订阅管理</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                    所有订阅管理
+                    <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
+                </h1>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={async () => {
-                            if (await confirm('确定要重建所有订阅缓存吗？\n\n这将清除所有现有缓存并立即重新生成它们。此操作可能需要一些时间，但能确保所有用户访问时无延迟。')) {
-                                setLoading(true);
-                                // Pass true to force clear before precache
-                                const res = await precacheAllSubscriptions(true);
-                                setLoading(false);
-                                if (res?.error) {
-                                    error(res.error);
-                                } else if (res?.message) {
-                                    success(res.message);
-                                } else {
-                                    success('所有订阅缓存已重建');
-                                }
-                            }
-                        }}
+                        onClick={() => setShowRebuildModal(true)}
                         disabled={loading}
                         className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -226,11 +336,17 @@ export default function AdminSubsClient({
             </div>
 
             {subs.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                    暂无任何订阅数据
+                <div className="space-y-4">
+                    <Search placeholder="搜索订阅..." />
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                        暂无任何订阅数据
+                    </div>
                 </div>
             ) : (
                 <>
+                    <div className="mb-4">
+                        <Search placeholder="搜索订阅..." />
+                    </div>
                     {/* Desktop View: Table */}
                     <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="w-full overflow-x-auto">
@@ -271,13 +387,7 @@ export default function AdminSubsClient({
                                                 <button
                                                     onClick={async () => {
                                                         if (await confirm('确定要重建此订阅的缓存吗？')) {
-                                                            const { rebuildSubscriptionCache } = await import('./actions');
-                                                            const res = await rebuildSubscriptionCache(sub.token);
-                                                            if (res?.error) {
-                                                                error(res.error);
-                                                            } else {
-                                                                success('订阅缓存已重建');
-                                                            }
+                                                            await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                         }
                                                     }}
                                                     className="text-green-600 hover:text-blue-800 font-medium"
@@ -351,10 +461,7 @@ export default function AdminSubsClient({
                                         <button
                                             onClick={async () => {
                                                 if (await confirm('确定要重建此订阅的缓存吗？')) {
-                                                    const { rebuildSubscriptionCache } = await import('./actions');
-                                                    const res = await rebuildSubscriptionCache(sub.token);
-                                                    if (res?.error) error(res.error);
-                                                    else success('订阅缓存已重建');
+                                                    await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                 }
                                             }}
                                             className="text-blue-600 hover:text-blue-800 font-medium"
@@ -584,6 +691,131 @@ export default function AdminSubsClient({
                     </>
                 )}
             </Modal>
+
+            {/* Rebuild Configuration Modal */}
+            <Modal
+                isOpen={showRebuildModal}
+                onClose={() => setShowRebuildModal(false)}
+                title="重建订阅缓存配置"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        选择重建方式。全并发速度最快，但可能对服务器造成较大压力。批量处理更稳定，适合订阅数量较多的情况。
+                    </p>
+
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input
+                                type="radio"
+                                checked={rebuildBatchSize === 0}
+                                onChange={() => setRebuildBatchSize(0)}
+                                className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900">全并发处理</div>
+                                <div className="text-xs text-gray-500">同时处理所有订阅，速度最快（推荐订阅数 &lt; 100）</div>
+                            </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input
+                                type="radio"
+                                checked={rebuildBatchSize === 10}
+                                onChange={() => setRebuildBatchSize(10)}
+                                className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900">批量处理（每批 10 个）</div>
+                                <div className="text-xs text-gray-500">适中的速度和服务器压力</div>
+                            </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input
+                                type="radio"
+                                checked={rebuildBatchSize === 5}
+                                onChange={() => setRebuildBatchSize(5)}
+                                className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900">批量处理（每批 5 个）</div>
+                                <div className="text-xs text-gray-500">较慢但更稳定，适合订阅数量很多的情况</div>
+                            </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input
+                                type="radio"
+                                checked={rebuildBatchSize === 1}
+                                onChange={() => setRebuildBatchSize(1)}
+                                className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900">逐个处理</div>
+                                <div className="text-xs text-gray-500">最慢但最稳定，适合调试或服务器资源有限的情况</div>
+                            </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input
+                                type="radio"
+                                checked={rebuildBatchSize > 1 && rebuildBatchSize !== 5 && rebuildBatchSize !== 10}
+                                onChange={() => setRebuildBatchSize(20)}
+                                className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="font-medium text-gray-900">自定义批次大小</div>
+                                {(rebuildBatchSize > 1 && rebuildBatchSize !== 5 && rebuildBatchSize !== 10) && (
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="1000"
+                                        value={rebuildBatchSize}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 1;
+                                            setRebuildBatchSize(Math.max(1, Math.min(1000, val)));
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        placeholder="输入批次大小（1-1000）"
+                                    />
+                                )}
+                                <div className="text-xs text-gray-500 mt-1">自定义每批处理的订阅数量</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-xs text-yellow-800">
+                            ⚠️ 此操作将清除所有现有缓存并重新生成。当前共有 <strong>{total}</strong> 个订阅需要处理。
+                        </p>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                        <button
+                            onClick={async () => {
+                                setShowRebuildModal(false);
+                                await handleStreamRebuild(rebuildBatchSize);
+                            }}
+                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                            开始重建
+                        </button>
+                        <button
+                            onClick={() => setShowRebuildModal(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                        >
+                            取消
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Pagination
+                total={total}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+            />
         </div >
     );
 }

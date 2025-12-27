@@ -14,7 +14,8 @@ export async function login(prevState: any, formData: FormData) {
     if (!username || !password) return { error: '请输入用户名和密码' };
 
     // 1. Check for Admin Init (First Run)
-    const allUsers = await db.getAllUsers();
+    // 1. Check for Admin Init (First Run)
+    const { data: allUsers } = await db.getAllUsers(1, 100); // Check first 100 users for admin
     const hasAdmin = allUsers.some(u => u.role === 'admin');
 
     if (!hasAdmin) {

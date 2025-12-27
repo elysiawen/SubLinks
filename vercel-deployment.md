@@ -6,7 +6,7 @@
 
 您可以使用下面的按钮一键将项目部署到 Vercel：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-repo/sublinks&env=DATABASE_TYPE,POSTGRES_URL,NEXT_PUBLIC_URL)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/elysiawen/SubLinks&env=DATABASE_TYPE,POSTGRES_URL,NEXT_PUBLIC_URL)
 
 **注意**：请将 URL 中的 `your-repo` 替换为实际的仓库地址。
 

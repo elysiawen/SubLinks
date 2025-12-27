@@ -6,8 +6,22 @@ import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 import Modal from '@/components/Modal';
+import Pagination from '@/components/Pagination';
+import Search from '@/components/Search';
 
-export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[], globalMaxSubs: number }) {
+export default function AdminUsersClient({
+    users,
+    total,
+    currentPage,
+    itemsPerPage,
+    globalMaxSubs
+}: {
+    users: any[],
+    total: number,
+    currentPage: number,
+    itemsPerPage: number,
+    globalMaxSubs: number
+}) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [loading, setLoading] = useState(false);
@@ -60,7 +74,7 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                     👥 用户管理
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{users.length}</span>
+                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
                 </h2>
                 <button
                     onClick={() => setIsAddingUser(true)}
@@ -134,9 +148,10 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
 
             {/* User List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 md:p-6 border-b border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-800">用户列表 ({users.length})</h3>
+                <div className="p-3 sm:p-4 border-b border-gray-100">
+                    <Search placeholder="搜索用户名..." />
                 </div>
+
 
                 {/* Desktop Table View */}
                 <div className="hidden md:block w-full overflow-x-auto">
@@ -365,6 +380,11 @@ export default function AdminUsersClient({ users, globalMaxSubs }: { users: any[
                 )}
             </Modal>
 
+            <Pagination
+                total={total}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+            />
         </div>
     );
 }

@@ -21,8 +21,8 @@ SubLinks 是一个现代化的订阅管理系统，专为 Clash 等代理工具�
 
 1. **克隆项目**
 ```bash
-git clone <your-repo-url>
-cd sublinks
+git clone https://github.com/elysiawen/SubLinks.git
+cd SubLinks
 ```
 
 2. **安装依赖**
@@ -90,7 +90,6 @@ sublinks/
 | `DATABASE_TYPE` | 数据库类型 (`postgres` 或 `redis`) | ✅ |
 | `POSTGRES_URL` | PostgreSQL 连接字符串 | 使用 PG 时 |
 | `REDIS_URL` | Redis 连接字符串 | 使用 Redis 时 |
-
 | `NEXT_PUBLIC_URL` | 站点公网地址 (用于 Vercel Cron callback) | ✅ (Vercel) |
 | `LOG_RETENTION_DAYS` | 日志保留天数 | ❌ |
 | `MAX_USER_SUBSCRIPTIONS` | 用户最大订阅数 | ❌ |

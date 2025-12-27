@@ -6,8 +6,13 @@ import { getParsedConfig } from '@/lib/analysis';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminSubscriptionsPage() {
-    const subs = await getAdminSubscriptions();
+export default async function AdminSubscriptionsPage({ searchParams }: { searchParams: Promise<{ page?: string; limit?: string; search?: string }> }) {
+    const params = await searchParams;
+    const page = parseInt(params.page || '1');
+    const limit = parseInt(params.limit || '10');
+    const search = params.search || undefined;
+
+    const { data: subs, total } = await getAdminSubscriptions(page, limit, search);
     const groupSets = await getGroupSets();
     const ruleSets = await getRuleSets();
 
@@ -23,6 +28,9 @@ export default async function AdminSubscriptionsPage() {
         <div className="space-y-6">
             <AdminSubsClient
                 initialSubs={subs}
+                total={total}
+                currentPage={page}
+                itemsPerPage={limit}
                 configSets={{ groups: groupSets, rules: ruleSets }}
                 defaultGroups={defaultGroups}
                 availableSources={availableSources}
