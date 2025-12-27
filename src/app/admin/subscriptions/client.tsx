@@ -464,7 +464,7 @@ export default function AdminSubsClient({
                                                     await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                 }
                                             }}
-                                            className="text-blue-600 hover:text-blue-800 font-medium"
+                                            className="text-green-600 hover:text-green-800 font-medium"
                                         >
                                             重建
                                         </button>
