@@ -4,6 +4,37 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import os from 'os';
 
+// Store previous CPU measurements for calculating usage
+let previousCpuInfo: { idle: number; total: number; timestamp: number } | null = null;
+
+function getCpuUsage(): number {
+    const cpus = os.cpus();
+
+    let totalIdle = 0;
+    let totalTick = 0;
+
+    cpus.forEach(cpu => {
+        for (const type in cpu.times) {
+            totalTick += cpu.times[type as keyof typeof cpu.times];
+        }
+        totalIdle += cpu.times.idle;
+    });
+
+    const currentTime = Date.now();
+
+    if (previousCpuInfo) {
+        const idleDiff = totalIdle - previousCpuInfo.idle;
+        const totalDiff = totalTick - previousCpuInfo.total;
+        const usage = totalDiff > 0 ? 100 - (100 * idleDiff / totalDiff) : 0;
+
+        previousCpuInfo = { idle: totalIdle, total: totalTick, timestamp: currentTime };
+        return usage;
+    }
+
+    previousCpuInfo = { idle: totalIdle, total: totalTick, timestamp: currentTime };
+    return 0; // First call, no previous data
+}
+
 export async function GET(req: NextRequest) {
     // Check authentication
     const cookieStore = await cookies();
@@ -43,6 +74,9 @@ export async function GET(req: NextRequest) {
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
         const usedSystemMem = totalMem - freeMem;
+
+        // Calculate CPU usage percentage
+        const cpuUsage = getCpuUsage();
 
         // Get load average (Unix-like systems only)
         const loadAvg = os.loadavg();
@@ -90,6 +124,7 @@ export async function GET(req: NextRequest) {
                 model: cpus[0]?.model || 'Unknown',
                 cores: cpus.length,
                 speed: cpus[0]?.speed || 0,
+                usage: cpuUsage,
                 loadAverage: {
                     '1min': loadAvg[0],
                     '5min': loadAvg[1],

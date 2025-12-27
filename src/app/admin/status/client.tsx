@@ -31,6 +31,7 @@ interface ServerStatus {
         model: string;
         cores: number;
         speed: number;
+        usage: number;
         loadAverage: {
             '1min': number;
             '5min': number;
@@ -199,13 +200,13 @@ export default function ServerStatusClient() {
                     </div>
                 </div>
 
-                {/* CPU */}
+                {/* CPU Info */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">⚡</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">CPU</h3>
+                        <h3 className="font-semibold text-gray-800">CPU 信息</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -266,7 +267,7 @@ export default function ServerStatusClient() {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <span className="text-xl">🧠</span>
+                            <span className="text-xl">🔲</span>
                         </div>
                         <h3 className="font-semibold text-gray-800">进程内存</h3>
                     </div>
@@ -290,39 +291,61 @@ export default function ServerStatusClient() {
                     </div>
                 </div>
 
-                {/* System Memory */}
+                {/* System Resources - CPU & Memory */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-3">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
-                            <span className="text-xl">💿</span>
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span className="text-xl">📊</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">系统内存</h3>
+                        <h3 className="font-semibold text-gray-800">系统资源</h3>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 mb-3">
+                    <div className="space-y-6">
+                        {/* CPU Usage */}
                         <div>
-                            <div className="text-xs text-gray-600">已使用</div>
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm text-gray-600">CPU 使用率</span>
+                                <span className="text-sm font-medium text-gray-900">{status.cpu.usage.toFixed(1)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div
+                                    className={`h-3 rounded-full transition-all duration-300 ${status.cpu.usage > 80 ? 'bg-red-500' :
+                                        status.cpu.usage > 60 ? 'bg-yellow-500' :
+                                            'bg-green-500'
+                                        }`}
+                                    style={{ width: `${Math.min(status.cpu.usage, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                        {/* Memory Usage */}
+                        <div>
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm text-gray-600">内存使用率</span>
+                                <span className="text-sm font-medium text-gray-900">{status.memory.system.percentage.toFixed(1)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div
+                                    className={`h-3 rounded-full transition-all duration-300 ${status.memory.system.percentage < 70 ? 'bg-purple-500' :
+                                        status.memory.system.percentage < 85 ? 'bg-yellow-500' :
+                                            'bg-red-500'
+                                        }`}
+                                    style={{ width: `${Math.min(status.memory.system.percentage, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <div className="text-xs text-gray-600">内存已用</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.used)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">空闲</div>
+                            <div className="text-xs text-gray-600">内存空闲</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.free)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">总计</div>
+                            <div className="text-xs text-gray-600">内存总计</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.total)}</div>
                         </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                            className={`h-3 rounded-full transition-all ${status.memory.system.percentage < 70 ? 'bg-cyan-500' :
-                                status.memory.system.percentage < 85 ? 'bg-yellow-500' :
-                                    'bg-red-500'
-                                }`}
-                            style={{ width: `${Math.min(status.memory.system.percentage, 100)}%` }}
-                        ></div>
-                    </div>
-                    <div className="text-right text-sm font-medium text-gray-700 mt-2">
-                        {status.memory.system.percentage.toFixed(1)}%
                     </div>
                 </div>
 
