@@ -63,10 +63,23 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleRefresh(request: NextRequest, body: any) {
+    const startTime = Date.now();
+    let authMethod = '';
+
     try {
         // 1. Get and validate API key
-        let apiKey = getApiKey(request);
-        if (!apiKey && body?.key) {
+        let apiKey: string | null = null;
+
+        // Detect authentication method
+        const authHeader = request.headers.get('authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            authMethod = 'Bearer';
+            apiKey = authHeader.substring(7);
+        } else if (request.nextUrl.searchParams.get('key')) {
+            authMethod = 'URL Param';
+            apiKey = request.nextUrl.searchParams.get('key');
+        } else if (body?.key) {
+            authMethod = 'POST Body';
             apiKey = body.key;
         }
 
@@ -79,6 +92,24 @@ async function handleRefresh(request: NextRequest, body: any) {
         }
 
         if (!apiKey || apiKey !== config.refreshApiKey) {
+            // Log failed auth attempt
+            try {
+                const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+                const ua = request.headers.get('user-agent') || 'Unknown';
+                await db.createAPIAccessLog({
+                    token: apiKey || 'missing',
+                    username: 'refresh-api',
+                    ip,
+                    ua,
+                    status: 401,
+                    timestamp: Date.now(),
+                    apiType: '刷新API请求',
+                    requestMethod: authMethod ? `${request.method} (${authMethod})` : request.method
+                });
+            } catch (e) {
+                console.error('Failed to log API access:', e);
+            }
+
             return NextResponse.json(
                 { error: 'Invalid or missing API key' },
                 { status: 401 }
@@ -99,18 +130,17 @@ async function handleRefresh(request: NextRequest, body: any) {
             sources = await Promise.all(
                 sourceNames.map(name => db.getUpstreamSourceByName(name))
             );
-            sources = sources.filter((s): s is import('@/lib/database/interface').UpstreamSource => s !== null);
+            sources = sources.filter(s => s !== null) as import('@/lib/database/interface').UpstreamSource[];
 
             if (sources.length === 0) {
                 return NextResponse.json(
-                    { error: 'No valid sources found with the provided names' },
+                    { error: `No valid sources found for names: ${sourceNames.join(', ')}` },
                     { status: 404 }
                 );
             }
         } else {
             // Refresh all sources
             sources = await db.getUpstreamSources();
-
             if (sources.length === 0) {
                 return NextResponse.json(
                     { error: 'No upstream sources configured' },
@@ -121,32 +151,33 @@ async function handleRefresh(request: NextRequest, body: any) {
 
         // 5. Refresh sources
         const refreshed: string[] = [];
-        const failed: string[] = [];
+        const failed: Array<{ name: string; error: string }> = [];
 
         for (const source of sources) {
             try {
                 await refreshUpstreamSource(source.name, {
-                    reason: 'API Request',
+                    reason: authMethod ? `API Request (${authMethod})` : 'API Request',
                     trigger: 'api'
                 });
                 refreshed.push(source.name);
-            } catch (error) {
+            } catch (error: any) {
                 console.error(`Failed to refresh source ${source.name}:`, error);
-                failed.push(source.name);
+                failed.push({
+                    name: source.name,
+                    error: error.message || 'Unknown error'
+                });
             }
         }
 
-        // 6. Clear subscription caches
-        const allSubs = await db.getAllSubscriptions();
-        const affectedSubs = allSubs.filter(sub =>
-            sub.selectedSources?.some(s => refreshed.includes(s))
-        );
+        // 6. Clear subscription cache for affected sources
+        const cacheCleared = await db.clearAllSubscriptionCaches();
 
-        let cacheCleared = 0;
-        for (const sub of affectedSubs) {
-            await db.deleteCache(`cache:subscription:${sub.token}`);
-            cacheCleared++;
-        }
+        // Get affected subscriptions for precaching
+        const allSubs = await db.getAllSubscriptions();
+        const affectedSubs = allSubs.filter(sub => {
+            const selectedSources = sub.selectedSources || [];
+            return sources.some(source => selectedSources.includes(source.name));
+        });
 
         // 7. Optional: Precache subscriptions
         let precached = 0;
@@ -166,7 +197,25 @@ async function handleRefresh(request: NextRequest, body: any) {
             }
         }
 
-        // 8. Return response
+        // 8. Log successful API access
+        try {
+            const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+            const ua = request.headers.get('user-agent') || 'Unknown';
+            await db.createAPIAccessLog({
+                token: apiKey,
+                username: 'refresh-api',
+                ip,
+                ua,
+                status: 200,
+                timestamp: Date.now(),
+                apiType: '刷新API请求',
+                requestMethod: authMethod ? `${request.method} (${authMethod})` : request.method
+            });
+        } catch (e) {
+            console.error('Failed to log API access:', e);
+        }
+
+        // 9. Return response
         const hasFailures = failed.length > 0;
         const allFailed = failed.length === sources.length;
 
@@ -188,6 +237,25 @@ async function handleRefresh(request: NextRequest, body: any) {
 
     } catch (error) {
         console.error('Refresh API error:', error);
+
+        // Log error
+        try {
+            const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+            const ua = request.headers.get('user-agent') || 'Unknown';
+            await db.createAPIAccessLog({
+                token: 'error',
+                username: 'refresh-api',
+                ip,
+                ua,
+                status: 500,
+                timestamp: Date.now(),
+                apiType: '刷新API请求',
+                requestMethod: authMethod ? `${request.method} (${authMethod})` : request.method
+            });
+        } catch (e) {
+            console.error('Failed to log API access:', e);
+        }
+
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

@@ -47,7 +47,9 @@ export async function GET(
                 ip,
                 ua,
                 status,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                apiType: '订阅API请求',
+                requestMethod: 'GET'
             });
         } catch (e) {
             console.error('Failed to log API access:', e);

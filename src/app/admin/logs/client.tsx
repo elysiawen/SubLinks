@@ -22,15 +22,27 @@ export default function LogsClient() {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+    const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
     const toggleExpand = (id: string) => {
-        const newSet = new Set(expandedLogs);
-        if (newSet.has(id)) {
-            newSet.delete(id);
+        const next = new Set(expandedLogs);
+        if (next.has(id)) {
+            next.delete(id);
         } else {
-            newSet.add(id);
+            next.add(id);
         }
-        setExpandedLogs(newSet);
+        setExpandedLogs(next);
+    };
+
+    const toggleToken = (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const next = new Set(expandedTokens);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        setExpandedTokens(next);
     };
 
     // Track active tab to prevent race conditions
@@ -388,7 +400,15 @@ export default function LogsClient() {
                                         {activeTab === 'api' && (
                                             <>
                                                 <td className="px-6 py-4 text-sm text-gray-200">
-                                                    <div className="font-mono text-xs text-blue-400 mb-0.5">{(log.token || '').substring(0, 8)}...</div>
+                                                    <div
+                                                        className="font-mono text-xs text-blue-400 mb-0.5 cursor-pointer hover:text-blue-300 transition-colors"
+                                                        title={log.token}
+                                                        onClick={(e) => toggleToken(log.id, e)}
+                                                    >
+                                                        {expandedTokens.has(log.id) || (log.token || '').length <= 8
+                                                            ? log.token
+                                                            : `${(log.token || '').substring(0, 8)}...`}
+                                                    </div>
                                                     <div>{log.username}</div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-400">
@@ -404,7 +424,12 @@ export default function LogsClient() {
                                                             <span className="text-gray-500 text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                         </div>
                                                     ) : (
-                                                        "API请求"
+                                                        <div>
+                                                            <div className="text-gray-300">{log.apiType || 'API请求'}</div>
+                                                            {log.requestMethod && (
+                                                                <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </td>
                                             </>
@@ -470,7 +495,15 @@ export default function LogsClient() {
                                             {activeTab === 'api' && (
                                                 <>
                                                     <td className="px-6 py-3 text-sm text-gray-200">
-                                                        <div className="font-mono text-xs text-blue-400 mb-0.5">{(childLog.token || '').substring(0, 8)}...</div>
+                                                        <div
+                                                            className="font-mono text-xs text-blue-400 mb-0.5 cursor-pointer hover:text-blue-300 transition-colors"
+                                                            title={childLog.token}
+                                                            onClick={(e) => toggleToken(childLog.id, e)}
+                                                        >
+                                                            {expandedTokens.has(childLog.id) || (childLog.token || '').length <= 8
+                                                                ? childLog.token
+                                                                : `${(childLog.token || '').substring(0, 8)}...`}
+                                                        </div>
                                                         <div>{childLog.username}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-sm text-gray-400">
@@ -478,7 +511,10 @@ export default function LogsClient() {
                                                         <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-sm text-gray-400">
-                                                        API请求
+                                                        <div className="text-gray-300">{childLog.apiType || 'API请求'}</div>
+                                                        {childLog.requestMethod && (
+                                                            <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
+                                                        )}
                                                     </td>
                                                 </>
                                             )}
@@ -536,7 +572,15 @@ export default function LogsClient() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">Token:</span>
-                                            <span className="font-mono text-xs text-blue-400">{(log.token || '').substring(0, 8)}...</span>
+                                            <span
+                                                className="font-mono text-xs text-blue-400 break-all cursor-pointer"
+                                                title={log.token}
+                                                onClick={(e) => toggleToken(log.id, e)}
+                                            >
+                                                {expandedTokens.has(log.id) || (log.token || '').length <= 8
+                                                    ? log.token
+                                                    : `${(log.token || '').substring(0, 8)}...`}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">用户:</span>
@@ -557,7 +601,12 @@ export default function LogsClient() {
                                                         <span className="text-xs text-gray-500 select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                     </div>
                                                 ) : (
-                                                    "API请求"
+                                                    <div>
+                                                        <div className="text-gray-300">{log.apiType || 'API请求'}</div>
+                                                        {log.requestMethod && (
+                                                            <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -571,7 +620,10 @@ export default function LogsClient() {
                                                             <span>{new Date(childLog.timestamp).toLocaleTimeString('zh-CN')}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
-                                                        <div className="text-gray-300">API请求</div>
+                                                        <div className="text-gray-300">{childLog.apiType || 'API请求'}</div>
+                                                        {childLog.requestMethod && (
+                                                            <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
+                                                        )}
                                                         <div className="mt-1 text-gray-600 break-words w-full" title={childLog.ua}>{childLog.ua}</div>
                                                     </div>
                                                 ))}

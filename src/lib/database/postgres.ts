@@ -150,7 +150,9 @@ export default class PostgresDatabase implements IDatabase {
                     ip VARCHAR(255) NOT NULL,
                     ua TEXT NOT NULL,
                     status INTEGER NOT NULL,
-                    timestamp BIGINT NOT NULL
+                    timestamp BIGINT NOT NULL,
+                    api_type VARCHAR(255),
+                    request_method VARCHAR(255)
                 );
                 CREATE INDEX IF NOT EXISTS idx_api_logs_token ON api_access_logs(token);
                 CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_access_logs(timestamp);
@@ -1009,9 +1011,9 @@ export default class PostgresDatabase implements IDatabase {
     async createAPIAccessLog(log: Omit<import('./interface').APIAccessLog, 'id'>): Promise<void> {
         const id = nanoid();
         await this.pool.query(
-            `INSERT INTO api_access_logs (id, token, username, ip, ua, status, timestamp)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, log.token, log.username, log.ip, log.ua, log.status, log.timestamp]
+            `INSERT INTO api_access_logs (id, token, username, ip, ua, status, timestamp, api_type, request_method)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [id, log.token, log.username, log.ip, log.ua, log.status, log.timestamp, log.apiType || null, log.requestMethod || null]
         );
     }
 
@@ -1037,7 +1039,9 @@ export default class PostgresDatabase implements IDatabase {
             ip: row.ip,
             ua: row.ua,
             status: row.status,
-            timestamp: parseInt(row.timestamp)
+            timestamp: parseInt(row.timestamp),
+            apiType: row.api_type || undefined,
+            requestMethod: row.request_method || undefined
         }));
     }
 

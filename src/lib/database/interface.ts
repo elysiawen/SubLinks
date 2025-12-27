@@ -34,6 +34,8 @@ export interface APIAccessLog {
     ua: string;
     status: number;
     timestamp: number;
+    apiType?: string;        // e.g., "订阅API请求", "刷新API请求"
+    requestMethod?: string;  // e.g., "GET (Bearer)", "POST", "GET (?key=)"
 }
 
 export interface WebAccessLog {
