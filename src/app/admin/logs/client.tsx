@@ -67,14 +67,15 @@ export default function LogsClient() {
             let fetchedCount = 0;
             const isSystem = tab === 'system';
             const isWeb = tab === 'web';
+            const isApi = tab === 'api';
 
             // Limit loop to avoid infinite requests. 
-            // Web logs can be heavily aggregated (by day), so we allow more fetches.
-            const maxFetches = (isSystem || isWeb) ? 10 : 1;
+            // All aggregated logs allow more fetches.
+            const maxFetches = (isSystem || isWeb || isApi) ? 10 : 1;
 
             for (let i = 0; i < maxFetches; i++) {
                 if (tab === 'api') {
-                    currentRes = await getAPILogs(apiPage, pageSize, searchTerm);
+                    currentRes = await getAPILogs(apiPage, pageSize * 2, searchTerm);
                 } else if (tab === 'web') {
                     // Fetch larger chunks for web logs too, as they might be heavily folded
                     currentRes = await getWebLogs(apiPage, pageSize * 2, searchTerm);
@@ -101,18 +102,19 @@ export default function LogsClient() {
 
                     // Check if we hit end of stream
                     const fetchedSize = currentRes.logs.length;
-                    const requestedSize = (tab === 'web' || isSystem) ? pageSize * 2 : pageSize;
+                    // For aggregated logs (web, system, api), we request 2x logs
+                    const isAggregated = tab === 'web' || tab === 'system' || tab === 'api';
+                    const requestedSize = isAggregated ? pageSize * 2 : pageSize;
 
                     if (fetchedSize < requestedSize) {
                         setHasMore(false);
-                        // Even if we don't have enough visual items, we can't fetch more.
                         break;
                     } else {
                         setHasMore(true);
                     }
 
                     // Check if we have enough visual items
-                    if (isSystem || isWeb) {
+                    if (isAggregated) {
                         const visualCount = aggregateLogs(currentLogs, tab).length;
 
                         // Safety break if we fetched too many raw items (e.g. 10 pages worth)
@@ -124,7 +126,7 @@ export default function LogsClient() {
                         // If we have added at least pageSize visual items, we are good.
                         if (addedVisualItems >= pageSize) break;
                     } else {
-                        break; // Non-aggregated logs don't need looping
+                        break;
                     }
                 } else {
                     setHasMore(false);

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { refreshUpstreamSource } from '@/lib/config-actions';
 
+export const maxDuration = 60;
+
 // Helper to extract API key from request
 function getApiKey(request: NextRequest): string | null {
     // Method 1: Bearer token
@@ -180,21 +182,42 @@ async function handleRefresh(request: NextRequest, body: any) {
         });
 
         // 7. Optional: Precache subscriptions
-        let precached = 0;
+        let precacheResults = { success: 0, failed: 0 };
         if (precache && affectedSubs.length > 0) {
-            const baseUrl = request.nextUrl.origin;
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+            console.log(`Starting precache for ${affectedSubs.length} subscriptions using base URL: ${baseUrl}`);
 
-            // Trigger precaching (fire and forget)
-            for (const sub of affectedSubs) {
-                // Pass a special header to identify this as an internal system request
+            // Create an array of promises
+            const precachePromises = affectedSubs.map(sub =>
                 fetch(`${baseUrl}/api/s/${sub.token}`, {
                     headers: {
                         'X-Internal-System-Precache': 'true'
                     }
                 })
-                    .then(() => precached++)
-                    .catch(() => { });
-            }
+                    .then(res => {
+                        if (res.ok) return { success: true };
+                        throw new Error(`Status ${res.status}`);
+                    })
+                    .catch(err => ({ success: false, error: err }))
+            );
+
+            // Wait for all to complete
+            const results = await Promise.allSettled(precachePromises);
+
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && (result.value as any).success) {
+                    precacheResults.success++;
+                } else {
+                    precacheResults.failed++;
+                    if (result.status === 'fulfilled') {
+                        console.error('Precache failed:', (result.value as any).error);
+                    } else {
+                        console.error('Precache promise rejected:', result.reason);
+                    }
+                }
+            });
+
+            console.log(`Precache completed: ${precacheResults.success} success, ${precacheResults.failed} failed`);
         }
 
         // 8. Log successful API access
