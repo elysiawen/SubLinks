@@ -37,10 +37,9 @@ npm install
 DATABASE_TYPE=postgres
 # PostgreSQL 连接 (必需)
 POSTGRES_URL=postgresql://user:password@localhost:5432/sublinks
-# JWT 签名密钥 (必需)
-JWT_SECRET=your-random-secret-key
+
 # 站点地址 (用于 Cron 预缓存自调用)
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_URL=http://localhost:3000
 ```
 
 4. **启动开发服务器**
@@ -56,7 +55,7 @@ npm run dev
 
 详见 [Vercel 部署指南](./vercel-deployment.md)
 
-**注意**：在 Vercel 部署时，请务必配置 `NEXT_PUBLIC_SITE_URL` 为您的实际访问域名（例如 `https://your-app.vercel.app`），以确保定时任务能正确通过公网触发预缓存。
+**注意**：在 Vercel 部署时，请务必配置 `NEXT_PUBLIC_URL` 为您的实际访问域名（例如 `https://your-app.vercel.app`），以确保定时任务能正确通过公网触发预缓存。
 
 ## 📦 技术栈
 
@@ -91,8 +90,8 @@ sublinks/
 | `DATABASE_TYPE` | 数据库类型 (`postgres` 或 `redis`) | ✅ |
 | `POSTGRES_URL` | PostgreSQL 连接字符串 | 使用 PG 时 |
 | `REDIS_URL` | Redis 连接字符串 | 使用 Redis 时 |
-| `JWT_SECRET` | JWT 密钥 | ✅ |
-| `NEXT_PUBLIC_SITE_URL` | 站点公网地址 (用于 Vercel Cron callback) | ✅ (Vercel) |
+
+| `NEXT_PUBLIC_URL` | 站点公网地址 (用于 Vercel Cron callback) | ✅ (Vercel) |
 | `LOG_RETENTION_DAYS` | 日志保留天数 | ❌ |
 | `MAX_USER_SUBSCRIPTIONS` | 用户最大订阅数 | ❌ |
 | `REFRESH_API_KEY` | 刷新接口专用鉴权 Key (可选) | ❌ |
