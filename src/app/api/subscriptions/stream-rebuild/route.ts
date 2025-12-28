@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes (max for Pro plan, will be capped at 10s for Hobby)
 
 export async function GET(req: NextRequest) {
     // Authenticate
