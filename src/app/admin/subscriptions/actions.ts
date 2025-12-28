@@ -108,7 +108,7 @@ export async function rebuildSubscriptionCache(token: string) {
         await db.deleteCache(`cache:subscription:${token}`);
 
         // 2. Precache (Fetch)
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
         const response = await fetch(`${baseUrl}/api/s/${token}`, {
             method: 'HEAD',
             headers: {
@@ -159,7 +159,7 @@ export async function precacheAllSubscriptions(force: boolean = false) {
         }
 
         // Trigger cache generation for each subscription by making a request
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
         const results = await Promise.allSettled(
             allSubs.map(async (sub) => {
                 try {
