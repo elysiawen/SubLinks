@@ -72,6 +72,9 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <div className="px-4 py-2 mb-2 text-xs text-gray-500">
                     当前管理员: <span className="font-bold text-gray-700">{username}</span>
                 </div>
+                <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors font-medium">
+                    🏠 返回用户中心
+                </Link>
                 <form action={logout}>
                     <button className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                         退出登录
