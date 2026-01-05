@@ -85,12 +85,15 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         // 3. Get Proxy Groups
         let groups;
         if (sub.groupId && sub.groupId !== 'default') {
-            // Use custom group set
-            const customGroup = await db.getCustomGroup(sub.groupId);
-            if (customGroup) {
-                const customGroups = yaml.load(customGroup.content);
-                if (Array.isArray(customGroups)) {
-                    groups = customGroups;
+            // Use custom group set - get userId from subscription owner
+            const user = await db.getUser(sub.username);
+            if (user) {
+                const customGroup = await db.getCustomGroup(sub.groupId, user.id);
+                if (customGroup) {
+                    const customGroups = yaml.load(customGroup.content);
+                    if (Array.isArray(customGroups)) {
+                        groups = customGroups;
+                    }
                 }
             }
         }
@@ -152,12 +155,15 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         // Then add rule set or upstream rules
         if (sub.ruleId && sub.ruleId !== 'default') {
-            // Use custom rule set
-            const customRule = await db.getCustomRule(sub.ruleId);
-            if (customRule) {
-                const customRules = yaml.load(customRule.content);
-                if (Array.isArray(customRules)) {
-                    rules.push(...customRules);
+            // Use custom rule set - get userId from subscription owner
+            const user = await db.getUser(sub.username);
+            if (user) {
+                const customRule = await db.getCustomRule(sub.ruleId, user.id);
+                if (customRule) {
+                    const customRules = yaml.load(customRule.content);
+                    if (Array.isArray(customRules)) {
+                        rules.push(...customRules);
+                    }
                 }
             }
         } else {

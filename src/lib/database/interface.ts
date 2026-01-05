@@ -67,6 +67,9 @@ export interface ConfigSet {
     name: string;
     content: string;
     updatedAt: number;
+    userId?: string;      // Owner of this config set
+    isGlobal?: boolean;   // If true, visible to all users
+    username?: string;    // Username of the owner (for admin display)
 }
 
 export interface UpstreamSource {
@@ -159,14 +162,19 @@ export interface IDatabase {
     // Config operations
     getGlobalConfig(): Promise<GlobalConfig>;
     setGlobalConfig(data: GlobalConfig): Promise<void>;
-    getCustomGroups(): Promise<ConfigSet[]>;
-    getCustomGroup(id: string): Promise<ConfigSet | null>;
-    saveCustomGroup(id: string | null, name: string, content: string): Promise<void>;
-    deleteCustomGroup(id: string): Promise<void>;
-    getCustomRules(): Promise<ConfigSet[]>;
-    getCustomRule(id: string): Promise<ConfigSet | null>;
-    saveCustomRule(id: string | null, name: string, content: string): Promise<void>;
-    deleteCustomRule(id: string): Promise<void>;
+    // User-scoped methods - returns user's own + global configs
+    getCustomGroups(userId: string): Promise<ConfigSet[]>;
+    getCustomGroup(id: string, userId: string): Promise<ConfigSet | null>;
+    saveCustomGroup(id: string | null, userId: string, name: string, content: string, isGlobal?: boolean): Promise<void>;
+    deleteCustomGroup(id: string, userId: string): Promise<void>;
+    getCustomRules(userId: string): Promise<ConfigSet[]>;
+    getCustomRule(id: string, userId: string): Promise<ConfigSet | null>;
+    saveCustomRule(id: string | null, userId: string, name: string, content: string, isGlobal?: boolean): Promise<void>;
+    deleteCustomRule(id: string, userId: string): Promise<void>;
+
+    // Admin methods - returns all configs
+    getAllCustomGroups(): Promise<ConfigSet[]>;
+    getAllCustomRules(): Promise<ConfigSet[]>;
 
     // Upstream source operations
     getUpstreamSources(): Promise<UpstreamSource[]>;

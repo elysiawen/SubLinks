@@ -12,6 +12,9 @@ interface ConfigSet {
     name: string;
     content: string;
     updatedAt: number;
+    userId?: string;
+    isGlobal?: boolean;
+    username?: string;
 }
 
 export default function CustomRulesClient({ customRules: initialRules }: { customRules: ConfigSet[] }) {
@@ -22,6 +25,7 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formName, setFormName] = useState('');
     const [formContent, setFormContent] = useState('');
+    const [formIsGlobal, setFormIsGlobal] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Rule Builder State
@@ -68,6 +72,7 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
         setEditingId(null);
         setFormName('');
         setFormContent('');
+        setFormIsGlobal(false);
         setRuleMode('simple');
         setGuiRules([]);
         setIsEditing(true);
@@ -77,6 +82,7 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
         setEditingId(rule.id);
         setFormName(rule.name);
         setFormContent(rule.content);
+        setFormIsGlobal(rule.isGlobal || false);
         setRuleMode('simple');
         syncTextToGui(rule.content);
         setIsEditing(true);
@@ -89,7 +95,7 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
         }
 
         setLoading(true);
-        await saveCustomRule(editingId, formName.trim(), formContent.trim());
+        await saveCustomRule(editingId, formName.trim(), formContent.trim(), formIsGlobal);
         setLoading(false);
         setIsEditing(false);
         success(editingId ? '规则集更新成功' : '规则集创建成功');
@@ -280,6 +286,28 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
                             )}
                         </div>
 
+                        {/* Global Config Checkbox */}
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={formIsGlobal}
+                                    onChange={(e) => setFormIsGlobal(e.target.checked)}
+                                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                />
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
+                                            🌐 设为全局配置
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        全局配置对所有用户可见和可用，但只有创建者可以编辑和删除
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+
                         <div className="flex gap-2">
                             <SubmitButton
                                 onClick={handleSave}
@@ -307,11 +335,20 @@ export default function CustomRulesClient({ customRules: initialRules }: { custo
                     {rules.map((rule) => (
                         <div key={rule.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                             <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-800">{rule.name}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        更新时间: {new Date(rule.updatedAt).toLocaleString('zh-CN')}
-                                    </p>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-lg font-semibold text-gray-800">{rule.name}</h3>
+                                        {rule.isGlobal && (
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded border border-purple-200">
+                                                🌐 全局
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                                        <span>👤 {rule.username || '未知用户'}</span>
+                                        <span>•</span>
+                                        <span>🕒 {new Date(rule.updatedAt).toLocaleString('zh-CN')}</span>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <button

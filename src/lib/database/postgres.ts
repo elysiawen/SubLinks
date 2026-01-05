@@ -131,17 +131,56 @@ export default class PostgresDatabase implements IDatabase {
 
                 CREATE TABLE IF NOT EXISTS custom_groups (
                     id VARCHAR(255) PRIMARY KEY,
+                    user_id VARCHAR(255),
                     name VARCHAR(255) NOT NULL,
                     content TEXT NOT NULL,
+                    is_global BOOLEAN DEFAULT FALSE,
                     updated_at BIGINT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS custom_rules (
                     id VARCHAR(255) PRIMARY KEY,
+                    user_id VARCHAR(255),
                     name VARCHAR(255) NOT NULL,
                     content TEXT NOT NULL,
+                    is_global BOOLEAN DEFAULT FALSE,
                     updated_at BIGINT NOT NULL
                 );
+                
+                -- Migration: Add user_id and is_global columns if they don't exist
+                DO $$
+                BEGIN
+                    -- Add user_id to custom_groups if not exists
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name='custom_groups' AND column_name='user_id') THEN
+                        ALTER TABLE custom_groups ADD COLUMN user_id VARCHAR(255);
+                    END IF;
+                    
+                    -- Add is_global to custom_groups if not exists
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name='custom_groups' AND column_name='is_global') THEN
+                        ALTER TABLE custom_groups ADD COLUMN is_global BOOLEAN DEFAULT FALSE;
+                    END IF;
+                    
+                    -- Add user_id to custom_rules if not exists
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name='custom_rules' AND column_name='user_id') THEN
+                        ALTER TABLE custom_rules ADD COLUMN user_id VARCHAR(255);
+                    END IF;
+                    
+                    -- Add is_global to custom_rules if not exists
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name='custom_rules' AND column_name='is_global') THEN
+                        ALTER TABLE custom_rules ADD COLUMN is_global BOOLEAN DEFAULT FALSE;
+                    END IF;
+                    
+                    -- Migrate existing data: assign to admin user
+                    UPDATE custom_groups SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1) 
+                    WHERE user_id IS NULL;
+                    
+                    UPDATE custom_rules SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1) 
+                    WHERE user_id IS NULL;
+                END $$;
 
                 CREATE TABLE IF NOT EXISTS api_access_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -763,18 +802,27 @@ export default class PostgresDatabase implements IDatabase {
         }
     }
 
-    async getCustomGroups(): Promise<ConfigSet[]> {
-        const result = await this.pool.query('SELECT * FROM custom_groups');
+    // User-scoped: returns user's own + global configs
+    async getCustomGroups(userId: string): Promise<ConfigSet[]> {
+        const result = await this.pool.query(
+            'SELECT * FROM custom_groups WHERE user_id = $1 OR is_global = TRUE',
+            [userId]
+        );
         return result.rows.map((row) => ({
             id: row.id,
             name: row.name,
             content: row.content,
             updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false
         }));
     }
 
-    async getCustomGroup(id: string): Promise<ConfigSet | null> {
-        const result = await this.pool.query('SELECT * FROM custom_groups WHERE id = $1', [id]);
+    async getCustomGroup(id: string, userId: string): Promise<ConfigSet | null> {
+        const result = await this.pool.query(
+            'SELECT * FROM custom_groups WHERE id = $1 AND (user_id = $2 OR is_global = TRUE)',
+            [id, userId]
+        );
         if (result.rows.length === 0) return null;
         const row = result.rows[0];
         return {
@@ -782,39 +830,73 @@ export default class PostgresDatabase implements IDatabase {
             name: row.name,
             content: row.content,
             updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false
         };
     }
 
-    async saveCustomGroup(id: string | null, name: string, content: string): Promise<void> {
+    async saveCustomGroup(id: string | null, userId: string, name: string, content: string, isGlobal: boolean = false): Promise<void> {
         const newId = id || nanoid(8);
         await this.pool.query(
-            `INSERT INTO custom_groups (id, name, content, updated_at)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO custom_groups (id, user_id, name, content, is_global, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (id) DO UPDATE SET
                  name = EXCLUDED.name,
                  content = EXCLUDED.content,
+                 is_global = EXCLUDED.is_global,
                  updated_at = EXCLUDED.updated_at`,
-            [newId, name, content, Date.now()]
+            [newId, userId, name, content, isGlobal, Date.now()]
         );
     }
 
-    async deleteCustomGroup(id: string): Promise<void> {
-        await this.pool.query('DELETE FROM custom_groups WHERE id = $1', [id]);
+    async deleteCustomGroup(id: string, userId: string): Promise<void> {
+        // Only allow deleting own configs
+        await this.pool.query(
+            'DELETE FROM custom_groups WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
     }
 
-
-    async getCustomRules(): Promise<ConfigSet[]> {
-        const result = await this.pool.query('SELECT * FROM custom_rules');
+    // Admin method: returns all configs with username
+    async getAllCustomGroups(): Promise<ConfigSet[]> {
+        const result = await this.pool.query(`
+            SELECT cg.*, u.username 
+            FROM custom_groups cg
+            LEFT JOIN users u ON cg.user_id::uuid = u.id
+        `);
         return result.rows.map((row) => ({
             id: row.id,
             name: row.name,
             content: row.content,
             updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false,
+            username: row.username || '未知用户'
         }));
     }
 
-    async getCustomRule(id: string): Promise<ConfigSet | null> {
-        const result = await this.pool.query('SELECT * FROM custom_rules WHERE id = $1', [id]);
+
+    // User-scoped: returns user's own + global configs
+    async getCustomRules(userId: string): Promise<ConfigSet[]> {
+        const result = await this.pool.query(
+            'SELECT * FROM custom_rules WHERE user_id = $1 OR is_global = TRUE',
+            [userId]
+        );
+        return result.rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            content: row.content,
+            updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false
+        }));
+    }
+
+    async getCustomRule(id: string, userId: string): Promise<ConfigSet | null> {
+        const result = await this.pool.query(
+            'SELECT * FROM custom_rules WHERE id = $1 AND (user_id = $2 OR is_global = TRUE)',
+            [id, userId]
+        );
         if (result.rows.length === 0) return null;
         const row = result.rows[0];
         return {
@@ -822,24 +904,49 @@ export default class PostgresDatabase implements IDatabase {
             name: row.name,
             content: row.content,
             updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false
         };
     }
 
-    async saveCustomRule(id: string | null, name: string, content: string): Promise<void> {
+    async saveCustomRule(id: string | null, userId: string, name: string, content: string, isGlobal: boolean = false): Promise<void> {
         const newId = id || nanoid(8);
         await this.pool.query(
-            `INSERT INTO custom_rules (id, name, content, updated_at)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO custom_rules (id, user_id, name, content, is_global, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (id) DO UPDATE SET
                  name = EXCLUDED.name,
                  content = EXCLUDED.content,
+                 is_global = EXCLUDED.is_global,
                  updated_at = EXCLUDED.updated_at`,
-            [newId, name, content, Date.now()]
+            [newId, userId, name, content, isGlobal, Date.now()]
         );
     }
 
-    async deleteCustomRule(id: string): Promise<void> {
-        await this.pool.query('DELETE FROM custom_rules WHERE id = $1', [id]);
+    async deleteCustomRule(id: string, userId: string): Promise<void> {
+        // Only allow deleting own configs
+        await this.pool.query(
+            'DELETE FROM custom_rules WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
+    }
+
+    // Admin method: returns all configs with username
+    async getAllCustomRules(): Promise<ConfigSet[]> {
+        const result = await this.pool.query(`
+            SELECT cr.*, u.username 
+            FROM custom_rules cr
+            LEFT JOIN users u ON cr.user_id::uuid = u.id
+        `);
+        return result.rows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            content: row.content,
+            updatedAt: parseInt(row.updated_at),
+            userId: row.user_id,
+            isGlobal: row.is_global || false,
+            username: row.username || '未知用户'
+        }));
     }
 
     // Cache operations

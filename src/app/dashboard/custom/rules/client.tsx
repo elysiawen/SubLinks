@@ -117,7 +117,8 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
             await saveRuleSet(editingRule?.id || null, ruleName, ruleContent);
             success(editingRule ? '规则已更新' : '规则已创建');
             setIsModalOpen(false);
-            router.refresh();
+            // Refresh the page to get updated data
+            window.location.reload();
         } catch (err) {
             error('保存失败: ' + (err as Error).message);
         } finally {
@@ -209,9 +210,16 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                         >
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-semibold text-gray-800 truncate">
-                                        {rule.name}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 truncate">
+                                            {rule.name}
+                                        </h3>
+                                        {rule.isGlobal && (
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded border border-purple-200 shrink-0">
+                                                🌐 全局
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-xs text-gray-500 mt-1">
                                         更新于 {formatDate(rule.updatedAt)}
                                     </p>
@@ -228,13 +236,23 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleEdit(rule)}
-                                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                                    disabled={rule.isGlobal}
+                                    className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${rule.isGlobal
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                        }`}
+                                    title={rule.isGlobal ? '全局配置不可编辑' : ''}
                                 >
                                     编辑
                                 </button>
                                 <button
                                     onClick={() => handleDelete(rule)}
-                                    className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                                    disabled={rule.isGlobal}
+                                    className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${rule.isGlobal
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                        }`}
+                                    title={rule.isGlobal ? '全局配置不可删除' : ''}
                                 >
                                     删除
                                 </button>

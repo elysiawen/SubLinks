@@ -12,6 +12,9 @@ interface ConfigSet {
     name: string;
     content: string;
     updatedAt: number;
+    userId?: string;
+    isGlobal?: boolean;
+    username?: string;
 }
 
 interface ProxyItem {
@@ -36,6 +39,7 @@ export default function CustomGroupsClient({
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formName, setFormName] = useState('');
     const [formContent, setFormContent] = useState('');
+    const [formIsGlobal, setFormIsGlobal] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Group Builder State
@@ -139,6 +143,7 @@ export default function CustomGroupsClient({
         setEditingId(null);
         setFormName('');
         setFormContent('');
+        setFormIsGlobal(false);
         setGroupMode('simple');
         setGuiGroups([]);
         setIsEditing(true);
@@ -148,6 +153,7 @@ export default function CustomGroupsClient({
         setEditingId(group.id);
         setFormName(group.name);
         setFormContent(group.content);
+        setFormIsGlobal(group.isGlobal || false);
         setGroupMode('simple');
         syncTextToGui(group.content);
         setIsEditing(true);
@@ -160,7 +166,7 @@ export default function CustomGroupsClient({
         }
 
         setLoading(true);
-        await saveCustomGroup(editingId, formName.trim(), formContent.trim());
+        await saveCustomGroup(editingId, formName.trim(), formContent.trim(), formIsGlobal);
         setLoading(false);
         setIsEditing(false);
         success(editingId ? '策略组更新成功' : '策略组创建成功');
@@ -535,6 +541,28 @@ export default function CustomGroupsClient({
                             )}
                         </div>
 
+                        {/* Global Config Checkbox */}
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={formIsGlobal}
+                                    onChange={(e) => setFormIsGlobal(e.target.checked)}
+                                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                />
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
+                                            🌐 设为全局配置
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        全局配置对所有用户可见和可用，但只有创建者可以编辑和删除
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+
                         <div className="flex gap-2">
                             <SubmitButton
                                 onClick={handleSave}
@@ -562,11 +590,20 @@ export default function CustomGroupsClient({
                     {groups.map((group) => (
                         <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                             <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-800">{group.name}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        更新时间: {new Date(group.updatedAt).toLocaleString('zh-CN')}
-                                    </p>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-lg font-semibold text-gray-800">{group.name}</h3>
+                                        {group.isGlobal && (
+                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded border border-purple-200">
+                                                🌐 全局
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                                        <span>👤 {group.username || '未知用户'}</span>
+                                        <span>•</span>
+                                        <span>🕒 {new Date(group.updatedAt).toLocaleString('zh-CN')}</span>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <button

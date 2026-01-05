@@ -2,48 +2,100 @@
 
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { getSession } from '@/lib/auth';
 import type { ConfigSet } from './database/interface';
 
 export { type ConfigSet };
 
-// --- Groups Management ---
+// Helper to get current user session
+async function getCurrentUserSession() {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (!sessionId) return null;
+    return await getSession(sessionId);
+}
+
+// --- Groups Management (User-scoped) ---
 
 export async function getGroupSets(): Promise<ConfigSet[]> {
-    const sets = await db.getCustomGroups();
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    const sets = await db.getCustomGroups(session.userId);
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveGroupSet(id: string | null, name: string, content: string) {
-    await db.saveCustomGroup(id, name, content);
-    revalidatePath('/admin/groups');
-    revalidatePath('/dashboard'); // Dropdowns update
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    await db.saveCustomGroup(id, session.userId, name, content, false);
+    revalidatePath('/dashboard/custom/groups');
     return { success: true };
 }
 
 export async function deleteGroupSet(id: string) {
-    await db.deleteCustomGroup(id);
-    revalidatePath('/admin/groups');
-    revalidatePath('/dashboard');
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    await db.deleteCustomGroup(id, session.userId);
+    revalidatePath('/dashboard/custom/groups');
 }
 
-// --- Rules Management ---
+// --- Rules Management (User-scoped) ---
 
 export async function getRuleSets(): Promise<ConfigSet[]> {
-    const sets = await db.getCustomRules();
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    const sets = await db.getCustomRules(session.userId);
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveRuleSet(id: string | null, name: string, content: string) {
-    await db.saveCustomRule(id, name, content);
-    revalidatePath('/admin/rules');
-    revalidatePath('/dashboard');
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    await db.saveCustomRule(id, session.userId, name, content, false);
+    revalidatePath('/dashboard/custom/rules');
     return { success: true };
 }
 
 export async function deleteRuleSet(id: string) {
-    await db.deleteCustomRule(id);
+    const session = await getCurrentUserSession();
+    if (!session) throw new Error('未授权');
+    await db.deleteCustomRule(id, session.userId);
+    revalidatePath('/dashboard/custom/rules');
+}
+
+// --- Admin Methods (All configs) ---
+
+export async function getAllGroupSetsAdmin(): Promise<ConfigSet[]> {
+    const session = await getCurrentUserSession();
+    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    const sets = await db.getAllCustomGroups();
+    return sets.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export async function saveGroupSetAdmin(id: string | null, name: string, content: string, isGlobal: boolean) {
+    const session = await getCurrentUserSession();
+    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    await db.saveCustomGroup(id, session.userId, name, content, isGlobal);
+    revalidatePath('/admin/groups');
+    revalidatePath('/dashboard/custom/groups');
+    return { success: true };
+}
+
+export async function getAllRuleSetsAdmin(): Promise<ConfigSet[]> {
+    const session = await getCurrentUserSession();
+    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    const sets = await db.getAllCustomRules();
+    return sets.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export async function saveRuleSetAdmin(id: string | null, name: string, content: string, isGlobal: boolean) {
+    const session = await getCurrentUserSession();
+    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    await db.saveCustomRule(id, session.userId, name, content, isGlobal);
     revalidatePath('/admin/rules');
-    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/custom/rules');
+    return { success: true };
 }
 
 // --- Upstream Source Refresh ---
@@ -80,6 +132,7 @@ export async function updateRefreshApiKey(apiKey: string | null) {
     revalidatePath('/admin/sources');
     return { success: true };
 }
+
 // --- Data Fetching Helpers (for client-side loading) ---
 
 export async function getProxyGroups() {

@@ -258,7 +258,8 @@ export default class RedisDatabase implements IDatabase {
         await this.redis.hset('config:global', updates);
     }
 
-    async getCustomGroups(): Promise<ConfigSet[]> {
+    // User-scoped: returns user's own + global configs
+    async getCustomGroups(userId: string): Promise<ConfigSet[]> {
         const keys = await this.redis.keys('custom:groups:*');
         if (keys.length === 0) return [];
 
@@ -269,30 +270,63 @@ export default class RedisDatabase implements IDatabase {
             })
         );
 
-        return sets.filter((s) => s !== null) as ConfigSet[];
+        // Filter: user's own + global
+        return sets
+            .filter((s) => s !== null && (s.userId === userId || s.isGlobal === true))
+            .sort((a, b) => b.updatedAt - a.updatedAt);
     }
 
-    async getCustomGroup(id: string): Promise<ConfigSet | null> {
+    async getCustomGroup(id: string, userId: string): Promise<ConfigSet | null> {
         const data = await this.redis.get(`custom:groups:${id}`);
-        return data ? JSON.parse(data) : null;
+        if (!data) return null;
+        const config = JSON.parse(data);
+        // Check access: must be owner or global
+        if (config.userId !== userId && !config.isGlobal) return null;
+        return config;
     }
 
-    async saveCustomGroup(id: string | null, name: string, content: string): Promise<void> {
+    async saveCustomGroup(id: string | null, userId: string, name: string, content: string, isGlobal: boolean = false): Promise<void> {
         const newId = id || nanoid(8);
         const data: ConfigSet = {
             id: newId,
             name,
             content,
             updatedAt: Date.now(),
+            userId,
+            isGlobal
         };
         await this.redis.set(`custom:groups:${newId}`, JSON.stringify(data));
     }
 
-    async deleteCustomGroup(id: string): Promise<void> {
-        await this.redis.del(`custom:groups:${id}`);
+    async deleteCustomGroup(id: string, userId: string): Promise<void> {
+        const data = await this.redis.get(`custom:groups:${id}`);
+        if (!data) return;
+        const config = JSON.parse(data);
+        // Only allow deleting own configs
+        if (config.userId === userId) {
+            await this.redis.del(`custom:groups:${id}`);
+        }
     }
 
-    async getCustomRules(): Promise<ConfigSet[]> {
+    // Admin method: returns all configs
+    async getAllCustomGroups(): Promise<ConfigSet[]> {
+        const keys = await this.redis.keys('custom:groups:*');
+        if (keys.length === 0) return [];
+
+        const sets = await Promise.all(
+            keys.map(async (key) => {
+                const data = await this.redis.get(key);
+                return data ? JSON.parse(data) : null;
+            })
+        );
+
+        return sets
+            .filter((s) => s !== null)
+            .sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    // User-scoped: returns user's own + global configs
+    async getCustomRules(userId: string): Promise<ConfigSet[]> {
         const keys = await this.redis.keys('custom:rules:*');
         if (keys.length === 0) return [];
 
@@ -303,27 +337,59 @@ export default class RedisDatabase implements IDatabase {
             })
         );
 
-        return sets.filter((s) => s !== null) as ConfigSet[];
+        // Filter: user's own + global
+        return sets
+            .filter((s) => s !== null && (s.userId === userId || s.isGlobal === true))
+            .sort((a, b) => b.updatedAt - a.updatedAt);
     }
 
-    async getCustomRule(id: string): Promise<ConfigSet | null> {
+    async getCustomRule(id: string, userId: string): Promise<ConfigSet | null> {
         const data = await this.redis.get(`custom:rules:${id}`);
-        return data ? JSON.parse(data) : null;
+        if (!data) return null;
+        const config = JSON.parse(data);
+        // Check access: must be owner or global
+        if (config.userId !== userId && !config.isGlobal) return null;
+        return config;
     }
 
-    async saveCustomRule(id: string | null, name: string, content: string): Promise<void> {
+    async saveCustomRule(id: string | null, userId: string, name: string, content: string, isGlobal: boolean = false): Promise<void> {
         const newId = id || nanoid(8);
         const data: ConfigSet = {
             id: newId,
             name,
             content,
             updatedAt: Date.now(),
+            userId,
+            isGlobal
         };
         await this.redis.set(`custom:rules:${newId}`, JSON.stringify(data));
     }
 
-    async deleteCustomRule(id: string): Promise<void> {
-        await this.redis.del(`custom:rules:${id}`);
+    async deleteCustomRule(id: string, userId: string): Promise<void> {
+        const data = await this.redis.get(`custom:rules:${id}`);
+        if (!data) return;
+        const config = JSON.parse(data);
+        // Only allow deleting own configs
+        if (config.userId === userId) {
+            await this.redis.del(`custom:rules:${id}`);
+        }
+    }
+
+    // Admin method: returns all configs
+    async getAllCustomRules(): Promise<ConfigSet[]> {
+        const keys = await this.redis.keys('custom:rules:*');
+        if (keys.length === 0) return [];
+
+        const sets = await Promise.all(
+            keys.map(async (key) => {
+                const data = await this.redis.get(key);
+                return data ? JSON.parse(data) : null;
+            })
+        );
+
+        return sets
+            .filter((s) => s !== null)
+            .sort((a, b) => b.updatedAt - a.updatedAt);
     }
 
     // Cache operations
