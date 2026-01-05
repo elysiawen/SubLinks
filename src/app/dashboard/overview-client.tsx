@@ -85,7 +85,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                     {!customBackgroundUrl && (
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"></div>
                     )}
-                    <div className="relative z-10">
+                    <div className="relative z-10 flex flex-col justify-center h-full">
                         <h1 className="text-3xl font-bold mb-2">欢迎回来，{username}！</h1>
                         <p className="text-blue-100">{hitokoto}</p>
                     </div>
