@@ -51,7 +51,7 @@ export default class PostgresDatabase implements IDatabase {
                     password VARCHAR(255) NOT NULL,
                     role VARCHAR(50) NOT NULL,
                     status VARCHAR(50) NOT NULL,
-                    max_subscriptions INTEGER, -- null = follow global, number = custom limit
+                    max_subscriptions INTEGER,
                     created_at BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -79,8 +79,6 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
                 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 
-                CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
-
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
                     value TEXT NOT NULL,
@@ -97,7 +95,7 @@ export default class PostgresDatabase implements IDatabase {
                     config JSONB NOT NULL,
                     source VARCHAR(255) NOT NULL,
                     created_at BIGINT NOT NULL DEFAULT 0,
-                    data JSONB -- Keep for compatibility if needed, though config is essentially data
+                    data JSONB
                 );
                 CREATE INDEX IF NOT EXISTS idx_proxies_source ON proxies(source);
 
@@ -120,7 +118,7 @@ export default class PostgresDatabase implements IDatabase {
                     rule_text JSONB NOT NULL,
                     priority INTEGER NOT NULL DEFAULT 0,
                     created_at BIGINT NOT NULL DEFAULT 0,
-                    data JSONB -- Keep for compatibility
+                    data JSONB
                 );
                 CREATE INDEX IF NOT EXISTS idx_rules_source ON rules(source);
 
@@ -146,41 +144,6 @@ export default class PostgresDatabase implements IDatabase {
                     is_global BOOLEAN DEFAULT FALSE,
                     updated_at BIGINT NOT NULL
                 );
-                
-                -- Migration: Add user_id and is_global columns if they don't exist
-                DO $$
-                BEGIN
-                    -- Add user_id to custom_groups if not exists
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                   WHERE table_name='custom_groups' AND column_name='user_id') THEN
-                        ALTER TABLE custom_groups ADD COLUMN user_id VARCHAR(255);
-                    END IF;
-                    
-                    -- Add is_global to custom_groups if not exists
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                   WHERE table_name='custom_groups' AND column_name='is_global') THEN
-                        ALTER TABLE custom_groups ADD COLUMN is_global BOOLEAN DEFAULT FALSE;
-                    END IF;
-                    
-                    -- Add user_id to custom_rules if not exists
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                   WHERE table_name='custom_rules' AND column_name='user_id') THEN
-                        ALTER TABLE custom_rules ADD COLUMN user_id VARCHAR(255);
-                    END IF;
-                    
-                    -- Add is_global to custom_rules if not exists
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                   WHERE table_name='custom_rules' AND column_name='is_global') THEN
-                        ALTER TABLE custom_rules ADD COLUMN is_global BOOLEAN DEFAULT FALSE;
-                    END IF;
-                    
-                    -- Migrate existing data: assign to admin user
-                    UPDATE custom_groups SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1) 
-                    WHERE user_id IS NULL;
-                    
-                    UPDATE custom_rules SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1) 
-                    WHERE user_id IS NULL;
-                END $$;
 
                 CREATE TABLE IF NOT EXISTS api_access_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -234,167 +197,6 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE INDEX IF NOT EXISTS idx_upstream_sources_name ON upstream_sources(name);
                 CREATE INDEX IF NOT EXISTS idx_upstream_sources_is_default ON upstream_sources(is_default);
             `);
-
-            // Migrations - run separately to ensure they execute even if tables already exist
-            try {
-                await client.query(`
-                    DO $$
-                    BEGIN
-                        -- Sessions Migrations
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='created_at') THEN
-                            ALTER TABLE sessions ADD COLUMN created_at BIGINT NOT NULL DEFAULT 0;
-                        END IF;
-
-                        -- Proxies Migrations
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='name') THEN
-                            ALTER TABLE proxies ADD COLUMN name VARCHAR(255) DEFAULT '';
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='type') THEN
-                            ALTER TABLE proxies ADD COLUMN type VARCHAR(50) DEFAULT '';
-                        END IF;
-                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='server') THEN
-                            ALTER TABLE proxies ADD COLUMN server VARCHAR(255);
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='port') THEN
-                            ALTER TABLE proxies ADD COLUMN port INTEGER;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='config') THEN
-                            ALTER TABLE proxies ADD COLUMN config JSONB DEFAULT '{}'::jsonb;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxies' AND column_name='created_at') THEN
-                            ALTER TABLE proxies ADD COLUMN created_at BIGINT NOT NULL DEFAULT 0;
-                        END IF;
-
-                        -- Proxy Groups Migrations
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='name') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN name VARCHAR(255) DEFAULT '';
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='type') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN type VARCHAR(50) DEFAULT '';
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='proxies') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN proxies JSONB DEFAULT '[]'::jsonb;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='config') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN config JSONB DEFAULT '{}'::jsonb;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='priority') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN priority INTEGER NOT NULL DEFAULT 0;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='proxy_groups' AND column_name='created_at') THEN
-                            ALTER TABLE proxy_groups ADD COLUMN created_at BIGINT NOT NULL DEFAULT 0;
-                        END IF;
-
-                        -- Rules Migrations
-                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rules' AND column_name='rule_text') THEN
-                            ALTER TABLE rules ADD COLUMN rule_text JSONB DEFAULT '[]'::jsonb;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rules' AND column_name='priority') THEN
-                            ALTER TABLE rules ADD COLUMN priority INTEGER NOT NULL DEFAULT 0;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rules' AND column_name='created_at') THEN
-                            ALTER TABLE rules ADD COLUMN created_at BIGINT NOT NULL DEFAULT 0;
-                        END IF;
-
-                        -- User UUID Migration
-                        -- Add id column if it doesn't exist
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='id') THEN
-                            ALTER TABLE users ADD COLUMN id UUID DEFAULT gen_random_uuid();
-                            -- Generate UUIDs for existing users
-                            UPDATE users SET id = gen_random_uuid() WHERE id IS NULL;
-                            -- Make id NOT NULL and PRIMARY KEY
-                            ALTER TABLE users ALTER COLUMN id SET NOT NULL;
-                            -- Drop old primary key constraint on username
-                            ALTER TABLE users DROP CONSTRAINT IF EXISTS users_pkey;
-                            -- Add new primary key on id
-                            ALTER TABLE users ADD PRIMARY KEY (id);
-                            -- Make username unique
-                            ALTER TABLE users ADD CONSTRAINT users_username_unique UNIQUE (username);
-                        END IF;
-
-                        -- Sessions: Add user_id column
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='user_id') THEN
-                            ALTER TABLE sessions ADD COLUMN user_id UUID;
-                            -- Populate user_id from username
-                            UPDATE sessions s SET user_id = u.id FROM users u WHERE s.username = u.username;
-                        END IF;
-
-                        -- Subscriptions: Add user_id column
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='user_id') THEN
-                            ALTER TABLE subscriptions ADD COLUMN user_id UUID;
-                            -- Populate user_id from username
-                            UPDATE subscriptions s SET user_id = u.id FROM users u WHERE s.username = u.username;
-                        END IF;
-
-                        -- Users: Add max_subscriptions column
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='max_subscriptions') THEN
-                            ALTER TABLE users ADD COLUMN max_subscriptions INTEGER;
-                            -- Default is NULL (follow global settings)
-                        END IF;
-
-                        -- GlobalConfig Migration: Single JSON row -> Multi-row Key-Value
-                        IF EXISTS (SELECT 1 FROM global_config WHERE key = 'global') THEN
-                            RAISE NOTICE '🔄 Migrating global_config from single JSON row to multi-row Key-Value...';
-                            
-                            DECLARE
-                                old_row RECORD;
-                                config_json JSONB;
-                            BEGIN
-                                -- Get the old global row
-                                SELECT * INTO old_row FROM global_config WHERE key = 'global';
-                                
-                                IF FOUND THEN
-                                    config_json := old_row.value::jsonb;
-                                    
-                                    -- Delete the old row
-                                    DELETE FROM global_config WHERE key = 'global';
-                                    
-                                    -- Insert individual keys
-                                    -- maxUserSubscriptions
-                                    IF config_json->>'maxUserSubscriptions' IS NOT NULL THEN
-                                        INSERT INTO global_config (key, value, updated_at)
-                                        VALUES ('maxUserSubscriptions', config_json->>'maxUserSubscriptions', old_row.updated_at);
-                                    END IF;
-                                    
-                                    -- logRetentionDays
-                                    IF config_json->>'logRetentionDays' IS NOT NULL THEN
-                                        INSERT INTO global_config (key, value, updated_at)
-                                        VALUES ('logRetentionDays', config_json->>'logRetentionDays', old_row.updated_at);
-                                    END IF;
-                                    
-                                    -- uaWhitelist (stored as JSON string)
-                                    IF config_json->'uaWhitelist' IS NOT NULL THEN
-                                        INSERT INTO global_config (key, value, updated_at)
-                                        VALUES ('uaWhitelist', (config_json->'uaWhitelist')::text, old_row.updated_at);
-                                    END IF;
-                                    
-                                    -- refreshApiKey
-                                    IF config_json->>'refreshApiKey' IS NOT NULL THEN
-                                        INSERT INTO global_config (key, value, updated_at)
-                                        VALUES ('refreshApiKey', config_json->>'refreshApiKey', old_row.updated_at);
-                                    END IF;
-                                    
-                                    -- upstreamLastUpdated
-                                    IF config_json->>'upstreamLastUpdated' IS NOT NULL THEN
-                                        INSERT INTO global_config (key, value, updated_at)
-                                        VALUES ('upstreamLastUpdated', config_json->>'upstreamLastUpdated', old_row.updated_at);
-                                    END IF;
-                                    
-                                    RAISE NOTICE '✅ Migration to multi-row completed!';
-                                END IF;
-                            END;
-                        END IF;
-
-
-                        -- Upstream Sources: Add traffic column
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='upstream_sources' AND column_name='traffic') THEN
-                            ALTER TABLE upstream_sources ADD COLUMN traffic JSONB;
-                        END IF;
-                    END $$;
-                `);
-            } catch (e) {
-                console.warn('Migration failed (non-critical):', e);
-            }
 
         } finally {
             client.release();
