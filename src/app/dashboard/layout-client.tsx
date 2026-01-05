@@ -216,6 +216,13 @@ export default function DashboardLayoutClient({ children, username, role }: Dash
                                         isActive={pathname === '/dashboard/subscriptions'}
                                         onItemClick={handleItemClick}
                                     />
+                                    <SidebarItem
+                                        icon="📚"
+                                        label="使用教程"
+                                        href="/dashboard/tutorial"
+                                        isActive={pathname === '/dashboard/tutorial'}
+                                        onItemClick={handleItemClick}
+                                    />
 
                                     <div className="px-3 pb-2 pt-4">
                                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">高级配置</p>
