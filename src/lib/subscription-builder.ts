@@ -14,7 +14,8 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         const config: any = {};
 
         // 1. Get Other Upstream Config FIRST (dns, tun, etc.) - put at top
-        const upstreamConfig = await db.getAllUpstreamConfig();
+        // Fetch isolated config for selected sources (merged)
+        const upstreamConfig = await db.getUpstreamConfig(sub.selectedSources);
         Object.assign(config, upstreamConfig);
 
         // 2. Get Proxies - filter by selected sources if specified

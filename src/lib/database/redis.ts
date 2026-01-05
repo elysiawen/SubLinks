@@ -540,8 +540,9 @@ export default class RedisDatabase implements IDatabase {
     }
 
     // Upstream Config
-    async saveUpstreamConfigItem(key: string, value: any): Promise<void> {
-        await this.redis.hset('upstream:config', key, JSON.stringify(value));
+    async saveUpstreamConfigItem(key: string, value: any, source?: string): Promise<void> {
+        const finalKey = source ? `${source}::${key}` : key;
+        await this.redis.hset('upstream:config', finalKey, JSON.stringify(value));
     }
 
     async getUpstreamConfigItem(key: string): Promise<any> {
@@ -556,6 +557,41 @@ export default class RedisDatabase implements IDatabase {
             config[key] = JSON.parse(value);
         }
         return config;
+    }
+
+    async getUpstreamConfig(sources?: string[]): Promise<Record<string, any>> {
+        const data = await this.redis.hgetall('upstream:config');
+
+        const sourceConfigs: Record<string, Record<string, any>> = {};
+        const globalConfig: Record<string, any> = {};
+
+        for (const [key, value] of Object.entries(data)) {
+            // Check for namespaced keys
+            if (key.includes('::')) {
+                const parts = key.split('::');
+                const src = parts[0];
+                const realKey = parts.slice(1).join('::');
+
+                if (!sourceConfigs[src]) sourceConfigs[src] = {};
+                sourceConfigs[src][realKey] = JSON.parse(value);
+            } else {
+                globalConfig[key] = JSON.parse(value);
+            }
+        }
+
+        // Merge logic
+        // If sources are selected, we do NOT start with globalConfig
+        const merged = (sources && sources.length > 0) ? {} : { ...globalConfig };
+
+        if (sources && sources.length > 0) {
+            for (const src of sources) {
+                if (sourceConfigs[src]) {
+                    Object.assign(merged, sourceConfigs[src]);
+                }
+            }
+        }
+
+        return merged;
     }
 
     // Logs - Use Redis Lists for simple time-ordered logs

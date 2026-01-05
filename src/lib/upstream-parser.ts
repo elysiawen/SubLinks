@@ -2,6 +2,7 @@ import { db } from './db';
 import yaml from 'js-yaml';
 import { nanoid } from 'nanoid';
 import type { Proxy, ProxyGroup, Rule } from './database/interface';
+import { parseBase64Links } from './link-parser';
 
 /**
  * Parse upstream YAML content and store structured data to database
@@ -12,7 +13,18 @@ export async function parseAndStoreUpstream(
     logger?: (msg: string, type?: 'info' | 'success' | 'error') => void
 ): Promise<void> {
     try {
-        const config = yaml.load(yamlContent) as any;
+        let config: any = yaml.load(yamlContent);
+
+        // Handle Base64 encoded node list (string output from yaml.load)
+        if (typeof config === 'string') {
+            const parsedProxies = parseBase64Links(yamlContent);
+            if (parsedProxies.length > 0) {
+                const msg = `  ℹ️ Detected Base64 node list with ${parsedProxies.length} proxies`;
+                console.log(msg);
+                if (logger) logger(msg, 'info');
+                config = { proxies: parsedProxies };
+            }
+        }
 
         const startMsg = `📦 Parsing upstream subscription data from [${sourceName}]...`;
         console.log(startMsg);
@@ -81,7 +93,8 @@ export async function parseAndStoreUpstream(
         const excludeKeys = ['proxies', 'proxy-groups', 'rules'];
         for (const [key, value] of Object.entries(config)) {
             if (!excludeKeys.includes(key)) {
-                await db.saveUpstreamConfigItem(key, value);
+                // Save config item with source namespacing
+                await db.saveUpstreamConfigItem(key, value, sourceName);
             }
         }
 

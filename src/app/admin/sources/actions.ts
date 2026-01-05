@@ -121,10 +121,10 @@ export async function updateUpstreamSource(
         }
     }
 
-    // Note: We don't refresh upstream cache here - only when adding new sources or force refresh
-    // Editing just updates the configuration, actual data refresh happens on schedule or manual trigger
-
-    // Editing just updates the configuration, actual data refresh happens on schedule or manual trigger
+    // Trigger immediate refresh after update
+    console.log(`🔄 Refreshing updated upstream source: ${newName}`);
+    const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+    await refreshSingleUpstreamSource(newName, url, undefined, { reason: 'Source Update', trigger: 'manual' });
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/settings');

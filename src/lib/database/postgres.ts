@@ -945,29 +945,66 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     // Upstream Config
-    async saveUpstreamConfigItem(key: string, value: any): Promise<void> {
+    async saveUpstreamConfigItem(key: string, value: any, source?: string): Promise<void> {
+        const finalKey = source ? `${source}::${key}` : key;
         await this.pool.query(
             `INSERT INTO upstream_config (key, value)
              VALUES ($1, $2)
              ON CONFLICT (key) DO UPDATE SET
                  value = EXCLUDED.value`,
-            [key, JSON.stringify(value)]
+            [finalKey, JSON.stringify(value)]
         );
     }
 
     async getUpstreamConfigItem(key: string): Promise<any> {
         const result = await this.pool.query('SELECT value FROM upstream_config WHERE key = $1', [key]);
         if (result.rows.length === 0) return null;
-        return result.rows[0].value; // PostgreSQL JSONB is already parsed
+        return result.rows[0].value;
     }
 
     async getAllUpstreamConfig(): Promise<Record<string, any>> {
         const result = await this.pool.query('SELECT key, value FROM upstream_config');
         const config: Record<string, any> = {};
         for (const row of result.rows) {
-            config[row.key] = row.value; // PostgreSQL JSONB is already parsed
+            config[row.key] = row.value;
         }
         return config;
+    }
+
+    async getUpstreamConfig(sources?: string[]): Promise<Record<string, any>> {
+        const result = await this.pool.query('SELECT key, value FROM upstream_config');
+
+        const sourceConfigs: Record<string, Record<string, any>> = {};
+        const globalConfig: Record<string, any> = {};
+
+        for (const row of result.rows) {
+            const fullKey = row.key;
+            // Check for namespaced keys
+            if (fullKey.includes('::')) {
+                const parts = fullKey.split('::');
+                const src = parts[0];
+                const realKey = parts.slice(1).join('::');
+
+                if (!sourceConfigs[src]) sourceConfigs[src] = {};
+                sourceConfigs[src][realKey] = row.value;
+            } else {
+                globalConfig[fullKey] = row.value;
+            }
+        }
+
+        // Merge logic: Base Global -> + Source 1 -> + Source 2 ...
+        // If sources are selected, we do NOT start with globalConfig (to avoid pollution from legacy non-namespaced data)
+        const merged = (sources && sources.length > 0) ? {} : { ...globalConfig };
+
+        if (sources && sources.length > 0) {
+            for (const src of sources) {
+                if (sourceConfigs[src]) {
+                    Object.assign(merged, sourceConfigs[src]);
+                }
+            }
+        }
+
+        return merged;
     }
 
     // Logs

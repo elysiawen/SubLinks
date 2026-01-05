@@ -209,9 +209,10 @@ export interface IDatabase {
     clearRules(source: string): Promise<void>;
 
     // Upstream Config
-    saveUpstreamConfigItem(key: string, value: any): Promise<void>;
+    saveUpstreamConfigItem(key: string, value: any, source?: string): Promise<void>;
     getUpstreamConfigItem(key: string): Promise<any>;
-    getAllUpstreamConfig(): Promise<Record<string, any>>;
+    getAllUpstreamConfig(): Promise<Record<string, any>>; // Returns raw config (including suffixed keys)
+    getUpstreamConfig(sources?: string[]): Promise<Record<string, any>>; // Returns merged config for selected sources
 
     // Logs
     createAPIAccessLog(log: Omit<APIAccessLog, 'id'>): Promise<void>;
