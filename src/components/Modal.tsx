@@ -18,8 +18,9 @@ export default function Modal({
     title,
     children,
     className = "",
-    maxWidth = "max-w-lg"
-}: ModalProps) {
+    maxWidth = "max-w-lg",
+    zIndex = 50
+}: ModalProps & { zIndex?: number }) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -42,7 +43,10 @@ export default function Modal({
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 min-h-screen">
+        <div
+            className="fixed inset-0 flex items-center justify-center p-4 min-h-screen"
+            style={{ zIndex }}
+        >
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-fade-in"

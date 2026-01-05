@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 async function getCurrentSession() {
     const cookieStore = await cookies();
@@ -40,6 +41,43 @@ export async function changePassword(oldPassword: string, newPassword: string) {
         ...user,
         password: hashedPassword
     });
+
+    return { success: true };
+}
+
+export async function deleteOwnAccount(password: string) {
+    const session = await getCurrentSession();
+    if (!session) {
+        return { error: '未登录' };
+    }
+
+    if (session.role === 'admin') {
+        return { error: '管理员账号无法通过此方式删除，请联系技术支持' };
+        // Protecting admin account from accidental self-deletion
+    }
+
+    // Get user
+    const user = await db.getUser(session.username);
+    if (!user) {
+        return { error: '用户不存在' };
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
+        return { error: '密码错误，验证失败' };
+    }
+
+    // Delete user
+    await db.deleteUser(session.username);
+
+    // Delete session (Logout)
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (sessionId) {
+        await db.deleteSession(sessionId);
+        cookieStore.delete('auth_session');
+    }
 
     return { success: true };
 }

@@ -1,11 +1,10 @@
 import { getUserSubscriptions } from '@/lib/sub-actions';
-import { getGroupSets, getRuleSets } from '@/lib/config-actions';
 import { getSession } from '@/lib/auth';
-import DashboardClient from './client';
+import { getUpstreamSources } from '@/lib/config-actions';
+import { getUserAccessLogs, getUserApiCount24h } from '@/lib/log-actions';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db } from '@/lib/db';
-
+import OverviewClient from './overview-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,24 +22,35 @@ export default async function DashboardPage() {
     }
 
     const subs = await getUserSubscriptions();
-
+    const sources = await getUpstreamSources();
+    const accessLogs = await getUserAccessLogs(3);
+    const apiCount24h = await getUserApiCount24h();
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 
-    // Map database fields to frontend fields
-    const mappedSubs = subs.map(sub => ({
-        token: sub.token,
-        name: sub.remark, // Map remark to name
-        customRules: sub.customRules,
-        groupId: sub.groupId,
-        ruleId: sub.ruleId,
-        selectedSources: sub.selectedSources || [],
-    }));
+    // Calculate statistics
+    const totalSubs = subs.length;
+    const enabledSubs = subs.filter(sub => sub.enabled !== false).length;
+
+    // Get user creation time from database
+    const { db } = await import('@/lib/db');
+    const userDetails = await db.getUser(user.username);
+    const userCreatedAt = userDetails?.createdAt || Date.now();
+
+    // Get custom background URL from global config
+    const globalConfig = await db.getGlobalConfig();
+    const customBackgroundUrl = globalConfig.customBackgroundUrl;
 
     return (
-        <DashboardClient
-            initialSubs={mappedSubs}
-            username={user.username}
+        <OverviewClient
+            totalSubs={totalSubs}
+            enabledSubs={enabledSubs}
+            accessLogs={accessLogs}
+            upstreamSources={sources}
+            apiCount24h={apiCount24h}
+            userCreatedAt={userCreatedAt}
+            customBackgroundUrl={customBackgroundUrl}
             baseUrl={baseUrl}
+            username={user.username}
         />
     );
 }
