@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 
 interface APIAccessLog {
@@ -40,9 +41,10 @@ interface OverviewClientProps {
     customBackgroundUrl?: string;
     baseUrl: string;
     username: string;
+    announcement?: string;
 }
 
-export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username }: OverviewClientProps) {
+export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username, announcement }: OverviewClientProps) {
     const { success, error } = useToast();
 
     const [hitokoto, setHitokoto] = useState('一言加载中...');
@@ -70,22 +72,27 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
-            {/* Welcome Header */}
-            <div
-                className="relative rounded-2xl p-8 text-white shadow-lg overflow-hidden"
-                style={customBackgroundUrl ? {
-                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${customBackgroundUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                } : {}}
-            >
-                {!customBackgroundUrl && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"></div>
-                )}
-                <div className="relative z-10">
-                    <h1 className="text-3xl font-bold mb-2">欢迎回来，{username}！</h1>
-                    <p className="text-blue-100">{hitokoto}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Welcome Header */}
+                <div
+                    className={`relative rounded-2xl p-8 text-white shadow-lg overflow-hidden ${announcement ? 'lg:col-span-2' : 'lg:col-span-3'}`}
+                    style={customBackgroundUrl ? {
+                        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${customBackgroundUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    } : {}}
+                >
+                    {!customBackgroundUrl && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+                    )}
+                    <div className="relative z-10">
+                        <h1 className="text-3xl font-bold mb-2">欢迎回来，{username}！</h1>
+                        <p className="text-blue-100">{hitokoto}</p>
+                    </div>
                 </div>
+
+                {/* Announcement Banner - Right Side */}
+                {announcement && <AnnouncementBanner content={announcement} className="lg:col-span-1 h-full" />}
             </div>
 
             {/* Statistics Cards */}

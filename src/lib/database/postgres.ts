@@ -543,6 +543,9 @@ export default class PostgresDatabase implements IDatabase {
                 case 'customBackgroundUrl':
                     config.customBackgroundUrl = row.value;
                     break;
+                case 'announcement':
+                    config.announcement = row.value;
+                    break;
             }
         }
 
@@ -579,6 +582,10 @@ export default class PostgresDatabase implements IDatabase {
 
             if (data.customBackgroundUrl !== undefined) {
                 updates.push(['customBackgroundUrl', data.customBackgroundUrl]);
+            }
+
+            if (data.announcement !== undefined) {
+                updates.push(['announcement', data.announcement]);
             }
 
             for (const [key, value] of updates) {

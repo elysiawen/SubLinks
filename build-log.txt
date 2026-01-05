@@ -54,5 +54,4 @@ Route (app)
 茠 Proxy (Middleware)
 
 鈼? (Static)   prerendered as static content
-茠  (Dynamic)  server-rendered on demand
 

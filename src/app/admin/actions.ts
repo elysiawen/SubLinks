@@ -32,7 +32,8 @@ export async function updateGlobalConfig(formData: FormData) {
         refreshApiKey: existingConfig.refreshApiKey,
         upstreamLastUpdated: existingConfig.upstreamLastUpdated,
         upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined,
-        customBackgroundUrl: (formData.get('customBackgroundUrl') as string) || undefined
+        customBackgroundUrl: (formData.get('customBackgroundUrl') as string) || undefined,
+        announcement: (formData.get('announcement') as string) || undefined
     });
 
     // Trigger cleanup immediately
@@ -47,7 +48,11 @@ export async function updateGlobalConfig(formData: FormData) {
         revalidatePath('/');
     }
 
+    // Always revalidate home page for announcement
+    revalidatePath('/');
+
     revalidatePath('/admin');
+    revalidatePath('/admin/settings');
 }
 
 export async function clearCache() {

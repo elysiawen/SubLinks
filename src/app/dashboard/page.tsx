@@ -39,6 +39,7 @@ export default async function DashboardPage() {
     // Get custom background URL from global config
     const globalConfig = await db.getGlobalConfig();
     const customBackgroundUrl = globalConfig.customBackgroundUrl;
+    const announcement = globalConfig.announcement;
 
     return (
         <OverviewClient
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
             customBackgroundUrl={customBackgroundUrl}
             baseUrl={baseUrl}
             username={user.username}
+            announcement={announcement}
         />
     );
 }

@@ -98,6 +98,7 @@ export interface GlobalConfig {
     uaWhitelist?: string[];
     refreshApiKey?: string;
     upstreamLastUpdated?: number;
+    announcement?: string; // Homepage announcement in Markdown format
     updatedAt?: number;
     upstreamUserAgent?: string; // Custom User-Agent for fetching upstream
     customBackgroundUrl?: string; // Custom background image URL for root page

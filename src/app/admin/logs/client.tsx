@@ -466,15 +466,15 @@ export default function LogsClient() {
                                                 <td className="px-6 py-4 text-sm text-gray-300 col-span-2">
                                                     <span className="px-2 py-1 rounded bg-gray-800 text-gray-300 text-xs mr-2 border border-gray-700">{log.category}</span>
                                                     {log.isMerged ? (
-                                                        <span className="cursor-pointer hover:text-white transition-colors gap-2 inline-flex items-center">
+                                                        <span className="cursor-pointer hover:text-white transition-colors gap-2 inline-flex items-center break-all">
                                                             {log.message}
                                                             <span className="text-gray-500 text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                         </span>
                                                     ) : (
-                                                        log.message
+                                                        <span className="break-all">{log.message}</span>
                                                     )}
                                                     {log.details && !log.isMerged && (
-                                                        <pre className="mt-2 text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto max-w-lg scrollbar-thin scrollbar-thumb-gray-800">
+                                                        <pre className="mt-2 text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap max-w-lg scrollbar-thin scrollbar-thumb-gray-800">
                                                             {JSON.stringify(log.details, null, 2)}
                                                         </pre>
                                                     )}
@@ -537,7 +537,7 @@ export default function LogsClient() {
                                             )}
 
                                             {activeTab === 'system' && (
-                                                <td className="px-6 py-3 text-sm text-gray-400">
+                                                <td className="px-6 py-3 text-sm text-gray-400 break-all">
                                                     {childLog.message}
                                                 </td>
                                             )}
@@ -718,7 +718,7 @@ export default function LogsClient() {
                                         </div>
                                         <div className="text-sm text-gray-300">
                                             <div
-                                                className={`cursor-pointer hover:text-white transition-colors ${expandedLogs.has(log.id) ? 'font-medium text-white' : ''}`}
+                                                className={`cursor-pointer hover:text-white transition-colors break-all ${expandedLogs.has(log.id) ? 'font-medium text-white' : ''}`}
                                                 onClick={log.isMerged ? () => toggleExpand(log.id) : undefined}
                                             >
                                                 {log.message}
@@ -738,9 +738,9 @@ export default function LogsClient() {
                                                                 <span className="text-gray-500 flex-shrink-0 text-[10px]">{new Date(childLog.timestamp).toLocaleTimeString()}</span>
                                                                 <span className={`${getStatusColor(childLog.status)} flex-shrink-0 text-[10px]`}>{childLog.status}</span>
                                                             </div>
-                                                            <div className="text-gray-300 break-words overflow-wrap-anywhere text-[11px] min-w-0">{childLog.message}</div>
+                                                            <div className="text-gray-300 break-all text-[11px] min-w-0">{childLog.message}</div>
                                                             {childLog.details && (
-                                                                <div className="mt-1 text-gray-400 text-[10px] break-words overflow-wrap-anywhere min-w-0">
+                                                                <div className="mt-1 text-gray-400 text-[10px] break-all min-w-0">
                                                                     {typeof childLog.details === 'string'
                                                                         ? childLog.details
                                                                         : JSON.stringify(childLog.details)}
@@ -752,7 +752,7 @@ export default function LogsClient() {
                                             )}
 
                                             {log.details && !log.isMerged && (
-                                                <pre className="text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto animate-in fade-in zoom-in-95 duration-200 mt-2">
+                                                <pre className="text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap animate-in fade-in zoom-in-95 duration-200 mt-2">
                                                     {JSON.stringify(log.details, null, 2)}
                                                 </pre>
                                             )}
