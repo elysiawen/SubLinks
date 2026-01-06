@@ -10,7 +10,7 @@ export default function TutorialClient() {
         { id: 'subscription', title: '📝 创建订阅' },
         { id: 'clients', title: '📱 客户端配置' },
         { id: 'advanced', title: '⚙️ 高级功能' },
-        { id: 'troubleshooting', title: '🔧 故障排查' },
+        { id: 'downloads', title: '💾 客户端下载' },
         { id: 'faq', title: '❓ 常见问题' },
     ];
 
@@ -29,7 +29,7 @@ export default function TutorialClient() {
                 </div>
 
                 {/* Top Navigation Tabs */}
-                <div className="sticky top-0 z-30 mb-8 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-4 backdrop-blur-md bg-gradient-to-br from-blue-50/95 via-white/95 to-purple-50/95">
+                <div className="lg:sticky top-0 z-30 mb-8 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-4 backdrop-blur-md">
                     <div className="max-w-7xl mx-auto">
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
                             <div className="flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ export default function TutorialClient() {
                     {activeSection === 'subscription' && <SubscriptionGuide />}
                     {activeSection === 'clients' && <ClientsGuide />}
                     {activeSection === 'advanced' && <AdvancedFeatures />}
-                    {activeSection === 'troubleshooting' && <Troubleshooting />}
+                    {activeSection === 'downloads' && <ClientDownloads />}
                     {activeSection === 'faq' && <FAQ />}
                 </div>
             </div>
@@ -68,7 +68,7 @@ function GettingStarted() {
     return (
         <div className="prose prose-blue max-w-none">
             <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <span className="text-4xl">🚀</span>
+                <span className="text-4xl">�</span>
                 快速开始
             </h2>
 
@@ -778,154 +778,302 @@ function AdvancedFeatures() {
     );
 }
 
-function Troubleshooting() {
+function ClientDownloads() {
     return (
         <div className="prose prose-blue max-w-none">
             <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <span className="text-4xl">🔧</span>
-                故障排查
+                <span className="text-4xl">💾</span>
+                客户端下载
             </h2>
-
+            <p className="text-gray-600 mb-8">以下是各平台 Clash 客户端的官方 GitHub 下载链接，请根据您的操作系统选择对应的客户端。</p>
             <div className="space-y-6">
-                <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-xl">
+                {/* Windows - Multiple Options */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                        <span className="text-3xl">🚨</span>
-                        <div>
-                            <h3 className="text-lg font-bold text-red-900 mb-2">订阅链接无法导入</h3>
-                            <div className="space-y-3 text-sm text-red-800">
-                                <div>
-                                    <strong>可能原因：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>• 订阅链接复制不完整</li>
-                                        <li>• 客户端不支持 Clash 格式</li>
-                                        <li>• 网络连接问题</li>
-                                        <li>• 订阅已被禁用或删除</li>
-                                    </ul>
+                        <span className="text-4xl">💻</span>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-blue-900 mb-3">Windows 客户端</h3>
+                            <p className="text-sm text-blue-800 mb-4">支持 Windows 10/11</p>
+
+                            <div className="space-y-4">
+                                {/* Clash Verge */}
+                                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
+                                    <p className="text-xs text-gray-600 mb-3">基于 Tauri 的现代化客户端，界面美观，性能优秀</p>
+                                    <a
+                                        href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 Clash.Verge_*_x64-setup.exe</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
                                 </div>
-                                <div>
-                                    <strong>解决方法：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>✓ 重新复制完整的订阅链接</li>
-                                        <li>✓ 确认客户端版本支持 Clash 配置</li>
-                                        <li>✓ 检查网络连接是否正常</li>
-                                        <li>✓ 在订阅管理页面确认订阅状态</li>
-                                    </ul>
+
+                                {/* Clash for Windows */}
+                                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Windows</p>
+                                    <p className="text-xs text-gray-600 mb-3">经典老牌客户端，功能完善稳定</p>
+                                    <a
+                                        href="https://github.com/Z-Siqi/Clash-for-Windows_Chinese/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 Clash.for.Windows.Setup.*.exe</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
+                                </div>
+
+                                {/* Clash Nyanpasu */}
+                                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Nyanpasu</p>
+                                    <p className="text-xs text-gray-600 mb-3">基于 Tauri 的新一代客户端</p>
+                                    <a
+                                        href="https://github.com/LibNyanpasu/clash-nyanpasu/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 Clash.Nyanpasu_*_x64-setup.exe</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-xl">
+                {/* macOS - Multiple Options */}
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                        <span className="text-3xl">📭</span>
-                        <div>
-                            <h3 className="text-lg font-bold text-orange-900 mb-2">节点列表为空</h3>
-                            <div className="space-y-3 text-sm text-orange-800">
-                                <div>
-                                    <strong>可能原因：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>• 上游源未刷新或刷新失败</li>
-                                        <li>• 上游源本身没有可用节点</li>
-                                        <li>• 选择的上游源配置有误</li>
-                                        <li>• 订阅创建时未选择上游源</li>
-                                    </ul>
+                        <span className="text-4xl">🍎</span>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-purple-900 mb-3">macOS 客户端</h3>
+                            <p className="text-sm text-purple-800 mb-4">支持 macOS 10.15+ (Intel 和 Apple Silicon)</p>
+
+                            <div className="space-y-4">
+                                {/* Clash Verge */}
+                                <div className="bg-white rounded-xl p-4 border border-purple-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
+                                    <p className="text-xs text-gray-600 mb-3">跨平台现代化客户端</p>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <a
+                                            href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
+                                        >
+                                            <span>📦</span>
+                                            Intel (*_x64.dmg)
+                                        </a>
+                                        <a
+                                            href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
+                                        >
+                                            <span>📦</span>
+                                            M1/M2 (*_aarch64.dmg)
+                                        </a>
+                                    </div>
                                 </div>
-                                <div>
-                                    <strong>解决方法：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>✓ 联系管理员检查上游源状态</li>
-                                        <li>✓ 在订阅管理页面手动刷新订阅</li>
-                                        <li>✓ 尝试选择其他上游源</li>
-                                        <li>✓ 重新创建订阅并正确选择上游源</li>
-                                    </ul>
+
+                                {/* ClashX */}
+                                <div className="bg-white rounded-xl p-4 border border-purple-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">ClashX</p>
+                                    <p className="text-xs text-gray-600 mb-3">轻量级 macOS 原生客户端</p>
+                                    <a
+                                        href="https://github.com/yichengchen/clashX/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 ClashX</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
+                                </div>
+
+                                {/* ClashX Pro */}
+                                <div className="bg-white rounded-xl p-4 border border-purple-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">ClashX Pro</p>
+                                    <p className="text-xs text-gray-600 mb-3">ClashX 增强版，支持更多功能</p>
+                                    <a
+                                        href="https://install.appcenter.ms/users/clashx/apps/clashx-pro/distribution_groups/public"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        前往下载页面
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-r-xl">
+                {/* Linux - Multiple Options */}
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                        <span className="text-3xl">🔌</span>
-                        <div>
-                            <h3 className="text-lg font-bold text-yellow-900 mb-2">节点无法连接</h3>
-                            <div className="space-y-3 text-sm text-yellow-800">
-                                <div>
-                                    <strong>可能原因：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>• 节点服务器故障或维护</li>
-                                        <li>• 本地网络限制</li>
-                                        <li>• 客户端配置错误</li>
-                                        <li>• 节点信息已过期</li>
-                                    </ul>
+                        <span className="text-4xl">🐧</span>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-orange-900 mb-3">Linux 客户端</h3>
+                            <p className="text-sm text-orange-800 mb-4">支持主流发行版</p>
+
+                            <div className="space-y-4">
+                                {/* Clash Verge */}
+                                <div className="bg-white rounded-xl p-4 border border-orange-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
+                                    <p className="text-xs text-gray-600 mb-3">支持 .deb, .rpm, .AppImage 多种格式</p>
+                                    <a
+                                        href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        前往下载页面
+                                    </a>
                                 </div>
-                                <div>
-                                    <strong>解决方法：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>✓ 尝试切换其他节点</li>
-                                        <li>✓ 更新订阅获取最新节点信息</li>
-                                        <li>✓ 检查本地防火墙设置</li>
-                                        <li>✓ 重启客户端或设备</li>
-                                    </ul>
+
+                                {/* Clash for Windows (Linux) */}
+                                <div className="bg-white rounded-xl p-4 border border-orange-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Windows (Linux 版)</p>
+                                    <p className="text-xs text-gray-600 mb-3">经典客户端的 Linux 版本</p>
+                                    <a
+                                        href="https://github.com/Z-Siqi/Clash-for-Windows_Chinese/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        下载 Clash.for.Windows-*.tar.gz
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl">
+                {/* Android - Multiple Options */}
+                <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                        <span className="text-3xl">🐌</span>
-                        <div>
-                            <h3 className="text-lg font-bold text-purple-900 mb-2">连接速度慢</h3>
-                            <div className="space-y-3 text-sm text-purple-800">
-                                <div>
-                                    <strong>可能原因：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>• 节点负载过高</li>
-                                        <li>• 选择的节点距离较远</li>
-                                        <li>• 网络高峰期</li>
-                                        <li>• 节点带宽限制</li>
-                                    </ul>
+                        <span className="text-4xl">🤖</span>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-green-900 mb-3">Android 客户端</h3>
+                            <p className="text-sm text-green-800 mb-4">支持 Android 5.0+</p>
+
+                            <div className="space-y-4">
+                                {/* Clash Meta for Android */}
+                                <div className="bg-white rounded-xl p-4 border border-green-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Meta for Android (推荐)</p>
+                                    <p className="text-xs text-gray-600 mb-3">基于 Meta 内核的强大客户端</p>
+                                    <a
+                                        href="https://github.com/MetaCubeX/ClashMetaForAndroid/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 cmfa-*-meta-universal-release.apk</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
                                 </div>
-                                <div>
-                                    <strong>解决方法：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>✓ 切换到其他节点</li>
-                                        <li>✓ 选择地理位置更近的节点</li>
-                                        <li>✓ 避开网络高峰时段</li>
-                                        <li>✓ 使用 url-test 策略组自动选择最快节点</li>
-                                    </ul>
+
+                                {/* Clash for Android */}
+                                <div className="bg-white rounded-xl p-4 border border-green-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Android</p>
+                                    <p className="text-xs text-gray-600 mb-3">官方 Android 客户端</p>
+                                    <a
+                                        href="https://github.com/Kr328/ClashForAndroid/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 cfa-*.apk</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
+                                </div>
+
+                                {/* SagerNet */}
+                                <div className="bg-white rounded-xl p-4 border border-green-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">SagerNet</p>
+                                    <p className="text-xs text-gray-600 mb-3">支持多种协议的通用代理工具</p>
+                                    <a
+                                        href="https://github.com/SagerNet/SagerNet/releases"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📦</span>
+                                        <span className="hidden sm:inline">下载 SagerNet-*.apk</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
+                {/* iOS - Multiple Options */}
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                        <span className="text-3xl">❌</span>
-                        <div>
-                            <h3 className="text-lg font-bold text-blue-900 mb-2">规则不生效</h3>
-                            <div className="space-y-3 text-sm text-blue-800">
-                                <div>
-                                    <strong>可能原因：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>• 规则语法错误</li>
-                                        <li>• 规则优先级问题</li>
-                                        <li>• 客户端未更新订阅</li>
-                                        <li>• 策略组配置错误</li>
-                                    </ul>
+                        <span className="text-4xl">📱</span>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-bold text-indigo-900 mb-3">iOS 客户端</h3>
+                            <p className="text-sm text-indigo-800 mb-4">需要非中国区 Apple ID</p>
+
+                            <div className="space-y-4">
+                                {/* Stash */}
+                                <div className="bg-white rounded-xl p-4 border border-indigo-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Stash (推荐)</p>
+                                    <p className="text-xs text-gray-600 mb-3">功能强大的规则代理工具，支持 Clash 配置</p>
+                                    <a
+                                        href="https://apps.apple.com/app/stash-rule-based-proxy/id1596063349"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>🍎</span>
+                                        App Store (付费)
+                                    </a>
                                 </div>
-                                <div>
-                                    <strong>解决方法：</strong>
-                                    <ul className="ml-4 mt-1 space-y-1">
-                                        <li>✓ 检查规则语法是否正确</li>
-                                        <li>✓ 确认规则顺序（自定义规则优先级最高）</li>
-                                        <li>✓ 在客户端中更新订阅</li>
-                                        <li>✓ 查看客户端日志排查问题</li>
-                                    </ul>
+
+                                {/* Shadowrocket */}
+                                <div className="bg-white rounded-xl p-4 border border-indigo-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Shadowrocket</p>
+                                    <p className="text-xs text-gray-600 mb-3">经典 iOS 代理工具，支持多种协议</p>
+                                    <a
+                                        href="https://apps.apple.com/app/shadowrocket/id932747118"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>🍎</span>
+                                        App Store (付费)
+                                    </a>
+                                </div>
+
+                                {/* Surge */}
+                                <div className="bg-white rounded-xl p-4 border border-indigo-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">Surge</p>
+                                    <p className="text-xs text-gray-600 mb-3">专业级网络调试工具</p>
+                                    <a
+                                        href="https://apps.apple.com/app/surge-5/id1442620678"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>🍎</span>
+                                        App Store (付费)
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -933,24 +1081,44 @@ function Troubleshooting() {
                 </div>
             </div>
 
-            <div className="mt-8 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-2xl p-6">
+            {/* Important Notes */}
+            <div className="mt-8 bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300 rounded-2xl p-6">
                 <div className="flex items-start gap-4">
-                    <span className="text-3xl">💬</span>
+                    <span className="text-3xl">⚠️</span>
                     <div>
-                        <h3 className="text-lg font-bold text-green-900 mb-2">仍然无法解决？</h3>
-                        <p className="text-green-800 mb-3">
-                            如果以上方法都无法解决您的问题，请联系系统管理员获取技术支持。
+                        <h3 className="text-lg font-bold text-yellow-900 mb-2">重要提示</h3>
+                        <ul className="text-sm text-yellow-800 space-y-2 ml-4">
+                            <li>• 请从官方 GitHub 仓库下载，确保软件安全性</li>
+                            <li>• 下载后请验证文件完整性，避免下载到恶意软件</li>
+                            <li>• 部分平台可能需要科学上网才能访问 GitHub</li>
+                            <li>• 首次安装可能需要允许"未知来源"或通过安全检查</li>
+                            <li>• 建议定期更新客户端以获得最新功能和安全修复</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {/* Domestic Mirror */}
+            <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-6">
+                <div className="flex items-start gap-4">
+                    <span className="text-3xl">🚀</span>
+                    <div className="flex-1">
+                        <h3 className="text-lg font-bold text-blue-900 mb-2">国内加速下载</h3>
+                        <p className="text-sm text-blue-800 mb-3">
+                            如果 GitHub 下载速度较慢，可以使用以下镜像加速服务：
                         </p>
-                        <div className="bg-white rounded-xl p-4 border border-green-200">
-                            <p className="text-sm text-gray-700">
-                                <strong>联系时请提供：</strong>
+                        <div className="bg-white rounded-xl p-4 border border-blue-200">
+                            <p className="text-xs text-gray-700 mb-3">
+                                <strong>使用方法：</strong>在 GitHub 链接前添加镜像域名
                             </p>
-                            <ul className="text-sm text-gray-600 mt-2 space-y-1 ml-4">
-                                <li>• 详细的问题描述</li>
-                                <li>• 使用的客户端名称和版本</li>
-                                <li>• 订阅名称或 Token</li>
-                                <li>• 错误截图或日志（如有）</li>
-                            </ul>
+                            <div className="bg-blue-50 rounded-lg p-3">
+                                <p className="text-xs font-semibold text-blue-900 mb-1">推荐镜像站</p>
+                                <code className="text-xs text-blue-700 break-all">https://ghfast.top</code>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3">
+                                💡 示例：<code className="bg-gray-100 px-2 py-1 rounded text-xs">https://github.com/xxx/releases</code>
+                                → <code className="bg-gray-100 px-2 py-1 rounded text-xs">https://ghfast.top/https://github.com/xxx/releases</code>
+                            </p>
                         </div>
                     </div>
                 </div>

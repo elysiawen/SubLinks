@@ -24,7 +24,7 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: string[], availableSources?: { name: string; url: string }[] }) {
+export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: string[], availableSources?: { name: string; url: string; isDefault?: boolean }[] }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
@@ -32,7 +32,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     // Data State
     const [configSets, setConfigSets] = useState<{ groups: ConfigSet[], rules: ConfigSet[] }>(initialConfigSets || { groups: [], rules: [] });
     const [defaultGroups, setDefaultGroups] = useState<string[]>(initialDefaultGroups || []);
-    const [availableSources, setAvailableSources] = useState<{ name: string; url: string }[]>(initialAvailableSources || []);
+    const [availableSources, setAvailableSources] = useState<{ name: string; url: string; isDefault?: boolean }[]>(initialAvailableSources || []);
     const [dataLoaded, setDataLoaded] = useState(!!initialConfigSets);
 
     // Fetch additional data on mount if not provided
@@ -212,7 +212,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
         setFormRules('');
         setFormGroupId('default');
         setFormRuleId('default');
-        setFormSelectedSources(availableSources.map(s => s.name));
+        setFormSelectedSources(availableSources.filter(s => s.isDefault).map(s => s.name));
         setRuleMode('simple');
         setGuiRules([]);
         setIsModalOpen(true);
