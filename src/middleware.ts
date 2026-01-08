@@ -5,6 +5,31 @@ const BLOCKED_UAS = ['MicroMessenger', 'QQ/'];
 
 export function middleware(request: NextRequest) {
     const ua = request.headers.get('user-agent') || '';
+    const path = request.nextUrl.pathname;
+
+    // Handle CORS for client API routes
+    if (path.startsWith('/api/client/')) {
+        // Handle preflight requests
+        if (request.method === 'OPTIONS') {
+            return new NextResponse(null, {
+                status: 200,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Access-Control-Max-Age': '86400',
+                },
+            });
+        }
+
+        // Add CORS headers to actual requests
+        const response = NextResponse.next();
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        return response;
+    }
 
     // Block WeChat and QQ (UA Blocking)
     // Applies to all routes in matcher
@@ -14,8 +39,6 @@ export function middleware(request: NextRequest) {
             { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
     }
-
-    const path = request.nextUrl.pathname;
 
     // Auth Check (Session Cookie Existence)
     // We do NOT verify session in middleware because it requires DB access (Redis) which isn't available in Edge Middleware easily without Upstash REST.
@@ -41,5 +64,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/api/s/:path*', '/admin/:path*', '/dashboard/:path*', '/login'],
+    matcher: ['/api/s/:path*', '/api/client/:path*', '/admin/:path*', '/dashboard/:path*', '/login'],
 }
