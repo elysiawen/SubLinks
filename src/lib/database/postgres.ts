@@ -55,6 +55,15 @@ export default class PostgresDatabase implements IDatabase {
                     created_at BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+                
+                -- Add tokenVersion column if it doesn't exist
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='users' AND column_name='token_version') THEN
+                        ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0;
+                    END IF;
+                END $$;
 
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
@@ -78,6 +87,19 @@ export default class PostgresDatabase implements IDatabase {
                 );
                 CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
                 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+                
+                -- Add user_id and token_version columns to sessions if they don't exist
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='user_id') THEN
+                        ALTER TABLE sessions ADD COLUMN user_id UUID;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='token_version') THEN
+                        ALTER TABLE sessions ADD COLUMN token_version INTEGER DEFAULT 0;
+                    END IF;
+                END $$;
 
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
@@ -207,7 +229,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUser(username: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, created_at FROM users WHERE username = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, created_at FROM users WHERE username = $1',
             [username]
         );
         if (result.rows.length === 0) return null;
@@ -219,6 +241,7 @@ export default class PostgresDatabase implements IDatabase {
             role: row.role,
             status: row.status,
             maxSubscriptions: row.max_subscriptions,
+            tokenVersion: row.token_version,
             createdAt: parseInt(row.created_at),
         };
     }
@@ -226,7 +249,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUserById(id: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, created_at FROM users WHERE id = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, created_at FROM users WHERE id = $1',
             [id]
         );
         if (result.rows.length === 0) return null;
@@ -238,21 +261,23 @@ export default class PostgresDatabase implements IDatabase {
             role: row.role,
             status: row.status,
             maxSubscriptions: row.max_subscriptions,
+            tokenVersion: row.token_version,
             createdAt: parseInt(row.created_at),
         };
     }
 
     async setUser(username: string, data: User): Promise<void> {
         await this.pool.query(
-            `INSERT INTO users (username, password, role, status, max_subscriptions, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO users (username, password, role, status, max_subscriptions, token_version, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (username) DO UPDATE SET
                  password = EXCLUDED.password,
                  role = EXCLUDED.role,
                  status = EXCLUDED.status,
-                 max_subscriptions = EXCLUDED.max_subscriptions
+                 max_subscriptions = EXCLUDED.max_subscriptions,
+                 token_version = EXCLUDED.token_version
              RETURNING id`,
-            [username, data.password, data.role, data.status, data.maxSubscriptions, data.createdAt]
+            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.createdAt]
         );
     }
 
@@ -308,15 +333,16 @@ export default class PostgresDatabase implements IDatabase {
         const expiresAt = Date.now() + ttl * 1000;
         const createdAt = Date.now();
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO sessions (session_id, user_id, username, role, token_version, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
                  role = EXCLUDED.role,
+                 token_version = EXCLUDED.token_version,
                  created_at = EXCLUDED.created_at,
                  expires_at = EXCLUDED.expires_at`,
-            [sessionId, data.userId, data.username, data.role, createdAt, expiresAt]
+            [sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, createdAt, expiresAt]
         );
     }
 
@@ -328,7 +354,7 @@ export default class PostgresDatabase implements IDatabase {
             await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
             const result = await this.pool.query(
-                'SELECT user_id, username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                'SELECT user_id, username, role, token_version FROM sessions WHERE session_id = $1 AND expires_at > $2',
                 [sessionId, Date.now()]
             );
             if (result.rows.length === 0) return null;
@@ -336,6 +362,7 @@ export default class PostgresDatabase implements IDatabase {
                 userId: result.rows[0].user_id,
                 username: result.rows[0].username,
                 role: result.rows[0].role,
+                tokenVersion: result.rows[0].token_version,
             };
         } catch (error) {
             console.error('Error in getSession:', error);
