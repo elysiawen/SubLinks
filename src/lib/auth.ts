@@ -14,12 +14,43 @@ export async function createSession(username: string, role: string) {
     if (!user) {
         throw new Error('User not found');
     }
-    await db.createSession(sessionId, { userId: user.id, username, role }, SESSION_TTL);
+    await db.createSession(sessionId, {
+        userId: user.id,
+        username,
+        role,
+        tokenVersion: user.tokenVersion || 0
+    }, SESSION_TTL);
     return sessionId;
 }
 
 export async function getSession(sessionId: string) {
-    return await db.getSession(sessionId);
+    const session = await db.getSession(sessionId);
+    if (!session) {
+        return null;
+    }
+
+    // Verify token version to invalidate sessions after password change
+    const user = await db.getUser(session.username);
+    if (!user) {
+        return null;
+    }
+
+    // Check if account is banned or disabled
+    if (user.status !== 'active') {
+        await db.deleteSession(sessionId);
+        return null;
+    }
+
+    const sessionVersion = session.tokenVersion || 0;
+    const currentVersion = user.tokenVersion || 0;
+
+    if (sessionVersion !== currentVersion) {
+        // Token version mismatch, session is invalid
+        await db.deleteSession(sessionId);
+        return null;
+    }
+
+    return session;
 }
 
 export async function destroySession(sessionId: string) {

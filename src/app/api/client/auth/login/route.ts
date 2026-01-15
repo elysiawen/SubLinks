@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         // Validate input
         if (!username || !password) {
             return NextResponse.json(
-                { error: 'Username and password are required' },
+                { error: '用户名和密码不能为空' },
                 { status: 400 }
             );
         }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         const user = await db.getUser(username);
         if (!user) {
             return NextResponse.json(
-                { error: 'Invalid username or password' },
+                { error: '用户名或密码错误' },
                 { status: 401 }
             );
         }
@@ -36,8 +36,16 @@ export async function POST(request: NextRequest) {
         const isValid = await verifyPassword(password, user.password);
         if (!isValid) {
             return NextResponse.json(
-                { error: 'Invalid username or password' },
+                { error: '用户名或密码错误' },
                 { status: 401 }
+            );
+        }
+
+        // Check if account is banned or disabled
+        if (user.status !== 'active') {
+            return NextResponse.json(
+                { error: '账户已被停用或封禁' },
+                { status: 403 }
             );
         }
 
@@ -46,6 +54,7 @@ export async function POST(request: NextRequest) {
             userId: user.id,
             username: user.username,
             role: user.role,
+            tokenVersion: user.tokenVersion || 0,
         };
 
         const accessToken = await createAccessToken(tokenPayload);
@@ -74,7 +83,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: '服务器内部错误' },
             { status: 500 }
         );
     }

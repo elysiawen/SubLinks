@@ -39,8 +39,17 @@ export async function changePassword(oldPassword: string, newPassword: string) {
     const hashedPassword = await hashPassword(newPassword);
     await db.setUser(session.username, {
         ...user,
-        password: hashedPassword
+        password: hashedPassword,
+        tokenVersion: (user.tokenVersion || 0) + 1  // Increment to invalidate all tokens
     });
+
+    // Logout user by deleting current session
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (sessionId) {
+        await db.deleteSession(sessionId);
+        cookieStore.delete('auth_session');
+    }
 
     return { success: true };
 }

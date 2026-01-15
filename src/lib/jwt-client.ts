@@ -11,6 +11,7 @@ export interface TokenPayload {
     userId: string;
     username: string;
     role: string;
+    tokenVersion?: number;
 }
 
 /**
@@ -45,11 +46,34 @@ export async function createRefreshToken(payload: TokenPayload): Promise<string>
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
-        return {
+        const tokenPayload = {
             userId: payload.userId as string,
             username: payload.username as string,
             role: payload.role as string,
+            tokenVersion: payload.tokenVersion as number | undefined,
         };
+
+        // Verify token version to invalidate tokens after password change
+        const { db } = await import('@/lib/db');
+        const user = await db.getUser(tokenPayload.username);
+        if (!user) {
+            return null;
+        }
+
+        // Check if account is banned or disabled
+        if (user.status !== 'active') {
+            return null;
+        }
+
+        const tokenVersion = tokenPayload.tokenVersion || 0;
+        const currentVersion = user.tokenVersion || 0;
+
+        if (tokenVersion !== currentVersion) {
+            // Token version mismatch, token is invalid
+            return null;
+        }
+
+        return tokenPayload;
     } catch (error) {
         // Log validation failures gracefully without stack trace
         if (error instanceof Error) {

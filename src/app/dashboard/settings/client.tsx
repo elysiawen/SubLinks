@@ -53,10 +53,11 @@ export default function SettingsClient({ username, role }: SettingsClientProps) 
         if (result.error) {
             error(result.error);
         } else {
-            success('密码修改成功');
-            setOldPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
+            success('密码修改成功,请重新登录');
+            // Wait a moment for user to see the success message
+            setTimeout(() => {
+                router.push('/login');
+            }, 1500);
         }
     };
 
@@ -174,8 +175,8 @@ export default function SettingsClient({ username, role }: SettingsClientProps) 
                             onClick={() => setIsDeleteModalOpen(true)}
                             disabled={role === 'admin' || deleteLoading}
                             className={`px-4 py-2 rounded-lg border font-medium transition-colors ${role === 'admin'
-                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                    : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
                                 }`}
                         >
                             注销账户

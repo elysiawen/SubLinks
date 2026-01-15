@@ -1,42 +1,44 @@
-# Vercel 部署问题排查
+# Vercel 部署指南
 
-## 订阅重建功能在 Vercel 上的限制
+SubLinks 完美支持 Vercel Serverless 部署，并针对 Vercel Edge Network 进行了深度优化。
 
-### 问题原因
-Vercel Serverless 函数有执行时间限制：
-- **Hobby 计划**：最大 10 秒
-- **Pro 计划**：最大 60 秒（可配置到 300 秒）
-- **Enterprise 计划**：最大 900 秒
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Felysiawen%2FSubLinks&env=DATABASE_TYPE,POSTGRES_URL,NEXT_PUBLIC_URL&project-name=sublinks&repository-name=sublinks)
 
-即使使用流式响应，函数也必须在这个时间内完成。
+## ⚡ 快速部署
 
-### 解决方案
+1. **点击上方按钮**：这将自动 fork 项目到您的 GitHub 并开始在 Vercel 上部署。
+2. **配置数据库**：SubLinks 需要一个 PostgreSQL 数据库。
+    - **推荐**：在 Vercel 部署过程中，添加 **Vercel Postgres** 集成（或使用 Neon、Supabase 等）。
+    - 获取连接字符串（Connection String），通常形如 `postgres://...`。
+3. **填写环境变量**：
 
-#### 1. 已添加 `maxDuration` 配置
-在 `src/app/api/subscriptions/stream-rebuild/route.ts` 中添加：
-```typescript
-export const maxDuration = 300; // 5 分钟
-```
+| 变量名 | 说明 | 示例值 |
+|--------|------|--------|
+| `DATABASE_TYPE` | 数据库类型 | `postgres` |
+| `POSTGRES_URL` | PostgreSQL 连接字符串 (如果使用 Vercel Postgres 可自动注入) | `postgres://user:pass@host:5432/db` |
+| `NEXT_PUBLIC_URL` | **重要**：您的最终生产环境域名 (用于 Cron Job) | `https://your-project.vercel.app` |
 
-#### 2. 建议的使用方式
+**等待构建完成**：Vercel 会自动安装依赖并构建项目。
 
-**对于 Hobby 计划用户**：
-- 使用批量处理模式（每批 5-10 个）
-- 避免一次性重建大量订阅
-- 如果订阅数超过 20 个，建议分批手动重建
+## 🛠️ 部署后配置
 
-**对于 Pro 计划用户**：
-- 可以使用全并发模式
-- 最多可处理约 100-200 个订阅（取决于每个订阅的处理时间）
+### 1. 初始化管理员账户
+部署完成后，访问您的站点。默认并没有初始化数据库表结构。SubLinks 代码内置了适配 Vercel 的自动迁移逻辑，但建议您首次访问：
+- 打开 `https://your-project.vercel.app/admin`
+- 默认管理员账号：`admin`
+- 默认管理员密码：`admin`
 
-#### 3. 替代方案
+> **安全警告**：首次登录后，请务必立即在“个人设置”中修改密码！
 
-如果订阅数量很大，可以考虑：
-1. 使用 Vercel Cron Jobs 定期重建
-2. 在本地运行重建脚本
-3. 使用后台任务队列（需要额外服务）
+### 2. 配置定时任务 (Cron Jobs)
+SubLinks 使用 Vercel Cron 来自动刷新上游订阅源并预缓存节点。
+- 项目根目录包含 `vercel.json`，其中已配置了 Cron 规则（每 30 分钟触发一次）。
+- 确保 `NEXT_PUBLIC_URL` 环境变量已正确设置为您的 Vercel 域名。Cron Job 会向 `${NEXT_PUBLIC_URL}/api/cron/refresh` 发送请求。
 
-### 测试建议
-1. 在 Vercel 上测试时，先用少量订阅（5-10个）
-2. 观察执行时间
-3. 根据实际情况调整批次大小
+## 常见问题
+
+**Q: 部署后访问报错 500?**
+A: 请检查 `POSTGRES_URL` 是否正确。如果是 Vercel Postgres，确保可以在 Vercel Dashboard 的 Storage 选项卡中查看到数据表。
+
+**Q: 定时刷新没有生效?**
+A: 检查 Vercel Dashboard 的 Logs -> Cron Jobs 页面。如果显示失败，通常是因为 `NEXT_PUBLIC_URL` 未配置或配置错误，导致 Cron 服务无法回调您的 API。

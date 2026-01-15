@@ -6,6 +6,7 @@ export interface User {
     role: string;
     status: string;
     maxSubscriptions: number | null; // null = follow global, number = custom limit
+    tokenVersion?: number; // Incremented on password change to invalidate tokens
     createdAt: number;
 }
 
@@ -13,6 +14,7 @@ export interface Session {
     userId: string;      // UUID reference to User
     username: string;    // Kept for backward compatibility
     role: string;
+    tokenVersion?: number; // Token version for invalidation
 }
 
 export interface PaginatedResult<T> {

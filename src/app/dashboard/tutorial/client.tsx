@@ -3,14 +3,14 @@
 import { useState } from 'react';
 
 export default function TutorialClient() {
-    const [activeSection, setActiveSection] = useState('getting-started');
+    const [activeSection, setActiveSection] = useState('downloads');
 
     const sections = [
+        { id: 'downloads', title: '💾 客户端下载' },
         { id: 'getting-started', title: '🚀 快速开始' },
         { id: 'subscription', title: '📝 创建订阅' },
         { id: 'clients', title: '📱 客户端配置' },
         { id: 'advanced', title: '⚙️ 高级功能' },
-        { id: 'downloads', title: '💾 客户端下载' },
         { id: 'faq', title: '❓ 常见问题' },
     ];
 
@@ -801,48 +801,17 @@ function ClientDownloads() {
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
                                     <p className="text-xs text-gray-600 mb-3">基于 Tauri 的现代化客户端，界面美观，性能优秀</p>
                                     <a
-                                        href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                        href="https://vermanager-api.135150.xyz/api/github/clash-verge-rev/clash-verge-rev/latest?platform=windows&arch=x64&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
-                                        <span className="hidden sm:inline">下载 Clash.Verge_*_x64-setup.exe</span>
+                                        <span className="hidden sm:inline">下载 Windows 版 (x64)</span>
                                         <span className="sm:hidden">下载</span>
                                     </a>
                                 </div>
 
-                                {/* Clash for Windows */}
-                                <div className="bg-white rounded-xl p-4 border border-blue-200">
-                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Windows</p>
-                                    <p className="text-xs text-gray-600 mb-3">经典老牌客户端，功能完善稳定</p>
-                                    <a
-                                        href="https://github.com/Z-Siqi/Clash-for-Windows_Chinese/releases"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
-                                    >
-                                        <span>📦</span>
-                                        <span className="hidden sm:inline">下载 Clash.for.Windows.Setup.*.exe</span>
-                                        <span className="sm:hidden">下载</span>
-                                    </a>
-                                </div>
-
-                                {/* Clash Nyanpasu */}
-                                <div className="bg-white rounded-xl p-4 border border-blue-200">
-                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash Nyanpasu</p>
-                                    <p className="text-xs text-gray-600 mb-3">基于 Tauri 的新一代客户端</p>
-                                    <a
-                                        href="https://github.com/LibNyanpasu/clash-nyanpasu/releases"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
-                                    >
-                                        <span>📦</span>
-                                        <span className="hidden sm:inline">下载 Clash.Nyanpasu_*_x64-setup.exe</span>
-                                        <span className="sm:hidden">下载</span>
-                                    </a>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -863,41 +832,27 @@ function ClientDownloads() {
                                     <p className="text-xs text-gray-600 mb-3">跨平台现代化客户端</p>
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <a
-                                            href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                            href="https://vermanager-api.135150.xyz/api/github/clash-verge-rev/clash-verge-rev/latest?platform=macos&arch=x64&redirect=true&proxy=cdn.gh-proxy.org"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
                                         >
                                             <span>📦</span>
-                                            Intel (*_x64.dmg)
+                                            Intel (x64)
                                         </a>
                                         <a
-                                            href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                            href="https://vermanager-api.135150.xyz/api/github/clash-verge-rev/clash-verge-rev/latest?platform=macos&arch=aarch64&redirect=true&proxy=cdn.gh-proxy.org"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
                                         >
                                             <span>📦</span>
-                                            M1/M2 (*_aarch64.dmg)
+                                            Apple Silicon (M1/M2)
                                         </a>
                                     </div>
                                 </div>
 
-                                {/* ClashX */}
-                                <div className="bg-white rounded-xl p-4 border border-purple-200">
-                                    <p className="text-sm font-semibold text-gray-900 mb-2">ClashX</p>
-                                    <p className="text-xs text-gray-600 mb-3">轻量级 macOS 原生客户端</p>
-                                    <a
-                                        href="https://github.com/yichengchen/clashX/releases"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs font-medium no-underline"
-                                    >
-                                        <span>📦</span>
-                                        <span className="hidden sm:inline">下载 ClashX</span>
-                                        <span className="sm:hidden">下载</span>
-                                    </a>
-                                </div>
+
 
                                 {/* ClashX Pro */}
                                 <div className="bg-white rounded-xl p-4 border border-purple-200">
@@ -916,10 +871,10 @@ function ClientDownloads() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Linux - Multiple Options */}
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
+                < div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow" >
                     <div className="flex items-start gap-4">
                         <span className="text-4xl">🐧</span>
                         <div className="flex-1">
@@ -932,13 +887,13 @@ function ClientDownloads() {
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
                                     <p className="text-xs text-gray-600 mb-3">支持 .deb, .rpm, .AppImage 多种格式</p>
                                     <a
-                                        href="https://github.com/clash-verge-rev/clash-verge-rev/releases"
+                                        href="https://vermanager-api.135150.xyz/api/github/clash-verge-rev/clash-verge-rev/latest?platform=linux&arch=x64&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
-                                        前往下载页面
+                                        下载 Linux 版 (x64)
                                     </a>
                                 </div>
 
@@ -947,22 +902,22 @@ function ClientDownloads() {
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Windows (Linux 版)</p>
                                     <p className="text-xs text-gray-600 mb-3">经典客户端的 Linux 版本</p>
                                     <a
-                                        href="https://github.com/Z-Siqi/Clash-for-Windows_Chinese/releases"
+                                        href="https://vermanager-api.135150.xyz/api/github/Z-Siqi/Clash-for-Windows_Chinese/latest?platform=linux&arch=x64&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
-                                        下载 Clash.for.Windows-*.tar.gz
+                                        下载 Linux 版 (x64)
                                     </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Android - Multiple Options */}
-                <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
+                < div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow" >
                     <div className="flex items-start gap-4">
                         <span className="text-4xl">🤖</span>
                         <div className="flex-1">
@@ -975,55 +930,41 @@ function ClientDownloads() {
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash Meta for Android (推荐)</p>
                                     <p className="text-xs text-gray-600 mb-3">基于 Meta 内核的强大客户端</p>
                                     <a
-                                        href="https://github.com/MetaCubeX/ClashMetaForAndroid/releases"
+                                        href="https://vermanager-api.135150.xyz/api/github/MetaCubeX/ClashMetaForAndroid/latest?platform=android&arch=universal&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
-                                        <span className="hidden sm:inline">下载 cmfa-*-meta-universal-release.apk</span>
+                                        <span className="hidden sm:inline">下载 Android 通用版 (APK)</span>
                                         <span className="sm:hidden">下载</span>
                                     </a>
                                 </div>
 
-                                {/* Clash for Android */}
-                                <div className="bg-white rounded-xl p-4 border border-green-200">
-                                    <p className="text-sm font-semibold text-gray-900 mb-2">Clash for Android</p>
-                                    <p className="text-xs text-gray-600 mb-3">官方 Android 客户端</p>
-                                    <a
-                                        href="https://github.com/Kr328/ClashForAndroid/releases"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
-                                    >
-                                        <span>📦</span>
-                                        <span className="hidden sm:inline">下载 cfa-*.apk</span>
-                                        <span className="sm:hidden">下载</span>
-                                    </a>
-                                </div>
+
 
                                 {/* SagerNet */}
                                 <div className="bg-white rounded-xl p-4 border border-green-200">
                                     <p className="text-sm font-semibold text-gray-900 mb-2">SagerNet</p>
                                     <p className="text-xs text-gray-600 mb-3">支持多种协议的通用代理工具</p>
                                     <a
-                                        href="https://github.com/SagerNet/SagerNet/releases"
+                                        href="https://vermanager-api.135150.xyz/api/github/SagerNet/SagerNet/latest?platform=android&arch=universal&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
-                                        <span className="hidden sm:inline">下载 SagerNet-*.apk</span>
+                                        <span className="hidden sm:inline">下载 Android 通用版 (APK)</span>
                                         <span className="sm:hidden">下载</span>
                                     </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* iOS - Multiple Options */}
-                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow">
+                < div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-xl hover:shadow-lg transition-shadow" >
                     <div className="flex items-start gap-4">
                         <span className="text-4xl">📱</span>
                         <div className="flex-1">
@@ -1078,11 +1019,11 @@ function ClientDownloads() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Important Notes */}
-            <div className="mt-8 bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300 rounded-2xl p-6">
+            < div className="mt-8 bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300 rounded-2xl p-6" >
                 <div className="flex items-start gap-4">
                     <span className="text-3xl">⚠️</span>
                     <div>
@@ -1096,34 +1037,9 @@ function ClientDownloads() {
                         </ul>
                     </div>
                 </div>
-            </div>
+            </div >
 
-            {/* Domestic Mirror */}
-            <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                    <span className="text-3xl">🚀</span>
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-blue-900 mb-2">国内加速下载</h3>
-                        <p className="text-sm text-blue-800 mb-3">
-                            如果 GitHub 下载速度较慢，可以使用以下镜像加速服务：
-                        </p>
-                        <div className="bg-white rounded-xl p-4 border border-blue-200">
-                            <p className="text-xs text-gray-700 mb-3">
-                                <strong>使用方法：</strong>在 GitHub 链接前添加镜像域名
-                            </p>
-                            <div className="bg-blue-50 rounded-lg p-3">
-                                <p className="text-xs font-semibold text-blue-900 mb-1">推荐镜像站</p>
-                                <code className="text-xs text-blue-700 break-all">https://ghfast.top</code>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-3">
-                                💡 示例：<code className="bg-gray-100 px-2 py-1 rounded text-xs">https://github.com/xxx/releases</code>
-                                → <code className="bg-gray-100 px-2 py-1 rounded text-xs">https://ghfast.top/https://github.com/xxx/releases</code>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </div >
     );
 }
 
