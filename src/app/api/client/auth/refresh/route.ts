@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             accessToken: newAccessToken,
-            expiresIn: 24 * 60 * 60, // 24 hours in seconds
+            expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
         });
     } catch (error) {
         console.error('Token refresh error:', error);

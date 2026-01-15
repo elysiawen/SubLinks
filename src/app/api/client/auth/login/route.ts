@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             },
             accessToken,
             refreshToken,
-            expiresIn: 24 * 60 * 60, // 24 hours in seconds
+            expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
         });
     } catch (error) {
         console.error('Login error:', error);

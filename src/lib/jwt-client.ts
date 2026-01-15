@@ -4,8 +4,8 @@ const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 );
 
-const ACCESS_TOKEN_TTL = 24 * 60 * 60; // 24 hours
-const REFRESH_TOKEN_TTL = 30 * 24 * 60 * 60; // 30 days
+const ACCESS_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
+const REFRESH_TOKEN_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export interface TokenPayload {
     userId: string;
@@ -51,7 +51,12 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
             role: payload.role as string,
         };
     } catch (error) {
-        console.error('Token verification failed:', error);
+        // Log validation failures gracefully without stack trace
+        if (error instanceof Error) {
+            console.warn('[JWT] Token validation failed:', error.message);
+        } else {
+            console.warn('[JWT] Token validation failed: Unknown error');
+        }
         return null;
     }
 }
