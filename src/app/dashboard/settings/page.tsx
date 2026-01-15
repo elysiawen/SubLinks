@@ -18,5 +18,5 @@ export default async function SettingsPage() {
         redirect('/login');
     }
 
-    return <SettingsClient username={user.username} role={user.role} />;
+    return <SettingsClient username={user.username} role={user.role} nickname={user.nickname} />;
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { changePassword, deleteOwnAccount } from '@/lib/user-actions';
+import { changePassword, deleteOwnAccount, updateNickname } from '@/lib/user-actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -11,12 +11,17 @@ import Modal from '@/components/Modal';
 interface SettingsClientProps {
     username: string;
     role: string;
+    nickname?: string;
 }
 
-export default function SettingsClient({ username, role }: SettingsClientProps) {
+export default function SettingsClient({ username, role, nickname: initialNickname }: SettingsClientProps) {
     const router = useRouter();
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+
+    // Nickname State
+    const [nickname, setNickname] = useState(initialNickname || '');
+    const [nicknameLoading, setNicknameLoading] = useState(false);
 
     // Password State
     const [oldPassword, setOldPassword] = useState('');
@@ -28,6 +33,20 @@ export default function SettingsClient({ username, role }: SettingsClientProps) 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [verifyPassword, setVerifyPassword] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
+
+    // Handle Nickname Update
+    const handleUpdateNickname = async () => {
+        setNicknameLoading(true);
+        const result = await updateNickname(nickname);
+        setNicknameLoading(false);
+
+        if (result.error) {
+            error(result.error);
+        } else {
+            success('昵称更新成功');
+            router.refresh();
+        }
+    };
 
     // Handle Password Change
     const handleChangePassword = async () => {
@@ -102,6 +121,48 @@ export default function SettingsClient({ username, role }: SettingsClientProps) 
             <div>
                 <h1 className="text-2xl font-bold text-gray-800">账户设置</h1>
                 <p className="text-sm text-gray-500 mt-1">管理您的个人资料和安全设置</p>
+            </div>
+
+            {/* Profile Section - Nickname */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        👤 个人资料
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">设置您的显示昵称</p>
+                </div>
+                <div className="p-6 space-y-4 max-w-lg">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                        <input
+                            type="text"
+                            value={username}
+                            disabled
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">用户名用于登录，无法修改</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
+                        <input
+                            type="text"
+                            value={nickname}
+                            onChange={(e) => setNickname(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="设置您的显示昵称"
+                            maxLength={50}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">昵称将在界面中显示，留空则显示用户名</p>
+                    </div>
+                    <div className="pt-2">
+                        <SubmitButton
+                            text="保存昵称"
+                            onClick={handleUpdateNickname}
+                            isLoading={nicknameLoading}
+                            className="w-full sm:w-auto"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Change Password Section */}

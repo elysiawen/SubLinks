@@ -27,7 +27,7 @@ export default function AdminUsersClient({
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
-    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, useGlobalLimit: boolean, customLimit: number } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number } | null>(null);
 
     const handleCreateUser = async (formData: FormData) => {
         setLoading(true);
@@ -50,7 +50,8 @@ export default function AdminUsersClient({
         const res = await updateUser(
             editingUser.username,
             editingUser.newUsername,
-            editingUser.newPassword || undefined
+            editingUser.newPassword || undefined,
+            editingUser.nickname || undefined
         );
 
         // Update subscription limit
@@ -110,6 +111,14 @@ export default function AdminUsersClient({
                         />
                     </div>
                     <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
+                        <input
+                            name="nickname"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="设置显示昵称"
+                        />
+                    </div>
+                    <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">密码</label>
                         <input
                             name="password"
@@ -159,6 +168,7 @@ export default function AdminUsersClient({
                         <thead>
                             <tr className="bg-gray-50/50">
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户名</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">昵称</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">角色</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">订阅限制</th>
@@ -169,6 +179,13 @@ export default function AdminUsersClient({
                             {users.map((user) => (
                                 <tr key={user.username} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {user.nickname ? (
+                                            <span className="text-gray-900">{user.nickname}</span>
+                                        ) : (
+                                            <span className="text-gray-400 italic">未设置</span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                             {user.role === 'admin' ? '管理员' : '用户'}
@@ -190,6 +207,7 @@ export default function AdminUsersClient({
                                                 username: user.username,
                                                 newUsername: user.username,
                                                 newPassword: '',
+                                                nickname: user.nickname || '',
                                                 useGlobalLimit: user.maxSubscriptions === null,
                                                 customLimit: user.maxSubscriptions || globalMaxSubs
                                             })}
@@ -234,7 +252,12 @@ export default function AdminUsersClient({
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900 mb-1">{user.username}</div>
+                                        <div className="font-medium text-gray-900 mb-1">
+                                            {user.username}
+                                            {user.nickname && (
+                                                <span className="ml-2 text-sm font-normal text-gray-600">({user.nickname})</span>
+                                            )}
+                                        </div>
                                         <div className="flex flex-wrap gap-2">
                                             <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                                 {user.role === 'admin' ? '管理员' : '用户'}
@@ -256,6 +279,7 @@ export default function AdminUsersClient({
                                             username: user.username,
                                             newUsername: user.username,
                                             newPassword: '',
+                                            nickname: user.nickname || '',
                                             useGlobalLimit: user.maxSubscriptions === null,
                                             customLimit: user.maxSubscriptions || globalMaxSubs
                                         })}
@@ -310,6 +334,16 @@ export default function AdminUsersClient({
                                 readOnly
                             />
                             <p className="text-xs text-gray-500 mt-1">用户名不可修改</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
+                            <input
+                                type="text"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                value={editingUser.nickname}
+                                onChange={e => setEditingUser({ ...editingUser, nickname: e.target.value })}
+                                placeholder="设置显示昵称"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">新密码</label>

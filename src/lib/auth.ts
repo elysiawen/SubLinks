@@ -18,7 +18,8 @@ export async function createSession(username: string, role: string) {
         userId: user.id,
         username,
         role,
-        tokenVersion: user.tokenVersion || 0
+        tokenVersion: user.tokenVersion || 0,
+        nickname: user.nickname
     }, SESSION_TTL);
     return sessionId;
 }
@@ -48,6 +49,19 @@ export async function getSession(sessionId: string) {
         // Token version mismatch, session is invalid
         await db.deleteSession(sessionId);
         return null;
+    }
+
+    // Update session nickname if it changed in database
+    if (session.nickname !== user.nickname) {
+        await db.createSession(sessionId, {
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            tokenVersion: user.tokenVersion || 0,
+            nickname: user.nickname
+        }, SESSION_TTL);
+        // Update the session object to return the latest nickname
+        session.nickname = user.nickname;
     }
 
     return session;

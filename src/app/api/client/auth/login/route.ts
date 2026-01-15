@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
+            nickname: user.nickname,
         };
 
         const accessToken = await createAccessToken(tokenPayload);
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 username: user.username,
                 role: user.role,
+                nickname: user.nickname,
             },
             accessToken,
             refreshToken,

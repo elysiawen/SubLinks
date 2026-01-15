@@ -90,3 +90,42 @@ export async function deleteOwnAccount(password: string) {
 
     return { success: true };
 }
+
+export async function updateNickname(nickname: string) {
+    const session = await getCurrentSession();
+    if (!session) {
+        return { error: '未登录' };
+    }
+
+    // Validate nickname
+    if (nickname && nickname.length > 50) {
+        return { error: '昵称不能超过50个字符' };
+    }
+
+    // Get user
+    const user = await db.getUser(session.username);
+    if (!user) {
+        return { error: '用户不存在' };
+    }
+
+    // Update nickname in database
+    await db.setUser(session.username, {
+        ...user,
+        nickname: nickname || undefined
+    });
+
+    // Update current session with new nickname
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (sessionId) {
+        await db.createSession(sessionId, {
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            tokenVersion: user.tokenVersion || 0,
+            nickname: nickname || undefined
+        }, 7 * 24 * 60 * 60); // 7 days
+    }
+
+    return { success: true };
+}

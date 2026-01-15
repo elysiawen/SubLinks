@@ -20,5 +20,5 @@ export default async function DashboardLayout({
         redirect('/login');
     }
 
-    return <DashboardLayoutClient username={user.username} role={user.role}>{children}</DashboardLayoutClient>;
+    return <DashboardLayoutClient username={user.username} role={user.role} nickname={user.nickname}>{children}</DashboardLayoutClient>;
 }

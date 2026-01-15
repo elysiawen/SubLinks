@@ -44,7 +44,7 @@ NEXT_PUBLIC_URL=http://localhost:3000
 
 4. **启动开发服务器**
 ```bash
-npm run dev
+npm run dev 
 ```
 
 5. **访问应用**

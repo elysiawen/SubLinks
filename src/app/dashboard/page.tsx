@@ -52,6 +52,7 @@ export default async function DashboardPage() {
             customBackgroundUrl={customBackgroundUrl}
             baseUrl={baseUrl}
             username={user.username}
+            nickname={user.nickname}
             announcement={announcement}
         />
     );

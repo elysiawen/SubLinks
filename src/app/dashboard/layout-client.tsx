@@ -10,6 +10,7 @@ interface DashboardLayoutClientProps {
     children: React.ReactNode;
     username: string;
     role: string;
+    nickname?: string;
 }
 
 interface NavItemProps {
@@ -99,7 +100,7 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
     </Link>
 );
 
-export default function DashboardLayoutClient({ children, username, role }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children, username, role, nickname }: DashboardLayoutClientProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Initialize with open submenus if current path matches
@@ -184,10 +185,10 @@ export default function DashboardLayoutClient({ children, username, role }: Dash
                                 <div className="px-4 mb-4">
                                     <div className="p-3 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm group hover:shadow-md transition-all duration-300">
                                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold border-2 border-white ring-1 ring-gray-100">
-                                            {username.slice(0, 2).toUpperCase()}
+                                            {(nickname || username).slice(0, 2).toUpperCase()}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{username}</p>
+                                            <p className="text-sm font-semibold text-gray-900 truncate">{nickname || username}</p>
                                             <p className="text-xs text-gray-500 truncate flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
                                                 已连接

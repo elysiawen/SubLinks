@@ -41,10 +41,11 @@ interface OverviewClientProps {
     customBackgroundUrl?: string;
     baseUrl: string;
     username: string;
+    nickname?: string;
     announcement?: string;
 }
 
-export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username, announcement }: OverviewClientProps) {
+export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username, nickname, announcement }: OverviewClientProps) {
     const { success, error } = useToast();
 
     const [hitokoto, setHitokoto] = useState('一言加载中...');
@@ -86,7 +87,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"></div>
                     )}
                     <div className="relative z-10 flex flex-col justify-center h-full">
-                        <h1 className="text-3xl font-bold mb-2">欢迎回来，{username}！</h1>
+                        <h1 className="text-3xl font-bold mb-2">欢迎回来，{nickname || username}！</h1>
                         <p className="text-blue-100">{hitokoto}</p>
                     </div>
                 </div>

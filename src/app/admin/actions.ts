@@ -87,6 +87,7 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
 export async function createUser(formData: FormData) {
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
+    const nickname = formData.get('nickname') as string;
     const rules = formData.get('customRules') as string;
     const role = (formData.get('role') as string) || 'user';
     const status = 'active';
@@ -108,6 +109,7 @@ export async function createUser(formData: FormData) {
         role,
         status,
         maxSubscriptions: null, // null = follow global settings
+        nickname: nickname || undefined,
         createdAt: Date.now()
     });
 
@@ -173,7 +175,7 @@ export async function updateUserMaxSubscriptions(username: string, maxSubscripti
     }
 }
 
-export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string) {
+export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string, nickname?: string) {
     // Get existing user data
     const user = await db.getUser(oldUsername);
     if (!user) return { error: 'User not found' };
@@ -188,6 +190,9 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
         if (newPassword) {
             user.password = await hashPassword(newPassword);
         }
+
+        // Update nickname
+        user.nickname = nickname || undefined;
 
         // 1. Create new user record
         await db.setUser(newUsername, user);
@@ -204,11 +209,12 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
         // 3. Delete old user
         await db.deleteUser(oldUsername);
     } else {
-        // Just password update
+        // Just password/nickname update
         if (newPassword) {
             user.password = await hashPassword(newPassword);
-            await db.setUser(oldUsername, user);
         }
+        user.nickname = nickname || undefined;
+        await db.setUser(oldUsername, user);
     }
 
     revalidatePath('/admin');

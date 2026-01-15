@@ -12,6 +12,7 @@ export interface TokenPayload {
     username: string;
     role: string;
     tokenVersion?: number;
+    nickname?: string;
 }
 
 /**
@@ -51,6 +52,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
             username: payload.username as string,
             role: payload.role as string,
             tokenVersion: payload.tokenVersion as number | undefined,
+            nickname: payload.nickname as string | undefined,
         };
 
         // Verify token version to invalidate tokens after password change

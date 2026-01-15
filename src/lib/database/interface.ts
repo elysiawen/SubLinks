@@ -7,6 +7,7 @@ export interface User {
     status: string;
     maxSubscriptions: number | null; // null = follow global, number = custom limit
     tokenVersion?: number; // Incremented on password change to invalidate tokens
+    nickname?: string;   // Display name (optional)
     createdAt: number;
 }
 
@@ -15,6 +16,7 @@ export interface Session {
     username: string;    // Kept for backward compatibility
     role: string;
     tokenVersion?: number; // Token version for invalidation
+    nickname?: string;   // Display name (optional)
 }
 
 export interface PaginatedResult<T> {
