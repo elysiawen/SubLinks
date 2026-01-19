@@ -1166,17 +1166,23 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').APIAccessLog[]> {
-        let query = 'SELECT * FROM api_access_logs';
+        let query = `
+            SELECT 
+                l.*,
+                u.nickname
+            FROM api_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+        `;
         const params: any[] = [];
         let paramIndex = 1;
 
         if (search) {
-            query += ` WHERE token ILIKE $${paramIndex} OR username ILIKE $${paramIndex} OR ip ILIKE $${paramIndex} OR ua ILIKE $${paramIndex}`;
+            query += ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
             params.push(`%${search}%`);
             paramIndex++;
         }
 
-        query += ` ORDER BY timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        query += ` ORDER BY l.timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
@@ -1184,6 +1190,7 @@ export default class PostgresDatabase implements IDatabase {
             id: row.id,
             token: row.token,
             username: row.username,
+            nickname: row.nickname || undefined,
             ip: row.ip,
             ua: row.ua,
             status: row.status,
@@ -1203,17 +1210,23 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').WebAccessLog[]> {
-        let query = 'SELECT * FROM web_access_logs';
+        let query = `
+            SELECT 
+                l.*,
+                u.nickname
+            FROM web_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+        `;
         const params: any[] = [];
         let paramIndex = 1;
 
         if (search) {
-            query += ` WHERE path ILIKE $${paramIndex} OR ip ILIKE $${paramIndex} OR username ILIKE $${paramIndex} OR ua ILIKE $${paramIndex}`;
+            query += ` WHERE l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
             params.push(`%${search}%`);
             paramIndex++;
         }
 
-        query += ` ORDER BY timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        query += ` ORDER BY l.timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
@@ -1223,6 +1236,7 @@ export default class PostgresDatabase implements IDatabase {
             ip: row.ip,
             ua: row.ua,
             username: row.username,
+            nickname: row.nickname || undefined,
             status: row.status,
             timestamp: parseInt(row.timestamp)
         }));

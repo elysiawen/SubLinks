@@ -3,7 +3,7 @@
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
-export async function addUpstreamSource(name: string, url: string, cacheDuration: number = 24, uaWhitelist: string[] = []) {
+export async function addUpstreamSource(name: string, url: string, cacheDuration: number = 24, uaWhitelist: string[] = [], skipRefresh: boolean = false) {
     // Create new upstream source in database
     await db.createUpstreamSource({
         name,
@@ -15,11 +15,13 @@ export async function addUpstreamSource(name: string, url: string, cacheDuration
         status: 'pending'
     });
 
-    // Immediately fetch and cache the new source
-    console.log(`🔄 Fetching new upstream source: ${name}`);
-    const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
-    await refreshSingleUpstreamSource(name, url);
-    console.log(`✅ New upstream source cached successfully`);
+    // Conditionally fetch and cache the new source
+    if (!skipRefresh) {
+        console.log(`🔄 Fetching new upstream source: ${name}`);
+        const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+        await refreshSingleUpstreamSource(name, url);
+        console.log(`✅ New upstream source cached successfully`);
+    }
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/settings');
@@ -87,7 +89,8 @@ export async function updateUpstreamSource(
     newName: string,
     url: string,
     cacheDuration: number = 24,
-    uaWhitelist: string[] = []
+    uaWhitelist: string[] = [],
+    skipRefresh: boolean = false
 ) {
     // Update upstream source in database
     await db.updateUpstreamSource(oldName, {
@@ -121,10 +124,12 @@ export async function updateUpstreamSource(
         }
     }
 
-    // Trigger immediate refresh after update
-    console.log(`🔄 Refreshing updated upstream source: ${newName}`);
-    const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
-    await refreshSingleUpstreamSource(newName, url, undefined, { reason: 'Source Update', trigger: 'manual' });
+    // Conditionally trigger immediate refresh after update
+    if (!skipRefresh) {
+        console.log(`🔄 Refreshing updated upstream source: ${newName}`);
+        const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
+        await refreshSingleUpstreamSource(newName, url, undefined, { reason: 'Source Update', trigger: 'manual' });
+    }
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/settings');

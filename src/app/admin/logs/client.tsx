@@ -174,6 +174,14 @@ export default function LogsClient() {
         return status === 'success' ? 'text-green-400' : 'text-red-400';
     };
 
+    const formatUserDisplay = (username?: string, nickname?: string) => {
+        if (!username) return '-';
+        if (nickname && nickname !== username) {
+            return `${nickname} (${username})`;
+        }
+        return username;
+    };
+
     // Log Aggregation Helper
     const aggregateLogs = (rawLogs: any[], tab: 'api' | 'web' | 'system') => {
         if (!rawLogs.length) return rawLogs;
@@ -411,7 +419,7 @@ export default function LogsClient() {
                                                             ? log.token
                                                             : `${(log.token || '').substring(0, 8)}...`}
                                                     </div>
-                                                    <div>{log.username}</div>
+                                                    <div>{formatUserDisplay(log.username, log.nickname)}</div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-400">
                                                     <div className="text-gray-300">{log.ip}</div>
@@ -440,7 +448,7 @@ export default function LogsClient() {
                                         {activeTab === 'web' && (
                                             <>
                                                 <td className="px-6 py-4 text-sm text-gray-200">
-                                                    {log.username || '-'}
+                                                    {formatUserDisplay(log.username, log.nickname)}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-400">
                                                     <div className="text-gray-300">{log.ip}</div>
@@ -506,7 +514,7 @@ export default function LogsClient() {
                                                                 ? childLog.token
                                                                 : `${(childLog.token || '').substring(0, 8)}...`}
                                                         </div>
-                                                        <div>{childLog.username}</div>
+                                                        <div>{formatUserDisplay(childLog.username, childLog.nickname)}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-sm text-gray-400">
                                                         <div className="text-gray-300">{childLog.ip}</div>
@@ -524,7 +532,7 @@ export default function LogsClient() {
                                             {activeTab === 'web' && (
                                                 <>
                                                     <td className="px-6 py-3 text-sm text-gray-400">
-                                                        {childLog.username || '-'}
+                                                        {formatUserDisplay(childLog.username, childLog.nickname)}
                                                     </td>
                                                     <td className="px-6 py-3 text-sm text-gray-500">
                                                         <div className="text-gray-400">{childLog.ip}</div>
@@ -586,7 +594,7 @@ export default function LogsClient() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">用户:</span>
-                                            <span className="text-sm text-gray-200">{log.username}</span>
+                                            <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">IP:</span>
@@ -645,7 +653,7 @@ export default function LogsClient() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">用户:</span>
-                                            <span className="text-sm text-gray-200">{log.username || '-'}</span>
+                                            <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-gray-500">IP:</span>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Modal from '@/components/Modal';
+import { Search } from 'lucide-react';
 
 export default function AdminRulesClient({ rulesBySource, totalCount, customSets }: {
     rulesBySource: Record<string, string[]>,
@@ -9,9 +10,23 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
     customSets: any[]
 }) {
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const sources = Object.keys(rulesBySource).sort();
     const selectedRules = selectedSource ? rulesBySource[selectedSource] : [];
+
+    // Filter rules based on search query
+    const filteredRules = useMemo(() => {
+        if (!searchQuery.trim()) return selectedRules;
+        const query = searchQuery.toLowerCase();
+        return selectedRules.filter(rule => rule.toLowerCase().includes(query));
+    }, [selectedRules, searchQuery]);
+
+    // Reset search when modal closes
+    const handleCloseModal = () => {
+        setSelectedSource(null);
+        setSearchQuery('');
+    };
 
     return (
         <div className="space-y-6">
@@ -78,13 +93,13 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
             {/* Modal */}
             <Modal
                 isOpen={!!selectedSource}
-                onClose={() => setSelectedSource(null)}
+                onClose={handleCloseModal}
                 title={
                     selectedSource ? (
                         <div className="flex items-center gap-2">
                             <span>📡 {selectedSource}</span>
                             <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-                                {(selectedSource ? rulesBySource[selectedSource] : []).length} 条规则
+                                {filteredRules.length} / {selectedRules.length} 条规则
                             </span>
                         </div>
                     ) : ''
@@ -92,14 +107,45 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
                 maxWidth="max-w-4xl"
             >
                 {selectedSource && (
-                    <div className="overflow-auto max-h-[70vh]">
-                        <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-1">
-                            {selectedRules.map((rule, idx) => (
-                                <div key={idx} className="text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors">
-                                    <span className="text-gray-400 mr-2">{idx + 1}.</span>
-                                    {rule}
+                    <div className="space-y-4">
+                        {/* Search Box */}
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="搜索规则..."
+                                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Rules List */}
+                        <div className="overflow-auto max-h-[60vh]">
+                            {filteredRules.length > 0 ? (
+                                <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-1">
+                                    {filteredRules.map((rule, idx) => (
+                                        <div key={idx} className="text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors">
+                                            <span className="text-gray-400 mr-2">{selectedRules.indexOf(rule) + 1}.</span>
+                                            {rule}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="text-center py-8 text-gray-400">
+                                    {searchQuery ? '没有找到匹配的规则' : '暂无规则'}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

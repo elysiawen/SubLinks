@@ -41,6 +41,7 @@ export interface APIAccessLog {
     id: string;
     token: string;
     username: string;
+    nickname?: string;       // User's display name
     ip: string;
     ua: string;
     status: number;
@@ -55,6 +56,7 @@ export interface WebAccessLog {
     ip: string;
     ua: string;
     username?: string;
+    nickname?: string;       // User's display name
     status: number;
     timestamp: number;
 }
