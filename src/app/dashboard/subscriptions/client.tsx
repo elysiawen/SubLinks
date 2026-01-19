@@ -17,6 +17,7 @@ interface Sub {
     groupId?: string;
     ruleId?: string;
     selectedSources?: string[];
+    enabled: boolean;
 }
 
 interface ConfigSets {
@@ -256,15 +257,20 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                             className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-all duration-200 group"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        {sub.name}
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-lg font-bold text-gray-800">
+                                            {sub.name}
+                                        </h3>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                            {sub.enabled ? '启用' : '禁用'}
+                                        </span>
                                         {sub.groupId && sub.groupId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 border border-purple-200">Custom Group</span>}
                                         {sub.ruleId && sub.ruleId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 border border-indigo-200">Custom Rules</span>}
-                                    </h3>
-                                    <p className="text-xs text-gray-400 font-mono mt-1 tracking-wide">Token: {sub.token.substring(0, 8)}...</p>
+                                    </div>
+                                    <p className="text-xs text-gray-400 font-mono mt-1 tracking-wide">Token: {sub.token}</p>
                                 </div>
-                                <div className="space-x-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                <div className="space-x-3">
                                     <button onClick={() => openEdit(sub)} className="text-blue-600 text-sm hover:underline font-medium">编辑</button>
                                     <button onClick={() => handleDelete(sub.token)} className="text-red-500 text-sm hover:underline font-medium">删除</button>
                                 </div>

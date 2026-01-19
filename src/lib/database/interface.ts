@@ -8,6 +8,7 @@ export interface User {
     maxSubscriptions: number | null; // null = follow global, number = custom limit
     tokenVersion?: number; // Incremented on password change to invalidate tokens
     nickname?: string;   // Display name (optional)
+    avatar?: string;     // Avatar URL (optional)
     createdAt: number;
 }
 
@@ -17,6 +18,7 @@ export interface Session {
     role: string;
     tokenVersion?: number; // Token version for invalidation
     nickname?: string;   // Display name (optional)
+    avatar?: string;     // Avatar URL (optional)
 }
 
 export interface PaginatedResult<T> {
@@ -106,6 +108,21 @@ export interface GlobalConfig {
     updatedAt?: number;
     upstreamUserAgent?: string; // Custom User-Agent for fetching upstream
     customBackgroundUrl?: string; // Custom background image URL for root page
+
+    // Storage configuration
+    storageProvider?: 'local' | 's3'; // Default: 'local'
+    localStoragePath?: string; // Default: '/uploads/avatars'
+
+    // Unified S3 configuration (supports R2, Tigris, AWS S3, MinIO, etc.)
+    s3Preset?: 'cloudflare-r2' | 'tigris' | 'aws-s3' | 'minio' | 'custom';
+    s3Endpoint?: string;
+    s3Region?: string;
+    s3AccessKeyId?: string;
+    s3SecretAccessKey?: string;
+    s3BucketName?: string;
+    s3PublicDomain?: string;
+    s3FolderPath?: string; // Default: 'avatars'
+    s3AccountId?: string; // For R2 endpoint construction
 }
 
 // Structured upstream data types

@@ -11,6 +11,7 @@ interface DashboardLayoutClientProps {
     username: string;
     role: string;
     nickname?: string;
+    avatar?: string;
 }
 
 interface NavItemProps {
@@ -100,7 +101,7 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
     </Link>
 );
 
-export default function DashboardLayoutClient({ children, username, role, nickname }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children, username, role, nickname, avatar }: DashboardLayoutClientProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Initialize with open submenus if current path matches
@@ -184,8 +185,12 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                 {/* User Profile Card */}
                                 <div className="px-4 mb-4">
                                     <div className="p-3 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm group hover:shadow-md transition-all duration-300">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold border-2 border-white ring-1 ring-gray-100">
-                                            {(nickname || username).slice(0, 2).toUpperCase()}
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold border-2 border-white ring-1 ring-gray-100 overflow-hidden">
+                                            {avatar ? (
+                                                <img src={avatar} alt="头像" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span>{(nickname || username).slice(0, 2).toUpperCase()}</span>
+                                            )}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="text-sm font-semibold text-gray-900 truncate">{nickname || username}</p>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, createAccessToken } from '@/lib/jwt-client';
+import { getFullAvatarUrl } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -29,11 +30,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create new access token
+        // Create new access token with full avatar URL
+        const fullAvatarUrl = getFullAvatarUrl(payload.avatar);
         const newAccessToken = await createAccessToken({
             userId: payload.userId,
             username: payload.username,
             role: payload.role,
+            tokenVersion: payload.tokenVersion,
+            nickname: payload.nickname,
+            avatar: fullAvatarUrl,
         });
 
         return NextResponse.json({

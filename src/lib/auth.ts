@@ -19,7 +19,8 @@ export async function createSession(username: string, role: string) {
         username,
         role,
         tokenVersion: user.tokenVersion || 0,
-        nickname: user.nickname
+        nickname: user.nickname,
+        avatar: user.avatar
     }, SESSION_TTL);
     return sessionId;
 }
@@ -52,16 +53,18 @@ export async function getSession(sessionId: string) {
     }
 
     // Update session nickname if it changed in database
-    if (session.nickname !== user.nickname) {
+    if (session.nickname !== user.nickname || session.avatar !== user.avatar) {
         await db.createSession(sessionId, {
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
-            nickname: user.nickname
+            nickname: user.nickname,
+            avatar: user.avatar
         }, SESSION_TTL);
-        // Update the session object to return the latest nickname
+        // Update the session object to return the latest data
         session.nickname = user.nickname;
+        session.avatar = user.avatar;
     }
 
     return session;

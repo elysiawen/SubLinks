@@ -13,6 +13,7 @@ export interface TokenPayload {
     role: string;
     tokenVersion?: number;
     nickname?: string;
+    avatar?: string;
 }
 
 /**
@@ -47,12 +48,13 @@ export async function createRefreshToken(payload: TokenPayload): Promise<string>
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
-        const tokenPayload = {
+        const tokenPayload: TokenPayload = {
             userId: payload.userId as string,
             username: payload.username as string,
             role: payload.role as string,
             tokenVersion: payload.tokenVersion as number | undefined,
             nickname: payload.nickname as string | undefined,
+            avatar: payload.avatar as string | undefined,
         };
 
         // Verify token version to invalidate tokens after password change
@@ -75,7 +77,12 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
             return null;
         }
 
-        return tokenPayload;
+        // Return payload with latest user info (nickname/avatar) from DB
+        return {
+            ...tokenPayload,
+            nickname: user.nickname,
+            avatar: user.avatar
+        };
     } catch (error) {
         // Log validation failures gracefully without stack trace
         if (error instanceof Error) {

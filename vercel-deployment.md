@@ -28,7 +28,7 @@ SubLinks 完美支持 Vercel Serverless 部署，并针对 Vercel Edge Network �
 - 默认管理员账号：`admin`
 - 默认管理员密码：`admin`
 
-> **安全警告**：首次登录后，请务必立即在“个人设置”中修改密码！
+> **安全警告**：首次登录后，请务必立即在“设置”中修改密码！
 
 ### 2. 配置定时任务 (Cron Jobs)
 SubLinks 使用 Vercel Cron 来自动刷新上游订阅源并预缓存节点。

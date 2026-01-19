@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
 import { createAccessToken, createRefreshToken } from '@/lib/jwt-client';
+import { getFullAvatarUrl } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -49,13 +50,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create tokens
+        // Create tokens with full avatar URL
+        const fullAvatarUrl = getFullAvatarUrl(user.avatar);
         const tokenPayload = {
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
             nickname: user.nickname,
+            avatar: fullAvatarUrl,
         };
 
         const accessToken = await createAccessToken(tokenPayload);
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
                 username: user.username,
                 role: user.role,
                 nickname: user.nickname,
+                avatar: fullAvatarUrl,
             },
             accessToken,
             refreshToken,

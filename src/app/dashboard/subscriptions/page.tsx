@@ -42,6 +42,7 @@ export default async function SubscriptionsPage() {
         groupId: sub.groupId,
         ruleId: sub.ruleId,
         selectedSources: sub.selectedSources || [],
+        enabled: sub.enabled,
     }));
 
     return (

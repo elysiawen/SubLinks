@@ -74,6 +74,15 @@ export default class PostgresDatabase implements IDatabase {
                     END IF;
                 END $$;
 
+                -- Add avatar column if it doesn't exist
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='users' AND column_name='avatar') THEN
+                        ALTER TABLE users ADD COLUMN avatar TEXT;
+                    END IF;
+                END $$;
+
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
                     username VARCHAR(255) NOT NULL,
@@ -111,6 +120,10 @@ export default class PostgresDatabase implements IDatabase {
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                                  WHERE table_name='sessions' AND column_name='nickname') THEN
                         ALTER TABLE sessions ADD COLUMN nickname VARCHAR(100);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='avatar') THEN
+                        ALTER TABLE sessions ADD COLUMN avatar TEXT;
                     END IF;
                 END $$;
 
@@ -242,7 +255,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUser(username: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, created_at FROM users WHERE username = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at FROM users WHERE username = $1',
             [username]
         );
         if (result.rows.length === 0) return null;
@@ -256,6 +269,7 @@ export default class PostgresDatabase implements IDatabase {
             maxSubscriptions: row.max_subscriptions,
             tokenVersion: row.token_version,
             nickname: row.nickname,
+            avatar: row.avatar,
             createdAt: parseInt(row.created_at),
         };
     }
@@ -263,7 +277,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUserById(id: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, created_at FROM users WHERE id = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at FROM users WHERE id = $1',
             [id]
         );
         if (result.rows.length === 0) return null;
@@ -277,23 +291,25 @@ export default class PostgresDatabase implements IDatabase {
             maxSubscriptions: row.max_subscriptions,
             tokenVersion: row.token_version,
             nickname: row.nickname,
+            avatar: row.avatar,
             createdAt: parseInt(row.created_at),
         };
     }
 
     async setUser(username: string, data: User): Promise<void> {
         await this.pool.query(
-            `INSERT INTO users (username, password, role, status, max_subscriptions, token_version, nickname, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO users (username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              ON CONFLICT (username) DO UPDATE SET
                  password = EXCLUDED.password,
                  role = EXCLUDED.role,
                  status = EXCLUDED.status,
                  max_subscriptions = EXCLUDED.max_subscriptions,
                  token_version = EXCLUDED.token_version,
-                 nickname = EXCLUDED.nickname
+                 nickname = EXCLUDED.nickname,
+                 avatar = EXCLUDED.avatar
              RETURNING id`,
-            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.createdAt]
+            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.createdAt]
         );
     }
 
@@ -334,6 +350,7 @@ export default class PostgresDatabase implements IDatabase {
             maxSubscriptions: row.max_subscriptions,
             tokenVersion: row.token_version,
             nickname: row.nickname,
+            avatar: row.avatar,
             createdAt: parseInt(row.created_at),
         }));
 
@@ -351,17 +368,18 @@ export default class PostgresDatabase implements IDatabase {
         const expiresAt = Date.now() + ttl * 1000;
         const createdAt = Date.now();
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
                  role = EXCLUDED.role,
                  token_version = EXCLUDED.token_version,
                  nickname = EXCLUDED.nickname,
+                 avatar = EXCLUDED.avatar,
                  created_at = EXCLUDED.created_at,
                  expires_at = EXCLUDED.expires_at`,
-            [sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, createdAt, expiresAt]
+            [sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar, createdAt, expiresAt]
         );
     }
 
@@ -373,7 +391,7 @@ export default class PostgresDatabase implements IDatabase {
             await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
             const result = await this.pool.query(
-                'SELECT user_id, username, role, token_version, nickname FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                'SELECT user_id, username, role, token_version, nickname, avatar FROM sessions WHERE session_id = $1 AND expires_at > $2',
                 [sessionId, Date.now()]
             );
             if (result.rows.length === 0) return null;
@@ -383,6 +401,7 @@ export default class PostgresDatabase implements IDatabase {
                 role: result.rows[0].role,
                 tokenVersion: result.rows[0].token_version,
                 nickname: result.rows[0].nickname,
+                avatar: result.rows[0].avatar,
             };
         } catch (error) {
             console.error('Error in getSession:', error);
@@ -593,6 +612,42 @@ export default class PostgresDatabase implements IDatabase {
                 case 'announcement':
                     config.announcement = row.value;
                     break;
+                case 'storageProvider':
+                    config.storageProvider = row.value as 'local' | 's3';
+                    break;
+                case 'localStoragePath':
+                    config.localStoragePath = row.value;
+                    break;
+
+                // Unified S3 configuration
+                case 's3Preset':
+                    config.s3Preset = row.value as any;
+                    break;
+                case 's3Endpoint':
+                    config.s3Endpoint = row.value;
+                    break;
+                case 's3Region':
+                    config.s3Region = row.value;
+                    break;
+                case 's3AccessKeyId':
+                    config.s3AccessKeyId = row.value;
+                    break;
+                case 's3SecretAccessKey':
+                    config.s3SecretAccessKey = row.value;
+                    break;
+                case 's3BucketName':
+                    config.s3BucketName = row.value;
+                    break;
+                case 's3PublicDomain':
+                    config.s3PublicDomain = row.value;
+                    break;
+                case 's3FolderPath':
+                    config.s3FolderPath = row.value;
+                    break;
+                case 's3AccountId':
+                    config.s3AccountId = row.value;
+                    break;
+
             }
         }
 
@@ -633,6 +688,52 @@ export default class PostgresDatabase implements IDatabase {
 
             if (data.announcement !== undefined) {
                 updates.push(['announcement', data.announcement]);
+            }
+
+            // Storage configuration
+            if (data.storageProvider !== undefined) {
+                updates.push(['storageProvider', data.storageProvider]);
+            }
+
+            if (data.localStoragePath !== undefined) {
+                updates.push(['localStoragePath', data.localStoragePath]);
+            }
+
+            // Unified S3 configuration
+            if (data.s3Preset !== undefined) {
+                updates.push(['s3Preset', data.s3Preset]);
+            }
+
+            if (data.s3Endpoint !== undefined) {
+                updates.push(['s3Endpoint', data.s3Endpoint]);
+            }
+
+            if (data.s3Region !== undefined) {
+                updates.push(['s3Region', data.s3Region]);
+            }
+
+            if (data.s3AccessKeyId !== undefined) {
+                updates.push(['s3AccessKeyId', data.s3AccessKeyId]);
+            }
+
+            if (data.s3SecretAccessKey !== undefined) {
+                updates.push(['s3SecretAccessKey', data.s3SecretAccessKey]);
+            }
+
+            if (data.s3BucketName !== undefined) {
+                updates.push(['s3BucketName', data.s3BucketName]);
+            }
+
+            if (data.s3PublicDomain !== undefined) {
+                updates.push(['s3PublicDomain', data.s3PublicDomain]);
+            }
+
+            if (data.s3FolderPath !== undefined) {
+                updates.push(['s3FolderPath', data.s3FolderPath]);
+            }
+
+            if (data.s3AccountId !== undefined) {
+                updates.push(['s3AccountId', data.s3AccountId]);
             }
 
             for (const [key, value] of updates) {
