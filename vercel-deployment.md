@@ -15,7 +15,7 @@ SubLinks 完美支持 Vercel Serverless 部署，并针对 Vercel Edge Network �
 | 变量名 | 说明 | 示例值 |
 |--------|------|--------|
 | `DATABASE_TYPE` | 数据库类型 | `postgres` |
-| `POSTGRES_URL` | PostgreSQL 连接字符串 (如果使用 Vercel Postgres 可自动注入) | `postgres://user:pass@host:5432/db` |
+| `POSTGRES_URL` | PostgreSQL 连接字符串 (如果使用 Vercel Postgres 可自动注入) | `postgres://user:pas@host:5432/db` |
 | `NEXT_PUBLIC_URL` | **重要**：您的最终生产环境域名 (用于 Cron Job) | `https://your-project.vercel.app` |
 
 **等待构建完成**：Vercel 会自动安装依赖并构建项目。
