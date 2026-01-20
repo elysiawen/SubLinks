@@ -211,7 +211,7 @@ export default function SessionManager({
                                                 </div>
                                             )}
                                             <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight whitespace-nowrap">
-                                                {info.name}
+                                                {session.deviceInfo && session.deviceInfo !== session.ua ? session.deviceInfo : info.name}
                                             </h4>
                                             {isCurrent && (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold bg-green-500 text-white dark:bg-green-500/20 dark:text-green-400 rounded-full whitespace-nowrap">

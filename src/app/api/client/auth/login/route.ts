@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { username, password } = body;
+        const { username, password, deviceInfo: customDeviceInfo } = body;
 
         // Validate input
         if (!username || !password) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
                 token: refreshToken,
                 ip,
                 ua,
-                deviceInfo: ua, // Simple storage for now
+                deviceInfo: customDeviceInfo || ua,
                 createdAt: Date.now(),
                 expiresAt: Date.now() + REFRESH_TTL_SEC * 1000,
                 lastActive: Date.now()

@@ -114,9 +114,15 @@ rules:
 ```json
 {
   "username": "john",
-  "password": "password123"
+  "password": "password123",
+  "deviceInfo": "Samsung S23 - App v1.2.0" 
 }
 ```
+
+**字段说明**：
+- `username` - 用户名
+- `password` - 密码
+- `deviceInfo` - (可选) 设备自定义信息，如型号、版本等。如果不传则默认使用 User-Agent。
 
 **成功响应** (200):
 
