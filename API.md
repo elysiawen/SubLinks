@@ -181,6 +181,35 @@ rules:
 | `400` | Refresh token is required | 缺少 refreshToken |
 | `401` | Invalid or expired refresh token | Token 无效或已过期 |
 | `500` | Internal server error | 服务器异常 |
+ 
+### 用户登出
+ 
+**注意**：客户端在本地清除 Token 的同时，**必须**调用此接口以在服务端吊销 Refresh Token，否则该会话将继续显示在“会话管理”列表中。
+ 
+**端点**：`POST /api/client/auth/logout`
+ 
+**请求体**：
+ 
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+ 
+**成功响应** (200):
+ 
+```json
+{
+  "success": true,
+  "message": "Successfully logged out"
+}
+```
+ 
+**错误响应**：
+ 
+| 状态码 | 错误信息 | 说明 |
+|--------|----------|------|
+| `400` | Refresh token is required | 请求体为空或缺少字段 |
 
 ---
 

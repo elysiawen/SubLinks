@@ -2,14 +2,21 @@
 
 import { db } from '@/lib/db';
 import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
+import { Session, RefreshToken } from '@/lib/database/interface';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-async function getCurrentSession() {
+export async function getCurrentSession() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get('auth_session')?.value;
     if (!sessionId) return null;
     return await getSession(sessionId);
+}
+
+export async function getCurrentUser() {
+    const session = await getCurrentSession();
+    if (!session) return null;
+    return db.getUser(session.username); // Or return session user details if sufficient
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {
@@ -37,19 +44,22 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 
     // Hash and update password
     const hashedPassword = await hashPassword(newPassword);
+    const newTokenVersion = (user.tokenVersion || 0) + 1;
     await db.setUser(session.username, {
         ...user,
         password: hashedPassword,
-        tokenVersion: (user.tokenVersion || 0) + 1  // Increment to invalidate all tokens
+        tokenVersion: newTokenVersion
     });
 
-    // Logout user by deleting current session
+    // Global Logout: delete all sessions and refresh tokens for this user
+    await Promise.all([
+        db.deleteAllUserSessions(user.id),
+        db.deleteAllUserRefreshTokens(user.id)
+    ]);
+
+    // Logout current web session by deleting cookie (DB record already deleted above)
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-    if (sessionId) {
-        await db.deleteSession(sessionId);
-        cookieStore.delete('auth_session');
-    }
+    cookieStore.delete('auth_session');
 
     return { success: true };
 }
@@ -255,15 +265,86 @@ export async function deleteAvatar() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get('auth_session')?.value;
     if (sessionId) {
+        // Fetch existing session first to preserve metadata
+        const existingSession = await db.getSession(sessionId);
         await db.createSession(sessionId, {
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
             nickname: user.nickname,
-            avatar: undefined
+            avatar: undefined,
+            // Preserve metadata
+            ip: existingSession?.ip,
+            ua: existingSession?.ua,
+            deviceInfo: existingSession?.deviceInfo,
+            lastActive: existingSession?.lastActive
         }, 7 * 24 * 60 * 60);
     }
+
+
+    return { success: true };
+}
+
+export async function getUserSessionsList() {
+    const session = await getCurrentSession();
+    if (!session) {
+        return { error: 'Unauthorized' };
+    }
+
+    const [webSessions, clientSessions] = await Promise.all([
+        db.getUserSessions(session.userId),
+        db.getUserRefreshTokens(session.userId)
+    ]);
+
+    const user = await db.getUser(session.username);
+    const currentTokenVersion = user?.tokenVersion || 0;
+
+    const cookieStore = await cookies();
+    const currentSessionId = cookieStore.get('auth_session')?.value;
+
+    // Normalize and filter data
+    const sessions = [
+        ...webSessions
+            .filter((s: Session) => (s.tokenVersion || 0) === currentTokenVersion)
+            .map((s: Session & { sessionId?: string }) => ({
+                id: s.sessionId || 'unknown',
+                type: 'web' as const,
+                ip: s.ip || 'unknown',
+                ua: s.ua || 'unknown',
+                deviceInfo: s.deviceInfo || 'Web Browser',
+                lastActive: s.lastActive || 0,
+                current: s.sessionId === currentSessionId
+            })),
+        ...clientSessions.map((s: RefreshToken) => ({
+            id: s.id,
+            type: 'client' as const,
+            ip: s.ip || 'unknown',
+            ua: s.ua || 'unknown',
+            deviceInfo: s.deviceInfo || 'Client App',
+            lastActive: s.lastActive || s.createdAt,
+            current: false
+        }))
+    ];
+
+    // Sort: Current session first, then by last active
+    sessions.sort((a, b) => {
+        if (a.current) return -1;
+        if (b.current) return 1;
+        return b.lastActive - a.lastActive;
+    });
+
+    return { sessions };
+}
+
+export async function revokeSession(sessionId: string) {
+    const session = await getCurrentSession();
+    if (!session) {
+        return { error: 'Unauthorized' };
+    }
+
+    await db.deleteUserSession(session.userId, sessionId);
+    await db.deleteUserRefreshToken(session.userId, sessionId);
 
     return { success: true };
 }

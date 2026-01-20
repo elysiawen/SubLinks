@@ -42,6 +42,9 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <Link href="/admin/users" className={linkClass('/admin/users')}>
                     👤 用户管理
                 </Link>
+                <Link href="/admin/sessions" className={linkClass('/admin/sessions')}>
+                    🔑 会话管理
+                </Link>
 
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅</div>
                 <Link href="/admin/sources" className={linkClass('/admin/sources')}>

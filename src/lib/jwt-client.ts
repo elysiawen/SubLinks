@@ -4,7 +4,7 @@ const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 );
 
-const ACCESS_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
+const ACCESS_TOKEN_TTL = 60 * 60; // 1 hour (Reduced for better session control)
 const REFRESH_TOKEN_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export interface TokenPayload {

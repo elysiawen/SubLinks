@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
 import { createAccessToken, createRefreshToken } from '@/lib/jwt-client';
+import { nanoid } from 'nanoid';
 import { getFullAvatarUrl } from '@/lib/utils';
 
 export const runtime = 'nodejs';
@@ -52,24 +53,55 @@ export async function POST(request: NextRequest) {
 
         // Create tokens with full avatar URL
         const fullAvatarUrl = getFullAvatarUrl(user.avatar);
-        const tokenPayload = {
+
+        const accessToken = await createAccessToken({
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
             nickname: user.nickname,
-            avatar: fullAvatarUrl,
-        };
+            avatar: user.avatar
+        });
 
-        const accessToken = await createAccessToken(tokenPayload);
-        const refreshToken = await createRefreshToken(tokenPayload);
+        const refreshToken = await createRefreshToken({
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            tokenVersion: user.tokenVersion || 0
+        });
+
+        // Store Refresh Token in DB
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        const ua = request.headers.get('user-agent') || 'unknown';
+        const REFRESH_TTL_SEC = 365 * 24 * 60 * 60; // 1 year (Match logic in jwt-client)
+
+        try {
+            await db.createRefreshToken({
+                id: nanoid(32),
+                userId: user.id,
+                username: user.username,
+                token: refreshToken,
+                ip,
+                ua,
+                deviceInfo: ua, // Simple storage for now
+                createdAt: Date.now(),
+                expiresAt: Date.now() + REFRESH_TTL_SEC * 1000,
+                lastActive: Date.now()
+            });
+        } catch (e) {
+            console.error('Failed to store refresh token:', e);
+            // Non-blocking error? Or should we fail login?
+            // If we fail to store, the user won't be able to refresh.
+            // It is better to fail or at least log. Proceeding implies they have a token that works technically but not via our check if validation is strict.
+            // Since we enforce DB check in refresh route, this token will be useless for refreshing.
+        }
 
         // Log successful login
         await db.createSystemLog({
             category: 'system',
             message: `Client login: ${username}`,
             status: 'success',
-            details: { username, role: user.role },
+            details: { username, role: user.role, ip, ua },
             timestamp: Date.now(),
         });
 
@@ -80,11 +112,10 @@ export async function POST(request: NextRequest) {
                 username: user.username,
                 role: user.role,
                 nickname: user.nickname,
-                avatar: fullAvatarUrl,
+                avatar: user.avatar
             },
             accessToken,
-            refreshToken,
-            expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
+            refreshToken
         });
     } catch (error) {
         console.error('Login error:', error);

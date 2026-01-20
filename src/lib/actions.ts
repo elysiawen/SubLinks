@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { createSession, verifyPassword, hashPassword } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 const COOKIE_NAME = 'auth_session';
@@ -55,7 +55,11 @@ export async function login(prevState: any, formData: FormData) {
     }
 
     // 3. Create Session
-    const sessionId = await createSession(username, user.role);
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+    const ua = headersList.get('user-agent') || 'unknown';
+
+    const sessionId = await createSession(username, user.role, ip, ua); // Pass IP and UA
 
     // 4. Set Cookie
     (await cookies()).set(COOKIE_NAME, sessionId, {

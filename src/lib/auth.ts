@@ -7,20 +7,27 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 
-export async function createSession(username: string, role: string) {
+export async function createSession(username: string, role: string, ip?: string, ua?: string) {
     const sessionId = nanoid(32);
     // Get user to obtain userId
     const user = await db.getUser(username);
     if (!user) {
         throw new Error('User not found');
     }
+
+    // Parse UA if present
+    const deviceInfo = ua ? ua : undefined; // TODO: Parse with uap-node if needed later
+
     await db.createSession(sessionId, {
         userId: user.id,
         username,
         role,
         tokenVersion: user.tokenVersion || 0,
         nickname: user.nickname,
-        avatar: user.avatar
+        avatar: user.avatar,
+        ip,
+        ua,
+        deviceInfo
     }, SESSION_TTL);
     return sessionId;
 }

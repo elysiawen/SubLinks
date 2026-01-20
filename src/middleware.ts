@@ -53,11 +53,21 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // If logged in but trying to access login, redirect to dashboard/admin
-    // (Optimization)
-    if (path === '/login' && hasSession) {
-        // Default to dashboard, page will redirect if admin
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    // If we are on login page:
+    if (path === '/login') {
+        const isRevoked = request.nextUrl.searchParams.has('revoked');
+
+        // 1. If signaled as revoked, clear cookie and stay on login
+        if (isRevoked && hasSession) {
+            const response = NextResponse.next();
+            response.cookies.delete('auth_session');
+            return response;
+        }
+
+        // 2. If not revoked and has a session, optimize by redirecting to dashboard
+        if (!isRevoked && hasSession) {
+            return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
     }
 
     return NextResponse.next()

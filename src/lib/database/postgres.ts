@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken } from './interface';
 import { nanoid } from 'nanoid';
 
 export default class PostgresDatabase implements IDatabase {
@@ -125,7 +125,41 @@ export default class PostgresDatabase implements IDatabase {
                                  WHERE table_name='sessions' AND column_name='avatar') THEN
                         ALTER TABLE sessions ADD COLUMN avatar TEXT;
                     END IF;
+
+                    -- Add new columns for device management
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='ip') THEN
+                        ALTER TABLE sessions ADD COLUMN ip VARCHAR(45);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='ua') THEN
+                        ALTER TABLE sessions ADD COLUMN ua TEXT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='device_info') THEN
+                        ALTER TABLE sessions ADD COLUMN device_info VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name='sessions' AND column_name='last_active') THEN
+                        ALTER TABLE sessions ADD COLUMN last_active BIGINT DEFAULT 0;
+                    END IF;
                 END $$;
+
+                CREATE TABLE IF NOT EXISTS refresh_tokens (
+                    id VARCHAR(255) PRIMARY KEY,
+                    user_id UUID NOT NULL,
+                    username VARCHAR(255) NOT NULL,
+                    token TEXT NOT NULL,
+                    ip VARCHAR(45),
+                    ua TEXT,
+                    device_info VARCHAR(255),
+                    created_at BIGINT NOT NULL,
+                    expires_at BIGINT NOT NULL,
+                    last_active BIGINT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
@@ -376,8 +410,8 @@ export default class PostgresDatabase implements IDatabase {
         const expiresAt = Date.now() + ttl * 1000;
         const createdAt = Date.now();
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ua, device_info, last_active, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
@@ -385,9 +419,16 @@ export default class PostgresDatabase implements IDatabase {
                  token_version = EXCLUDED.token_version,
                  nickname = EXCLUDED.nickname,
                  avatar = EXCLUDED.avatar,
+                 ip = EXCLUDED.ip,
+                 ua = EXCLUDED.ua,
+                 device_info = EXCLUDED.device_info,
+                 last_active = EXCLUDED.last_active,
                  created_at = EXCLUDED.created_at,
                  expires_at = EXCLUDED.expires_at`,
-            [sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar, createdAt, expiresAt]
+            [
+                sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar,
+                data.ip, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt
+            ]
         );
     }
 
@@ -399,17 +440,22 @@ export default class PostgresDatabase implements IDatabase {
             await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
             const result = await this.pool.query(
-                'SELECT user_id, username, role, token_version, nickname, avatar FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                'SELECT * FROM sessions WHERE session_id = $1 AND expires_at > $2',
                 [sessionId, Date.now()]
             );
             if (result.rows.length === 0) return null;
+            const row = result.rows[0];
             return {
-                userId: result.rows[0].user_id,
-                username: result.rows[0].username,
-                role: result.rows[0].role,
-                tokenVersion: result.rows[0].token_version,
-                nickname: result.rows[0].nickname,
-                avatar: result.rows[0].avatar,
+                userId: row.user_id,
+                username: row.username,
+                role: row.role,
+                tokenVersion: row.token_version,
+                nickname: row.nickname,
+                avatar: row.avatar,
+                ip: row.ip,
+                ua: row.ua,
+                deviceInfo: row.device_info,
+                lastActive: parseInt(row.last_active || '0'),
             };
         } catch (error) {
             console.error('Error in getSession:', error);
@@ -424,10 +470,11 @@ export default class PostgresDatabase implements IDatabase {
                     [sessionId, Date.now()]
                 );
                 if (result.rows.length === 0) return null;
+                const row = result.rows[0];
                 return {
-                    userId: result.rows[0].user_id,
-                    username: result.rows[0].username,
-                    role: result.rows[0].role,
+                    userId: row.user_id,
+                    username: row.username,
+                    role: row.role,
                 };
             }
             throw error;
@@ -438,8 +485,207 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM sessions WHERE session_id = $1', [sessionId]);
     }
 
+    async deleteUserSession(userId: string, sessionId: string): Promise<void> {
+        await this.pool.query('DELETE FROM sessions WHERE session_id = $1 AND user_id = $2', [sessionId, userId]);
+    }
+
+    async deleteAllUserSessions(userId: string): Promise<void> {
+        await this.pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+    }
+
+    async getUserSessions(userId: string): Promise<Session[]> {
+        await this.ensureInitialized();
+        // Cleanup first
+        await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+
+        const result = await this.pool.query(
+            'SELECT * FROM sessions WHERE user_id = $1 ORDER BY last_active DESC',
+            [userId]
+        );
+
+        return result.rows.map(row => ({
+            sessionId: row.session_id, // This property is extra but harmless at runtime
+            userId: row.user_id,
+            username: row.username,
+            role: row.role,
+            tokenVersion: row.token_version,
+            nickname: row.nickname,
+            avatar: row.avatar,
+            ip: row.ip,
+            ua: row.ua,
+            deviceInfo: row.device_info,
+            lastActive: parseInt(row.last_active || '0'),
+        }));
+    }
+
+    async getAllSessions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<Session & { sessionId: string }>> {
+        await this.ensureInitialized();
+        await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+
+        let query = 'SELECT * FROM sessions';
+        let countQuery = 'SELECT COUNT(*) FROM sessions';
+        const params: any[] = [];
+
+        if (search) {
+            query += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR nickname ILIKE $1)';
+            countQuery += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR nickname ILIKE $1)';
+            params.push(`%${search}%`);
+        }
+
+        query += ` ORDER BY last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        const offset = (page - 1) * limit;
+        params.push(limit, offset);
+
+        const [results, countResult] = await Promise.all([
+            this.pool.query(query, params),
+            this.pool.query(countQuery, search ? [params[0]] : [])
+        ]);
+
+        return {
+            data: results.rows.map(row => ({
+                sessionId: row.session_id,
+                userId: row.user_id,
+                username: row.username,
+                role: row.role,
+                tokenVersion: row.token_version,
+                nickname: row.nickname,
+                avatar: row.avatar,
+                ip: row.ip,
+                ua: row.ua,
+                deviceInfo: row.device_info,
+                lastActive: parseInt(row.last_active || '0')
+            })),
+            total: parseInt(countResult.rows[0].count)
+        };
+    }
+
+    async getAllRefreshTokens(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<RefreshToken>> {
+        await this.ensureInitialized();
+        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+
+        let query = 'SELECT * FROM refresh_tokens';
+        let countQuery = 'SELECT COUNT(*) FROM refresh_tokens';
+        const params: any[] = [];
+
+        if (search) {
+            query += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR device_info ILIKE $1)';
+            countQuery += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR device_info ILIKE $1)';
+            params.push(`%${search}%`);
+        }
+
+        query += ` ORDER BY last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        const offset = (page - 1) * limit;
+        params.push(limit, offset);
+
+        const [results, countResult] = await Promise.all([
+            this.pool.query(query, params),
+            this.pool.query(countQuery, search ? [params[0]] : [])
+        ]);
+
+        return {
+            data: results.rows.map(row => ({
+                id: row.id,
+                userId: row.user_id,
+                username: row.username,
+                token: row.token,
+                ip: row.ip,
+                ua: row.ua,
+                deviceInfo: row.device_info,
+                createdAt: parseInt(row.created_at),
+                expiresAt: parseInt(row.expires_at),
+                lastActive: parseInt(row.last_active)
+            })),
+            total: parseInt(countResult.rows[0].count)
+        };
+    }
+
     async cleanupExpiredSessions(): Promise<number> {
         const result = await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        return result.rowCount || 0;
+    }
+
+    // Refresh Token operations
+    async createRefreshToken(token: RefreshToken): Promise<void> {
+        await this.ensureInitialized();
+        await this.pool.query(
+            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ua, device_info, created_at, expires_at, last_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [
+                token.id, token.userId, token.username, token.token,
+                token.ip, token.ua, token.deviceInfo,
+                token.createdAt, token.expiresAt, token.lastActive
+            ]
+        );
+    }
+
+    async getRefreshToken(tokenString: string): Promise<RefreshToken | null> {
+        await this.ensureInitialized();
+        // Cleanup expired
+        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+
+        const result = await this.pool.query(
+            'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > $2',
+            [tokenString, Date.now()]
+        );
+
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+
+        // Update last active async
+        this.pool.query('UPDATE refresh_tokens SET last_active = $1 WHERE id = $2', [Date.now(), row.id]).catch(console.error);
+
+        return {
+            id: row.id,
+            userId: row.user_id,
+            username: row.username,
+            token: row.token,
+            ip: row.ip,
+            ua: row.ua,
+            deviceInfo: row.device_info,
+            createdAt: parseInt(row.created_at),
+            expiresAt: parseInt(row.expires_at),
+            lastActive: parseInt(row.last_active)
+        };
+    }
+
+    async deleteRefreshToken(tokenString: string): Promise<void> {
+        await this.pool.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenString]);
+    }
+
+    async deleteUserRefreshToken(userId: string, tokenId: string): Promise<void> {
+        await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1 AND user_id = $2', [tokenId, userId]);
+    }
+
+    async deleteAllUserRefreshTokens(userId: string): Promise<void> {
+        await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+    }
+
+    async getUserRefreshTokens(userId: string): Promise<RefreshToken[]> {
+        await this.ensureInitialized();
+        // Cleanup expired
+        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+
+        const result = await this.pool.query(
+            'SELECT * FROM refresh_tokens WHERE user_id = $1 ORDER BY last_active DESC',
+            [userId]
+        );
+
+        return result.rows.map(row => ({
+            id: row.id,
+            userId: row.user_id,
+            username: row.username,
+            token: row.token,
+            ip: row.ip,
+            ua: row.ua,
+            deviceInfo: row.device_info,
+            createdAt: parseInt(row.created_at),
+            expiresAt: parseInt(row.expires_at),
+            lastActive: parseInt(row.last_active)
+        }));
+    }
+
+    async cleanupExpiredRefreshTokens(): Promise<number> {
+        const result = await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
         return result.rowCount || 0;
     }
 

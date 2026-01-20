@@ -35,6 +35,23 @@ export interface Session {
     tokenVersion?: number; // Token version for invalidation
     nickname?: string;   // Display name (optional)
     avatar?: string;     // Avatar URL (optional)
+    ip?: string;         // IP address
+    ua?: string;         // User Agent
+    deviceInfo?: string; // Parsed device info
+    lastActive?: number; // Last active timestamp
+}
+
+export interface RefreshToken {
+    id: string;          // UUID/nanoid
+    userId: string;
+    username: string;
+    token: string;       // Hashed token or JTI
+    ip?: string;
+    ua?: string;
+    deviceInfo?: string; // e.g., "Chrome on Windows"
+    createdAt: number;
+    expiresAt: number;
+    lastActive: number;
 }
 
 export interface PaginatedResult<T> {
@@ -190,8 +207,22 @@ export interface IDatabase {
     // Session operations
     createSession(sessionId: string, data: Session, ttl: number): Promise<void>;
     getSession(sessionId: string): Promise<Session | null>;
-    deleteSession(sessionId: string): Promise<void>;
+    deleteSession(sessionId: string): Promise<void>; // Delete by Session ID
+    deleteUserSession(userId: string, sessionId: string): Promise<void>; // Delete by UserID + SessionID (Security)
+    getUserSessions(userId: string): Promise<Session[]>; // Get all web sessions for user
+    getAllSessions(page?: number, limit?: number, search?: string): Promise<PaginatedResult<Session & { sessionId: string }>>; // Admin: Get all sessions
+    deleteAllUserSessions(userId: string): Promise<void>; // Delete ALL web sessions for a user
     cleanupExpiredSessions(): Promise<number>; // Returns count of deleted sessions
+
+    // Refresh Token operations (Client Sessions)
+    createRefreshToken(token: RefreshToken): Promise<void>;
+    getRefreshToken(tokenString: string): Promise<RefreshToken | null>;
+    deleteRefreshToken(tokenString: string): Promise<void>; // Delete by token string
+    deleteUserRefreshToken(userId: string, tokenId: string): Promise<void>; // Delete by ID (Revoke)
+    deleteAllUserRefreshTokens(userId: string): Promise<void>; // Delete ALL refresh tokens for a user
+    getUserRefreshTokens(userId: string): Promise<RefreshToken[]>;
+    getAllRefreshTokens(page?: number, limit?: number, search?: string): Promise<PaginatedResult<RefreshToken>>; // Admin: Get all refresh tokens
+    cleanupExpiredRefreshTokens(): Promise<number>;
 
     // Subscription operations
     createSubscription(token: string, username: string, data: SubData): Promise<void>;

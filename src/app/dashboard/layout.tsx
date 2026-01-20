@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
     const user = await getSession(sessionId);
     if (!user) {
-        redirect('/login');
+        redirect('/login?revoked=1');
     }
 
     return <DashboardLayoutClient username={user.username} role={user.role} nickname={user.nickname} avatar={user.avatar}>{children}</DashboardLayoutClient>;

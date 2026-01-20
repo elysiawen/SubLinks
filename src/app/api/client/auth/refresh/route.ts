@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 import { verifyToken, createAccessToken } from '@/lib/jwt-client';
 import { getFullAvatarUrl } from '@/lib/utils';
 
@@ -30,6 +31,29 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Verify token exists in DB (Check for revocation)
+        const storedToken = await db.getRefreshToken(refreshToken);
+        if (!storedToken) {
+            return NextResponse.json(
+                { error: 'Session revoked or expired' },
+                { status: 401 }
+            );
+        }
+
+        // Update Last Active & IP (if changed)
+        // We could update IP/UA here if needed, but getRefreshToken updates last_active automatically in Postgres implementation
+        // If we want to capture new IP we would need an updateRefreshToken method or just ignore for now as refresh token IP usually doesn't change much
+        // For now, let's just rely on the getRefreshToken side-effect or implicit check.
+        // Actually, db.getRefreshToken in Postgres implementation does: "UPDATE refresh_tokens SET last_active = ...".
+
+        // If we wanted to update IP:
+        /*
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        if (ip !== storedToken.ip) {
+             // ... update logic ...
+        }
+        */
+
         // Create new access token with full avatar URL
         const fullAvatarUrl = getFullAvatarUrl(payload.avatar);
         const newAccessToken = await createAccessToken({
@@ -44,7 +68,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             accessToken: newAccessToken,
-            expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
+            expiresIn: 60 * 60, // 1 hour
         });
     } catch (error) {
         console.error('Token refresh error:', error);

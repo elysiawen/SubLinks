@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import RedisMock from 'ioredis-mock';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken } from './interface';
 import { nanoid } from 'nanoid';
 
 export default class RedisDatabase implements IDatabase {
@@ -134,6 +134,71 @@ export default class RedisDatabase implements IDatabase {
     async cleanupExpiredSessions(): Promise<number> {
         // Redis handles TTL automatically, no manual cleanup needed
         return 0;
+    }
+
+    async deleteUserSession(userId: string, sessionId: string): Promise<void> {
+        // For Redis, we just delete by sessionId as we probably don't have a reliable userId index unless we maintain sets
+        await this.deleteSession(sessionId);
+    }
+
+    async deleteAllUserSessions(userId: string): Promise<void> {
+        console.warn('⚠️ deleteAllUserSessions is not fully implemented in Redis.');
+    }
+
+    async getAllSessions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<Session & { sessionId: string }>> {
+        console.warn('⚠️ getAllSessions is not implemented in Redis.');
+        return { data: [], total: 0 };
+    }
+
+    async getUserSessions(userId: string): Promise<Session[]> {
+        console.warn('⚠️ getUserSessions is partial in Redis - requires maintaining user:sessions sets which is not fully implemented.');
+        // If we implemented sets: await this.redis.smembers(`user:${userId}:sessions`) -> get each
+        return [];
+    }
+
+    // Refresh Token operations (Not fully supported in Redis mode logic yet, stubs for interface)
+    async deleteAllUserRefreshTokens(userId: string): Promise<void> {
+        console.warn('⚠️ deleteAllUserRefreshTokens is not fully implemented in Redis.');
+    }
+
+    async getAllRefreshTokens(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<RefreshToken>> {
+        console.warn('⚠️ getAllRefreshTokens is not implemented in Redis.');
+        return { data: [], total: 0 };
+    }
+
+    async createRefreshToken(token: RefreshToken): Promise<void> {
+        await this.redis.set(`refresh:${token.token}`, JSON.stringify(token), 'EX', (token.expiresAt - Date.now()) / 1000);
+        // Also map by ID
+        await this.redis.set(`refresh:id:${token.id}`, token.token, 'EX', (token.expiresAt - Date.now()) / 1000);
+    }
+
+    async getRefreshToken(tokenString: string): Promise<RefreshToken | null> {
+        const data = await this.redis.get(`refresh:${tokenString}`);
+        return data ? JSON.parse(data) : null;
+    }
+
+    async deleteRefreshToken(tokenString: string): Promise<void> {
+        const token = await this.getRefreshToken(tokenString);
+        if (token) {
+            await this.redis.del(`refresh:${tokenString}`);
+            await this.redis.del(`refresh:id:${token.id}`);
+        }
+    }
+
+    async deleteUserRefreshToken(userId: string, tokenId: string): Promise<void> {
+        const tokenString = await this.redis.get(`refresh:id:${tokenId}`);
+        if (tokenString) {
+            await this.deleteRefreshToken(tokenString);
+        }
+    }
+
+    async getUserRefreshTokens(userId: string): Promise<RefreshToken[]> {
+        console.warn('⚠️ getUserRefreshTokens is not fully supported with Redis. Please use PostgreSQL.');
+        return [];
+    }
+
+    async cleanupExpiredRefreshTokens(): Promise<number> {
+        return 0; // Redis handles TTL
     }
 
     // Subscription operations

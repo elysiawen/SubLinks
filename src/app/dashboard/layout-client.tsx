@@ -287,6 +287,13 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                         isActive={pathname === '/dashboard/settings'}
                                         onItemClick={handleItemClick}
                                     />
+                                    <SidebarItem
+                                        icon="📱"
+                                        label="登录设备管理"
+                                        href="/dashboard/sessions"
+                                        isActive={pathname === '/dashboard/sessions'}
+                                        onItemClick={handleItemClick}
+                                    />
 
                                     {role === 'admin' && (
                                         <>

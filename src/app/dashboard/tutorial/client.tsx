@@ -925,6 +925,22 @@ function ClientDownloads() {
                             <p className="text-sm text-green-800 mb-4">支持 Android 5.0+</p>
 
                             <div className="space-y-4">
+                                {/* SubLinks Android Official */}
+                                <div className="bg-white rounded-xl p-4 border border-green-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">SubLinks Android (官方客户端)</p>
+                                    <p className="text-xs text-gray-600 mb-3">专为 SubLinks 开发的原生安卓客户端，支持自动刷新和设备管理</p>
+                                    <a
+                                        href="https://vermanager-api.135150.xyz/api/download/latest?app=sublinks-client-android&platform=android&arch=arm64&buildType=release&redirect=true"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>📱</span>
+                                        <span className="hidden sm:inline">下载安卓官方版 (arm64-v8a)</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
+                                </div>
+
                                 {/* Clash Meta for Android */}
                                 <div className="bg-white rounded-xl p-4 border border-green-200">
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash Meta for Android (推荐)</p>

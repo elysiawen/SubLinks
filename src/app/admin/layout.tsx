@@ -16,7 +16,11 @@ export default async function AdminLayout({
     }
 
     const session = await getSession(sessionId);
-    if (!session || session.role !== 'admin') {
+    if (!session) {
+        redirect('/login?revoked=1');
+    }
+
+    if (session.role !== 'admin') {
         redirect('/dashboard'); // or 403
     }
 
