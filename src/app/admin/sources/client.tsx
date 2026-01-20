@@ -43,7 +43,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     const [sources, setSources] = useState<UpstreamSource[]>(initialSources);
     const [isAdding, setIsAdding] = useState(false);
     const [editingSource, setEditingSource] = useState<UpstreamSource | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loadingSave, setLoadingSave] = useState(false);
+    const [loadingSaveAndUpdate, setLoadingSaveAndUpdate] = useState(false);
+    const [loadingAction, setLoadingAction] = useState(false); // For refresh/delete operations
     const [showApiModal, setShowApiModal] = useState(false);
 
     // Stream Refresh Logic
@@ -53,7 +55,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             'info',
             Infinity // Persistent toast
         );
-        setLoading(true);
+        setLoadingAction(true);
 
         try {
             const params = sourceName ? `?name=${encodeURIComponent(sourceName)}` : '';
@@ -101,7 +103,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             // Keep error toast for a while
             setTimeout(() => removeToast(toastId), 5000);
         } finally {
-            setLoading(false);
+            setLoadingAction(false);
         }
     };
 
@@ -170,7 +172,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             return;
         }
 
-        setLoading(true);
+        if (shouldRefresh) {
+            setLoadingSaveAndUpdate(true);
+        } else {
+            setLoadingSave(true);
+        }
+
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
 
         let duration = parseFloat(formCacheDuration);
@@ -181,7 +188,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
         await addUpstreamSource(formName.trim(), formUrl.trim(), duration, uaList, !shouldRefresh);
         const sourceName = formName.trim();
-        setLoading(false);
+
+        if (shouldRefresh) {
+            setLoadingSaveAndUpdate(false);
+        } else {
+            setLoadingSave(false);
+        }
+
         resetForm();
         setIsAdding(false);
         success('上游源添加成功');
@@ -198,7 +211,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         if (!editingSource) return;
         if (!validateForm()) return;
 
-        setLoading(true);
+        if (shouldRefresh) {
+            setLoadingSaveAndUpdate(true);
+        } else {
+            setLoadingSave(true);
+        }
+
         const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
 
         let duration = parseFloat(formCacheDuration);
@@ -217,9 +235,16 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         );
 
         const sourceName = formName.trim();
-        setLoading(false);
+
+        if (shouldRefresh) {
+            setLoadingSaveAndUpdate(false);
+        } else {
+            setLoadingSave(false);
+        }
+
         resetForm();
         setEditingSource(null);
+        setIsAdding(false);
         success('上游源更新成功');
 
         if (shouldRefresh) {
@@ -235,9 +260,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             return;
         }
 
-        setLoading(true);
+        setLoadingAction(true);
         await deleteUpstreamSource(sourceName);
-        setLoading(false);
+        setLoadingAction(false);
         success('上游源已删除');
         window.location.reload();
     };
@@ -257,10 +282,10 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     };
 
     const handleSetDefault = async (sourceName: string) => {
-        setLoading(true);
+        setLoadingAction(true);
         try {
             const result = await setDefaultUpstreamSource(sourceName);
-            setLoading(false);
+            setLoadingAction(false);
 
             if (result.success) {
                 success(`已将 "${sourceName}" 设为默认源`);
@@ -269,7 +294,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 error(`设置默认源失败`);
             }
         } catch (e) {
-            setLoading(false);
+            setLoadingAction(false);
             error(`设置默认源失败: ${e}`);
         }
     };
@@ -290,7 +315,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     </button>
                     <button
                         onClick={handleForceRefresh}
-                        disabled={loading}
+                        disabled={loadingAction}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium text-sm"
                     >
                         🔄 强制刷新
@@ -382,13 +407,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         <div className="flex gap-2">
                             <SubmitButton
                                 onClick={() => editingSource ? handleUpdate(false) : handleAdd(false)}
-                                isLoading={loading}
+                                isLoading={loadingSave}
                                 text={editingSource ? '保存' : '保存'}
                                 className="flex-1"
                             />
                             <SubmitButton
                                 onClick={() => editingSource ? handleUpdate(true) : handleAdd(true)}
-                                isLoading={loading}
+                                isLoading={loadingSaveAndUpdate}
                                 text={editingSource ? '保存并更新' : '保存并更新'}
                                 className="flex-1 bg-green-600 hover:bg-green-700"
                             />
@@ -428,7 +453,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             ) : (
                                                 <button
                                                     onClick={() => handleSetDefault(source.name)}
-                                                    disabled={loading}
+                                                    disabled={loadingAction}
                                                     className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
                                                     title="设为默认上游源"
                                                 >
@@ -496,7 +521,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     <div className="flex md:flex-col gap-2 md:w-32 shrink-0">
                                         <button
                                             onClick={() => handleRefreshSingle(source.name)}
-                                            disabled={loading}
+                                            disabled={loadingAction}
                                             className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                             title="刷新此上游源"
                                         >
@@ -504,14 +529,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         </button>
                                         <button
                                             onClick={() => openEditModal(source)}
-                                            disabled={loading}
+                                            disabled={loadingAction}
                                             className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                         >
                                             ✏️ 编辑
                                         </button>
                                         <button
                                             onClick={() => handleDelete(source.name)}
-                                            disabled={loading}
+                                            disabled={loadingAction}
                                             className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                         >
                                             🗑️ 删除

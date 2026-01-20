@@ -1,16 +1,70 @@
 'use client'
 
-import { useActionState } from 'react';
+import { useActionState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { login } from '@/lib/actions';
 
 import { SubmitButton } from '@/components/SubmitButton';
 
-export default function LoginPage() {
+// LoginForm component that uses useSearchParams
+function LoginForm() {
     const [state, formAction] = useActionState(login, null);
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl');
 
+    return (
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+            <form className="space-y-6" action={formAction}>
+                {/* Hidden field for callback URL */}
+                {callbackUrl && (
+                    <input type="hidden" name="callbackUrl" value={callbackUrl} />
+                )}
+
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                            👤 用户名
+                        </label>
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            required
+                            className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                            placeholder="请输入用户名"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                            🔑 密码
+                        </label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                            placeholder="请输入密码"
+                        />
+                    </div>
+                </div>
+
+                {state?.error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-shake">
+                        <span>⚠️</span>
+                        <span>{state.error}</span>
+                    </div>
+                )}
+
+                <div>
+                    <SubmitButton text="🔐 登录" className="w-full py-3 rounded-xl shadow-lg shadow-blue-500/30" />
+                </div>
+            </form>
+        </div>
+    );
+}
+
+export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
             {/* Decorative background elements */}
@@ -29,55 +83,14 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Login Card */}
-                <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
-                    <form className="space-y-6" action={formAction}>
-                        {/* Hidden field for callback URL */}
-                        {callbackUrl && (
-                            <input type="hidden" name="callbackUrl" value={callbackUrl} />
-                        )}
-
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    👤 用户名
-                                </label>
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    required
-                                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
-                                    placeholder="请输入用户名"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    🔑 密码
-                                </label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
-                                    placeholder="请输入密码"
-                                />
-                            </div>
-                        </div>
-
-                        {state?.error && (
-                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-shake">
-                                <span>⚠️</span>
-                                <span>{state.error}</span>
-                            </div>
-                        )}
-
-                        <div>
-                            <SubmitButton text="🔐 登录" className="w-full py-3 rounded-xl shadow-lg shadow-blue-500/30" />
-                        </div>
-                    </form>
-                </div>
+                {/* Login Card with Suspense */}
+                <Suspense fallback={
+                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+                        <div className="text-center text-gray-500">加载中...</div>
+                    </div>
+                }>
+                    <LoginForm />
+                </Suspense>
 
                 {/* Bottom decoration */}
                 <div className="mt-8 text-center text-sm text-gray-500">
