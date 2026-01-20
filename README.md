@@ -100,10 +100,6 @@ POSTGRES_URL=postgresql://user:password@localhost:5432/sublinks
 # 站点地址（用于 Cron 预缓存自调用）
 NEXT_PUBLIC_URL=http://localhost:3000
 
-# 可选配置
-LOG_RETENTION_DAYS=30              # 日志保留天数
-MAX_USER_SUBSCRIPTIONS=10          # 用户最大订阅数
-REFRESH_API_KEY=your-secret-key    # 刷新接口鉴权密钥
 ```
 
 #### 4. 启动开发服务器
