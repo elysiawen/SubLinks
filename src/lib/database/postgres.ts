@@ -56,32 +56,10 @@ export default class PostgresDatabase implements IDatabase {
                 );
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
                 
-                -- Add tokenVersion column if it doesn't exist
-                DO $$ 
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='users' AND column_name='token_version') THEN
-                        ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0;
-                    END IF;
-                END $$;
-
-                -- Add nickname column if it doesn't exist
-                DO $$ 
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='users' AND column_name='nickname') THEN
-                        ALTER TABLE users ADD COLUMN nickname VARCHAR(100);
-                    END IF;
-                END $$;
-
-                -- Add avatar column if it doesn't exist
-                DO $$ 
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='users' AND column_name='avatar') THEN
-                        ALTER TABLE users ADD COLUMN avatar TEXT;
-                    END IF;
-                END $$;
+                -- Ensure all required columns exist in users
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
 
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
@@ -106,44 +84,15 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
                 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
                 
-                -- Add user_id and token_version columns to sessions if they don't exist
-                DO $$ 
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='user_id') THEN
-                        ALTER TABLE sessions ADD COLUMN user_id UUID;
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='token_version') THEN
-                        ALTER TABLE sessions ADD COLUMN token_version INTEGER DEFAULT 0;
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='nickname') THEN
-                        ALTER TABLE sessions ADD COLUMN nickname VARCHAR(100);
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='avatar') THEN
-                        ALTER TABLE sessions ADD COLUMN avatar TEXT;
-                    END IF;
-
-                    -- Add new columns for device management
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='ip') THEN
-                        ALTER TABLE sessions ADD COLUMN ip VARCHAR(45);
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='ua') THEN
-                        ALTER TABLE sessions ADD COLUMN ua TEXT;
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='device_info') THEN
-                        ALTER TABLE sessions ADD COLUMN device_info VARCHAR(255);
-                    END IF;
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                 WHERE table_name='sessions' AND column_name='last_active') THEN
-                        ALTER TABLE sessions ADD COLUMN last_active BIGINT DEFAULT 0;
-                    END IF;
-                END $$;
+                -- Ensure all required columns exist in sessions
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id UUID;
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT;
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip VARCHAR(45);
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ua TEXT;
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_info VARCHAR(255);
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_active BIGINT DEFAULT 0;
 
                 CREATE TABLE IF NOT EXISTS refresh_tokens (
                     id VARCHAR(255) PRIMARY KEY,
