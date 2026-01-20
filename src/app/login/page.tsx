@@ -1,12 +1,15 @@
 'use client'
 
 import { useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { login } from '@/lib/actions';
 
 import { SubmitButton } from '@/components/SubmitButton';
 
 export default function LoginPage() {
-    const [state, formAction] = useActionState(login, null)
+    const [state, formAction] = useActionState(login, null);
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl');
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
@@ -29,6 +32,11 @@ export default function LoginPage() {
                 {/* Login Card */}
                 <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
                     <form className="space-y-6" action={formAction}>
+                        {/* Hidden field for callback URL */}
+                        {callbackUrl && (
+                            <input type="hidden" name="callbackUrl" value={callbackUrl} />
+                        )}
+
                         <div className="space-y-4">
                             <div>
                                 <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">

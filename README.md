@@ -191,12 +191,10 @@ SubLinks/
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
 | `REDIS_URL` | Redis 连接字符串（使用 Redis 时） | - |
-| `LOG_RETENTION_DAYS` | 日志保留天数 | `30` |
-| `MAX_USER_SUBSCRIPTIONS` | 用户最大订阅数 | `10` |
-| `REFRESH_API_KEY` | 刷新接口专用鉴权密钥 | - |
-| `S3_ENDPOINT` | S3 兼容存储端点（可选） | - |
-| `S3_ACCESS_KEY` | S3 访问密钥 | - |
-| `S3_SECRET_KEY` | S3 密钥 | - |
+| `JWT_SECRET` | JWT 密钥（客户端 API 认证） | `your-secret-key-change-in-production` |
+| `NODE_ENV` | 运行环境 | `development` |
+
+> **注意**：日志保留天数、用户最大订阅数、刷新 API 密钥、S3 存储配置等都在 **系统设置** 页面的数据库中配置，不是环境变量。
 
 ---
 

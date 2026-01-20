@@ -10,6 +10,7 @@ const COOKIE_NAME = 'auth_session';
 export async function login(prevState: any, formData: FormData) {
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
+    const callbackUrl = formData.get('callbackUrl') as string | null;
 
     if (!username || !password) return { error: '请输入用户名和密码' };
 
@@ -64,8 +65,11 @@ export async function login(prevState: any, formData: FormData) {
         maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
-    // 5. Redirect based on role
-    if (user.role === 'admin') {
+    // 5. Redirect to callback URL or default based on role
+    if (callbackUrl && callbackUrl.startsWith('/')) {
+        // Validate callback URL is internal
+        redirect(callbackUrl);
+    } else if (user.role === 'admin') {
         redirect('/admin');
     } else {
         redirect('/dashboard');
