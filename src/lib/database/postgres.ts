@@ -233,7 +233,6 @@ export default class PostgresDatabase implements IDatabase {
                     name VARCHAR(255) UNIQUE NOT NULL,
                     url TEXT NOT NULL,
                     cache_duration NUMERIC DEFAULT 24,
-                    ua_whitelist JSONB DEFAULT '[]'::jsonb,
                     is_default BOOLEAN DEFAULT false,
                     last_updated BIGINT DEFAULT 0,
                     status VARCHAR(20) DEFAULT 'pending',
@@ -1349,7 +1348,7 @@ export default class PostgresDatabase implements IDatabase {
             INSERT INTO upstream_sources (
                 name, url, cache_duration, is_default,
                 last_updated, status, error, traffic, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         `, [
             source.name,
             source.url,

@@ -203,7 +203,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             // Trigger refresh after adding
             await handleStreamRefresh(sourceName);
         } else {
-            router.refresh();
+            window.location.reload();
         }
     };
 
@@ -250,7 +250,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             // Trigger refresh after updating
             await handleStreamRefresh(sourceName);
         } else {
-            router.refresh();
+            window.location.reload();
         }
     };
 

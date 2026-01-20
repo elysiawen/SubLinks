@@ -73,11 +73,6 @@ export async function deleteUpstreamSource(sourceName: string) {
 export async function updateSystemSettings(formData: FormData) {
     const globalConfig = await db.getGlobalConfig();
 
-    const uaWhitelistStr = formData.get('uaWhitelist') as string;
-    const uaWhitelist = uaWhitelistStr
-        ? uaWhitelistStr.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
-
     await db.setGlobalConfig({
         ...globalConfig
     });

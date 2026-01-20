@@ -15,12 +15,6 @@ export async function updateGlobalConfig(formData: FormData) {
     // Get existing config to preserve other settings
     const existingConfig = await db.getGlobalConfig();
 
-    // Parse uaWhitelist (handle legacy field, preserve if not present)
-    const uaWhitelistStr = formData.get('uaWhitelist') as string | null;
-    const uaWhitelist = uaWhitelistStr !== null
-        ? uaWhitelistStr.split(',').map(s => s.trim()).filter(s => s)
-        : existingConfig.uaWhitelist;
-
     const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
 
     // Parse maxUserSubscriptions, preserve existing value if not provided
@@ -36,7 +30,6 @@ export async function updateGlobalConfig(formData: FormData) {
     await db.setGlobalConfig({
         maxUserSubscriptions,
         logRetentionDays,
-        uaWhitelist,
         uaFilter,  // Add UA filter config
         refreshApiKey: existingConfig.refreshApiKey,
         upstreamLastUpdated: existingConfig.upstreamLastUpdated,
