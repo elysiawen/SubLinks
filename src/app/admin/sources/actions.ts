@@ -3,13 +3,18 @@
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
-export async function addUpstreamSource(name: string, url: string, cacheDuration: number = 24, uaWhitelist: string[] = [], skipRefresh: boolean = false) {
+export async function addUpstreamSource(
+    name: string,
+    url: string,
+    cacheDuration: number = 24,
+    skipRefresh: boolean = false
+) {
     // Create new upstream source in database
     await db.createUpstreamSource({
         name,
         url,
         cacheDuration,
-        uaWhitelist,
+
         isDefault: false,
         lastUpdated: 0,
         status: 'pending'
@@ -74,8 +79,7 @@ export async function updateSystemSettings(formData: FormData) {
         : [];
 
     await db.setGlobalConfig({
-        ...globalConfig,
-        uaWhitelist
+        ...globalConfig
     });
 
     revalidatePath('/admin/sources');
@@ -89,7 +93,7 @@ export async function updateUpstreamSource(
     newName: string,
     url: string,
     cacheDuration: number = 24,
-    uaWhitelist: string[] = [],
+
     skipRefresh: boolean = false
 ) {
     // Update upstream source in database
@@ -97,7 +101,7 @@ export async function updateUpstreamSource(
         name: newName,
         url,
         cacheDuration,
-        uaWhitelist
+
     });
 
     // If name changed, we need to update the source tag in database

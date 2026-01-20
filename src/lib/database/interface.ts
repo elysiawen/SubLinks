@@ -1,4 +1,20 @@
 // Database interface types
+
+// UA Filter Types
+export type UaMatchType = 'contains' | 'startsWith' | 'endsWith' | 'regex' | 'exact';
+export type UaFilterMode = 'blacklist' | 'whitelist';
+
+export interface UaRule {
+    pattern: string;           // Match pattern
+    matchType: UaMatchType;    // Match type
+    description?: string;      // Rule description
+}
+
+export interface UaFilterConfig {
+    mode: UaFilterMode;        // Blacklist or whitelist mode
+    rules: UaRule[];           // Rule list
+    enabled: boolean;          // Whether enabled
+}
 export interface User {
     id: string;          // UUID - primary identifier
     username: string;    // Used for login
@@ -84,7 +100,7 @@ export interface UpstreamSource {
     name: string;
     url: string;
     cacheDuration?: number; // Cache duration in hours
-    uaWhitelist?: string[]; // UA whitelist
+
     isDefault?: boolean; // Mark as default source for new users/subscriptions
     lastUpdated?: number; // Timestamp of last refresh
     status?: 'pending' | 'success' | 'failure'; // Status of last refresh
@@ -103,7 +119,7 @@ export interface GlobalConfig {
     logRetentionDays: number; // Default: 30
 
     // Optional settings
-    uaWhitelist?: string[];
+
     refreshApiKey?: string;
     upstreamLastUpdated?: number;
     announcement?: string; // Homepage announcement in Markdown format
@@ -125,6 +141,9 @@ export interface GlobalConfig {
     s3PublicDomain?: string;
     s3FolderPath?: string; // Default: 'avatars'
     s3AccountId?: string; // For R2 endpoint construction
+
+    // New UA filtering configuration
+    uaFilter?: UaFilterConfig;  // Global UA filter config
 }
 
 // Structured upstream data types

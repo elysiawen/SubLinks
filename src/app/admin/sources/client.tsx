@@ -15,7 +15,6 @@ interface UpstreamSource {
     name: string;
     url: string;
     cacheDuration?: number;
-    uaWhitelist?: string[];
     isDefault?: boolean;
     lastUpdated?: number;
     status?: 'pending' | 'success' | 'failure';
@@ -112,14 +111,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     const [formUrl, setFormUrl] = useState('');
     const [formCacheDuration, setFormCacheDuration] = useState<string>('24');
     const [formDurationUnit, setFormDurationUnit] = useState<'hours' | 'minutes'>('hours');
-    const [formUaWhitelist, setFormUaWhitelist] = useState('');
 
     const resetForm = () => {
         setFormName('');
         setFormUrl('');
         setFormCacheDuration('24');
         setFormDurationUnit('hours');
-        setFormUaWhitelist('');
     };
 
     const validateForm = () => {
@@ -159,7 +156,6 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             }
         }
 
-        setFormUaWhitelist((source.uaWhitelist || []).join(', '));
         setEditingSource(source);
         setIsAdding(false);
     };
@@ -178,7 +174,6 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             setLoadingSave(true);
         }
 
-        const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
 
         let duration = parseFloat(formCacheDuration);
         if (isNaN(duration) || duration < 0) duration = 24;
@@ -186,7 +181,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             duration = duration / 60;
         }
 
-        await addUpstreamSource(formName.trim(), formUrl.trim(), duration, uaList, !shouldRefresh);
+        await addUpstreamSource(
+            formName.trim(),
+            formUrl.trim(),
+            duration,
+            !shouldRefresh
+        );
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
@@ -217,7 +217,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             setLoadingSave(true);
         }
 
-        const uaList = formUaWhitelist.split(',').map(s => s.trim()).filter(Boolean);
+
 
         let duration = parseFloat(formCacheDuration);
         if (isNaN(duration) || duration < 0) duration = 24;
@@ -230,7 +230,6 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             formName.trim(),
             formUrl.trim(),
             duration,
-            uaList,
             !shouldRefresh
         );
 
@@ -392,17 +391,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 )}
                             </p>
                         </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">UA 白名单 (可选，逗号分隔)</label>
-                            <input
-                                type="text"
-                                value={formUaWhitelist}
-                                onChange={(e) => setFormUaWhitelist(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                placeholder="Clash, Shadowrocket"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">留空表示不限制客户端类型</p>
-                        </div>
+
 
                         <div className="flex gap-2">
                             <SubmitButton
@@ -432,122 +421,117 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 )}
             </Modal>
 
-            {
-                sources.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                        暂无上游源,点击上方按钮添加
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {sources.map((source, index) => (
-                            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                    {/* Left: Source Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <h3 className="text-lg font-semibold text-gray-800">{source.name}</h3>
-                                            {source.isDefault ? (
-                                                <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
-                                                    ⭐ 默认
-                                                </span>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleSetDefault(source.name)}
-                                                    disabled={loadingAction}
-                                                    className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
-                                                    title="设为默认上游源"
-                                                >
-                                                    ☆ 设为默认
-                                                </button>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
-                                        <div className="flex flex-wrap gap-2 text-xs">
-                                            <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
-                                                {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
-                                                    ? '♾️ 永不自动失效'
-                                                    : `🕒 ${(source.cacheDuration ?? 24) < 1
-                                                        ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
-                                                        : `${source.cacheDuration ?? 24}h`}`
-                                                }
+            {sources.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                    暂无上游源,点击上方按钮添加
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {sources.map((source, index) => (
+                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                {/* Left: Source Info */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h3 className="text-lg font-semibold text-gray-800">{source.name}</h3>
+                                        {source.isDefault ? (
+                                            <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
+                                                ⭐ 默认
                                             </span>
-                                            {source.uaWhitelist && source.uaWhitelist.length > 0 && (
-                                                <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
-                                                    🔒 UA限制
-                                                </span>
-                                            )}
-                                            {source.lastUpdated && (
-                                                <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
-                                                    {source.status === 'failure' ? '❌' : '✅'}
-                                                    {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: zhCN })}
-                                                </span>
-                                            )}
-                                            {source.status === 'failure' && source.error && (
-                                                <span className="bg-red-50 text-red-600 px-2 py-1 rounded" title={source.error}>
-                                                    ⚠️ {source.error}
-                                                </span>
-                                            )}
-                                        </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleSetDefault(source.name)}
+                                                disabled={loadingAction}
+                                                className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                                                title="设为默认上游源"
+                                            >
+                                                ☆ 设为默认
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                        <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
+                                            {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
+                                                ? '♾️ 永不自动失效'
+                                                : `🕒 ${(source.cacheDuration ?? 24) < 1
+                                                    ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
+                                                    : `${source.cacheDuration ?? 24}h`}`
+                                            }
+                                        </span>
 
-                                        {source.traffic && (
-                                            <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs border border-gray-100">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-gray-500 font-medium">流量使用</span>
-                                                    <span className="text-blue-600 font-bold">
-                                                        {formatBytes(source.traffic.upload + source.traffic.download)} / {formatBytes(source.traffic.total)}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
-                                                    <div
-                                                        className="bg-blue-500 h-1.5 rounded-full"
-                                                        style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2 text-gray-500">
-                                                    <div>
-                                                        ↑ {formatBytes(source.traffic.upload)}
-                                                        <span className="mx-1">|</span>
-                                                        ↓ {formatBytes(source.traffic.download)}
-                                                    </div>
-                                                    <div className="text-right text-gray-400">
-                                                        {source.traffic.expire ? `过期: ${new Date(source.traffic.expire * 1000).toLocaleDateString()}` : '无过期时间'}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        {source.lastUpdated && (
+                                            <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                                                {source.status === 'failure' ? '❌' : '✅'}
+                                                {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: zhCN })}
+                                            </span>
+                                        )}
+                                        {source.status === 'failure' && source.error && (
+                                            <span className="bg-red-50 text-red-600 px-2 py-1 rounded" title={source.error}>
+                                                ⚠️ {source.error}
+                                            </span>
                                         )}
                                     </div>
 
-                                    {/* Right: Action Buttons (Only 3) */}
-                                    <div className="flex md:flex-col gap-2 md:w-32 shrink-0">
-                                        <button
-                                            onClick={() => handleRefreshSingle(source.name)}
-                                            disabled={loadingAction}
-                                            className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
-                                            title="刷新此上游源"
-                                        >
-                                            🔄 刷新
-                                        </button>
-                                        <button
-                                            onClick={() => openEditModal(source)}
-                                            disabled={loadingAction}
-                                            className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
-                                        >
-                                            ✏️ 编辑
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(source.name)}
-                                            disabled={loadingAction}
-                                            className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
-                                        >
-                                            🗑️ 删除
-                                        </button>
-                                    </div>
+                                    {source.traffic && (
+                                        <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs border border-gray-100">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-gray-500 font-medium">流量使用</span>
+                                                <span className="text-blue-600 font-bold">
+                                                    {formatBytes(source.traffic.upload + source.traffic.download)} / {formatBytes(source.traffic.total)}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
+                                                <div
+                                                    className="bg-blue-500 h-1.5 rounded-full"
+                                                    style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-gray-500">
+                                                <div>
+                                                    ↑ {formatBytes(source.traffic.upload)}
+                                                    <span className="mx-1">|</span>
+                                                    ↓ {formatBytes(source.traffic.download)}
+                                                </div>
+                                                <div className="text-right text-gray-400">
+                                                    {source.traffic.expire ? `过期: ${new Date(source.traffic.expire * 1000).toLocaleDateString()}` : '无过期时间'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right: Action Buttons (Only 3) */}
+                                <div className="flex md:flex-col gap-2 md:w-32 shrink-0">
+                                    <button
+                                        onClick={() => handleRefreshSingle(source.name)}
+                                        disabled={loadingAction}
+                                        className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                        title="刷新此上游源"
+                                    >
+                                        🔄 刷新
+                                    </button>
+                                    <button
+                                        onClick={() => openEditModal(source)}
+                                        disabled={loadingAction}
+                                        className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                    >
+                                        ✏️ 编辑
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(source.name)}
+                                        disabled={loadingAction}
+                                        className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                    >
+                                        🗑️ 删除
+                                    </button>
                                 </div>
                             </div>
-                        ))}
-                    </div >
-                )
-            }
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <RefreshApiModal
                 isOpen={showApiModal}
                 onClose={() => setShowApiModal(false)}
@@ -558,6 +542,6 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     return await updateRefreshApiKey(apiKey);
                 }}
             />
-        </div >
+        </div>
     );
 }

@@ -231,13 +231,7 @@ export default class RedisDatabase implements IDatabase {
         if (data.customBackgroundUrl) config.customBackgroundUrl = data.customBackgroundUrl;
         if (data.upstreamUserAgent) config.upstreamUserAgent = data.upstreamUserAgent;
 
-        if (data.uaWhitelist) {
-            try {
-                config.uaWhitelist = JSON.parse(data.uaWhitelist);
-            } catch {
-                config.uaWhitelist = [];
-            }
-        }
+
 
         return config;
     }
@@ -248,7 +242,7 @@ export default class RedisDatabase implements IDatabase {
             logRetentionDays: data.logRetentionDays.toString()
         };
 
-        if (data.uaWhitelist) updates.uaWhitelist = JSON.stringify(data.uaWhitelist);
+
         if (data.refreshApiKey) updates.refreshApiKey = data.refreshApiKey;
         if (data.upstreamLastUpdated) updates.upstreamLastUpdated = data.upstreamLastUpdated.toString();
         if (data.updatedAt) updates.updatedAt = data.updatedAt.toString();

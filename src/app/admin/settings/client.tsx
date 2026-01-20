@@ -10,6 +10,9 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import { commands } from '@uiw/react-md-editor';
 import { S3_PRESETS, buildS3Endpoint } from '@/lib/storage/utils';
+import UaFilterForm from '@/components/UaFilterForm';
+import { UaFilterConfig } from '@/lib/database/interface';
+
 
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
@@ -85,13 +88,67 @@ function RetentionSelector({ initialValue }: { initialValue: number }) {
     );
 }
 
+function UaFilterEditor({ initialConfig, config }: { initialConfig?: any; config: any }) {
+    const { success, error } = useToast();
+    const [currentConfig, setCurrentConfig] = useState<UaFilterConfig>(initialConfig || {
+        enabled: false,
+        mode: 'blacklist',
+        rules: []
+    });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const formData = new FormData();
+
+            // Preserve other config fields
+            formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
+            formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '10');
+            formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
+            formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
+            formData.append('announcement', config.announcement || '');
+
+            // Add UA filter config
+            formData.append('uaFilter', JSON.stringify(currentConfig));
+
+            const { updateGlobalConfig } = await import('../actions');
+            await updateGlobalConfig(formData);
+            success('UA 过滤配置已保存');
+        } catch (e) {
+            error('保存失败');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div>
+            <UaFilterForm
+                value={currentConfig}
+                onChange={setCurrentConfig}
+            />
+
+            {/* Save Button */}
+            <div className="pt-6">
+                <SubmitButton
+                    onClick={handleSave}
+                    isLoading={isSaving}
+                    text="保存 UA 过滤配置"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
 function AnnouncementEditor({ initialValue, config }: { initialValue: string; config: any }) {
     const { success } = useToast();
     const [announcement, setAnnouncement] = useState(initialValue);
 
     return (
         <form action={async (formData) => {
-            formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
             formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
             formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
             formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
@@ -191,7 +248,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">🗑️</span> 日志自动清理
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
 
                     // Handle custom retention
@@ -232,6 +289,17 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                 </form>
             </div>
 
+            {/* UA Filter Configuration */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span className="mr-2">🛡️</span> UA 过滤配置
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                    配置订阅 API 的 User-Agent 过滤规则。注意：微信和 QQ 已在 Middleware 层拦截，无需在此配置。
+                </p>
+                <UaFilterEditor initialConfig={config.uaFilter} config={config} />
+            </div>
+
 
             {/* User Limits */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -239,7 +307,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">👤</span> 用户限制
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
                     formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
 
@@ -277,7 +345,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">🌐</span> UA设置
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
                     formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
                     formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
@@ -318,7 +386,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     <span className="mr-2">🎨</span> 外观设置
                 </h3>
                 <form action={async (formData) => {
-                    formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
                     formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
                     formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
@@ -362,7 +430,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     const formData = new FormData(form);
 
                     // Append other config fields
-                    formData.append('uaWhitelist', (config.uaWhitelist || []).join(','));
+
                     formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
                     formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
                     formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');

@@ -79,7 +79,6 @@ export async function GET(
 
     // 3. Calculate effective settings from selected sources
     let effectiveCacheDuration = 24; // Default to 24 hours if no specific source duration
-    let effectiveUaWhitelist = config.uaWhitelist || [];
 
     const selectedSourceNames = sub.selectedSources || [];
 
@@ -107,17 +106,18 @@ export async function GET(
             effectiveCacheDuration = 0; // All sources are infinite
         }
 
-        // Merge UA whitelists
-        const sourceWhitelists = selectedSources.flatMap(s => s.uaWhitelist || []);
-        if (sourceWhitelists.length > 0) {
-            effectiveUaWhitelist = Array.from(new Set([...effectiveUaWhitelist, ...sourceWhitelists]));
-        }
     }
 
-    // 4. User Agent Check
-    if (effectiveUaWhitelist.length > 0) {
-        const ua = request.headers.get('user-agent') || '';
-        const allowed = effectiveUaWhitelist.some((w: string) => ua.includes(w));
+    // 4. User Agent Check (New flexible filter system)
+    const { checkUaFilter } = await import('@/lib/ua-filter');
+    const ua = request.headers.get('user-agent') || '';
+
+    // Determine effective UA filter config (Global only)
+    const effectiveUaFilter = config.uaFilter;
+
+    // Apply new UA filter if configured
+    if (effectiveUaFilter) {
+        const allowed = checkUaFilter(ua, effectiveUaFilter);
         if (!allowed) {
             await logAccess(403);
             return new NextResponse('Client Not Allowed', { status: 403 });

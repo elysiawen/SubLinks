@@ -12,12 +12,16 @@ export async function getGlobalConfig() {
 }
 
 export async function updateGlobalConfig(formData: FormData) {
-    const uaWhitelist = (formData.get('uaWhitelist') as string).split(',').map(s => s.trim()).filter(s => s);
-
-    const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
-
     // Get existing config to preserve other settings
     const existingConfig = await db.getGlobalConfig();
+
+    // Parse uaWhitelist (handle legacy field, preserve if not present)
+    const uaWhitelistStr = formData.get('uaWhitelist') as string | null;
+    const uaWhitelist = uaWhitelistStr !== null
+        ? uaWhitelistStr.split(',').map(s => s.trim()).filter(s => s)
+        : existingConfig.uaWhitelist;
+
+    const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
 
     // Parse maxUserSubscriptions, preserve existing value if not provided
     const maxUserSubscriptionsStr = formData.get('maxUserSubscriptions') as string;
@@ -25,10 +29,15 @@ export async function updateGlobalConfig(formData: FormData) {
         ? parseInt(maxUserSubscriptionsStr) || 10
         : existingConfig.maxUserSubscriptions;
 
+    // Parse UA filter config
+    const uaFilterStr = formData.get('uaFilter') as string;
+    const uaFilter = uaFilterStr ? JSON.parse(uaFilterStr) : existingConfig.uaFilter;
+
     await db.setGlobalConfig({
         maxUserSubscriptions,
         logRetentionDays,
         uaWhitelist,
+        uaFilter,  // Add UA filter config
         refreshApiKey: existingConfig.refreshApiKey,
         upstreamLastUpdated: existingConfig.upstreamLastUpdated,
         upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined,

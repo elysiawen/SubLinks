@@ -244,6 +244,15 @@ export default class PostgresDatabase implements IDatabase {
                 );
                 CREATE INDEX IF NOT EXISTS idx_upstream_sources_name ON upstream_sources(name);
                 CREATE INDEX IF NOT EXISTS idx_upstream_sources_is_default ON upstream_sources(is_default);
+
+                -- Add ua_policy and custom_ua_filter columns to upstream_sources if they don't exist
+                -- Drop legacy ua_policy and custom_ua_filter columns
+                DO $$ 
+                BEGIN
+                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS ua_policy;
+                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS custom_ua_filter;
+                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS ua_whitelist;
+                END $$;
             `);
 
         } finally {
@@ -589,12 +598,13 @@ export default class PostgresDatabase implements IDatabase {
                 case 'logRetentionDays':
                     config.logRetentionDays = parseInt(row.value);
                     break;
-                case 'uaWhitelist':
+
+                case 'uaFilter':
                     try {
-                        config.uaWhitelist = JSON.parse(row.value);
+                        config.uaFilter = JSON.parse(row.value);
                     } catch (e) {
-                        console.warn('Failed to parse uaWhitelist:', e);
-                        config.uaWhitelist = [];
+                        console.warn('Failed to parse uaFilter:', e);
+                        config.uaFilter = { enabled: false, mode: 'blacklist', rules: [] };
                     }
                     break;
                 case 'refreshApiKey':
@@ -666,8 +676,10 @@ export default class PostgresDatabase implements IDatabase {
                 ['logRetentionDays', data.logRetentionDays.toString()]
             ];
 
-            if (data.uaWhitelist !== undefined) {
-                updates.push(['uaWhitelist', JSON.stringify(data.uaWhitelist)]);
+
+
+            if (data.uaFilter !== undefined) {
+                updates.push(['uaFilter', JSON.stringify(data.uaFilter)]);
             }
 
             if (data.refreshApiKey !== undefined) {
@@ -1300,7 +1312,6 @@ export default class PostgresDatabase implements IDatabase {
             name: row.name,
             url: row.url,
             cacheDuration: row.cache_duration,
-            uaWhitelist: row.ua_whitelist,
             isDefault: row.is_default,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
@@ -1320,7 +1331,6 @@ export default class PostgresDatabase implements IDatabase {
             name: row.name,
             url: row.url,
             cacheDuration: row.cache_duration,
-            uaWhitelist: row.ua_whitelist,
             isDefault: row.is_default,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
@@ -1337,14 +1347,13 @@ export default class PostgresDatabase implements IDatabase {
         const currentTime = Date.now();
         await this.pool.query(`
             INSERT INTO upstream_sources (
-                name, url, cache_duration, ua_whitelist, is_default,
+                name, url, cache_duration, is_default,
                 last_updated, status, error, traffic, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
             source.name,
             source.url,
             source.cacheDuration || 24,
-            JSON.stringify(source.uaWhitelist || []),
             source.isDefault || false,
             source.lastUpdated || 0,
             source.status || 'pending',
@@ -1372,10 +1381,7 @@ export default class PostgresDatabase implements IDatabase {
             updates.push(`cache_duration = $${paramIndex++}`);
             values.push(source.cacheDuration);
         }
-        if (source.uaWhitelist !== undefined) {
-            updates.push(`ua_whitelist = $${paramIndex++}`);
-            values.push(JSON.stringify(source.uaWhitelist));
-        }
+
         if (source.isDefault !== undefined) {
             updates.push(`is_default = $${paramIndex++}`);
             values.push(source.isDefault);
@@ -1411,6 +1417,8 @@ export default class PostgresDatabase implements IDatabase {
 
     async deleteUpstreamSource(name: string): Promise<void> {
         await this.pool.query('DELETE FROM upstream_sources WHERE name = $1', [name]);
+        // Also delete associated config (prefixed with "name::")
+        await this.pool.query('DELETE FROM upstream_config WHERE key LIKE $1', [`${name}::%`]);
     }
 
     async setDefaultUpstreamSource(name: string): Promise<void> {
