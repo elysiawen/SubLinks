@@ -94,7 +94,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
     return (
         <div className="space-y-6">
             {/* Enable Toggle */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
                 <div>
                     <label className="text-sm font-medium text-gray-700">启用 UA 过滤</label>
                     <p className="text-xs text-gray-500 mt-1">关闭后将不进行任何 UA 检查（Middleware 层的微信/QQ 拦截仍然生效）</p>
@@ -102,7 +102,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                 <button
                     type="button"
                     onClick={() => setEnabled(!enabled)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
                 >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -179,8 +179,8 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                         ) : (
                             <div className="space-y-3">
                                 {rules.map((rule, index) => (
-                                    <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <div className="flex-1 space-y-2">
+                                    <div key={index} className="flex flex-col sm:flex-row gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                        <div className="flex-1 space-y-2 w-full">
                                             <input
                                                 type="text"
                                                 value={rule.pattern}
@@ -188,11 +188,11 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                                 placeholder="匹配模式 (例如: clash, Chrome/)"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
                                             />
-                                            <div className="flex gap-2">
+                                            <div className="flex flex-col sm:flex-row gap-2">
                                                 <select
                                                     value={rule.matchType}
                                                     onChange={(e) => updateRule(index, 'matchType', e.target.value as any)}
-                                                    className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-white text-gray-900"
+                                                    className="block w-full sm:w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-white text-gray-900"
                                                 >
                                                     <option value="contains">包含</option>
                                                     <option value="startsWith">开头匹配</option>
@@ -212,7 +212,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                         <button
                                             type="button"
                                             onClick={() => removeRule(index)}
-                                            className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm border border-red-100"
+                                            className="w-full sm:w-auto px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm border border-red-100 mt-2 sm:mt-0"
                                         >
                                             删除
                                         </button>
