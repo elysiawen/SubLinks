@@ -306,13 +306,17 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
         // Update password if provided
         if (newPassword) {
             user.password = await hashPassword(newPassword);
+            user.tokenVersion = (user.tokenVersion || 0) + 1;
         }
 
         // Update nickname
         user.nickname = nickname || undefined;
 
         // 1. Create new user record
-        await db.setUser(newUsername, user);
+        await db.setUser(newUsername, {
+            ...user,
+            username: newUsername // Ensure username is updated in the object
+        });
 
         // 2. Migrate subscriptions
         const subs = await db.getUserSubscriptions(oldUsername);
@@ -320,18 +324,37 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
             const token = sub.token;
             const { token: _, ...subData } = sub;
             subData.username = newUsername;
-            await db.updateSubscription(token, subData);
+            await db.updateSubscription(token, subData); // TODO: Verify if username/user_id update is needed for rename support
         }
 
         // 3. Delete old user
         await db.deleteUser(oldUsername);
+
+        // If password changed or username changed (which means new identity), invalidating old sessions is good.
+        // Old sessions were for `oldUsername` (and old `user_id`).
+        // `deleteUser` deletes the user.
+        // `sessions` table might need manual cleanup if no cascade.
+        await Promise.all([
+            db.deleteAllUserSessions(user.id),
+            db.deleteAllUserRefreshTokens(user.id)
+        ]);
+
     } else {
         // Just password/nickname update
         if (newPassword) {
             user.password = await hashPassword(newPassword);
+            user.tokenVersion = (user.tokenVersion || 0) + 1;
         }
         user.nickname = nickname || undefined;
         await db.setUser(oldUsername, user);
+
+        // Invalidate sessions if password changed
+        if (newPassword) {
+            await Promise.all([
+                db.deleteAllUserSessions(user.id),
+                db.deleteAllUserRefreshTokens(user.id)
+            ]);
+        }
     }
 
     revalidatePath('/admin');
