@@ -64,7 +64,7 @@ export async function revokeAnySession(sessionId: string, type: 'web' | 'client'
     if (type === 'web') {
         await db.deleteSession(sessionId);
     } else {
-        await db.deleteRefreshToken(sessionId);
+        await db.deleteRefreshTokenById(sessionId);
     }
 
     return { success: true };

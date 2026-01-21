@@ -185,6 +185,13 @@ export default class RedisDatabase implements IDatabase {
         }
     }
 
+    async deleteRefreshTokenById(id: string): Promise<void> {
+        const tokenString = await this.redis.get(`refresh:id:${id}`);
+        if (tokenString) {
+            await this.deleteRefreshToken(tokenString);
+        }
+    }
+
     async deleteUserRefreshToken(userId: string, tokenId: string): Promise<void> {
         const tokenString = await this.redis.get(`refresh:id:${tokenId}`);
         if (tokenString) {

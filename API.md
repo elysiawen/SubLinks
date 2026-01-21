@@ -306,43 +306,7 @@ curl "https://your-domain.com/api/client/subscriptions" \
 | `401` | Invalid or expired token | Token 无效或已过期 |
 | `500` | Internal server error | 服务器异常 |
 
-### 获取用户资料
 
-获取当前用户的个人资料和统计信息。
-
-**端点**：`GET /api/client/profile`
-
-**认证**：需要 Bearer Token
-
-**请求示例**：
-
-```bash
-curl "https://your-domain.com/api/client/profile" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-**成功响应** (200):
-
-```json
-{
-  "success": true,
-  "profile": {
-    "id": 1,
-    "username": "john",
-    "role": "user",
-    "subscriptionCount": 3
-  }
-}
-```
-
-**错误响应**：
-
-| 状态码 | 错误信息 | 说明 |
-|--------|----------|------|
-| `401` | Authorization token required | 缺少认证 Token |
-| `401` | Invalid or expired token | Token 无效或已过期 |
-| `404` | User not found | 用户不存在 |
-| `500` | Internal server error | 服务器异常 |
 
 ---
 

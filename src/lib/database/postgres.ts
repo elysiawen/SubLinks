@@ -601,6 +601,10 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenString]);
     }
 
+    async deleteRefreshTokenById(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1', [id]);
+    }
+
     async deleteUserRefreshToken(userId: string, tokenId: string): Promise<void> {
         await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1 AND user_id = $2', [tokenId, userId]);
     }

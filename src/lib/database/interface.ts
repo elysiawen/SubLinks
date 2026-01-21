@@ -218,6 +218,7 @@ export interface IDatabase {
     createRefreshToken(token: RefreshToken): Promise<void>;
     getRefreshToken(tokenString: string): Promise<RefreshToken | null>;
     deleteRefreshToken(tokenString: string): Promise<void>; // Delete by token string
+    deleteRefreshTokenById(id: string): Promise<void>; // Delete by UUID
     deleteUserRefreshToken(userId: string, tokenId: string): Promise<void>; // Delete by ID (Revoke)
     deleteAllUserRefreshTokens(userId: string): Promise<void>; // Delete ALL refresh tokens for a user
     getUserRefreshTokens(userId: string): Promise<RefreshToken[]>;
