@@ -115,7 +115,7 @@ rules:
 {
   "username": "john",
   "password": "password123",
-  "deviceInfo": "Samsung S23 - App v1.2.0" 
+  "deviceInfo": "Samsung S23" 
 }
 ```
 

@@ -516,31 +516,33 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                 <div className="space-y-3">
                                     {/* Add Group Form */}
                                     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                        <div className="grid grid-cols-12 gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
                                             <input
                                                 type="text"
                                                 value={newGroupName}
                                                 onChange={(e) => setNewGroupName(e.target.value)}
                                                 onKeyPress={(e) => e.key === 'Enter' && addGuiGroup()}
                                                 placeholder="策略组名称"
-                                                className="col-span-7 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-1"
                                             />
-                                            <select
-                                                value={newGroupType}
-                                                onChange={(e) => setNewGroupType(e.target.value)}
-                                                className="col-span-4 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="select">select</option>
-                                                <option value="url-test">url-test</option>
-                                                <option value="fallback">fallback</option>
-                                                <option value="load-balance">load-balance</option>
-                                            </select>
-                                            <button
-                                                onClick={addGuiGroup}
-                                                className="col-span-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                                            >
-                                                +
-                                            </button>
+                                            <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-2">
+                                                <select
+                                                    value={newGroupType}
+                                                    onChange={(e) => setNewGroupType(e.target.value)}
+                                                    className="flex-1 sm:w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="select">select</option>
+                                                    <option value="url-test">url-test</option>
+                                                    <option value="fallback">fallback</option>
+                                                    <option value="load-balance">load-balance</option>
+                                                </select>
+                                                <button
+                                                    onClick={addGuiGroup}
+                                                    className="shrink-0 bg-blue-600 text-white rounded-lg px-4 hover:bg-blue-700 transition-colors text-sm font-medium"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 

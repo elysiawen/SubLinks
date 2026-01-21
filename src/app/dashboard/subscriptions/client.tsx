@@ -442,38 +442,40 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                                         </div>
                                     ) : (
                                         <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                                            <div className="p-3 bg-white border-b border-gray-100 flex gap-2 items-center">
-                                                <select
-                                                    className="w-32 shrink-0 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
-                                                    value={newRuleType}
-                                                    onChange={e => setNewRuleType(e.target.value)}
-                                                >
-                                                    {RuleTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                                                </select>
-
+                                            <div className="p-3 bg-white border-b border-gray-100 flex flex-col sm:flex-row gap-2 sm:items-center">
                                                 <input
-                                                    className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-3 py-1.5 outline-none focus:border-blue-500"
+                                                    className="w-full sm:flex-1 sm:min-w-0 text-xs border border-gray-200 rounded px-3 py-2 sm:py-1.5 outline-none focus:border-blue-500 order-1 sm:order-2"
                                                     placeholder={newRuleType === 'MATCH' ? '无需填写' : 'google.com'}
                                                     value={newRuleValue}
                                                     onChange={e => setNewRuleValue(e.target.value)}
                                                     disabled={newRuleType === 'MATCH'}
                                                 />
 
-                                                <select
-                                                    className="w-28 shrink-0 text-xs border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-500"
-                                                    value={newRulePolicy}
-                                                    onChange={e => setNewRulePolicy(e.target.value)}
-                                                >
-                                                    {availablePolicies.map(p => <option key={p} value={p}>{p}</option>)}
-                                                </select>
+                                                <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-1 sm:contents">
+                                                    <select
+                                                        className="flex-1 sm:w-32 sm:flex-none text-xs border border-gray-200 rounded px-2 py-2 sm:py-1.5 outline-none focus:border-blue-500"
+                                                        value={newRuleType}
+                                                        onChange={e => setNewRuleType(e.target.value)}
+                                                    >
+                                                        {RuleTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                                    </select>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={addRule}
-                                                    className="shrink-0 bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                                </button>
+                                                    <select
+                                                        className="flex-1 sm:w-28 sm:flex-none text-xs border border-gray-200 rounded px-2 py-2 sm:py-1.5 outline-none focus:border-blue-500 sm:order-3"
+                                                        value={newRulePolicy}
+                                                        onChange={e => setNewRulePolicy(e.target.value)}
+                                                    >
+                                                        {availablePolicies.map(p => <option key={p} value={p}>{p}</option>)}
+                                                    </select>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={addRule}
+                                                        className="shrink-0 bg-blue-600 text-white px-3 sm:px-2 py-2 sm:py-1.5 rounded hover:bg-blue-700 sm:order-4"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="h-40 overflow-y-auto p-2 space-y-2">

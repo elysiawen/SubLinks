@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
             nickname: user.nickname,
-            avatar: user.avatar
+            avatar: fullAvatarUrl || user.avatar // Use full URL in token
         });
 
         const refreshToken = await createRefreshToken({
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
                 username: user.username,
                 role: user.role,
                 nickname: user.nickname,
-                avatar: user.avatar
+                avatar: fullAvatarUrl || user.avatar // Return full URL
             },
             accessToken,
             refreshToken
