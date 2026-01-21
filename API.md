@@ -217,6 +217,44 @@ rules:
 |--------|----------|------|
 | `400` | Refresh token is required | 请求体为空或缺少字段 |
 
+### 获取当前用户信息
+
+获取当前认证用户的详细信息。
+
+**端点**：`GET /api/client/auth/user`
+
+**认证**：需要 Bearer Token
+
+**请求示例**：
+
+```bash
+curl "https://your-domain.com/api/client/auth/user" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**成功响应** (200):
+
+```json
+{
+  "success": true,
+  "user": {
+    "id": "d67bdef6-...",
+    "username": "john",
+    "role": "user",
+    "nickname": "John Doe",
+    "avatar": "https://your-domain.com/uploads/avatars/john.png"
+  }
+}
+```
+
+**错误响应**：
+
+| 状态码 | 错误信息 | 说明 |
+|--------|----------|------|
+| `401` | 未提供认证令牌 | header 中缺少 Authorization |
+| `401` | 无效或过期的令牌 | Token 校验失败 |
+| `500` | 服务器内部错误 | 服务器异常 |
+
 ---
 
 ## 📊 客户端数据
