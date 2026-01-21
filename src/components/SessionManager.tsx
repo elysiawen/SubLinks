@@ -181,23 +181,23 @@ export default function SessionManager({
                         return (
                             <div
                                 key={session.id}
-                                className={`group relative flex flex-col lg:flex-row items-start lg:items-center justify-between p-5 bg-white dark:bg-zinc-900/40 rounded-3xl border transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/40 dark:hover:shadow-black/20 ${isCurrent
+                                className={`group relative flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 sm:p-5 bg-white dark:bg-zinc-900/40 rounded-3xl border transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/40 dark:hover:shadow-black/20 ${isCurrent
                                     ? 'border-blue-500/30 bg-blue-50/10 dark:bg-blue-900/10 shadow-sm shadow-blue-500/5'
                                     : 'border-gray-100 dark:border-zinc-800 hover:border-blue-200 dark:hover:border-blue-900/40'
                                     }`}
                             >
-                                <div className="flex items-start lg:items-center gap-5 w-full">
+                                <div className="flex items-start lg:items-center gap-3 sm:gap-5 w-full">
                                     {/* Icon */}
-                                    <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 ${isCurrent
+                                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 ${isCurrent
                                         ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30'
                                         : 'bg-gray-50 dark:bg-zinc-800 border-gray-100 dark:border-zinc-700 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-zinc-700 group-hover:text-blue-600 group-hover:border-blue-200 dark:group-hover:border-blue-900/50 group-hover:scale-105'
                                         }`}>
                                         {session.type === 'client' ? (
-                                            <Box className="w-7 h-7" />
+                                            <Box className="w-6 h-6 sm:w-7 sm:h-7" />
                                         ) : info.isMobile ? (
-                                            <Smartphone className="w-7 h-7" />
+                                            <Smartphone className="w-6 h-6 sm:w-7 sm:h-7" />
                                         ) : (
-                                            <Monitor className="w-7 h-7" />
+                                            <Monitor className="w-6 h-6 sm:w-7 sm:h-7" />
                                         )}
                                     </div>
 
@@ -210,7 +210,7 @@ export default function SessionManager({
                                                     <span className="text-sm font-black text-gray-900 dark:text-gray-100">{session.username}</span>
                                                 </div>
                                             )}
-                                            <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight whitespace-nowrap">
+                                            <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight break-all sm:break-normal whitespace-normal sm:whitespace-nowrap leading-snug">
                                                 {session.deviceInfo && session.deviceInfo !== session.ua ? session.deviceInfo : info.name}
                                             </h4>
                                             {isCurrent && (

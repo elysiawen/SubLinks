@@ -30,7 +30,7 @@ export default async function SessionsPage() {
             </div>
 
             <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur opacity-30"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur opacity-30"></div>
                 <div className="relative">
                     <SessionsList />
                 </div>
