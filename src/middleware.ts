@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Auth Check (Session Cookie Existence)
-    // We do NOT verify session in middleware because it requires DB access (Redis) which isn't available in Edge Middleware easily without Upstash REST.
+    // We do NOT verify session in middleware because it requires DB access which isn't available in Edge Middleware easily.
     // We let Layout/Page verify the validity. Middleware just redirects "obviously unauthenticated" users.
 
     const isProtectedRoute = path.startsWith('/admin') || path.startsWith('/dashboard');

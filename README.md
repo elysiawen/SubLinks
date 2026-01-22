@@ -72,7 +72,7 @@ SubLinks 是一个现代化的订阅管理系统，专为 Clash 等代理工具�
 
 ### 方式一：Vercel 一键部署（推荐）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Felysiawen%2FSubLinks&env=DATABASE_TYPE,POSTGRES_URL,NEXT_PUBLIC_URL&project-name=sublinks&repository-name=sublinks)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Felysiawen%2FSubLinks&env=POSTGRES_URL,NEXT_PUBLIC_URL&project-name=sublinks&repository-name=sublinks)
 
 点击上方按钮，按照提示配置环境变量即可完成部署。详见 [Vercel 部署指南](./vercel-deployment.md)。
 
@@ -96,9 +96,6 @@ npm install
 创建 `.env.local` 文件：
 
 ```env
-# 数据库类型
-DATABASE_TYPE=postgres
-
 # PostgreSQL 连接字符串（必需）
 POSTGRES_URL=postgresql://user:password@localhost:5432/sublinks
 
@@ -133,7 +130,6 @@ npm run dev
 | **TypeScript** | 类型安全的 JavaScript |
 | **Tailwind CSS** | 实用优先的 CSS 框架 |
 | **PostgreSQL** | 主数据库（推荐 Neon/Vercel Postgres） |
-| **Redis** | 可选的缓存层 |
 | **JWT** | 用户认证 |
 | **bcrypt** | 密码加密 |
 | **Vercel** | Serverless 部署平台 |
@@ -162,8 +158,7 @@ SubLinks/
 │   │   └── ...
 │   ├── lib/                    # 核心逻辑
 │   │   ├── database/           # 数据库适配器
-│   │   │   ├── postgres.ts     # PostgreSQL 实现
-│   │   │   └── redis.ts        # Redis 实现
+│   │   │   └── postgres.ts     # PostgreSQL 实现
 │   │   ├── analysis.ts         # 订阅解析核心
 │   │   ├── subscription-builder.ts  # 配置生成
 │   │   ├── storage/            # S3 存储支持
@@ -183,7 +178,6 @@ SubLinks/
 
 | 变量名 | 说明 | 示例值 |
 |--------|------|--------|
-| `DATABASE_TYPE` | 数据库类型 | `postgres` 或 `redis` |
 | `POSTGRES_URL` | PostgreSQL 连接字符串 | `postgres://user:pass@host:5432/db` |
 | `NEXT_PUBLIC_URL` | 站点公网地址（Vercel Cron 必需） | `https://your-app.vercel.app` |
 
@@ -191,7 +185,6 @@ SubLinks/
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `REDIS_URL` | Redis 连接字符串（使用 Redis 时） | - |
 | `JWT_SECRET` | JWT 密钥（客户端 API 认证） | `your-secret-key-change-in-production` |
 | `NODE_ENV` | 运行环境 | `development` |
 

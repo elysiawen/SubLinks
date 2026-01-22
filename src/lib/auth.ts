@@ -2,8 +2,8 @@ import { db } from './db';
 import { nanoid } from 'nanoid';
 import { SignJWT, jwtVerify } from 'jose';
 
-// Use simple session ID instead of JWT for simplicity with Redis
-// or use JWT stateless. Redis is cleaner for revocation (blocking users).
+// Use simple session ID instead of JWT for simplicity.
+// or use JWT stateless.
 
 const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 

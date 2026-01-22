@@ -8,7 +8,7 @@ SubLinks 完美支持 Vercel Serverless 部署，并针对 Vercel Edge Network �
 
 ### 方式一：一键部署（推荐）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Felysiawen%2FSubLinks&env=DATABASE_TYPE,POSTGRES_URL,NEXT_PUBLIC_URL&project-name=sublinks&repository-name=sublinks)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Felysiawen%2FSubLinks&env=POSTGRES_URL,NEXT_PUBLIC_URL&project-name=sublinks&repository-name=sublinks)
 
 点击上方按钮，Vercel 将自动：
 1. Fork 项目到您的 GitHub 账户
@@ -79,7 +79,6 @@ SubLinks 需要 PostgreSQL 数据库。推荐以下方案：
 
 | 变量名 | 说明 | 示例值 |
 |--------|------|--------|
-| `DATABASE_TYPE` | 数据库类型 | `postgres` |
 | `POSTGRES_URL` | PostgreSQL 连接字符串 | `postgres://user:pass@host.neon.tech/dbname` |
 | `NEXT_PUBLIC_URL` | **重要**：您的生产域名 | `https://your-project.vercel.app` |
 
@@ -89,7 +88,6 @@ SubLinks 需要 PostgreSQL 数据库。推荐以下方案：
 
 | 变量名 | 说明 | 默认值 | 推荐值 |
 |--------|------|--------|--------|
-| `REDIS_URL` | Redis 连接字符串（使用 Redis 时） | - | - |
 | `JWT_SECRET` | JWT 密钥（客户端 API） | 自动生成 | 强随机字符串 |
 
 **生成随机密钥**：
