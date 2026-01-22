@@ -394,6 +394,12 @@ export default class PostgresDatabase implements IDatabase {
             );
             if (result.rows.length === 0) return null;
             const row = result.rows[0];
+
+            // Optimize: Update last active only if more than 60 seconds have passed
+            const lastActive = Number(row.last_active || 0);
+            if (Date.now() - lastActive > 60 * 1000) {
+                await this.pool.query('UPDATE sessions SET last_active = $1 WHERE session_id = $2', [Date.now(), sessionId]);
+            }
             return {
                 userId: row.user_id,
                 username: row.username,

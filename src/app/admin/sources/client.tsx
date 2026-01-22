@@ -185,24 +185,20 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             formName.trim(),
             formUrl.trim(),
             duration,
-            !shouldRefresh
+            true
         );
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
-            setLoadingSaveAndUpdate(false);
+            // Don't close modal, keep loading
+            success('保存成功，正在更新...');
+            await handleStreamRefresh(sourceName);
+            // handleStreamRefresh will reload page, so no need to clean up state
         } else {
             setLoadingSave(false);
-        }
-
-        resetForm();
-        setIsAdding(false);
-        success('上游源添加成功');
-
-        if (shouldRefresh) {
-            // Trigger refresh after adding
-            await handleStreamRefresh(sourceName);
-        } else {
+            resetForm();
+            setIsAdding(false);
+            success('上游源添加成功');
             window.location.reload();
         }
     };
@@ -230,26 +226,22 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             formName.trim(),
             formUrl.trim(),
             duration,
-            !shouldRefresh
+            true
         );
 
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
-            setLoadingSaveAndUpdate(false);
+            // Don't close modal, keep loading
+            success('保存成功，正在更新...');
+            await handleStreamRefresh(sourceName);
+            // handleStreamRefresh will reload page
         } else {
             setLoadingSave(false);
-        }
-
-        resetForm();
-        setEditingSource(null);
-        setIsAdding(false);
-        success('上游源更新成功');
-
-        if (shouldRefresh) {
-            // Trigger refresh after updating
-            await handleStreamRefresh(sourceName);
-        } else {
+            resetForm();
+            setEditingSource(null);
+            setIsAdding(false);
+            success('上游源更新成功');
             window.location.reload();
         }
     };

@@ -371,14 +371,23 @@ export async function deleteUser(username: string) {
 
     // Delete avatar if exists
     const user = await db.getUser(username);
-    if (user && user.avatar) {
-        try {
-            const { StorageFactory } = await import('@/lib/storage');
-            const storage = await StorageFactory.createFromGlobalConfig();
-            await storage.delete(user.avatar);
-        } catch (error) {
-            console.warn('Failed to delete user avatar:', error);
+    if (user) {
+        // Delete avatar if exists
+        if (user.avatar) {
+            try {
+                const { StorageFactory } = await import('@/lib/storage');
+                const storage = await StorageFactory.createFromGlobalConfig();
+                await storage.delete(user.avatar);
+            } catch (error) {
+                console.warn('Failed to delete user avatar:', error);
+            }
         }
+
+        // Delete all sessions and refresh tokens
+        await Promise.all([
+            db.deleteAllUserSessions(user.id),
+            db.deleteAllUserRefreshTokens(user.id)
+        ]);
     }
 
     // Then delete the user

@@ -178,7 +178,9 @@ SubLinks/
 
 | 变量名 | 说明 | 示例值 |
 |--------|------|--------|
-| `POSTGRES_URL` | PostgreSQL 连接字符串 | `postgres://user:pass@host:5432/db` |
+| `DATABASE_TYPE` | 数据库类型 (`postgres` 或 `mysql`) | `postgres` |
+| `POSTGRES_URL` | PostgreSQL 连接字符串（当 `DATABASE_TYPE` 为 `postgres` 时必需） | `postgres://user:pass@host:5432/db` |
+| `MYSQL_URL` | MySQL 连接字符串（当 `DATABASE_TYPE` 为 `mysql` 时必需） | `mysql://user:pass@host:3306/db` |
 | `NEXT_PUBLIC_URL` | 站点公网地址（Vercel Cron 必需） | `https://your-app.vercel.app` |
 
 ### 可选变量

@@ -50,6 +50,9 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        // Get database type
+        const dbType = process.env.DATABASE_TYPE || 'postgres';
+
         // Measure database latency
         let dbLatency: number | null = null;
         try {
@@ -98,7 +101,7 @@ export async function GET(req: NextRequest) {
             platform: process.platform,
             arch: process.arch,
             hostname: os.hostname(),
-            database: 'PostgreSQL',
+            database: dbType === 'mysql' ? 'MySQL' : 'PostgreSQL',
             dbLatency,
             uptime: process.uptime(),
             systemUptime: os.uptime(),

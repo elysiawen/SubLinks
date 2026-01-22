@@ -79,7 +79,9 @@ SubLinks 需要 PostgreSQL 数据库。推荐以下方案：
 
 | 变量名 | 说明 | 示例值 |
 |--------|------|--------|
+| `DATABASE_TYPE` | 数据库类型 (`postgres` 或 `mysql`) | `postgres` |
 | `POSTGRES_URL` | PostgreSQL 连接字符串 | `postgres://user:pass@host.neon.tech/dbname` |
+| `MYSQL_URL` | MySQL 连接字符串 | `mysql://user:pass@host:3306/dbname` |
 | `NEXT_PUBLIC_URL` | **重要**：您的生产域名 | `https://your-project.vercel.app` |
 
 > ⚠️ **重要**：`NEXT_PUBLIC_URL` 必须设置为您的实际 Vercel 域名（或自定义域名），否则 Cron Job 无法正常工作。
