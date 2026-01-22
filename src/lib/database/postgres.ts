@@ -381,7 +381,7 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getSession(sessionId: string): Promise<Session | null> {
+    async getSession(sessionId: string, currentIp?: string): Promise<Session | null> {
         await this.ensureInitialized();
 
         try {
@@ -395,9 +395,13 @@ export default class PostgresDatabase implements IDatabase {
             if (result.rows.length === 0) return null;
             const row = result.rows[0];
 
-            // Optimize: Update last active only if more than 60 seconds have passed
+            // Optimize: Update last active only if more than 60 seconds have passed, or update IP if changed
             const lastActive = Number(row.last_active || 0);
-            if (Date.now() - lastActive > 60 * 1000) {
+            const storedIp = row.ip;
+
+            if (currentIp && currentIp !== storedIp) {
+                await this.pool.query('UPDATE sessions SET ip = $1, last_active = $2 WHERE session_id = $3', [currentIp, Date.now(), sessionId]);
+            } else if (Date.now() - lastActive > 60 * 1000) {
                 await this.pool.query('UPDATE sessions SET last_active = $1 WHERE session_id = $2', [Date.now(), sessionId]);
             }
             return {

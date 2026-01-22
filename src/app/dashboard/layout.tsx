@@ -15,7 +15,9 @@ export default async function DashboardLayout({
         redirect('/login');
     }
 
-    const user = await getSession(sessionId);
+    const headersList = await import('next/headers').then(mod => mod.headers());
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || undefined;
+    const user = await getSession(sessionId, ip);
     if (!user) {
         redirect('/login?revoked=1');
     }

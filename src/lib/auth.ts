@@ -32,8 +32,8 @@ export async function createSession(username: string, role: string, ip?: string,
     return sessionId;
 }
 
-export async function getSession(sessionId: string) {
-    const session = await db.getSession(sessionId);
+export async function getSession(sessionId: string, currentIp?: string) {
+    const session = await db.getSession(sessionId, currentIp);
     if (!session) {
         return null;
     }

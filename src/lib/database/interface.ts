@@ -206,7 +206,7 @@ export interface IDatabase {
 
     // Session operations
     createSession(sessionId: string, data: Session, ttl: number): Promise<void>;
-    getSession(sessionId: string): Promise<Session | null>;
+    getSession(sessionId: string, currentIp?: string): Promise<Session | null>;
     deleteSession(sessionId: string): Promise<void>; // Delete by Session ID
     deleteUserSession(userId: string, sessionId: string): Promise<void>; // Delete by UserID + SessionID (Security)
     getUserSessions(userId: string): Promise<Session[]>; // Get all web sessions for user

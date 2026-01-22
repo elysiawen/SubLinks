@@ -380,7 +380,7 @@ export default class MysqlDatabase implements IDatabase {
         );
     }
 
-    async getSession(sessionId: string): Promise<Session | null> {
+    async getSession(sessionId: string, currentIp?: string): Promise<Session | null> {
         if (!sessionId) return null;
         await this.ensureInitialized();
 
@@ -393,9 +393,15 @@ export default class MysqlDatabase implements IDatabase {
         if (rows.length === 0) return null;
 
         const row = rows[0];
-        // Optimize: Update last active only if more than 60 seconds have passed
         const lastActive = Number(row.last_active);
-        if (Date.now() - lastActive > 60 * 1000) {
+        const storedIp = row.ip;
+
+        // If IP Changed, update immediately (reset last_active too because it's an activity)
+        if (currentIp && currentIp !== storedIp) {
+            await this.query('UPDATE sessions SET ip = ?, last_active = ? WHERE session_id = ?', [currentIp, Date.now(), sessionId]);
+        }
+        // Otherwise, optimize: Update last active only if more than 60 seconds have passed
+        else if (Date.now() - lastActive > 60 * 1000) {
             await this.query('UPDATE sessions SET last_active = ? WHERE session_id = ?', [Date.now(), sessionId]);
         }
 
