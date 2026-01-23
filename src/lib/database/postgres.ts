@@ -1,6 +1,7 @@
 import { Pool, PoolClient } from 'pg';
 import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken } from './interface';
 import { nanoid } from 'nanoid';
+import { getLocation } from '../ip-location';
 
 export default class PostgresDatabase implements IDatabase {
     private pool: Pool;
@@ -100,6 +101,9 @@ export default class PostgresDatabase implements IDatabase {
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ua TEXT;
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_info VARCHAR(255);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_active BIGINT DEFAULT 0;
+                
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
 
                 CREATE TABLE IF NOT EXISTS refresh_tokens (
                     id VARCHAR(255) PRIMARY KEY,
@@ -365,9 +369,19 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
         const expiresAt = Date.now() + ttl * 1000;
         const createdAt = Date.now();
+
+        let location = data.ipLocation;
+        let isp = data.isp;
+
+        if (!location && data.ip) {
+            const locInfo = await getLocation(data.ip).catch(() => ({ location: undefined, isp: undefined }));
+            location = locInfo.location;
+            isp = locInfo.isp;
+        }
+
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ua, device_info, last_active, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
@@ -376,6 +390,8 @@ export default class PostgresDatabase implements IDatabase {
                  nickname = EXCLUDED.nickname,
                  avatar = EXCLUDED.avatar,
                  ip = EXCLUDED.ip,
+                 ip_location = EXCLUDED.ip_location,
+                 isp = EXCLUDED.isp,
                  ua = EXCLUDED.ua,
                  device_info = EXCLUDED.device_info,
                  last_active = EXCLUDED.last_active,
@@ -383,7 +399,7 @@ export default class PostgresDatabase implements IDatabase {
                  expires_at = EXCLUDED.expires_at`,
             [
                 sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar,
-                data.ip, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt
+                data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt
             ]
         );
     }
@@ -405,9 +421,23 @@ export default class PostgresDatabase implements IDatabase {
             // Optimize: Update last active only if more than 60 seconds have passed, or update IP if changed
             const lastActive = Number(row.last_active || 0);
             const storedIp = row.ip;
+            const storedLocation = row.ip_location;
+            const storedIsp = row.isp;
 
-            if (currentIp && currentIp !== storedIp) {
-                await this.pool.query('UPDATE sessions SET ip = $1, last_active = $2 WHERE session_id = $3', [currentIp, Date.now(), sessionId]);
+            if (currentIp && (currentIp !== storedIp || !storedLocation)) {
+                let newLocation = storedLocation;
+                let newIsp = storedIsp;
+
+                if (currentIp !== storedIp || !storedLocation) {
+                    const locInfo = await getLocation(currentIp).catch(() => ({ location: undefined, isp: undefined }));
+                    newLocation = locInfo.location;
+                    newIsp = locInfo.isp;
+                }
+
+                await this.pool.query('UPDATE sessions SET ip = $1, ip_location = $2, isp = $3, last_active = $4 WHERE session_id = $5', [currentIp, newLocation, newIsp, Date.now(), sessionId]);
+                row.ip = currentIp;
+                row.ip_location = newLocation;
+                row.isp = newIsp;
             } else if (Date.now() - lastActive > 60 * 1000) {
                 await this.pool.query('UPDATE sessions SET last_active = $1 WHERE session_id = $2', [Date.now(), sessionId]);
             }
@@ -419,6 +449,8 @@ export default class PostgresDatabase implements IDatabase {
                 nickname: row.nickname,
                 avatar: row.avatar,
                 ip: row.ip,
+                ipLocation: row.ip_location,
+                isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 lastActive: parseInt(row.last_active || '0'),
@@ -478,6 +510,8 @@ export default class PostgresDatabase implements IDatabase {
             nickname: row.nickname,
             avatar: row.avatar,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             lastActive: parseInt(row.last_active || '0'),
@@ -517,6 +551,8 @@ export default class PostgresDatabase implements IDatabase {
                 nickname: row.nickname,
                 avatar: row.avatar,
                 ip: row.ip,
+                ipLocation: row.ip_location,
+                isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 lastActive: parseInt(row.last_active || '0')

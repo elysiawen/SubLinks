@@ -27,8 +27,10 @@ export interface UnifiedSessionItem {
     username?: string;
     nickname?: string;
     ip: string;
+    ipLocation?: string;
+    isp?: string;
     ua: string;
-    deviceInfo?: string;
+    deviceInfo?: string; // Parsed device info
     lastActive: number;
     current?: boolean;
 }
@@ -231,7 +233,19 @@ export default function SessionManager({
                                             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                                                 <div className="flex items-center gap-1.5">
                                                     <Globe className="w-4 h-4 text-blue-500/60" />
-                                                    <span className="font-mono font-medium">{session.ip}</span>
+                                                    <span className="font-mono font-medium">
+                                                        {session.ip}
+                                                        {session.ipLocation && (
+                                                            <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md font-sans border border-indigo-100 dark:border-indigo-800/30">
+                                                                {session.ipLocation}
+                                                            </span>
+                                                        )}
+                                                        {session.isp && (
+                                                            <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-md font-sans border border-emerald-100 dark:border-emerald-800/30">
+                                                                {session.isp}
+                                                            </span>
+                                                        )}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <Clock className="w-4 h-4 text-orange-500/60" />

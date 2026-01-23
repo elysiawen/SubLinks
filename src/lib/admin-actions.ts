@@ -28,6 +28,8 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         username: s.username,
         nickname: s.nickname || s.username,
         ip: s.ip || 'unknown',
+        ipLocation: s.ipLocation,
+        isp: s.isp,
         ua: s.ua || 'unknown',
         deviceInfo: s.deviceInfo || 'Web Browser',
         lastActive: s.lastActive || 0,

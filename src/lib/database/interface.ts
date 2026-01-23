@@ -36,6 +36,8 @@ export interface Session {
     nickname?: string;   // Display name (optional)
     avatar?: string;     // Avatar URL (optional)
     ip?: string;         // IP address
+    ipLocation?: string; // IP Location
+    isp?: string;        // ISP Name
     ua?: string;         // User Agent
     deviceInfo?: string; // Parsed device info
     lastActive?: number; // Last active timestamp

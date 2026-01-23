@@ -2,6 +2,7 @@ import { createPool, Pool } from 'mysql2/promise';
 import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, UpstreamSource, APIAccessLog, WebAccessLog, SystemLog } from './interface';
 import { nanoid } from 'nanoid';
 import { randomUUID } from 'crypto';
+import { getLocation } from '../ip-location';
 
 export default class MysqlDatabase implements IDatabase {
     private pool: Pool;
@@ -113,12 +114,27 @@ export default class MysqlDatabase implements IDatabase {
                 nickname VARCHAR(100),
                 avatar TEXT,
                 ip VARCHAR(45),
+                ip_location VARCHAR(255),
                 ua TEXT,
                 device_info VARCHAR(255),
                 last_active BIGINT DEFAULT 0,
                 INDEX idx_sessions_username (username),
                 INDEX idx_sessions_expires (expires_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            
+            -- Ensure ip_location column exists
+            -- User request: Just add the column, don't rename old 'location'.
+            
+            SELECT count(*) INTO @exist FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'sessions' AND column_name = 'ip_location';
+            SET @query = IF(@exist=0, 'ALTER TABLE sessions ADD COLUMN ip_location VARCHAR(255)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Ensure isp column exists
+            SELECT count(*) INTO @exist_isp FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'sessions' AND column_name = 'isp';
+            SET @query = IF(@exist_isp=0, 'ALTER TABLE sessions ADD COLUMN isp VARCHAR(255)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS refresh_tokens (
                 id VARCHAR(255) PRIMARY KEY,
@@ -374,9 +390,19 @@ export default class MysqlDatabase implements IDatabase {
         await this.ensureInitialized();
         const expiresAt = Date.now() + (ttl * 1000);
 
+        let location = data.ipLocation;
+        let isp = data.isp;
+
+        if (!location && data.ip) {
+            // New Session: try to get location
+            const locInfo = await getLocation(data.ip).catch(() => ({ location: undefined, isp: undefined }));
+            location = locInfo.location;
+            isp = locInfo.isp;
+        }
+
         await this.pool.query(
-            `INSERT INTO sessions (session_id, username, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ua, device_info, last_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO sessions (session_id, username, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 username = VALUES(username),
                 role = VALUES(role),
@@ -385,7 +411,7 @@ export default class MysqlDatabase implements IDatabase {
                 nickname = VALUES(nickname),
                 avatar = VALUES(avatar),
                 last_active = VALUES(last_active)`,
-            [sessionId, data.username, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || 0, data.nickname, data.avatar, data.ip, data.ua, data.deviceInfo, data.lastActive || Date.now()]
+            [sessionId, data.username, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || 0, data.nickname, data.avatar, data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || Date.now()]
         );
     }
 
@@ -404,10 +430,28 @@ export default class MysqlDatabase implements IDatabase {
         const row = rows[0];
         const lastActive = Number(row.last_active);
         const storedIp = row.ip;
+        const storedLocation = row.ip_location;
+        const storedIsp = row.isp;
 
         // If IP Changed, update immediately (reset last_active too because it's an activity)
-        if (currentIp && currentIp !== storedIp) {
-            await this.query('UPDATE sessions SET ip = ?, last_active = ? WHERE session_id = ?', [currentIp, Date.now(), sessionId]);
+        // Also update if location is missing but we have an IP
+        if (currentIp && (currentIp !== storedIp || !storedLocation)) {
+            // Fetch new location if IP changed OR if we just want to backfill missing location
+            let newLocation = storedLocation;
+            let newIsp = storedIsp;
+
+            if (currentIp !== storedIp || !storedLocation) {
+                const locInfo = await getLocation(currentIp).catch(() => ({ location: undefined, isp: undefined }));
+                newLocation = locInfo.location;
+                newIsp = locInfo.isp;
+            }
+
+            await this.query('UPDATE sessions SET ip = ?, ip_location = ?, isp = ?, last_active = ? WHERE session_id = ?', [currentIp, newLocation, newIsp, Date.now(), sessionId]);
+
+            // Update the row object for return
+            row.ip = currentIp;
+            row.ip_location = newLocation;
+            row.isp = newIsp;
         }
         // Otherwise, optimize: Update last active only if more than 60 seconds have passed
         else if (Date.now() - lastActive > 60 * 1000) {
@@ -422,6 +466,8 @@ export default class MysqlDatabase implements IDatabase {
             nickname: row.nickname,
             avatar: row.avatar,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             lastActive: Number(row.last_active)
@@ -449,6 +495,8 @@ export default class MysqlDatabase implements IDatabase {
             nickname: row.nickname,
             avatar: row.avatar,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             lastActive: Number(row.last_active)
@@ -493,6 +541,8 @@ export default class MysqlDatabase implements IDatabase {
                 nickname: row.nickname,
                 avatar: row.avatar,
                 ip: row.ip,
+                ipLocation: row.ip_location,
+                isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 lastActive: Number(row.last_active)

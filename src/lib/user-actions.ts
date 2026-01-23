@@ -311,6 +311,8 @@ export async function getUserSessionsList() {
                 id: s.sessionId || 'unknown',
                 type: 'web' as const,
                 ip: s.ip || 'unknown',
+                ipLocation: s.ipLocation,
+                isp: s.isp,
                 ua: s.ua || 'unknown',
                 deviceInfo: s.deviceInfo || 'Web Browser',
                 lastActive: s.lastActive || 0,
