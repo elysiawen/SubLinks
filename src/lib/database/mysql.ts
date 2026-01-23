@@ -24,16 +24,25 @@ export default class MysqlDatabase implements IDatabase {
         });
     }
 
+    private initializationPromise: Promise<void> | null = null;
+
     private async ensureInitialized() {
         if (this.initialized) return;
 
-        try {
-            await this.initTables();
-            this.initialized = true;
-        } catch (err) {
-            console.error('Failed to initialize MySQL tables:', err);
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initTables()
+                .then(() => {
+                    this.initialized = true;
+                })
+                .catch((err) => {
+                    console.error('Failed to initialize MySQL tables:', err);
+                    this.initializationPromise = null;
+                });
         }
+
+        await this.initializationPromise;
     }
+
 
     private async query<T extends any = any>(sql: string, params: any[] = []): Promise<[T, any]> {
         let lastError;

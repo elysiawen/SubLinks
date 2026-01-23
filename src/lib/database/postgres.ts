@@ -23,16 +23,23 @@ export default class PostgresDatabase implements IDatabase {
         // Session cleanup is handled lazily in getSession, or use a Cron Job.
     }
 
+    private initializationPromise: Promise<void> | null = null;
+
     private async ensureInitialized() {
         if (this.initialized) return;
 
-        try {
-            await this.initTables();
-            this.initialized = true;
-        } catch (err) {
-            console.error('Failed to initialize PostgreSQL tables:', err);
-            // Don't throw - allow retry on next call
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initTables()
+                .then(() => {
+                    this.initialized = true;
+                })
+                .catch((err) => {
+                    console.error('Failed to initialize PostgreSQL tables:', err);
+                    this.initializationPromise = null; // Allow retry on failure
+                });
         }
+
+        await this.initializationPromise;
     }
 
     private async initTables() {
