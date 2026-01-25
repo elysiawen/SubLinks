@@ -121,6 +121,9 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
                 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 
+                ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
+                ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
+
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
                     value TEXT NOT NULL,
@@ -591,6 +594,8 @@ export default class PostgresDatabase implements IDatabase {
                 username: row.username,
                 token: row.token,
                 ip: row.ip,
+                ipLocation: row.ip_location,
+                isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 createdAt: parseInt(row.created_at),
@@ -609,12 +614,22 @@ export default class PostgresDatabase implements IDatabase {
     // Refresh Token operations
     async createRefreshToken(token: RefreshToken): Promise<void> {
         await this.ensureInitialized();
+
+        let location = token.ipLocation;
+        let isp = token.isp;
+
+        if (!location && token.ip) {
+            const locInfo = await getLocation(token.ip).catch(() => ({ location: undefined, isp: undefined }));
+            location = locInfo.location;
+            isp = locInfo.isp;
+        }
+
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ua, device_info, created_at, expires_at, last_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
             [
                 token.id, token.userId, token.username, token.token,
-                token.ip, token.ua, token.deviceInfo,
+                token.ip, location, isp, token.ua, token.deviceInfo,
                 token.createdAt, token.expiresAt, token.lastActive
             ]
         );
@@ -642,6 +657,8 @@ export default class PostgresDatabase implements IDatabase {
             username: row.username,
             token: row.token,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             createdAt: parseInt(row.created_at),
@@ -682,6 +699,8 @@ export default class PostgresDatabase implements IDatabase {
             username: row.username,
             token: row.token,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             createdAt: parseInt(row.created_at),

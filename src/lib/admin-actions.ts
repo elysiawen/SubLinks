@@ -44,6 +44,8 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         username: s.username,
         nickname: s.username, // Might need to fetch user for nickname
         ip: s.ip || 'unknown',
+        ipLocation: s.ipLocation,
+        isp: s.isp,
         ua: s.ua || 'unknown',
         deviceInfo: s.deviceInfo || 'Client App',
         lastActive: s.lastActive || s.createdAt,

@@ -322,6 +322,8 @@ export async function getUserSessionsList() {
             id: s.id,
             type: 'client' as const,
             ip: s.ip || 'unknown',
+            ipLocation: s.ipLocation,
+            isp: s.isp,
             ua: s.ua || 'unknown',
             deviceInfo: s.deviceInfo || 'Client App',
             lastActive: s.lastActive || s.createdAt,

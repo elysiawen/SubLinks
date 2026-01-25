@@ -150,6 +150,18 @@ export default class MysqlDatabase implements IDatabase {
                 INDEX idx_refresh_tokens_user (user_id),
                 INDEX idx_refresh_tokens_token (token(255))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure ip_location column exists in refresh_tokens
+            SELECT count(*) INTO @exist_rt_loc FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'refresh_tokens' AND column_name = 'ip_location';
+            SET @query = IF(@exist_rt_loc=0, 'ALTER TABLE refresh_tokens ADD COLUMN ip_location VARCHAR(255)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Ensure isp column exists in refresh_tokens
+            SELECT count(*) INTO @exist_rt_isp FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'refresh_tokens' AND column_name = 'isp';
+            SET @query = IF(@exist_rt_isp=0, 'ALTER TABLE refresh_tokens ADD COLUMN isp VARCHAR(255)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
             
             CREATE TABLE IF NOT EXISTS custom_config (
                 id VARCHAR(255) PRIMARY KEY,
@@ -563,10 +575,20 @@ export default class MysqlDatabase implements IDatabase {
     // Refresh Tokens
     async createRefreshToken(token: RefreshToken): Promise<void> {
         await this.ensureInitialized();
+
+        let location = token.ipLocation;
+        let isp = token.isp;
+
+        if (!location && token.ip) {
+            const locInfo = await getLocation(token.ip).catch(() => ({ location: undefined, isp: undefined }));
+            location = locInfo.location;
+            isp = locInfo.isp;
+        }
+
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ua, device_info, created_at, expires_at, last_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [token.id, token.userId, token.username, token.token, token.ip, token.ua, token.deviceInfo, token.createdAt, token.expiresAt, token.lastActive]
+            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [token.id, token.userId, token.username, token.token, token.ip, location, isp, token.ua, token.deviceInfo, token.createdAt, token.expiresAt, token.lastActive]
         );
     }
 
@@ -585,6 +607,8 @@ export default class MysqlDatabase implements IDatabase {
             username: row.username,
             token: row.token,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             createdAt: Number(row.created_at),
@@ -622,6 +646,8 @@ export default class MysqlDatabase implements IDatabase {
             username: row.username,
             token: row.token,
             ip: row.ip,
+            ipLocation: row.ip_location,
+            isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
             createdAt: Number(row.created_at),
@@ -668,6 +694,8 @@ export default class MysqlDatabase implements IDatabase {
                 username: row.username,
                 token: row.token,
                 ip: row.ip,
+                ipLocation: row.ip_location,
+                isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 createdAt: Number(row.created_at),

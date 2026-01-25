@@ -49,6 +49,8 @@ export interface RefreshToken {
     username: string;
     token: string;       // Hashed token or JTI
     ip?: string;
+    ipLocation?: string; // IP Location
+    isp?: string;        // ISP Name
     ua?: string;
     deviceInfo?: string; // e.g., "Chrome on Windows"
     createdAt: number;
