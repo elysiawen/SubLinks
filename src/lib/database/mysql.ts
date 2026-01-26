@@ -99,9 +99,16 @@ export default class MysqlDatabase implements IDatabase {
                 custom_rules TEXT,
                 selected_sources JSON,
                 enabled TINYINT(1) DEFAULT 1,
+                auto_disabled TINYINT(1) DEFAULT 0,
                 created_at BIGINT NOT NULL,
                 INDEX idx_subscriptions_username (username)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure auto_disabled column exists (Migration)
+            SELECT count(*) INTO @exist_auto_disabled FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'subscriptions' AND column_name = 'auto_disabled';
+            SET @query = IF(@exist_auto_disabled=0, 'ALTER TABLE subscriptions ADD COLUMN auto_disabled TINYINT(1) DEFAULT 0', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id VARCHAR(255) PRIMARY KEY,
@@ -428,6 +435,7 @@ export default class MysqlDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
             enabled: !!row.enabled,
+            autoDisabled: !!row.auto_disabled,
             createdAt: Number(row.created_at)
         }));
     }
@@ -753,9 +761,9 @@ export default class MysqlDatabase implements IDatabase {
         // We assume we want to use the JSON column for selected_sources
 
         await this.pool.query(
-            `INSERT INTO subscriptions (token, username, remark, group_id, rule_id, custom_rules, selected_sources, enabled, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [token, username, data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, data.createdAt]
+            `INSERT INTO subscriptions (token, username, remark, group_id, rule_id, custom_rules, selected_sources, enabled, auto_disabled, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [token, username, data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, data.autoDisabled || false, data.createdAt]
         );
     }
 
@@ -774,6 +782,7 @@ export default class MysqlDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
             enabled: !!row.enabled,
+            autoDisabled: !!row.auto_disabled,
             createdAt: Number(row.created_at)
         };
     }
@@ -791,9 +800,10 @@ export default class MysqlDatabase implements IDatabase {
                 rule_id = ?, 
                 custom_rules = ?, 
                 selected_sources = ?, 
-                enabled = ?
+                enabled = ?,
+                auto_disabled = ?
              WHERE token = ?`,
-            [data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, token]
+            [data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, data.autoDisabled || false, token]
         );
     }
 
@@ -810,6 +820,7 @@ export default class MysqlDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
             enabled: !!row.enabled,
+            autoDisabled: !!row.auto_disabled,
             createdAt: Number(row.created_at)
         }));
     }
@@ -822,8 +833,9 @@ export default class MysqlDatabase implements IDatabase {
         let params: any[] = [];
 
         if (search) {
-            query += ' WHERE username LIKE ? OR remark LIKE ?';
-            params.push(`%${search}%`, `%${search}%`);
+            // Search in username, remark, token, and selected_sources (JSON as text)
+            query += ' WHERE username LIKE ? OR remark LIKE ? OR token LIKE ? OR selected_sources LIKE ?';
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
         query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
@@ -834,8 +846,8 @@ export default class MysqlDatabase implements IDatabase {
         let countQuery = 'SELECT COUNT(*) as total FROM subscriptions';
         let countParams: any[] = [];
         if (search) {
-            countQuery += ' WHERE username LIKE ? OR remark LIKE ?';
-            countParams.push(`%${search}%`, `%${search}%`);
+            countQuery += ' WHERE username LIKE ? OR remark LIKE ? OR token LIKE ? OR selected_sources LIKE ?';
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
         const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
@@ -850,6 +862,7 @@ export default class MysqlDatabase implements IDatabase {
                 customRules: row.custom_rules,
                 selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
                 enabled: !!row.enabled,
+                autoDisabled: !!row.auto_disabled,
                 createdAt: Number(row.created_at)
             })),
             total: countRows[0].total

@@ -19,20 +19,16 @@ export async function createSubscription(remark: string, customRules: string, gr
     const session = await getCurrentSession();
     if (!session) return { error: 'Unauthorized' };
 
-    // Check subscription limit (admins are exempt)
+    // Check subscription limit (all users including admins)
     const user = await db.getUser(session.username);
-    const isAdmin = user?.role === 'admin';
+    const config = await db.getGlobalConfig();
+    // Use user's custom limit if set, otherwise use global limit
+    const maxSubs = user?.maxSubscriptions ?? config.maxUserSubscriptions ?? 1;
 
-    if (!isAdmin) {
-        const config = await db.getGlobalConfig();
-        // Use user's custom limit if set, otherwise use global limit
-        const maxSubs = user?.maxSubscriptions ?? config.maxUserSubscriptions ?? 1;
-
-        if (maxSubs > 0) {
-            const userSubs = await db.getUserSubscriptions(session.username);
-            if (userSubs.length >= maxSubs) {
-                return { error: `超过最大订阅数量限制 (${maxSubs}条)` };
-            }
+    if (maxSubs > 0) {
+        const userSubs = await db.getUserSubscriptions(session.username);
+        if (userSubs.length >= maxSubs) {
+            return { error: `超过最大订阅数量限制 (${maxSubs}条)` };
         }
     }
 
@@ -53,6 +49,17 @@ export async function createSubscription(remark: string, customRules: string, gr
 
     if (!subData.selectedSources || subData.selectedSources.length === 0) {
         return { error: '至少选择一个上游源' };
+    }
+
+    // Validate that selected sources are enabled
+    const allSources = await db.getUpstreamSources();
+    const enabledSourceNames = new Set(
+        allSources.filter(s => s.enabled !== false).map(s => s.name)
+    );
+
+    const invalidSources = subData.selectedSources.filter(s => !enabledSourceNames.has(s));
+    if (invalidSources.length > 0) {
+        return { error: `无法创建订阅: 所选源 (${invalidSources.join(', ')}) 已被禁用或不存在` };
     }
 
     await db.createSubscription(token, session.username, subData);
@@ -99,6 +106,22 @@ export async function updateSubscription(token: string, remark: string, customRu
     }
     subData.selectedSources = filteredSources;
 
+    // Validate that selected sources are enabled
+    const allSources = await db.getUpstreamSources();
+    const enabledSourceNames = new Set(
+        allSources.filter(s => s.enabled !== false).map(s => s.name)
+    );
+
+    const invalidSources = subData.selectedSources.filter(s => !enabledSourceNames.has(s));
+    // Ideally we should prevent saving, but user might be editing an already disabled sub? 
+    // Actually user dashboard is for ACTIVE management. If they pick a disabled source, we should tell them.
+    if (invalidSources.length > 0) {
+        return { error: `无法更新订阅: 所选源 (${invalidSources.join(', ')}) 已被禁用或不存在` };
+    }
+
+    // Reset auto-disabled flag if user manually updates subscription
+    subData.autoDisabled = false;
+
     await db.updateSubscription(token, subData);
 
     // Invalidate subscription cache
@@ -128,7 +151,29 @@ export async function toggleSubscriptionEnabled(token: string, enabled: boolean)
     const subData = await db.getSubscription(token);
     if (!subData) return { error: 'Not found' };
 
+    // If enabling, check if there are valid sources
+    if (enabled) {
+        const allSources = await db.getUpstreamSources();
+        const enabledSourceNames = new Set(
+            allSources.filter(s => s.enabled !== false).map(s => s.name)
+        );
+
+        let isValid = false;
+        if (!subData.selectedSources || subData.selectedSources.length === 0) {
+            // "All" sources selected. Valid if there is at least one enabled source globally.
+            isValid = enabledSourceNames.size > 0;
+        } else {
+            // Specific sources selected. Valid if at least one selected source is enabled.
+            isValid = subData.selectedSources.some(s => enabledSourceNames.has(s));
+        }
+
+        if (!isValid) {
+            return { error: '无法启用: 该订阅没有可用的上游源 (所有选中的源均已被禁用或删除)' };
+        }
+    }
+
     subData.enabled = enabled;
+    subData.autoDisabled = false; // Reset auto-disable flag on manual toggle
     await db.updateSubscription(token, subData);
 
     // Invalidate subscription cache

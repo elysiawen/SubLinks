@@ -26,6 +26,55 @@ export async function getAdminSubscriptions(page: number = 1, limit: number = 10
     return await db.getAllSubscriptions(page, limit, search);
 }
 
+export async function createAdminSubscription(
+    username: string,
+    data: {
+        remark: string,
+        customRules?: string,
+        groupId?: string,
+        ruleId?: string,
+        selectedSources?: string[]
+    }
+) {
+    const session = await getAdminSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    if (!username || username.trim() === '') {
+        return { error: '请选择用户' };
+    }
+
+    // Check user exists
+    const user = await db.getUser(username);
+    if (!user) {
+        return { error: '用户不存在' };
+    }
+
+    const token = generateToken();
+    const now = Date.now();
+
+    const newSub: SubData = {
+        username: username.trim(),
+        remark: data.remark || '未命名订阅',
+        enabled: true,
+        createdAt: now,
+        customRules: data.customRules || '',
+        groupId: data.groupId || 'default',
+        ruleId: data.ruleId || 'default',
+        selectedSources: data.selectedSources?.filter(s => s.trim() !== '') || [],
+        autoDisabled: false
+    };
+
+    // Ensure at least one source is selected
+    if (!newSub.selectedSources || newSub.selectedSources.length === 0) {
+        return { error: '请至少选择一个上游源' };
+    }
+
+    await db.createSubscription(token, username.trim(), newSub);
+
+    revalidatePath('/admin/subscriptions');
+    return { success: true, token };
+}
+
 export async function deleteAdminSubscription(token: string) {
     const session = await getAdminSession();
     if (!session) return { error: 'Unauthorized' };
@@ -67,7 +116,8 @@ export async function updateAdminSubscription(
         customRules: data.customRules ?? sub.customRules,
         groupId: data.groupId ?? sub.groupId,
         ruleId: data.ruleId ?? sub.ruleId,
-        selectedSources: data.selectedSources ?? sub.selectedSources
+        selectedSources: data.selectedSources ?? sub.selectedSources,
+        autoDisabled: false // Reset auto-disable flag on manual admin update
     };
 
     // Filter out any empty strings from selectedSources

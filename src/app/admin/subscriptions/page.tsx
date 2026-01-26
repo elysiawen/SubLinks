@@ -24,6 +24,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
 
     const availableSources = await db.getUpstreamSources();
 
+    // Fetch all users for admin create subscription
+    const { data: users } = await db.getAllUsers(1, 10000);
+
     return (
         <div className="space-y-6">
             <AdminSubsClient
@@ -34,6 +37,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
                 configSets={{ groups: groupSets, rules: ruleSets }}
                 defaultGroups={defaultGroups}
                 availableSources={availableSources}
+                users={users.map(u => ({ username: u.username, nickname: u.nickname }))}
             />
         </div>
     );

@@ -77,10 +77,15 @@ export default class PostgresDatabase implements IDatabase {
                     rule_id VARCHAR(255),
                     custom_rules TEXT,
                     selected_sources JSONB,
+                    selected_sources JSONB,
                     enabled BOOLEAN DEFAULT TRUE,
+                    auto_disabled BOOLEAN DEFAULT FALSE,
                     created_at BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_subscriptions_username ON subscriptions(username);
+                
+                -- Ensure auto_disabled column exists
+                ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS auto_disabled BOOLEAN DEFAULT FALSE;
 
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
@@ -722,8 +727,8 @@ export default class PostgresDatabase implements IDatabase {
         const userId = user?.id || null;
 
         await this.pool.query(
-            `INSERT INTO subscriptions (token, username, user_id, remark, group_id, rule_id, custom_rules, selected_sources, enabled, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            `INSERT INTO subscriptions (token, username, user_id, remark, group_id, rule_id, custom_rules, selected_sources, enabled, auto_disabled, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
             [
                 token,
                 username,
@@ -734,6 +739,7 @@ export default class PostgresDatabase implements IDatabase {
                 data.customRules,
                 JSON.stringify(data.selectedSources || []),
                 data.enabled,
+                data.autoDisabled || false,
                 data.createdAt
             ]
         );
@@ -752,6 +758,7 @@ export default class PostgresDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: row.selected_sources || [],
             enabled: row.enabled,
+            autoDisabled: row.auto_disabled,
             createdAt: parseInt(row.created_at),
         };
     }
@@ -766,7 +773,8 @@ export default class PostgresDatabase implements IDatabase {
         const countParams: any[] = [];
 
         if (search) {
-            const searchClause = ' WHERE username ILIKE $1 OR remark ILIKE $1 OR token ILIKE $1';
+            // Search in username, remark, token, and selected_sources (JSON array as text)
+            const searchClause = ' WHERE username ILIKE $1 OR remark ILIKE $1 OR token ILIKE $1 OR selected_sources::text ILIKE $1';
             query += searchClause;
             countQuery += searchClause;
             params.push(`%${search}%`);
@@ -790,6 +798,7 @@ export default class PostgresDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: row.selected_sources || [],
             enabled: row.enabled,
+            autoDisabled: row.auto_disabled,
             createdAt: parseInt(row.created_at),
         }));
 
@@ -808,7 +817,8 @@ export default class PostgresDatabase implements IDatabase {
                  rule_id = $4,
                  custom_rules = $5,
                  selected_sources = $6,
-                 enabled = $7
+                 enabled = $7,
+                 auto_disabled = $8
              WHERE token = $1`,
             [
                 token,
@@ -817,7 +827,8 @@ export default class PostgresDatabase implements IDatabase {
                 data.ruleId,
                 data.customRules,
                 JSON.stringify(data.selectedSources || []),
-                data.enabled
+                data.enabled,
+                data.autoDisabled || false
             ]
         );
     }
@@ -833,6 +844,7 @@ export default class PostgresDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: row.selected_sources || [],
             enabled: row.enabled,
+            autoDisabled: row.auto_disabled,
             createdAt: parseInt(row.created_at),
         }));
     }
@@ -869,6 +881,7 @@ export default class PostgresDatabase implements IDatabase {
             customRules: row.custom_rules,
             selectedSources: row.selected_sources, // Postgres driver parses JSONB automatically
             enabled: row.enabled,
+            autoDisabled: row.auto_disabled,
             createdAt: parseInt(row.created_at)
         }));
     }

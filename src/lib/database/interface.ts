@@ -71,6 +71,7 @@ export interface SubData {
     ruleId?: string;
     selectedSources?: string[]; // User-selected upstream sources
     enabled: boolean;
+    autoDisabled?: boolean; // True if disabled automatically by system due to upstream failure
     createdAt: number;
 }
 
