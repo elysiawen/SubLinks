@@ -50,8 +50,8 @@ export async function getUserAccessLogs(limit: number = 3) {
 
     // Get all logs and filter by username
     // Using search to optimize but still filtering for security and exact match
-    const allLogs = await db.getAPIAccessLogs(100, 0, user.username);
-    const userLogs = allLogs
+    const result = await db.getAPIAccessLogs(100, 0, user.username);
+    const userLogs = result.data
         .filter(log => log.username === user.username)
         .slice(0, limit);
 
@@ -75,8 +75,8 @@ export async function getUserApiCount24h() {
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
 
     // Get recent logs efficiently
-    const allLogs = await db.getAPIAccessLogs(1000, 0, user.username);
-    const count = allLogs.filter(log =>
+    const result = await db.getAPIAccessLogs(1000, 0, user.username);
+    const count = result.data.filter(log =>
         log.username === user.username &&
         log.timestamp >= twentyFourHoursAgo
     ).length;
@@ -104,8 +104,8 @@ export async function getUserSubscriptionLogs(page: number = 1, pageSize: number
     // This is not scalable for huge datasets but suffices for per-user logs typically.
     // Better approach: Fetch with search=username.
 
-    const logs = await db.getAPIAccessLogs(1000, 0, user.username);
-    const filtered = logs.filter(log => log.username === user.username);
+    const result = await db.getAPIAccessLogs(1000, 0, user.username);
+    const filtered = result.data.filter(log => log.username === user.username);
 
     const total = filtered.length; // Approximate total based on fetched limit
     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -122,8 +122,8 @@ export async function getUserWebAccessLogs(page: number = 1, pageSize: number = 
     const user = await getSession(sessionId);
     if (!user) return { logs: [], total: 0 };
 
-    const logs = await db.getWebAccessLogs(1000, 0, user.username);
-    const filtered = logs.filter(log => log.username === user.username);
+    const result = await db.getWebAccessLogs(1000, 0, user.username);
+    const filtered = result.data.filter(log => log.username === user.username);
 
     const total = filtered.length;
     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);

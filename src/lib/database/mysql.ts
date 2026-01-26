@@ -1375,33 +1375,43 @@ export default class MysqlDatabase implements IDatabase {
         ).catch(e => console.error('Log error', e));
     }
 
-    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<APIAccessLog[]> {
+    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<APIAccessLog>> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM api_access_logs';
+        let countQuery = 'SELECT COUNT(*) as total FROM api_access_logs';
+
         const params: any[] = [];
+        const countParams: any[] = [];
 
         if (search) {
-            query += ' WHERE username LIKE ? OR ip LIKE ?';
+            const searchClause = ' WHERE username LIKE ? OR ip LIKE ?';
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`);
         }
 
         query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
+        const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
 
-        return rows.map(row => ({
-            id: row.id,
-            token: row.token,
-            username: row.username,
-            nickname: row.nickname,
-            ip: row.ip,
-            ua: row.ua,
-            status: row.status,
-            timestamp: Number(row.timestamp),
-            apiType: row.api_type,
-            requestMethod: row.request_method
-        }));
+        return {
+            data: rows.map(row => ({
+                id: row.id,
+                token: row.token,
+                username: row.username,
+                nickname: row.nickname,
+                ip: row.ip,
+                ua: row.ua,
+                status: row.status,
+                timestamp: Number(row.timestamp),
+                apiType: row.api_type,
+                requestMethod: row.request_method
+            })),
+            total: countRows[0].total
+        };
     }
 
     async createWebAccessLog(log: Omit<WebAccessLog, 'id'>): Promise<void> {
@@ -1412,30 +1422,41 @@ export default class MysqlDatabase implements IDatabase {
         ).catch(e => console.error('Log error', e));
     }
 
-    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<WebAccessLog[]> {
+    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<WebAccessLog>> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM web_access_logs';
+        let countQuery = 'SELECT COUNT(*) as total FROM web_access_logs';
+
         const params: any[] = [];
+        const countParams: any[] = [];
 
         if (search) {
-            query += ' WHERE username LIKE ? OR ip LIKE ? OR path LIKE ?';
+            const searchClause = ' WHERE username LIKE ? OR ip LIKE ? OR path LIKE ?';
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
         query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
-        return rows.map(row => ({
-            id: row.id,
-            path: row.path,
-            ip: row.ip,
-            ua: row.ua,
-            username: row.username,
-            nickname: row.nickname,
-            status: row.status,
-            timestamp: Number(row.timestamp)
-        }));
+        const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
+
+        return {
+            data: rows.map(row => ({
+                id: row.id,
+                path: row.path,
+                ip: row.ip,
+                ua: row.ua,
+                username: row.username,
+                nickname: row.nickname,
+                status: row.status,
+                timestamp: Number(row.timestamp)
+            })),
+            total: countRows[0].total
+        };
     }
 
     async createSystemLog(log: Omit<SystemLog, 'id'>): Promise<void> {
@@ -1446,27 +1467,38 @@ export default class MysqlDatabase implements IDatabase {
         ).catch(e => console.error('Log error', e));
     }
 
-    async getSystemLogs(limit: number, offset: number, search?: string): Promise<SystemLog[]> {
+    async getSystemLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<SystemLog>> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM system_logs';
+        let countQuery = 'SELECT COUNT(*) as total FROM system_logs';
+
         const params: any[] = [];
+        const countParams: any[] = [];
+
         if (search) {
-            query += ' WHERE message LIKE ? OR category LIKE ?';
+            const searchClause = ' WHERE message LIKE ? OR category LIKE ?';
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`);
         }
         query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
+        const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
 
-        return rows.map(row => ({
-            id: row.id,
-            category: row.category,
-            message: row.message,
-            details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
-            status: row.status,
-            timestamp: Number(row.timestamp)
-        }));
+        return {
+            data: rows.map(row => ({
+                id: row.id,
+                category: row.category,
+                message: row.message,
+                details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
+                status: row.status,
+                timestamp: Number(row.timestamp)
+            })),
+            total: countRows[0].total
+        };
     }
 
     async cleanupLogs(retentionDays: number): Promise<void> {

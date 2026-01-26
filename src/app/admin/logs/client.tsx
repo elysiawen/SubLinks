@@ -24,6 +24,12 @@ export default function LogsClient() {
     const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
     const [expandedTokens, setExpandedTokens] = useState<Set<string>>(new Set());
 
+    const [targetVisualLimit, setTargetVisualLimit] = useState(limit);
+    const [totalLogs, setTotalLogs] = useState(0);
+    const [isMergeMode, setIsMergeMode] = useState(true);
+
+    // ... (existing state)
+
     const toggleExpand = (id: string) => {
         const next = new Set(expandedLogs);
         if (next.has(id)) {
@@ -57,31 +63,66 @@ export default function LogsClient() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchLogs = async (pageNum: number, isRefresh = false, tab: 'api' | 'web' | 'system', pageSize: number, searchTerm: string) => {
+    const fetchLogs = async (
+        pageNum: number,
+        isRefresh = false,
+        tab: 'api' | 'web' | 'system',
+        pageSize: number,
+        searchTerm: string,
+        targetLimit: number
+    ) => {
         setLoading(true);
         try {
+            // Standard Pagination Mode (Non-Merge)
+            if (!isMergeMode) {
+                let currentRes;
+                if (tab === 'api') {
+                    currentRes = await getAPILogs(pageNum, pageSize, searchTerm);
+                } else if (tab === 'web') {
+                    currentRes = await getWebLogs(pageNum, pageSize, searchTerm);
+                } else {
+                    currentRes = await getSystemLogs(pageNum, pageSize, searchTerm);
+                }
+
+                if (activeTabRef.current !== tab) return;
+
+                if (currentRes.error) {
+                    console.error(currentRes.error);
+                    return;
+                }
+
+                if (currentRes.logs) {
+                    setLogs(currentRes.logs);
+                    setTotalLogs(currentRes.total || 0);
+                    // For standard pagination, hasMore is managed by page count
+                }
+                return;
+            }
+
             let currentLogs: any[] = isRefresh ? [] : [...logs];
+            // If we already have enough visual items (and not refreshing), we don't need to fetch
+            if (!isRefresh) {
+                const currentVisualCount = aggregateLogs(currentLogs, tab).length;
+                if (currentVisualCount >= targetLimit) {
+                    setLogs(currentLogs);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             let apiPage = pageNum;
             let currentRes;
-
             let fetchedCount = 0;
-            const isSystem = tab === 'system';
-            const isWeb = tab === 'web';
-            const isApi = tab === 'api';
 
-            // Limit loop to avoid infinite requests. 
-            // All aggregated logs allow more fetches.
-            const maxFetches = (isSystem || isWeb || isApi) ? 10 : 1;
+            const maxFetches = 10; // Safety limit
 
             for (let i = 0; i < maxFetches; i++) {
                 if (tab === 'api') {
-                    currentRes = await getAPILogs(apiPage, pageSize * 2, searchTerm);
+                    currentRes = await getAPILogs(apiPage, pageSize, searchTerm);
                 } else if (tab === 'web') {
-                    // Fetch larger chunks for web logs too, as they might be heavily folded
-                    currentRes = await getWebLogs(apiPage, pageSize * 2, searchTerm);
+                    currentRes = await getWebLogs(apiPage, pageSize, searchTerm);
                 } else {
-                    // Fetch larger chunks for system logs to reduce round trips
-                    currentRes = await getSystemLogs(apiPage, pageSize * 2, searchTerm);
+                    currentRes = await getSystemLogs(apiPage, pageSize, searchTerm);
                 }
 
                 // Check if tab changed while fetching
@@ -98,15 +139,10 @@ export default function LogsClient() {
 
                     // Update state variables for next iteration
                     apiPage++;
-                    setPage(apiPage); // Keep track of where we are in API pages
+                    setPage(apiPage); // Keep track of next page to fetch
 
                     // Check if we hit end of stream
-                    const fetchedSize = currentRes.logs.length;
-                    // For aggregated logs (web, system, api), we request 2x logs
-                    const isAggregated = tab === 'web' || tab === 'system' || tab === 'api';
-                    const requestedSize = isAggregated ? pageSize * 2 : pageSize;
-
-                    if (fetchedSize < requestedSize) {
+                    if (currentRes.logs.length < pageSize) {
                         setHasMore(false);
                         break;
                     } else {
@@ -114,20 +150,13 @@ export default function LogsClient() {
                     }
 
                     // Check if we have enough visual items
-                    if (isAggregated) {
-                        const visualCount = aggregateLogs(currentLogs, tab).length;
+                    const visualCount = aggregateLogs(currentLogs, tab).length;
 
-                        // Safety break if we fetched too many raw items (e.g. 10 pages worth)
-                        if (fetchedCount >= pageSize * 10) break;
+                    // Specific fix: Ensure we have at least targetLimit visual items
+                    if (visualCount >= targetLimit) break;
 
-                        const baseCount = isRefresh ? 0 : aggregateLogs(logs, tab).length;
-                        const addedVisualItems = visualCount - baseCount;
-
-                        // If we have added at least pageSize visual items, we are good.
-                        if (addedVisualItems >= pageSize) break;
-                    } else {
-                        break;
-                    }
+                    // Safety break if we fetched too many raw items
+                    if (fetchedCount >= pageSize * 20) break;
                 } else {
                     setHasMore(false);
                     break;
@@ -143,18 +172,25 @@ export default function LogsClient() {
         }
     };
 
-    // Reset when tab, limit, or search changes
+    // Reset when tab, limit, search, or merge mode changes
     useEffect(() => {
         setPage(1);
         setLogs([]);
         setHasMore(true);
-        fetchLogs(1, true, activeTab, limit, debouncedSearch);
-    }, [activeTab, limit, debouncedSearch]);
+        setTargetVisualLimit(limit);
+        fetchLogs(1, true, activeTab, limit, debouncedSearch, limit);
+    }, [activeTab, limit, debouncedSearch, isMergeMode]);
+
+    const handlePageChange = (newPage: number) => {
+        setPage(newPage);
+        fetchLogs(newPage, true, activeTab, limit, debouncedSearch, limit);
+    };
 
     const loadMore = () => {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchLogs(nextPage, false, activeTab, limit, debouncedSearch);
+        const nextTarget = targetVisualLimit + limit;
+        setTargetVisualLimit(nextTarget);
+        // Use current 'page' which is already the next page index
+        fetchLogs(page, false, activeTab, limit, debouncedSearch, nextTarget);
     };
 
     const formatTime = (ts: number) => {
@@ -321,8 +357,10 @@ export default function LogsClient() {
 
     // Log Aggregation Logic
     const processedLogs = React.useMemo(() => {
-        return aggregateLogs(logs, activeTab);
-    }, [logs, activeTab]);
+        if (!isMergeMode) return logs;
+        const aggregated = aggregateLogs(logs, activeTab);
+        return aggregated.slice(0, targetVisualLimit);
+    }, [logs, activeTab, targetVisualLimit, isMergeMode]);
 
     return (
         <div className="space-y-6">
@@ -358,6 +396,19 @@ export default function LogsClient() {
                 </div>
 
                 <div className="flex items-center space-x-4 w-full sm:w-auto">
+                    <div className="flex items-center space-x-3 select-none">
+                        <button
+                            onClick={() => setIsMergeMode(!isMergeMode)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${isMergeMode ? 'bg-blue-600' : 'bg-gray-700'
+                                }`}
+                        >
+                            <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isMergeMode ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                            />
+                        </button>
+                        <span className="text-sm text-gray-400 cursor-pointer" onClick={() => setIsMergeMode(!isMergeMode)}>合并显示</span>
+                    </div>
                     <div className="relative flex-1 sm:w-64">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-4 w-4 text-gray-400" />
@@ -783,15 +834,64 @@ export default function LogsClient() {
                     )
                 }
 
-                {hasMore && (
-                    <div className="p-4 text-center border-t border-gray-800 bg-black/20">
-                        <button
-                            onClick={loadMore}
-                            disabled={loading}
-                            className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600"
-                        >
-                            {loading ? '加载中...' : '加载更多'}
-                        </button>
+                {isMergeMode ? (
+                    (hasMore || processedLogs.length === targetVisualLimit) && (
+                        <div className="p-4 text-center border-t border-gray-800 bg-black/20">
+                            <button
+                                onClick={loadMore}
+                                disabled={loading}
+                                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600"
+                            >
+                                {loading ? '加载中...' : '加载更多'}
+                            </button>
+                        </div>
+                    )
+                ) : (
+                    <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-800 bg-black/20 text-sm">
+                        <div className="text-gray-400 whitespace-nowrap">
+                            共 {totalLogs} 条记录
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
+                            <div className="flex items-center space-x-2 order-last sm:order-first sm:border-r sm:border-gray-700 sm:pr-4 sm:mr-2">
+                                <span className="text-gray-300 whitespace-nowrap">跳转至</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={Math.ceil(totalLogs / limit) || undefined}
+                                    defaultValue={page}
+                                    key={page}
+                                    className="w-12 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-center text-gray-200 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const val = parseInt(e.currentTarget.value);
+                                            const max = Math.ceil(totalLogs / limit) || 999999;
+                                            if (!isNaN(val) && val >= 1 && val <= max) {
+                                                handlePageChange(val);
+                                            }
+                                        }
+                                    }}
+                                />
+                                <span className="text-gray-300 whitespace-nowrap">页</span>
+                            </div>
+
+                            <button
+                                onClick={() => handlePageChange(page - 1)}
+                                disabled={page <= 1 || loading}
+                                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600 whitespace-nowrap"
+                            >
+                                上一页
+                            </button>
+                            <span className="text-gray-300 whitespace-nowrap">
+                                第 {page} / {Math.ceil(totalLogs / limit)} 页
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(page + 1)}
+                                disabled={!hasMore || loading}
+                                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600 whitespace-nowrap"
+                            >
+                                下一页
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

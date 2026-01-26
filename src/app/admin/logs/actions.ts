@@ -17,22 +17,22 @@ export async function getAPILogs(page: number = 1, limit: number = 50, search?: 
     if (!await verifyAdmin()) return { error: 'Unauthorized' };
 
     const offset = (page - 1) * limit;
-    const logs = await db.getAPIAccessLogs(limit, offset, search);
-    return { logs };
+    const result = await db.getAPIAccessLogs(limit, offset, search);
+    return { logs: result.data, total: result.total };
 }
 
 export async function getWebLogs(page: number = 1, limit: number = 50, search?: string) {
     if (!await verifyAdmin()) return { error: 'Unauthorized' };
 
     const offset = (page - 1) * limit;
-    const logs = await db.getWebAccessLogs(limit, offset, search);
-    return { logs };
+    const result = await db.getWebAccessLogs(limit, offset, search);
+    return { logs: result.data, total: result.total };
 }
 
 export async function getSystemLogs(page: number = 1, limit: number = 50, search?: string) {
     if (!await verifyAdmin()) return { error: 'Unauthorized' };
 
     const offset = (page - 1) * limit;
-    const logs = await db.getSystemLogs(limit, offset, search);
-    return { logs };
+    const result = await db.getSystemLogs(limit, offset, search);
+    return { logs: result.data, total: result.total };
 }

@@ -1493,7 +1493,7 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').APIAccessLog[]> {
+    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').PaginatedResult<import('./interface').APIAccessLog>> {
         let query = `
             SELECT 
                 l.*,
@@ -1501,20 +1501,34 @@ export default class PostgresDatabase implements IDatabase {
             FROM api_access_logs l
             LEFT JOIN users u ON l.username = u.username
         `;
+        let countQuery = `
+            SELECT COUNT(*) 
+            FROM api_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+        `;
+
         const params: any[] = [];
+        const countParams: any[] = [];
         let paramIndex = 1;
 
         if (search) {
-            query += ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
+            const searchClause = ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`);
+            countParams.push(`%${search}%`);
             paramIndex++;
         }
+
+        const countResult = await this.pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
 
         query += ` ORDER BY l.timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
-        return result.rows.map(row => ({
+
+        const data = result.rows.map(row => ({
             id: row.id,
             token: row.token,
             username: row.username,
@@ -1526,6 +1540,8 @@ export default class PostgresDatabase implements IDatabase {
             apiType: row.api_type || undefined,
             requestMethod: row.request_method || undefined
         }));
+
+        return { data, total };
     }
 
     async createWebAccessLog(log: Omit<import('./interface').WebAccessLog, 'id'>): Promise<void> {
@@ -1537,7 +1553,7 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').WebAccessLog[]> {
+    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').PaginatedResult<import('./interface').WebAccessLog>> {
         let query = `
             SELECT 
                 l.*,
@@ -1545,20 +1561,33 @@ export default class PostgresDatabase implements IDatabase {
             FROM web_access_logs l
             LEFT JOIN users u ON l.username = u.username
         `;
+        let countQuery = `
+            SELECT COUNT(*) 
+            FROM web_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+        `;
+
         const params: any[] = [];
+        const countParams: any[] = [];
         let paramIndex = 1;
 
         if (search) {
-            query += ` WHERE l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
+            const searchClause = ` WHERE l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`);
+            countParams.push(`%${search}%`);
             paramIndex++;
         }
+
+        const countResult = await this.pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
 
         query += ` ORDER BY l.timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
-        return result.rows.map(row => ({
+        const data = result.rows.map(row => ({
             id: row.id,
             path: row.path,
             ip: row.ip,
@@ -1568,6 +1597,8 @@ export default class PostgresDatabase implements IDatabase {
             status: row.status,
             timestamp: parseInt(row.timestamp)
         }));
+
+        return { data, total };
     }
 
     async createSystemLog(log: Omit<import('./interface').SystemLog, 'id'>): Promise<void> {
@@ -1579,29 +1610,40 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getSystemLogs(limit: number, offset: number, search?: string): Promise<import('./interface').SystemLog[]> {
+    async getSystemLogs(limit: number, offset: number, search?: string): Promise<import('./interface').PaginatedResult<import('./interface').SystemLog>> {
         let query = 'SELECT * FROM system_logs';
+        let countQuery = 'SELECT COUNT(*) FROM system_logs';
+
         const params: any[] = [];
+        const countParams: any[] = [];
         let paramIndex = 1;
 
         if (search) {
-            query += ` WHERE message ILIKE $${paramIndex} OR category ILIKE $${paramIndex}`;
+            const searchClause = ` WHERE message ILIKE $${paramIndex} OR category ILIKE $${paramIndex}`;
+            query += searchClause;
+            countQuery += searchClause;
             params.push(`%${search}%`);
+            countParams.push(`%${search}%`);
             paramIndex++;
         }
+
+        const countResult = await this.pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
 
         query += ` ORDER BY timestamp DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
-        return result.rows.map(row => ({
+        const data = result.rows.map(row => ({
             id: row.id,
             category: row.category,
             message: row.message,
-            details: row.details,
+            details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
             status: row.status,
             timestamp: parseInt(row.timestamp)
         }));
+
+        return { data, total };
     }
 
     async cleanupLogs(retentionDays: number): Promise<void> {

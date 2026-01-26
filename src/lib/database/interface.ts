@@ -298,13 +298,13 @@ export interface IDatabase {
 
     // Logs
     createAPIAccessLog(log: Omit<APIAccessLog, 'id'>): Promise<void>;
-    getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<APIAccessLog[]>;
+    getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<APIAccessLog>>;
 
     createWebAccessLog(log: Omit<WebAccessLog, 'id'>): Promise<void>;
-    getWebAccessLogs(limit: number, offset: number, search?: string): Promise<WebAccessLog[]>;
+    getWebAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<WebAccessLog>>;
 
     createSystemLog(log: Omit<SystemLog, 'id'>): Promise<void>;
-    getSystemLogs(limit: number, offset: number, search?: string): Promise<SystemLog[]>;
+    getSystemLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<SystemLog>>;
 
     // Maintenance
     cleanupLogs(retentionDays: number): Promise<void>;

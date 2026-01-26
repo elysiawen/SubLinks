@@ -18,15 +18,15 @@ export async function getDashboardStats() {
 
     // Get recent access logs (last 24 hours)
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const allAccessLogs = await db.getAPIAccessLogs(1000, 0); // Get last 1000 logs
-    const recentAccessCount = allAccessLogs.filter((log: any) => log.timestamp > oneDayAgo).length;
+    const accessLogResult = await db.getAPIAccessLogs(1000, 0); // Get last 1000 logs
+    const recentAccessCount = accessLogResult.data.filter((log: any) => log.timestamp > oneDayAgo).length;
 
     // Get latest logs
-    const systemLogs = await db.getSystemLogs(5, 0); // Get latest 5
-    const accessLogs = await db.getAPIAccessLogs(5, 0); // Get latest 5
+    const systemLogResult = await db.getSystemLogs(5, 0); // Get latest 5
+    const latestAccessLogResult = await db.getAPIAccessLogs(5, 0); // Get latest 5
 
-    const latestSystemLogs = systemLogs;
-    const latestAccessLogs = accessLogs;
+    const latestSystemLogs = systemLogResult.data;
+    const latestAccessLogs = latestAccessLogResult.data;
 
     return {
         users: {
