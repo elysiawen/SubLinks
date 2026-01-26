@@ -373,7 +373,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        API访问日志
+                        API访问
                     </button>
                     <button
                         onClick={() => setActiveTab('web')}
@@ -382,7 +382,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        网站访问日志
+                        WEB访问
                     </button>
                     <button
                         onClick={() => setActiveTab('system')}
@@ -391,7 +391,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        系统日志
+                        系统
                     </button>
                 </div>
 
