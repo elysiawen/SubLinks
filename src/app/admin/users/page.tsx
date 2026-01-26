@@ -1,4 +1,4 @@
-import { getUsers } from '../actions';
+import { getUsers } from './actions';
 import AdminUsersClient from './client';
 import { db } from '@/lib/db';
 

@@ -26,6 +26,8 @@ export interface User {
     nickname?: string;   // Display name (optional)
     avatar?: string;     // Avatar URL (optional)
     createdAt: number;
+    totpSecret?: string; // 2FA Secret
+    totpEnabled?: boolean; // 2FA Enabled Status
 }
 
 export interface Session {

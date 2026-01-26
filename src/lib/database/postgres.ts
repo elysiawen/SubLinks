@@ -68,6 +68,8 @@ export default class PostgresDatabase implements IDatabase {
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT FALSE;
 
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
@@ -266,7 +268,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUser(username: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at FROM users WHERE username = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, totp_secret, totp_enabled, created_at FROM users WHERE username = $1',
             [username]
         );
         if (result.rows.length === 0) return null;
@@ -281,6 +283,8 @@ export default class PostgresDatabase implements IDatabase {
             tokenVersion: row.token_version,
             nickname: row.nickname,
             avatar: row.avatar,
+            totpSecret: row.totp_secret,
+            totpEnabled: row.totp_enabled,
             createdAt: parseInt(row.created_at),
         };
     }
@@ -288,7 +292,7 @@ export default class PostgresDatabase implements IDatabase {
     async getUserById(id: string): Promise<User | null> {
         await this.ensureInitialized();
         const result = await this.pool.query(
-            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at FROM users WHERE id = $1',
+            'SELECT id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, totp_secret, totp_enabled, created_at FROM users WHERE id = $1',
             [id]
         );
         if (result.rows.length === 0) return null;
@@ -303,14 +307,16 @@ export default class PostgresDatabase implements IDatabase {
             tokenVersion: row.token_version,
             nickname: row.nickname,
             avatar: row.avatar,
+            totpSecret: row.totp_secret,
+            totpEnabled: row.totp_enabled,
             createdAt: parseInt(row.created_at),
         };
     }
 
     async setUser(username: string, data: User): Promise<void> {
         await this.pool.query(
-            `INSERT INTO users (username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO users (username, password, role, status, max_subscriptions, token_version, nickname, avatar, totp_secret, totp_enabled, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              ON CONFLICT (username) DO UPDATE SET
                  password = EXCLUDED.password,
                  role = EXCLUDED.role,
@@ -318,9 +324,11 @@ export default class PostgresDatabase implements IDatabase {
                  max_subscriptions = EXCLUDED.max_subscriptions,
                  token_version = EXCLUDED.token_version,
                  nickname = EXCLUDED.nickname,
-                 avatar = EXCLUDED.avatar
+                 avatar = EXCLUDED.avatar,
+                 totp_secret = EXCLUDED.totp_secret,
+                 totp_enabled = EXCLUDED.totp_enabled
              RETURNING id`,
-            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.createdAt]
+            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
         );
     }
 
@@ -362,6 +370,7 @@ export default class PostgresDatabase implements IDatabase {
             tokenVersion: row.token_version,
             nickname: row.nickname,
             avatar: row.avatar,
+            totpEnabled: row.totp_enabled,
             createdAt: parseInt(row.created_at),
         }));
 

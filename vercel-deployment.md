@@ -1,6 +1,6 @@
 # Vercel 部署指南
 
-SubLinks 完美支持 Vercel Serverless 部署，并针对 Vercel Edge Network 进行了深度优化。本指南将帮助您在几分钟内完成部署。
+SubLinks 支持 Vercel Serverless 的部署，并针对 Vercel Edge Network 进行了深度优化。本指南将帮助您在几分钟内完成部署。
 
 ---
 

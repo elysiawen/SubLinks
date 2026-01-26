@@ -5,12 +5,61 @@ import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
 import { Session, RefreshToken } from '@/lib/database/interface';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { generateSecret, generateURI, verify } from 'otplib';
+import QRCode from 'qrcode';
+
+// ... (imports)
 
 export async function getCurrentSession() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get('auth_session')?.value;
     if (!sessionId) return null;
     return await getSession(sessionId);
+}
+
+export async function setup2FA() {
+    const session = await getCurrentSession();
+    if (!session) return { error: '未登录' };
+
+    const secret = generateSecret();
+    const otpauth = generateURI({
+        secret,
+        label: session.username,
+        issuer: 'SubLinks'
+    });
+
+    try {
+        const qrCode = await QRCode.toDataURL(otpauth);
+        return { secret, qrCode };
+    } catch (err) {
+        console.error('QR Code generation failed:', err);
+        return { error: '生成二维码失败' };
+    }
+}
+
+export async function enable2FA(secret: string, token: string) {
+    const session = await getCurrentSession();
+    if (!session) return { error: '未登录' };
+
+    // Verify the token with the provided secret (not saved yet)
+    try {
+        const result = await verify({ token, secret });
+        if (!result?.valid) return { error: '验证码错误' };
+    } catch (err) {
+        return { error: '验证失败' };
+    }
+
+    // Update user
+    const user = await db.getUser(session.username);
+    if (!user) return { error: '用户不存在' };
+
+    await db.setUser(session.username, {
+        ...user,
+        totpSecret: secret,
+        totpEnabled: true
+    });
+
+    return { success: true };
 }
 
 export async function getCurrentUser() {
@@ -339,6 +388,30 @@ export async function getUserSessionsList() {
     });
 
     return { sessions };
+}
+
+
+export async function disable2FA(password: string) {
+    const session = await getCurrentSession();
+    if (!session) return { error: '未登录' };
+
+    const user = await db.getUser(session.username);
+    if (!user) return { error: '用户不存在' };
+
+    // Verify password
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
+        return { error: '密码错误' };
+    }
+
+    // Disable 2FA
+    await db.setUser(session.username, {
+        ...user,
+        totpEnabled: false,
+        totpSecret: undefined
+    });
+
+    return { success: true };
 }
 
 export async function revokeSession(sessionId: string) {

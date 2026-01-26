@@ -21,7 +21,7 @@ interface APIAccessLog {
 interface UpstreamSource {
     name: string;
     url: string;
-    enabled: boolean;
+    enabled?: boolean;
     lastUpdated?: number;
     status?: 'pending' | 'success' | 'failure';
     traffic?: {

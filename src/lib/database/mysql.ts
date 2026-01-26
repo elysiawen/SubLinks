@@ -86,9 +86,23 @@ export default class MysqlDatabase implements IDatabase {
                 token_version INTEGER DEFAULT 0,
                 nickname VARCHAR(100),
                 avatar TEXT,
+                totp_secret TEXT,
+                totp_enabled TINYINT(1) DEFAULT 0,
                 created_at BIGINT NOT NULL,
                 INDEX idx_users_username (username)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure totp_secret column exists (Migration)
+            SELECT count(*) INTO @exist_totp_secret FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'totp_secret';
+            SET @query = IF(@exist_totp_secret=0, 'ALTER TABLE users ADD COLUMN totp_secret TEXT', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Ensure totp_enabled column exists (Migration)
+            SELECT count(*) INTO @exist_totp_enabled FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'totp_enabled';
+            SET @query = IF(@exist_totp_enabled=0, 'ALTER TABLE users ADD COLUMN totp_enabled TINYINT(1) DEFAULT 0', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS subscriptions (
                 token VARCHAR(255) PRIMARY KEY,
@@ -308,6 +322,8 @@ export default class MysqlDatabase implements IDatabase {
             tokenVersion: row.token_version,
             nickname: row.nickname,
             avatar: row.avatar,
+            totpSecret: row.totp_secret,
+            totpEnabled: !!row.totp_enabled,
             createdAt: Number(row.created_at)
         };
     }
@@ -328,6 +344,8 @@ export default class MysqlDatabase implements IDatabase {
             tokenVersion: row.token_version,
             nickname: row.nickname,
             avatar: row.avatar,
+            totpSecret: row.totp_secret,
+            totpEnabled: !!row.totp_enabled,
             createdAt: Number(row.created_at)
         };
     }
@@ -341,8 +359,8 @@ export default class MysqlDatabase implements IDatabase {
 
         // MySQL UPSERT: INSERT ... ON DUPLICATE KEY UPDATE
         await this.pool.query(
-            `INSERT INTO users (id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO users (id, username, password, role, status, max_subscriptions, token_version, nickname, avatar, totp_secret, totp_enabled, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                  password = VALUES(password),
                  role = VALUES(role),
@@ -350,8 +368,10 @@ export default class MysqlDatabase implements IDatabase {
                  max_subscriptions = VALUES(max_subscriptions),
                  token_version = VALUES(token_version),
                  nickname = VALUES(nickname),
-                 avatar = VALUES(avatar)`,
-            [id, username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.createdAt]
+                 avatar = VALUES(avatar),
+                 totp_secret = VALUES(totp_secret),
+                 totp_enabled = VALUES(totp_enabled)`,
+            [id, username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
         );
     }
 
@@ -399,6 +419,7 @@ export default class MysqlDatabase implements IDatabase {
                 tokenVersion: row.token_version,
                 nickname: row.nickname,
                 avatar: row.avatar,
+                totpEnabled: row.totp_enabled === 1 || row.totp_enabled === true,
                 createdAt: Number(row.created_at)
             })),
             total: countRows[0].total

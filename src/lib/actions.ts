@@ -15,7 +15,6 @@ export async function login(prevState: any, formData: FormData) {
     if (!username || !password) return { error: '请输入用户名和密码' };
 
     // 1. Check for Admin Init (First Run)
-    // 1. Check for Admin Init (First Run)
     const { data: allUsers } = await db.getAllUsers(1, 100); // Check first 100 users for admin
     const hasAdmin = allUsers.some(u => u.role === 'admin');
 
@@ -54,6 +53,33 @@ export async function login(prevState: any, formData: FormData) {
         return { error: '密码错误' };
     }
 
+    // 2FA Verification
+    if (user.totpEnabled) {
+        const code = formData.get('code') as string | null;
+        if (!code) {
+            // Frontend should detect this error and show the code input
+            return { error: '2fa_required' };
+        }
+
+        const { verify } = await import('otplib');
+        let isValid2FA = false;
+        try {
+            // functional verify returns dictionary { valid: boolean, ... } or plain boolean?
+            // Documentation says: returns VerifyResult
+            // import { verify, ... } from 'otplib'; 
+            // declare function verify(options: OTPVerifyOptions): Promise<VerifyResult>;
+            // VerifyResult: { valid: boolean, delta?: number }
+            const result = await verify({ token: code, secret: user.totpSecret || '' });
+            isValid2FA = !!(result && result.valid);
+        } catch (e) {
+            isValid2FA = false;
+        }
+
+        if (!isValid2FA) {
+            return { error: '两步验证码错误' };
+        }
+    }
+
     // 3. Create Session
     const headersList = await headers();
     const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
@@ -89,4 +115,3 @@ export async function logout() {
     cookieStore.delete(COOKIE_NAME);
     redirect('/login');
 }
-

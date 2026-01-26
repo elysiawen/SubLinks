@@ -1,4 +1,4 @@
-import { getGlobalConfig } from '../actions';
+import { getGlobalConfig } from './actions';
 import AdminSettingsClient from './client';
 
 export const dynamic = 'force-dynamic';

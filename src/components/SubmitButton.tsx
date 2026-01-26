@@ -10,9 +10,10 @@ interface SubmitButtonProps {
     isLoading?: boolean;
     onClick?: () => void;
     type?: "submit" | "button" | "reset";
+    disabled?: boolean;
 }
 
-export function SubmitButton({ children, text = '提交', className = '', isLoading, onClick, type = "submit" }: SubmitButtonProps) {
+export function SubmitButton({ children, text = '提交', className = '', isLoading, onClick, type = "submit", disabled }: SubmitButtonProps) {
     const { pending } = useFormStatus();
     const isPending = isLoading !== undefined ? isLoading : pending;
 
@@ -23,7 +24,7 @@ export function SubmitButton({ children, text = '提交', className = '', isLoad
     return (
         <button
             type={type}
-            disabled={isPending}
+            disabled={isPending || disabled}
             onClick={onClick}
             className={`${baseClasses} ${isPending ? disabledClasses : ''} ${className}`}
         >

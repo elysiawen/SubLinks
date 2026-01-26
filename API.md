@@ -1,6 +1,6 @@
 # SubLinks API 文档
 
-本文档基于实际代码实现，提供 SubLinks 的完整 API 参考。
+本文档提供 SubLinks 的完整 API 参考。
 
 ---
 

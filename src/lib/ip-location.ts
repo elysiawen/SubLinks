@@ -18,7 +18,7 @@ export async function getLocation(ip: string): Promise<{ location: string, isp?:
         // TEST MODE: Mock public IP to test location display
         // ip = '112.20.126.196';
         // If you want disable test mode, uncomment below:
-        return { location: '本地回环' };
+        return { location: '本地' };
     }
 
     // Checking for private IPs

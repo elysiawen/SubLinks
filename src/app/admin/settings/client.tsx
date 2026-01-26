@@ -112,7 +112,7 @@ function UaFilterEditor({ initialConfig, config }: { initialConfig?: any; config
             // Add UA filter config
             formData.append('uaFilter', JSON.stringify(currentConfig));
 
-            const { updateGlobalConfig } = await import('../actions');
+            const { updateGlobalConfig } = await import('./actions');
             await updateGlobalConfig(formData);
             success('UA 过滤配置已保存');
         } catch (e) {
@@ -155,7 +155,7 @@ function AnnouncementEditor({ initialValue, config }: { initialValue: string; co
             formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
             formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
 
-            const { updateGlobalConfig } = await import('../actions');
+            const { updateGlobalConfig } = await import('./actions');
             await updateGlobalConfig(formData);
             success('公告栏设置已保存');
         }} className="space-y-4">
@@ -259,7 +259,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     }
                     formData.set('logRetentionDays', days);
 
-                    const { updateGlobalConfig } = await import('../actions');
+                    const { updateGlobalConfig } = await import('./actions');
                     await updateGlobalConfig(formData);
                     success('日志清理设置已保存');
                 }} className="space-y-4">
@@ -272,7 +272,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                             type="button"
                             onClick={async () => {
                                 if (await confirm('⚠️ 确定要立即删除系统中的所有日志吗？此操作无法撤销。', { confirmColor: 'red', confirmText: '清空日志' })) {
-                                    const { clearLogs } = await import('../actions');
+                                    const { clearLogs } = await import('./actions');
                                     const res = await clearLogs(0);
                                     if (res?.success) {
                                         success('所有日志已清理完成');
@@ -315,7 +315,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     const maxSubs = formData.get('maxUserSubscriptions') as string;
                     formData.set('maxUserSubscriptions', maxSubs);
 
-                    const { updateGlobalConfig } = await import('../actions');
+                    const { updateGlobalConfig } = await import('./actions');
                     await updateGlobalConfig(formData);
                     success('用户限制设置已保存');
                 }} className="space-y-4">
@@ -354,7 +354,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     const upstreamUserAgent = formData.get('upstreamUserAgent') as string;
                     formData.set('upstreamUserAgent', upstreamUserAgent);
 
-                    const { updateGlobalConfig } = await import('../actions');
+                    const { updateGlobalConfig } = await import('./actions');
                     await updateGlobalConfig(formData);
                     success('网络设置已保存');
                 }} className="space-y-4">
@@ -392,7 +392,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
                     formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
 
-                    const { updateGlobalConfig } = await import('../actions');
+                    const { updateGlobalConfig } = await import('./actions');
                     await updateGlobalConfig(formData);
                     success('外观设置已保存');
                 }} className="space-y-4">
@@ -439,7 +439,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
 
                     try {
-                        const { updateGlobalConfig } = await import('../actions');
+                        const { updateGlobalConfig } = await import('./actions');
                         await updateGlobalConfig(formData);
                         success('存储设置已保存');
                         router.refresh();
@@ -682,7 +682,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                                     const provider = formData.get('storageProvider') as string;
 
                                     if (provider === 's3') {
-                                        const { testS3Connection } = await import('../actions');
+                                        const { testS3Connection } = await import('./actions');
                                         const result = await testS3Connection(formData);
 
                                         if (result.success) {
@@ -736,7 +736,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                     onClick={async () => {
                         setIsCleaning(true);
                         try {
-                            const { cleanupSessions } = await import('../actions');
+                            const { cleanupSessions } = await import('./actions');
                             const result = await cleanupSessions();
                             if (result.count > 0) {
                                 success(`已清理 ${result.count} 个过期 session`);

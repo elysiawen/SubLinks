@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar } from '../actions';
+import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -28,7 +28,7 @@ export default function AdminUsersClient({
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
-    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
 
     // Avatar State
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -278,9 +278,16 @@ export default function AdminUsersClient({
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
-                                            {user.role === 'admin' ? '管理员' : '用户'}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
+                                                {user.role === 'admin' ? '管理员' : '用户'}
+                                            </span>
+                                            {user.totpEnabled && (
+                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title="2FA 已启用">
+                                                    2FA
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
@@ -301,12 +308,14 @@ export default function AdminUsersClient({
                                                 nickname: user.nickname || '',
                                                 useGlobalLimit: user.maxSubscriptions === null,
                                                 customLimit: user.maxSubscriptions || globalMaxSubs,
-                                                avatar: user.avatar
+                                                avatar: user.avatar,
+                                                totpEnabled: user.totpEnabled
                                             })}
                                             className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                                         >
                                             编辑
                                         </button>
+
                                         <button
                                             onClick={async () => {
                                                 const newStatus = user.status === 'active' ? 'suspended' : 'active';
@@ -358,10 +367,15 @@ export default function AdminUsersClient({
                                                     <span className="ml-2 text-sm font-normal text-gray-600">({user.nickname})</span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                                     {user.role === 'admin' ? '管理员' : '用户'}
                                                 </span>
+                                                {user.totpEnabled && (
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter">
+                                                        2FA
+                                                    </span>
+                                                )}
                                                 <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                                                     {user.status === 'active' ? '正常' : '已停用'}
                                                 </span>
@@ -374,7 +388,7 @@ export default function AdminUsersClient({
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2 pt-2">
+                                <div className="flex flex-wrap gap-2 pt-2">
                                     <button
                                         onClick={() => setEditingUser({
                                             username: user.username,
@@ -383,12 +397,14 @@ export default function AdminUsersClient({
                                             nickname: user.nickname || '',
                                             useGlobalLimit: user.maxSubscriptions === null,
                                             customLimit: user.maxSubscriptions || globalMaxSubs,
-                                            avatar: user.avatar
+                                            avatar: user.avatar,
+                                            totpEnabled: user.totpEnabled
                                         })}
-                                        className="flex-1 text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-blue-50"
+                                        className="flex-1 min-w-[80px] text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-blue-50 text-center"
                                     >
                                         编辑
                                     </button>
+
                                     <button
                                         onClick={async () => {
                                             const newStatus = user.status === 'active' ? 'suspended' : 'active';
@@ -397,7 +413,7 @@ export default function AdminUsersClient({
                                                 success(`用户 ${user.username} 已${newStatus === 'active' ? '启用' : '停用'}`);
                                             }
                                         }}
-                                        className={`flex-1 font-medium transition-colors text-sm py-2 px-3 border rounded-lg ${user.status === 'active' ? 'text-orange-500 hover:text-orange-700 border-orange-200 hover:bg-orange-50' : 'text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50'}`}
+                                        className={`flex-1 min-w-[80px] font-medium transition-colors text-sm py-2 px-3 border rounded-lg text-center ${user.status === 'active' ? 'text-orange-500 hover:text-orange-700 border-orange-200 hover:bg-orange-50' : 'text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50'}`}
                                     >
                                         {user.status === 'active' ? '停用' : '启用'}
                                     </button>
@@ -408,7 +424,7 @@ export default function AdminUsersClient({
                                                 success(`用户 ${user.username} 已删除`);
                                             }
                                         }}
-                                        className="flex-1 text-red-500 hover:text-red-700 font-medium transition-colors text-sm py-2 px-3 border border-red-200 rounded-lg hover:bg-red-50"
+                                        className="flex-1 min-w-[80px] text-red-500 hover:text-red-700 font-medium transition-colors text-sm py-2 px-3 border border-red-200 rounded-lg hover:bg-red-50 text-center"
                                     >
                                         删除
                                     </button>
@@ -486,7 +502,7 @@ export default function AdminUsersClient({
                                 type="text"
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.nickname}
-                                onChange={e => setEditingUser({ ...editingUser, nickname: e.target.value })}
+                                onChange={e => editingUser && setEditingUser({ ...editingUser, nickname: e.target.value })}
                                 placeholder="设置显示昵称"
                             />
                         </div>
@@ -496,9 +512,46 @@ export default function AdminUsersClient({
                                 type="password"
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.newPassword}
-                                onChange={e => setEditingUser({ ...editingUser, newPassword: e.target.value })}
+                                onChange={e => editingUser && setEditingUser({ ...editingUser, newPassword: e.target.value })}
                                 placeholder="留空则不修改密码"
                             />
+                        </div>
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">安全选项</label>
+                            {editingUser.totpEnabled ? (
+                                <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                                        <div>
+                                            <div className="text-sm font-medium text-orange-800">两步验证 (2FA) 已开启</div>
+                                            <div className="text-xs text-orange-600">重置后该用户将只需密码即可登录</div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (await confirm(`确定要重置用户 ${editingUser.username} 的两步验证 (2FA) 吗？`, { confirmColor: 'red', confirmText: '确认重置' })) {
+                                                const res = await resetUser2FA(editingUser.username);
+                                                if (res.error) error(res.error);
+                                                else {
+                                                    success('2FA 已重置');
+                                                    setEditingUser({ ...editingUser, totpEnabled: false });
+                                                }
+                                            }
+                                        }}
+                                        className="px-3 py-1.5 bg-white border border-orange-200 text-orange-600 rounded-md text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm"
+                                    >
+                                        重置 2FA
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 text-sm">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    该用户未开启两步验证
+                                </div>
+                            )}
                         </div>
 
                         <div className="border-t border-gray-200 pt-4">
@@ -508,7 +561,7 @@ export default function AdminUsersClient({
                                     <input
                                         type="radio"
                                         checked={editingUser.useGlobalLimit}
-                                        onChange={() => setEditingUser({ ...editingUser, useGlobalLimit: true })}
+                                        onChange={() => editingUser && setEditingUser({ ...editingUser, useGlobalLimit: true })}
                                         className="w-4 h-4 text-blue-600"
                                     />
                                     <div className="flex-1">
@@ -520,7 +573,7 @@ export default function AdminUsersClient({
                                     <input
                                         type="radio"
                                         checked={!editingUser.useGlobalLimit}
-                                        onChange={() => setEditingUser({ ...editingUser, useGlobalLimit: false })}
+                                        onChange={() => editingUser && setEditingUser({ ...editingUser, useGlobalLimit: false })}
                                         className="w-4 h-4 text-blue-600"
                                     />
                                     <div className="flex-1">
@@ -530,7 +583,7 @@ export default function AdminUsersClient({
                                                 type="number"
                                                 min="0"
                                                 value={editingUser.customLimit}
-                                                onChange={e => setEditingUser({ ...editingUser, customLimit: parseInt(e.target.value) || 0 })}
+                                                onChange={e => editingUser && setEditingUser({ ...editingUser, customLimit: parseInt(e.target.value) || 0 })}
                                                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                                 placeholder="输入订阅数量"
                                                 onClick={e => e.stopPropagation()}

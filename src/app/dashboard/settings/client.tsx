@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { changePassword, deleteOwnAccount, updateNickname, uploadAvatar, deleteAvatar } from '@/lib/user-actions';
+import { changePassword, deleteOwnAccount, updateNickname, uploadAvatar, deleteAvatar, setup2FA, enable2FA, disable2FA } from '@/lib/user-actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -14,16 +14,43 @@ interface SettingsClientProps {
     role: string;
     nickname?: string;
     avatar?: string;
+    totpEnabled: boolean;
 }
 
-export default function SettingsClient({ username, role, nickname: initialNickname, avatar: initialAvatar }: SettingsClientProps) {
+export default function SettingsClient({
+    username,
+    role,
+    nickname: initialNickname,
+    avatar: initialAvatar,
+    totpEnabled: initialTotpEnabled
+}: SettingsClientProps) {
     const router = useRouter();
     const { success, error } = useToast();
     const { confirm } = useConfirm();
 
-    // Nickname State
     const [nickname, setNickname] = useState(initialNickname || '');
     const [nicknameLoading, setNicknameLoading] = useState(false);
+
+    // 2FA State
+    const [twoFAEnabled, setTwoFAEnabled] = useState(initialTotpEnabled);
+    // User interface in interface.ts has totpEnabled, but SettingsClientProps only has what is passed.
+    // I need to update SettingsClientProps or fetch it.
+    // Actually, I should pass it from server component.
+    // For now I'll assume we fetch or it's passed.
+    // Let's check SettingsClientProps in file view (Step 4149): 
+    // interface SettingsClientProps { username, role, nickname, avatar }
+    // I should add totpEnabled to props.
+
+    // ...
+    // But I can't easily change props from here without changing page.tsx server component.
+    // I will check page.tsx later.
+    // For now, assume I will update props.
+
+    const [show2FAModal, setShow2FAModal] = useState(false);
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [secret, setSecret] = useState<string | null>(null);
+    const [token, setToken] = useState('');
+    const [twoFALoading, setTwoFALoading] = useState(false);
 
     // Avatar State
     const [avatar, setAvatar] = useState(initialAvatar);
@@ -161,11 +188,130 @@ export default function SettingsClient({ username, role, nickname: initialNickna
             error(result.error);
         } else {
             success('密码修改成功,请重新登录');
-            // Wait a moment for user to see the success message
             setTimeout(() => {
                 router.push('/login');
             }, 1500);
         }
+    };
+
+    // 2FA Handlers
+    const handleSetup2FA = async () => {
+        setTwoFALoading(true);
+        const result = await setup2FA();
+        setTwoFALoading(false);
+        if (result.error) {
+            error(result.error);
+        } else {
+            // Check for valid strings before setting state
+            setSecret(result.secret || null);
+            setQrCode(result.qrCode || null);
+            setShow2FAModal(true);
+        }
+    };
+
+    const handleEnable2FA = async () => {
+        if (!token) {
+            error('请输入验证码');
+            return;
+        }
+        if (!secret) return;
+
+        setTwoFALoading(true);
+        const result = await enable2FA(secret, token);
+        setTwoFALoading(false);
+
+        if (result.error) {
+            error(result.error);
+        } else {
+            success('两步验证已启用');
+            setTwoFAEnabled(true);
+            setShow2FAModal(false);
+            setToken('');
+            setSecret(null);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!verifyPassword) {
+            error('请输入密码');
+            return;
+        }
+
+        setIsDeleteModalOpen(false); // Reuse delete modal? No, create new or reuse verify mechanism?
+        // Let's create a custom flow or use confirm? 
+        // We can ask for password inside a confirm-like modal?
+        // For simplicity, let's use a similar modal state or just ask for password via prompt? No, prompt is bad.
+        // Let's assume we have a way. 
+        // Or simply we set a state 'isDisable2FAModalOpen'?
+        // The request says "disable2FA(password)".
+        // I'll reuse "isDeleteModalOpen" for password verification for generic actions? 
+        // Better: create 'actionType' state for the password modal.
+
+        // Simpler implementation: Just use a prompt for now? No, better use the existing modal but change title/action.
+        // But let's stick to adding a separate handler first.
+    };
+
+    // Generic "Verify Password" modal state
+    const [passwordVerifyConfig, setPasswordVerifyConfig] = useState<{
+        action: 'delete' | 'disable2FA' | null;
+        description: string;
+        confirmText: string;
+    }>({
+        action: null,
+        description: '',
+        confirmText: '确认'
+    });
+
+    // Update handleDeleteAccount to use this.
+    // But to minimize diff, let's just add new state for Disable 2FA Password Modal if needed.
+    // Or I'll just add `handleDisable2FAConfirm` that gets called by the modal.
+
+    const onVerifyPasswordConfirm = async () => {
+        const { action } = passwordVerifyConfig;
+
+        if (action === 'delete') {
+            setDeleteLoading(true);
+            const result = await deleteOwnAccount(verifyPassword);
+            if (result?.error) {
+                setDeleteLoading(false);
+                error(result.error);
+            } else {
+                success('账户已注销');
+                router.push('/login');
+            }
+        } else if (action === 'disable2FA') {
+            setDeleteLoading(true); // Reuse loading state
+            const result = await disable2FA(verifyPassword);
+            setDeleteLoading(false);
+            if (result.error) {
+                error(result.error);
+            } else {
+                success('两步验证已关闭');
+                setTwoFAEnabled(false);
+                setIsDeleteModalOpen(false); // Close modal
+            }
+        }
+    };
+
+    // Modified Action Starters
+    const startDeleteAccount = () => {
+        setPasswordVerifyConfig({
+            action: 'delete',
+            description: '为了保障您的账户安全，在注销账户前我们需要验证您的登录密码。',
+            confirmText: '确认注销'
+        });
+        setVerifyPassword('');
+        setIsDeleteModalOpen(true);
+    };
+
+    const startDisable2FA = () => {
+        setPasswordVerifyConfig({
+            action: 'disable2FA',
+            description: '为了保障您的账户安全，在关闭两步验证前我们需要验证您的登录密码。',
+            confirmText: '确认关闭'
+        });
+        setVerifyPassword('');
+        setIsDeleteModalOpen(true);
     };
 
     // Handle Delete Account
@@ -309,6 +455,43 @@ export default function SettingsClient({ username, role, nickname: initialNickna
                 </div>
             </div>
 
+            {/* 2FA Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        🛡️ 两步验证 (2FA)
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">使用 Google Authenticator 或其他应用生成验证码</p>
+                </div>
+                <div className="p-6 space-y-4 max-w-lg">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium text-gray-900">
+                                当前状态:
+                                <span className={`ml-2 px-2 py-1 rounded text-xs ${twoFAEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                    {twoFAEnabled ? '已启用' : '未启用'}
+                                </span>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {twoFAEnabled
+                                    ? '您的账户已受到两步验证保护'
+                                    : '建议启用两步验证以提高账户安全性'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={twoFAEnabled ? startDisable2FA : handleSetup2FA}
+                            disabled={twoFALoading}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${twoFAEnabled
+                                ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                        >
+                            {twoFALoading ? '处理中...' : (twoFAEnabled ? '关闭 2FA' : '启用 2FA')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Change Password Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
@@ -377,7 +560,7 @@ export default function SettingsClient({ username, role, nickname: initialNickna
                             </p>
                         </div>
                         <button
-                            onClick={() => setIsDeleteModalOpen(true)}
+                            onClick={startDeleteAccount}
                             disabled={role === 'admin' || deleteLoading}
                             className={`px-4 py-2 rounded-lg border font-medium transition-colors ${role === 'admin'
                                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
@@ -402,7 +585,7 @@ export default function SettingsClient({ username, role, nickname: initialNickna
                         <div>
                             <h4 className="font-bold text-yellow-800">安全验证</h4>
                             <p className="text-sm text-yellow-700 mt-1">
-                                为了保障您的账户安全，在注销账户前我们需要验证您的登录密码。
+                                {passwordVerifyConfig.description}
                             </p>
                         </div>
                     </div>
@@ -420,13 +603,13 @@ export default function SettingsClient({ username, role, nickname: initialNickna
                     </div>
 
                     <div className="flex gap-2 pt-4">
-                        <button
-                            onClick={handleDeleteAccount}
+                        <SubmitButton
+                            onClick={onVerifyPasswordConfirm}
                             disabled={!verifyPassword}
-                            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            下一步
-                        </button>
+                            isLoading={deleteLoading}
+                            text={passwordVerifyConfig.confirmText}
+                            className="flex-1 bg-red-600 hover:bg-red-700 shadow-none py-2"
+                        />
                         <button
                             onClick={() => setIsDeleteModalOpen(false)}
                             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
@@ -437,6 +620,50 @@ export default function SettingsClient({ username, role, nickname: initialNickna
                 </div>
             </Modal>
 
+            {/* 2FA Setup Modal */}
+            <Modal
+                isOpen={show2FAModal}
+                onClose={() => setShow2FAModal(false)}
+                title="启用两步验证"
+            >
+                <div className="space-y-6">
+                    <div className="text-center">
+                        <p className="text-sm text-gray-600 mb-4">
+                            请使用 Google Authenticator 或其他应用扫描下方二维码
+                        </p>
+                        {qrCode && (
+                            <div className="flex justify-center mb-4">
+                                <img src={qrCode} alt="2FA QR Code" className="w-48 h-48 border border-gray-200 rounded-lg" />
+                            </div>
+                        )}
+                        {secret && (
+                            <p className="text-xs text-gray-400 font-mono select-all">密钥: {secret}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">输入 6 位验证码</label>
+                        <input
+                            type="text"
+                            value={token}
+                            onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="000000"
+                            autoFocus
+                        />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                        <SubmitButton
+                            text="启用验证"
+                            onClick={handleEnable2FA}
+                            isLoading={twoFALoading}
+                            className="w-full"
+                            disabled={token.length !== 6}
+                        />
+                    </div>
+                </div>
+            </Modal>
             {/* Avatar Cropper */}
             {showCropper && avatarPreview && (
                 <AvatarCropper

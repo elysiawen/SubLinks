@@ -18,5 +18,16 @@ export default async function SettingsPage() {
         redirect('/login');
     }
 
-    return <SettingsClient username={user.username} role={user.role} nickname={user.nickname} avatar={user.avatar} />;
+    // 从数据库获取最新的用户信息以包含 2FA 状态
+    const { db } = await import('@/lib/db');
+    const dbUser = await db.getUser(user.username);
+    const totpEnabled = dbUser?.totpEnabled || false;
+
+    return <SettingsClient
+        username={user.username}
+        role={user.role}
+        nickname={user.nickname}
+        avatar={user.avatar}
+        totpEnabled={totpEnabled}
+    />;
 }
