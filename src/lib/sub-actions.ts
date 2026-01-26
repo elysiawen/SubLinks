@@ -116,3 +116,24 @@ export async function getUserSubscriptions() {
     return subs.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+
+export async function toggleSubscriptionEnabled(token: string, enabled: boolean) {
+    const session = await getCurrentSession();
+    if (!session) return { error: 'Unauthorized' };
+
+    // Verify ownership
+    const isOwner = await db.isSubscriptionOwner(session.username, token);
+    if (!isOwner) return { error: 'Forbidden' };
+
+    const subData = await db.getSubscription(token);
+    if (!subData) return { error: 'Not found' };
+
+    subData.enabled = enabled;
+    await db.updateSubscription(token, subData);
+
+    // Invalidate subscription cache
+    await db.deleteCache(`cache:subscription:${token}`);
+
+    revalidatePath('/dashboard');
+    return { success: true };
+}

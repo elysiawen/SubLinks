@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { createSubscription, deleteSubscription, updateSubscription } from '@/lib/sub-actions';
+import { createSubscription, deleteSubscription, updateSubscription, toggleSubscriptionEnabled } from '@/lib/sub-actions';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { useToast } from '@/components/ToastProvider';
@@ -25,7 +25,7 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: string[], availableSources?: { name: string; url: string; isDefault?: boolean }[] }) {
+export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: string[], availableSources?: { name: string; url: string; isDefault?: boolean; enabled?: boolean }[] }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
@@ -33,7 +33,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     // Data State
     const [configSets, setConfigSets] = useState<{ groups: ConfigSet[], rules: ConfigSet[] }>(initialConfigSets || { groups: [], rules: [] });
     const [defaultGroups, setDefaultGroups] = useState<string[]>(initialDefaultGroups || []);
-    const [availableSources, setAvailableSources] = useState<{ name: string; url: string; isDefault?: boolean }[]>(initialAvailableSources || []);
+    const [availableSources, setAvailableSources] = useState<{ name: string; url: string; isDefault?: boolean; enabled?: boolean }[]>(initialAvailableSources || []);
     const [dataLoaded, setDataLoaded] = useState(!!initialConfigSets);
 
     // Fetch additional data on mount if not provided
@@ -134,6 +134,30 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
             await deleteSubscription(token);
             success('订阅已删除');
             refresh();
+        }
+    }
+
+    const handleToggle = async (sub: Sub) => {
+        const newStatus = !sub.enabled;
+        const action = newStatus ? '启用' : '禁用';
+
+        // Optimistic update
+        setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: newStatus } : s));
+
+        try {
+            const result = await toggleSubscriptionEnabled(sub.token, newStatus);
+            if (result.error) {
+                error(result.error);
+                // Revert on error
+                setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
+            } else {
+                success(`订阅已${action}`);
+                refresh();
+            }
+        } catch (err) {
+            error('操作失败');
+            // Revert on error
+            setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
         }
     }
 
@@ -271,6 +295,12 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                                     <p className="text-xs text-gray-400 font-mono mt-1 tracking-wide">Token: {sub.token}</p>
                                 </div>
                                 <div className="space-x-3">
+                                    <button
+                                        onClick={() => handleToggle(sub)}
+                                        className={`text-sm hover:underline font-medium ${sub.enabled ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800'}`}
+                                    >
+                                        {sub.enabled ? '禁用' : '启用'}
+                                    </button>
                                     <button onClick={() => openEdit(sub)} className="text-blue-600 text-sm hover:underline font-medium">编辑</button>
                                     <button onClick={() => handleDelete(sub.token)} className="text-red-500 text-sm hover:underline font-medium">删除</button>
                                 </div>
@@ -287,6 +317,42 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                                 >
                                     复制链接
                                 </button>
+                            </div>
+
+                            {/* Upstream Sources Display */}
+                            <div className="mb-4 text-xs text-gray-600">
+                                <span className="font-semibold text-gray-500 mr-2">使用源:</span>
+                                <div className="inline-flex flex-wrap gap-2 mt-1">
+                                    {(sub.selectedSources && sub.selectedSources.length > 0) ? (
+                                        sub.selectedSources.map(sourceName => {
+                                            const source = availableSources.find(s => s.name === sourceName);
+                                            if (!source) {
+                                                return (
+                                                    <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-500 flex items-center gap-1">
+                                                        🗑️ {sourceName} (已删除)
+                                                    </span>
+                                                );
+                                            }
+                                            return (
+                                                <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
+                                                    ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                    : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                    }`}>
+                                                    {source.enabled !== false ? '✅' : '⛔'} {source.name}
+                                                </span>
+                                            );
+                                        })
+                                    ) : (
+                                        availableSources.map(source => (
+                                            <span key={source.name} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
+                                                ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                }`}>
+                                                {source.enabled !== false ? '✅' : '⛔'} {source.name}
+                                            </span>
+                                        ))
+                                    )}
+                                </div>
                             </div>
 
                             {sub.customRules && (

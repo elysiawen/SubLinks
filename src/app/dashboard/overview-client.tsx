@@ -21,6 +21,7 @@ interface APIAccessLog {
 interface UpstreamSource {
     name: string;
     url: string;
+    enabled: boolean;
     lastUpdated?: number;
     status?: 'pending' | 'success' | 'failure';
     traffic?: {
@@ -179,8 +180,10 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                 });
                             };
 
-                            const getStatusColor = (status?: string) => {
-                                switch (status) {
+                            const getStatusColor = (source: UpstreamSource) => {
+                                if (source.enabled === false) return 'bg-gray-100 text-gray-500 border-gray-200';
+
+                                switch (source.status) {
                                     case 'success': return 'bg-green-100 text-green-700 border-green-200';
                                     case 'failure': return 'bg-red-100 text-red-700 border-red-200';
                                     case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
@@ -188,8 +191,10 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                 }
                             };
 
-                            const getStatusText = (status?: string) => {
-                                switch (status) {
+                            const getStatusText = (source: UpstreamSource) => {
+                                if (source.enabled === false) return '⛔ 已禁用';
+
+                                switch (source.status) {
                                     case 'success': return '✓ 正常';
                                     case 'failure': return '✗ 失败';
                                     case 'pending': return '⏳ 更新中';
@@ -201,8 +206,8 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                 <div key={source.name} className="border border-gray-200 rounded-lg p-4 hover:border-blue-200 transition-colors">
                                     <div className="flex items-start justify-between mb-3">
                                         <h3 className="font-semibold text-gray-800">{source.name}</h3>
-                                        <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(source.status)}`}>
-                                            {getStatusText(source.status)}
+                                        <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(source)}`}>
+                                            {getStatusText(source)}
                                         </span>
                                     </div>
 

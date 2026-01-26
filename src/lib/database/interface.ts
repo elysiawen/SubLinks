@@ -123,6 +123,7 @@ export interface UpstreamSource {
     cacheDuration?: number; // Cache duration in hours
 
     isDefault?: boolean; // Mark as default source for new users/subscriptions
+    enabled?: boolean;   // Whether the source is enabled (default: true)
     lastUpdated?: number; // Timestamp of last refresh
     status?: 'pending' | 'success' | 'failure'; // Status of last refresh
     error?: string; // Error message if failed
@@ -237,6 +238,7 @@ export interface IDatabase {
     getUserSubscriptions(username: string): Promise<Array<SubData & { token: string }>>;
     getAllSubscriptions(page?: number, limit?: number, search?: string): Promise<PaginatedResult<SubData & { token: string }>>;
     isSubscriptionOwner(username: string, token: string): Promise<boolean>;
+    getSubscriptionsBySource(sourceName: string): Promise<Array<SubData & { token: string }>>; // Find subscriptions using a specific source
 
     // Config operations
     getGlobalConfig(): Promise<GlobalConfig>;
@@ -268,7 +270,8 @@ export interface IDatabase {
     getCache(key: string): Promise<string | null>;
     setCache(key: string, value: string, ttl?: number): Promise<void>;
     deleteCache(key: string): Promise<void>;
-    clearAllSubscriptionCaches(): Promise<void>; // Clear all cache:subscription:* entries
+    clearAllSubscriptionCaches(): Promise<void>;
+    clearSubscriptionCache(token: string): Promise<void>; // Clear cache for a specific subscription // Clear all cache:subscription:* entries
 
     // Structured upstream data operations
     // Proxies

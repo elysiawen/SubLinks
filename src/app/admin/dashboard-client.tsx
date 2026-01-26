@@ -15,6 +15,7 @@ interface DashboardStats {
     };
     upstreamSources: {
         total: number;
+        active: number;
         defaultSource: string | null;
     };
     recentAccess: {
@@ -81,8 +82,12 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                             <span className="text-xs text-gray-400">上游源</span>
                         </div>
                         <div className="text-3xl font-bold text-gray-800 mb-1">{stats.upstreamSources.total}</div>
+                        <div className="flex gap-3 text-xs">
+                            <span className="text-green-600">✓ {stats.upstreamSources.active} 启用</span>
+                            <span className="text-gray-400">✗ {stats.upstreamSources.total - stats.upstreamSources.active} 禁用</span>
+                        </div>
                         {stats.upstreamSources.defaultSource && (
-                            <div className="text-xs text-yellow-600">⭐ {stats.upstreamSources.defaultSource}</div>
+                            <div className="text-xs text-yellow-600 mt-1">⭐ {stats.upstreamSources.defaultSource}</div>
                         )}
                     </div>
                 </Link>

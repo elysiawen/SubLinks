@@ -13,6 +13,7 @@ export async function getDashboardStats() {
 
     // Get upstream sources
     const upstreamSources = await db.getUpstreamSources();
+    const activeSources = upstreamSources.filter(s => s.enabled !== false).length;
     const defaultSource = upstreamSources.find(s => s.isDefault);
 
     // Get recent access logs (last 24 hours)
@@ -39,6 +40,7 @@ export async function getDashboardStats() {
         },
         upstreamSources: {
             total: upstreamSources.length,
+            active: activeSources,
             defaultSource: defaultSource?.name || null
         },
         recentAccess: {

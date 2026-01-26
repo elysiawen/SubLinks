@@ -250,6 +250,11 @@ export async function GET(
     try {
         const finalYaml = await buildSubscriptionYaml(sub);
 
+        if (finalYaml === null) {
+            console.warn(`⚠️ [API] Subscription build blocked: All selected sources disabled (Token: ${token})`);
+            return new NextResponse('所选订阅源均已被禁用或不可用 / All selected upstream sources are disabled', { status: 503 });
+        }
+
         // Cache the built YAML with NO expiration (infinite).
         // It will only be invalidated if:
         // 1. Subscription is edited (sub-actions.ts)
@@ -268,7 +273,13 @@ export async function GET(
                 'X-Cache': 'MISS',
             },
         });
-    } catch (error) {
+    } catch (error: any) {
+        // Handle specific "All sources disabled" error - Log as warning, not error
+        if (error.message && error.message.includes('All selected upstream sources are disabled')) {
+            console.warn(`⚠️ [API] Subscription build blocked: ${error.message} (Token: ${token})`);
+            return new NextResponse(error.message, { status: 503 }); // 503 Service Unavailable
+        }
+
         console.error('Failed to build subscription:', error);
         await logAccess(500);
         return new NextResponse('Internal Server Error', { status: 500 });

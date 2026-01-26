@@ -5,7 +5,7 @@ import type { SubData } from './database/interface';
 /**
  * Build subscription YAML from database structured data
  */
-export async function buildSubscriptionYaml(sub: SubData & { token: string }): Promise<string> {
+export async function buildSubscriptionYaml(sub: SubData & { token: string }): Promise<string | null> {
     try {
         console.log('📋 Building subscription for:', sub.remark || sub.token);
         console.log('   Custom rules:', sub.customRules ? `${sub.customRules.split('\n').length} lines` : 'none');
@@ -13,19 +13,38 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         const config: any = {};
 
-        // 1. Get Other Upstream Config FIRST (dns, tun, etc.) - put at top
-        // Fetch isolated config for selected sources (merged)
-        const upstreamConfig = await db.getUpstreamConfig(sub.selectedSources);
+        // 1. Get enabled status of sources
+        const allSources = await db.getUpstreamSources();
+        const enabledSources = new Set(allSources.filter(s => s.enabled !== false).map(s => s.name));
+
+        // Calculate effective sources (user selected AND enabled)
+        let effectiveSources: string[] = [];
+        if (sub.selectedSources && sub.selectedSources.length > 0) {
+            effectiveSources = sub.selectedSources.filter(s => enabledSources.has(s));
+
+            // If user selected sources but NONE are enabled, return null (signal for 503)
+            if (effectiveSources.length === 0) {
+                console.warn(`⚠️ All selected sources are disabled for subscription: ${sub.token}`);
+                return null;
+            }
+        } else {
+            // If no selection (all), use all enabled sources
+            effectiveSources = Array.from(enabledSources);
+        }
+
+        console.log(`   ✓ Effective sources: ${effectiveSources.join(', ')}`);
+
+        // 2. Get Other Upstream Config (dns, tun, etc.) - using EFFECTIVE sources
+        // Fetch isolated config for effective sources (merged)
+        const upstreamConfig = await db.getUpstreamConfig(effectiveSources);
         Object.assign(config, upstreamConfig);
 
-        // 2. Get Proxies - filter by selected sources if specified
+        // 2. Get Proxies - filter by EFFECTIVE sources
         let allProxies = await db.getProxies();
 
-        // Filter by selected sources
-        if (sub.selectedSources && sub.selectedSources.length > 0) {
-            allProxies = allProxies.filter(p => sub.selectedSources!.includes(p.source));
-            console.log(`   ✓ Filtered proxies to ${allProxies.length} from sources: ${sub.selectedSources.join(', ')}`);
-        }
+        // Filter by effective sources
+        allProxies = allProxies.filter(p => effectiveSources.includes(p.source));
+        console.log(`   ✓ Filtered proxies to ${allProxies.length} from effective sources`);
 
         // Format proxies with proper field ordering
         config.proxies = allProxies.map(p => {
@@ -100,13 +119,11 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         }
 
         if (!groups) {
-            // Use upstream groups - filter by selected sources
+            // Use upstream groups - filter by effective sources
             let upstreamGroups = await db.getProxyGroups();
 
-            if (sub.selectedSources && sub.selectedSources.length > 0) {
-                upstreamGroups = upstreamGroups.filter(g => sub.selectedSources!.includes(g.source));
-                console.log(`   ✓ Filtered groups to ${upstreamGroups.length} from selected sources`);
-            }
+            upstreamGroups = upstreamGroups.filter(g => effectiveSources.includes(g.source));
+            console.log(`   ✓ Filtered groups to ${upstreamGroups.length} from effective sources`);
 
             // Deduplicate groups by name (in case multiple sources have same group names)
             const groupMap = new Map<string, typeof upstreamGroups[0]>();
@@ -168,13 +185,11 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
                 }
             }
         } else {
-            // Use upstream rules - filter by selected sources
+            // Use upstream rules - filter by effective sources
             let upstreamRules = await db.getRules();
 
-            if (sub.selectedSources && sub.selectedSources.length > 0) {
-                upstreamRules = upstreamRules.filter(r => sub.selectedSources!.includes(r.source));
-                console.log(`   ✓ Filtered rules to ${upstreamRules.length} from selected sources`);
-            }
+            upstreamRules = upstreamRules.filter(r => effectiveSources.includes(r.source));
+            console.log(`   ✓ Filtered rules to ${upstreamRules.length} from effective sources`);
 
             rules.push(...upstreamRules.map(r => r.ruleText));
         }

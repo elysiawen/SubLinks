@@ -180,6 +180,7 @@ export default class MysqlDatabase implements IDatabase {
                 url TEXT NOT NULL,
                 cache_duration INTEGER DEFAULT 60,
                 is_default TINYINT(1) DEFAULT 0,
+                enabled TINYINT(1) DEFAULT 1,
                 last_updated BIGINT,
                 status VARCHAR(50),
                 error TEXT,
@@ -188,6 +189,12 @@ export default class MysqlDatabase implements IDatabase {
                 traffic_total BIGINT DEFAULT 0,
                 traffic_expire BIGINT DEFAULT 0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure enabled column exists in upstream_sources
+            SELECT count(*) INTO @exist_us_enabled FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'upstream_sources' AND column_name = 'enabled';
+            SET @query = IF(@exist_us_enabled=0, 'ALTER TABLE upstream_sources ADD COLUMN enabled TINYINT(1) DEFAULT 1', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS cache (
                 \`key\` VARCHAR(255) PRIMARY KEY,
@@ -395,6 +402,34 @@ export default class MysqlDatabase implements IDatabase {
         await this.ensureInitialized();
         const [rows] = await this.pool.query<any[]>('SELECT 1 FROM users WHERE username = ?', [username]);
         return rows.length > 0;
+    }
+
+
+
+    async getSubscriptionsBySource(sourceName: string): Promise<Array<SubData & { token: string }>> {
+        await this.ensureInitialized();
+        // Check both:
+        // 1. selected_sources contains sourceName (JSON array check)
+        // 2. selected_sources is NULL or empty (implies ALL sources, so it includes this one)
+        const [rows] = await this.pool.query<any[]>(
+            `SELECT * FROM subscriptions WHERE 
+             selected_sources IS NULL 
+             OR selected_sources = '[]'
+             OR JSON_CONTAINS(selected_sources, ?)`,
+            [JSON.stringify(sourceName)]
+        );
+
+        return rows.map(row => ({
+            token: row.token,
+            username: row.username,
+            remark: row.remark,
+            groupId: row.group_id,
+            ruleId: row.rule_id,
+            customRules: row.custom_rules,
+            selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
+            enabled: !!row.enabled,
+            createdAt: Number(row.created_at)
+        }));
     }
 
     // Session Operations
@@ -983,6 +1018,7 @@ export default class MysqlDatabase implements IDatabase {
         if (source.url !== undefined) { updates.push('url = ?'); params.push(source.url); }
         if (source.cacheDuration !== undefined) { updates.push('cache_duration = ?'); params.push(source.cacheDuration); }
         if (source.isDefault !== undefined) { updates.push('is_default = ?'); params.push(source.isDefault); }
+        if (source.enabled !== undefined) { updates.push('enabled = ?'); params.push(source.enabled); }
         if (source.lastUpdated !== undefined) { updates.push('last_updated = ?'); params.push(source.lastUpdated); }
         if (source.status !== undefined) { updates.push('status = ?'); params.push(source.status); }
         if (source.error !== undefined) { updates.push('error = ?'); params.push(source.error); }
@@ -1059,6 +1095,10 @@ export default class MysqlDatabase implements IDatabase {
 
     async clearAllSubscriptionCaches(): Promise<void> {
         await this.pool.query('DELETE FROM cache WHERE `key` LIKE "cache:subscription:%"');
+    }
+
+    async clearSubscriptionCache(token: string): Promise<void> {
+        await this.pool.query('DELETE FROM cache WHERE `key` = ?', [`cache:subscription:${token}`]);
     }
 
     // Structured Data

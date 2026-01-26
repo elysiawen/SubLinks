@@ -7,6 +7,7 @@ export async function addUpstreamSource(
     name: string,
     url: string,
     cacheDuration: number = 24,
+    enabled: boolean = true,
     skipRefresh: boolean = false
 ) {
     // Create new upstream source in database
@@ -14,7 +15,7 @@ export async function addUpstreamSource(
         name,
         url,
         cacheDuration,
-
+        enabled,
         isDefault: false,
         lastUpdated: 0,
         status: 'pending'
@@ -88,7 +89,7 @@ export async function updateUpstreamSource(
     newName: string,
     url: string,
     cacheDuration: number = 24,
-
+    enabled: boolean = true,
     skipRefresh: boolean = false
 ) {
     // Update upstream source in database
@@ -96,7 +97,7 @@ export async function updateUpstreamSource(
         name: newName,
         url,
         cacheDuration,
-
+        enabled
     });
 
     // If name changed, we need to update the source tag in database
@@ -174,6 +175,29 @@ export async function refreshSingleSource(sourceName: string) {
 export async function setDefaultUpstreamSource(sourceName: string) {
     // Set default upstream source in database
     await db.setDefaultUpstreamSource(sourceName);
+
+    revalidatePath('/admin/sources');
+    return { success: true };
+}
+
+export async function toggleUpstreamSourceEnabled(sourceName: string, enabled: boolean) {
+    await db.updateUpstreamSource(sourceName, { enabled });
+
+    // If disabling, clear caches for AFFECTED subscriptions only
+    if (!enabled) {
+        console.log(`🚫 Source "${sourceName}" disabled, finding affected subscriptions...`);
+        const affectedSubs = await db.getSubscriptionsBySource(sourceName);
+        console.log(`   Found ${affectedSubs.length} affected subscriptions. Clearing their caches...`);
+
+        // Execute in parallel chunks
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < affectedSubs.length; i += CHUNK_SIZE) {
+            const chunk = affectedSubs.slice(i, i + CHUNK_SIZE);
+            await Promise.all(chunk.map(sub => db.clearSubscriptionCache(sub.token)));
+        }
+
+        console.log(`✅ Cleared ${affectedSubs.length} subscription caches.`);
+    }
 
     revalidatePath('/admin/sources');
     return { success: true };

@@ -245,9 +245,10 @@ export default class PostgresDatabase implements IDatabase {
                 -- Drop legacy ua_policy and custom_ua_filter columns
                 DO $$ 
                 BEGIN
-                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS ua_policy;
                    ALTER TABLE upstream_sources DROP COLUMN IF EXISTS custom_ua_filter;
                    ALTER TABLE upstream_sources DROP COLUMN IF EXISTS ua_whitelist;
+                   -- Add enabled column if not exists
+                   ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE;
                 END $$;
             `);
 
@@ -844,6 +845,34 @@ export default class PostgresDatabase implements IDatabase {
         return result.rows.length > 0;
     }
 
+    async getSubscriptionsBySource(sourceName: string): Promise<Array<SubData & { token: string }>> {
+        // Check for subscriptions where:
+        // 1. selected_sources is NULL
+        // 2. selected_sources is empty array '[]'
+        // 3. selected_sources contains the sourceName
+
+        // Note: filtered subscriptions store selected_sources as JSONB array ["source1", "source2"]
+        const result = await this.pool.query(
+            `SELECT * FROM subscriptions WHERE 
+             selected_sources IS NULL 
+             OR selected_sources = '[]'::jsonb
+             OR selected_sources @> $1::jsonb`,
+            [JSON.stringify([sourceName])] // @> expects a JSON array on the right side for containment
+        );
+
+        return result.rows.map(row => ({
+            token: row.token,
+            username: row.username,
+            remark: row.remark,
+            groupId: row.group_id,
+            ruleId: row.rule_id,
+            customRules: row.custom_rules,
+            selectedSources: row.selected_sources, // Postgres driver parses JSONB automatically
+            enabled: row.enabled,
+            createdAt: parseInt(row.created_at)
+        }));
+    }
+
     // Config operations
     async getGlobalConfig(): Promise<GlobalConfig> {
         await this.ensureInitialized();
@@ -1220,6 +1249,10 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query("DELETE FROM cache WHERE key LIKE 'cache:subscription:%'");
     }
 
+    async clearSubscriptionCache(token: string): Promise<void> {
+        await this.pool.query('DELETE FROM cache WHERE key = $1', [`cache:subscription:${token}`]);
+    }
+
     // Structured upstream data operations
     // Proxies
     async saveProxies(proxies: Proxy[]): Promise<void> {
@@ -1583,6 +1616,7 @@ export default class PostgresDatabase implements IDatabase {
             url: row.url,
             cacheDuration: row.cache_duration,
             isDefault: row.is_default,
+            enabled: row.enabled,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
             error: row.error,
@@ -1602,6 +1636,7 @@ export default class PostgresDatabase implements IDatabase {
             url: row.url,
             cacheDuration: row.cache_duration,
             isDefault: row.is_default,
+            enabled: row.enabled,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
             error: row.error,
@@ -1617,14 +1652,15 @@ export default class PostgresDatabase implements IDatabase {
         const currentTime = Date.now();
         await this.pool.query(`
             INSERT INTO upstream_sources (
-                name, url, cache_duration, is_default,
+                name, url, cache_duration, is_default, enabled,
                 last_updated, status, error, traffic, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
             source.name,
             source.url,
             source.cacheDuration || 24,
             source.isDefault || false,
+            source.enabled !== false,
             source.lastUpdated || 0,
             source.status || 'pending',
             source.error || null,
@@ -1655,6 +1691,10 @@ export default class PostgresDatabase implements IDatabase {
         if (source.isDefault !== undefined) {
             updates.push(`is_default = $${paramIndex++}`);
             values.push(source.isDefault);
+        }
+        if (source.enabled !== undefined) {
+            updates.push(`enabled = $${paramIndex++}`);
+            values.push(source.enabled);
         }
         if (source.lastUpdated !== undefined) {
             updates.push(`last_updated = $${paramIndex++}`);

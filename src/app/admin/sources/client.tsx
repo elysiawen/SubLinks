@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource } from './actions';
+import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource, toggleUpstreamSourceEnabled } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
@@ -15,6 +15,7 @@ interface UpstreamSource {
     name: string;
     url: string;
     cacheDuration?: number;
+    enabled?: boolean;
     isDefault?: boolean;
     lastUpdated?: number;
     status?: 'pending' | 'success' | 'failure';
@@ -185,7 +186,8 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             formName.trim(),
             formUrl.trim(),
             duration,
-            true
+            true, // enabled
+            true // skipRefresh (Always skip server-side refresh, let client handle stream refresh)
         );
         const sourceName = formName.trim();
 
@@ -200,6 +202,25 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             setIsAdding(false);
             success('上游源添加成功');
             window.location.reload();
+        }
+    };
+
+    const handleToggleEnabled = async (source: UpstreamSource) => {
+        const newStatus = !(source.enabled !== false);
+        // Optimistic update
+        setSources(prev => prev.map(s =>
+            s.name === source.name ? { ...s, enabled: newStatus } : s
+        ));
+
+        try {
+            await toggleUpstreamSourceEnabled(source.name, newStatus);
+            success(`已${newStatus ? '启用' : '禁用'}源 "${source.name}"`);
+        } catch (e) {
+            // Revert on error
+            setSources(prev => prev.map(s =>
+                s.name === source.name ? { ...s, enabled: source.enabled } : s
+            ));
+            error('操作失败');
         }
     };
 
@@ -226,7 +247,8 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             formName.trim(),
             formUrl.trim(),
             duration,
-            true
+            true,
+            true // skipRefresh (Always skip server-side refresh, let client handle stream refresh)
         );
 
         const sourceName = formName.trim();
@@ -426,20 +448,36 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                                         <h3 className="text-lg font-semibold text-gray-800">{source.name}</h3>
-                                        {source.isDefault ? (
-                                            <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
-                                                ⭐ 默认
-                                            </span>
-                                        ) : (
+
+                                        <div className="flex items-center gap-2">
+                                            {/* Enabled Toggle */}
                                             <button
-                                                onClick={() => handleSetDefault(source.name)}
+                                                onClick={() => handleToggleEnabled(source)}
                                                 disabled={loadingAction}
-                                                className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
-                                                title="设为默认上游源"
+                                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${source.enabled !== false
+                                                    ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                                                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                    }`}
+                                                title={source.enabled !== false ? '点击禁用' : '点击启用'}
                                             >
-                                                ☆ 设为默认
+                                                {source.enabled !== false ? '✅ 已启用' : '⛔ 已禁用'}
                                             </button>
-                                        )}
+
+                                            {source.isDefault ? (
+                                                <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
+                                                    ⭐ 默认
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleSetDefault(source.name)}
+                                                    disabled={loadingAction}
+                                                    className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                                                    title="设为默认上游源"
+                                                >
+                                                    ☆ 设为默认
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
                                     <div className="flex flex-wrap gap-2 text-xs">
