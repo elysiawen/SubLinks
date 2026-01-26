@@ -1506,14 +1506,17 @@ export default class PostgresDatabase implements IDatabase {
         let query = `
             SELECT 
                 l.*,
-                u.nickname
+                u.nickname,
+                s.remark as sub_remark
             FROM api_access_logs l
             LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN subscriptions s ON l.token = s.token
         `;
         let countQuery = `
             SELECT COUNT(*) 
             FROM api_access_logs l
             LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN subscriptions s ON l.token = s.token
         `;
 
         const params: any[] = [];
@@ -1521,7 +1524,7 @@ export default class PostgresDatabase implements IDatabase {
         let paramIndex = 1;
 
         if (search) {
-            const searchClause = ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
+            const searchClause = ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex}`;
             query += searchClause;
             countQuery += searchClause;
             params.push(`%${search}%`);
@@ -1542,6 +1545,7 @@ export default class PostgresDatabase implements IDatabase {
             token: row.token,
             username: row.username,
             nickname: row.nickname || undefined,
+            subRemark: row.sub_remark || undefined,
             ip: row.ip,
             ua: row.ua,
             status: row.status,

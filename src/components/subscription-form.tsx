@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { SubmitButton } from '@/components/SubmitButton';
+import { useToast } from '@/components/ToastProvider';
 
 export interface SubscriptionFormProps {
     initialData?: {
@@ -23,6 +24,7 @@ export interface SubscriptionFormProps {
     availableSources: {
         name: string;
         url: string;
+        isDefault?: boolean;
         enabled?: boolean;
         status?: 'pending' | 'success' | 'failure';
         lastUpdated?: number
@@ -43,6 +45,7 @@ export default function SubscriptionForm({
     isAdmin = false,
     submitLabel = '保存'
 }: SubscriptionFormProps) {
+    const { error } = useToast();
     const [loading, setLoading] = useState(false);
 
     // Form State
@@ -62,11 +65,11 @@ export default function SubscriptionForm({
     // Set default sources if creating new and list is empty (User experience)
     useEffect(() => {
         if (!initialData && selectedSources.length === 0 && availableSources.length > 0) {
-            // Default to selecting all enabled sources
-            const enabledSources = availableSources
-                .filter(s => s.enabled !== false)
+            // Default to selecting only the default source (isDefault: true), not all enabled sources
+            const defaultSources = availableSources
+                .filter(s => s.isDefault === true && s.enabled !== false)
                 .map(s => s.name);
-            setSelectedSources(enabledSources);
+            setSelectedSources(defaultSources);
         }
     }, [initialData, availableSources]);
 
@@ -169,6 +172,12 @@ export default function SubscriptionForm({
     };
 
     const handleSubmit = async () => {
+        // Validation: require at least one source
+        if (selectedSources.length === 0) {
+            error('请至少选择一个上游源');
+            return;
+        }
+
         setLoading(true);
         try {
             await onSubmit({
@@ -269,7 +278,7 @@ export default function SubscriptionForm({
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        选择要使用的上游节点源，未选择则默认使用全部可用源
+                        请选择至少一个上游节点源
                     </p>
                 </div>
             )}

@@ -1398,21 +1398,31 @@ export default class MysqlDatabase implements IDatabase {
 
     async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<APIAccessLog>> {
         await this.ensureInitialized();
-        let query = 'SELECT * FROM api_access_logs';
-        let countQuery = 'SELECT COUNT(*) as total FROM api_access_logs';
+        let query = `
+            SELECT l.*, u.nickname, s.remark as sub_remark
+            FROM api_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN subscriptions s ON l.token = s.token
+        `;
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM api_access_logs l
+            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN subscriptions s ON l.token = s.token
+        `;
 
         const params: any[] = [];
         const countParams: any[] = [];
 
         if (search) {
-            const searchClause = ' WHERE username LIKE ? OR ip LIKE ?';
+            const searchClause = ' WHERE l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?';
             query += searchClause;
             countQuery += searchClause;
-            params.push(`%${search}%`, `%${search}%`);
-            countParams.push(`%${search}%`, `%${search}%`);
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
-        query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY l.timestamp DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
@@ -1424,6 +1434,7 @@ export default class MysqlDatabase implements IDatabase {
                 token: row.token,
                 username: row.username,
                 nickname: row.nickname,
+                subRemark: row.sub_remark || undefined,
                 ip: row.ip,
                 ua: row.ua,
                 status: row.status,

@@ -469,6 +469,9 @@ export default function LogsClient() {
                                                         {expandedTokens.has(log.id) || (log.token || '').length <= 8
                                                             ? log.token
                                                             : `${(log.token || '').substring(0, 8)}...`}
+                                                        {log.subRemark && (
+                                                            <span className="text-gray-400 ml-1">（{log.subRemark}）</span>
+                                                        )}
                                                     </div>
                                                     <div>{formatUserDisplay(log.username, log.nickname)}</div>
                                                 </td>
@@ -564,6 +567,9 @@ export default function LogsClient() {
                                                             {expandedTokens.has(childLog.id) || (childLog.token || '').length <= 8
                                                                 ? childLog.token
                                                                 : `${(childLog.token || '').substring(0, 8)}...`}
+                                                            {childLog.subRemark && (
+                                                                <span className="text-gray-500 ml-1">（{childLog.subRemark}）</span>
+                                                            )}
                                                         </div>
                                                         <div>{formatUserDisplay(childLog.username, childLog.nickname)}</div>
                                                     </td>
@@ -641,6 +647,9 @@ export default function LogsClient() {
                                                 {expandedTokens.has(log.id) || (log.token || '').length <= 8
                                                     ? log.token
                                                     : `${(log.token || '').substring(0, 8)}...`}
+                                                {log.subRemark && (
+                                                    <span className="text-gray-400 ml-1">（{log.subRemark}）</span>
+                                                )}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">

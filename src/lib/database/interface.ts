@@ -82,6 +82,7 @@ export interface APIAccessLog {
     token: string;
     username: string;
     nickname?: string;       // User's display name
+    subRemark?: string;      // Subscription remark/name (fetched via JOIN, not stored)
     ip: string;
     ua: string;
     status: number;
