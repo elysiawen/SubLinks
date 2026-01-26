@@ -364,7 +364,7 @@ export default function LogsClient() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-end border-b border-gray-200 pb-4 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end border-b border-gray-200 pb-4 gap-4">
                 <div className="flex space-x-2">
                     <button
                         onClick={() => setActiveTab('api')}
