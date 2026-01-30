@@ -1659,13 +1659,22 @@ export default class PostgresDatabase implements IDatabase {
         return { data, total };
     }
 
-    async cleanupLogs(retentionDays: number): Promise<void> {
-        if (!retentionDays || retentionDays <= 0) return;
+    async cleanupLogs(retentionDays: number, logTypes: string[] = ['api', 'web', 'system']): Promise<void> {
+        if (retentionDays < 0) return;
         const cutoff = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
 
-        await this.pool.query('DELETE FROM api_access_logs WHERE timestamp < $1', [cutoff]);
-        await this.pool.query('DELETE FROM web_access_logs WHERE timestamp < $1', [cutoff]);
-        await this.pool.query('DELETE FROM system_logs WHERE timestamp < $1', [cutoff]);
+        const promises = [];
+        if (logTypes.includes('api')) {
+            promises.push(this.pool.query('DELETE FROM api_access_logs WHERE timestamp < $1', [cutoff]));
+        }
+        if (logTypes.includes('web')) {
+            promises.push(this.pool.query('DELETE FROM web_access_logs WHERE timestamp < $1', [cutoff]));
+        }
+        if (logTypes.includes('system')) {
+            promises.push(this.pool.query('DELETE FROM system_logs WHERE timestamp < $1', [cutoff]));
+        }
+
+        await Promise.all(promises);
     }
 
     async deleteAllLogs(): Promise<void> {

@@ -30,9 +30,9 @@ export async function updateGlobalConfig(formData: FormData) {
         uaFilter,  // Add UA filter config
         refreshApiKey: existingConfig.refreshApiKey,
         upstreamLastUpdated: existingConfig.upstreamLastUpdated,
-        upstreamUserAgent: (formData.get('upstreamUserAgent') as string) || undefined,
-        customBackgroundUrl: (formData.get('customBackgroundUrl') as string) || undefined,
-        announcement: (formData.get('announcement') as string) || undefined,
+        upstreamUserAgent: formData.get('upstreamUserAgent') !== null ? (formData.get('upstreamUserAgent') as string) : undefined,
+        customBackgroundUrl: formData.get('customBackgroundUrl') !== null ? (formData.get('customBackgroundUrl') as string) : undefined,
+        announcement: formData.get('announcement') !== null ? (formData.get('announcement') as string) : undefined,
         // Unified S3 storage configuration
         storageProvider: (formData.get('storageProvider') as 'local' | 's3') || existingConfig.storageProvider || 'local',
         localStoragePath: (formData.get('localStoragePath') as string)?.trim() || existingConfig.localStoragePath,
@@ -46,11 +46,6 @@ export async function updateGlobalConfig(formData: FormData) {
         s3FolderPath: (formData.get('s3FolderPath') as string)?.trim() || existingConfig.s3FolderPath,
         s3AccountId: (formData.get('s3AccountId') as string)?.trim() || existingConfig.s3AccountId,
     });
-
-    // Trigger cleanup immediately
-    if (logRetentionDays > 0) {
-        await db.cleanupLogs(logRetentionDays);
-    }
 
     // Revalidate home page cache if background URL changed
     const oldBg = existingConfig.customBackgroundUrl;
@@ -179,14 +174,10 @@ export async function cleanupSessions() {
     return { count };
 }
 
-export async function clearLogs(days: number = 30) {
+export async function clearLogs(days: number = 30, logTypes: string[] = ['api', 'web', 'system']) {
     if (days < 0) return { error: 'Invalid retention days' };
 
-    if (days === 0) {
-        await db.deleteAllLogs();
-    } else {
-        await db.cleanupLogs(days);
-    }
+    await db.cleanupLogs(days, logTypes);
 
     revalidatePath('/admin/logs');
     revalidatePath('/admin/settings');

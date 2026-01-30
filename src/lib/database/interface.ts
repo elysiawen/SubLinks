@@ -310,7 +310,7 @@ export interface IDatabase {
     getSystemLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<SystemLog>>;
 
     // Maintenance
-    cleanupLogs(retentionDays: number): Promise<void>;
+    cleanupLogs(retentionDays: number, logTypes?: string[]): Promise<void>;
     deleteAllLogs(): Promise<void>;
 }
 

@@ -1533,13 +1533,21 @@ export default class MysqlDatabase implements IDatabase {
         };
     }
 
-    async cleanupLogs(retentionDays: number): Promise<void> {
+    async cleanupLogs(retentionDays: number, logTypes: string[] = ['api', 'web', 'system']): Promise<void> {
         const threshold = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
-        await Promise.all([
-            this.pool.query('DELETE FROM api_access_logs WHERE timestamp < ?', [threshold]),
-            this.pool.query('DELETE FROM web_access_logs WHERE timestamp < ?', [threshold]),
-            this.pool.query('DELETE FROM system_logs WHERE timestamp < ?', [threshold])
-        ]);
+        const promises = [];
+
+        if (logTypes.includes('api')) {
+            promises.push(this.pool.query('DELETE FROM api_access_logs WHERE timestamp < ?', [threshold]));
+        }
+        if (logTypes.includes('web')) {
+            promises.push(this.pool.query('DELETE FROM web_access_logs WHERE timestamp < ?', [threshold]));
+        }
+        if (logTypes.includes('system')) {
+            promises.push(this.pool.query('DELETE FROM system_logs WHERE timestamp < ?', [threshold]));
+        }
+
+        await Promise.all(promises);
     }
 
     async deleteAllLogs(): Promise<void> {
