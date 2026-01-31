@@ -109,9 +109,82 @@ export async function login(prevState: any, formData: FormData) {
 export async function logout() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(COOKIE_NAME)?.value;
+
     if (sessionId) {
         await db.deleteSession(sessionId);
     }
+
     cookieStore.delete(COOKIE_NAME);
     redirect('/login');
+}
+
+// QR Code Login Actions
+
+export async function generateQrToken() {
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+    const ua = headersList.get('user-agent') || 'unknown';
+
+    // Generate simple token
+    const token = crypto.randomUUID();
+    const expiresAt = Date.now() + 1 * 60 * 1000; // 1 minute
+
+    const payload = JSON.stringify({
+        status: 'pending',
+        ip,
+        ua,
+        expiresAt
+    });
+
+    // Lazy cleanup: Delete expired QR tokens from DB
+    await db.cleanupQrCache().catch(e => console.error('QR cleanup failed:', e));
+
+    await db.setCache(`qr:${token}`, payload, 60);
+    return { token, expiresAt };
+}
+
+export async function checkQrStatus(token: string) {
+    if (!token) return { status: 'error' };
+
+    const cacheData = await db.getCache(`qr:${token}`);
+    if (!cacheData) {
+        return { status: 'expired' };
+    }
+
+    let data;
+    try {
+        data = JSON.parse(cacheData);
+    } catch (e) {
+        return { status: 'error' };
+    }
+
+    if (Date.now() > data.expiresAt) {
+        return { status: 'expired' };
+    }
+
+    if (data.status === 'confirmed' && data.userId) {
+        // Login the user
+        const user = await db.getUserById(data.userId);
+        if (!user) return { status: 'error', message: 'User not found' };
+
+        const headersList = await headers();
+        const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
+        const ua = headersList.get('user-agent') || 'unknown';
+
+        const sessionId = await createSession(user.username, user.role, ip, ua);
+
+        (await cookies()).set(COOKIE_NAME, sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+        });
+
+        // Clear cache
+        await db.deleteCache(`qr:${token}`);
+
+        return { status: 'success' };
+    }
+
+    return { status: data.status };
 }

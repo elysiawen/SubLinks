@@ -4,11 +4,11 @@ import { useActionState, Suspense, useRef, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { login } from '@/lib/actions';
 import Modal from '@/components/Modal';
+import QrCodeLogin from '@/components/QrCodeLogin';
 
 import { SubmitButton } from '@/components/SubmitButton';
 
-// LoginForm component that uses useSearchParams
-function LoginForm() {
+function PasswordLogin() {
     const [state, formAction, isPending] = useActionState(login, null);
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl');
@@ -53,10 +53,10 @@ function LoginForm() {
     };
 
     return (
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+        <>
             <form
                 ref={formRef}
-                className="space-y-6"
+                className="space-y-6 pt-2"
                 action={formAction}
                 onSubmit={(e) => {
                     // Client-side validation before submission
@@ -190,6 +190,50 @@ function LoginForm() {
                     </div>
                 </div>
             </Modal>
+        </>
+    );
+}
+
+function LoginBox() {
+    const [loginMethod, setLoginMethod] = useState<'password' | 'qr'>('password');
+
+    return (
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">
+            {/* Tabs */}
+            <div className="flex p-1 bg-gray-100/50 rounded-xl mb-6 relative">
+                <button
+                    onClick={() => setLoginMethod('password')}
+                    className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'password'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <span className="mr-2">🔑</span>
+                    密码登录
+                </button>
+                <button
+                    onClick={() => setLoginMethod('qr')}
+                    className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'qr'
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <span className="mr-2">📱</span>
+                    扫码登录
+                </button>
+            </div>
+
+            <div>
+                {loginMethod === 'password' ? (
+                    <div className="animate-fade-in">
+                        <PasswordLogin />
+                    </div>
+                ) : (
+                    <div className="animate-fade-in">
+                        <QrCodeLogin />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -202,7 +246,7 @@ export default function LoginPage() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
-            <div className="max-w-md w-full relative z-10">
+            <div className="max-w-md w-full relative z-10 transition-all duration-300">
                 {/* Title */}
                 <div className="text-center mb-8">
                     <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
@@ -215,11 +259,11 @@ export default function LoginPage() {
 
                 {/* Login Card with Suspense */}
                 <Suspense fallback={
-                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 min-h-[300px] flex items-center justify-center">
                         <div className="text-center text-gray-500">加载中...</div>
                     </div>
                 }>
-                    <LoginForm />
+                    <LoginBox />
                 </Suspense>
 
                 {/* Bottom decoration */}

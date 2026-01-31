@@ -1550,6 +1550,10 @@ export default class MysqlDatabase implements IDatabase {
         await Promise.all(promises);
     }
 
+    async cleanupQrCache(): Promise<void> {
+        await this.pool.query('DELETE FROM cache WHERE `key` LIKE \'qr:%\' AND expires_at < ?', [Date.now()]);
+    }
+
     async deleteAllLogs(): Promise<void> {
         await Promise.all([
             this.pool.query('TRUNCATE TABLE api_access_logs'),

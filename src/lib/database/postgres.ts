@@ -1677,6 +1677,11 @@ export default class PostgresDatabase implements IDatabase {
         await Promise.all(promises);
     }
 
+    async cleanupQrCache(): Promise<void> {
+        const threshold = Date.now() - 1 * 60 * 1000;
+        await this.pool.query('DELETE FROM cache WHERE key LIKE \'qr:%\' AND expires_at < $1', [threshold]);
+    }
+
     async deleteAllLogs(): Promise<void> {
         await this.pool.query('DELETE FROM api_access_logs');
         await this.pool.query('DELETE FROM web_access_logs');

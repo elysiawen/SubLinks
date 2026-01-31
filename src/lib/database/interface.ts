@@ -312,5 +312,6 @@ export interface IDatabase {
     // Maintenance
     cleanupLogs(retentionDays: number, logTypes?: string[]): Promise<void>;
     deleteAllLogs(): Promise<void>;
+    cleanupQrCache(): Promise<void>;
 }
 
