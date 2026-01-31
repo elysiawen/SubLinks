@@ -17,6 +17,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
         }
 
+        // Security check: Ensure the user's session hasn't been revoked
+        // If the user was forcibly logged out, their refresh tokens would be deleted
+        const userRefreshTokens = await db.getUserRefreshTokens(payload.userId);
+        if (!userRefreshTokens || userRefreshTokens.length === 0) {
+            return NextResponse.json({ error: 'Session has been revoked' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { token } = body;
 
