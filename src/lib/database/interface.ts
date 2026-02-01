@@ -75,6 +75,7 @@ export interface SubData {
     enabled: boolean;
     autoDisabled?: boolean; // True if disabled automatically by system due to upstream failure
     createdAt: number;
+    cacheTime?: number; // Last cache timestamp (or expiry in MySQL)
 }
 
 export interface APIAccessLog {
@@ -225,7 +226,7 @@ export interface IDatabase {
 
     // Refresh Token operations (Client Sessions)
     createRefreshToken(token: RefreshToken): Promise<void>;
-    getRefreshToken(tokenString: string): Promise<RefreshToken | null>;
+    getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null>;
     deleteRefreshToken(tokenString: string): Promise<void>; // Delete by token string
     deleteRefreshTokenById(id: string): Promise<void>; // Delete by UUID
     deleteUserRefreshToken(userId: string, tokenId: string): Promise<void>; // Delete by ID (Revoke)

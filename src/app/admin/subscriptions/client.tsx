@@ -20,6 +20,7 @@ interface Sub {
     groupId?: string;
     ruleId?: string;
     selectedSources?: string[];
+    cacheTime?: number;
 }
 
 interface ConfigSets {
@@ -237,6 +238,7 @@ export default function AdminSubsClient({
                                         <th className="px-6 py-4 whitespace-nowrap">备注名称</th>
                                         <th className="px-6 py-4 whitespace-nowrap">Token</th>
                                         <th className="px-6 py-4 whitespace-nowrap">状态</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">缓存</th>
                                         <th className="px-6 py-4 whitespace-nowrap">上游源</th>
                                         <th className="px-6 py-4 whitespace-nowrap">配置</th>
                                         <th className="px-6 py-4 whitespace-nowrap">创建时间</th>
@@ -253,6 +255,23 @@ export default function AdminSubsClient({
                                                 <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
                                                     {sub.enabled ? '启用' : '禁用'}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {sub.cacheTime ? (
+                                                    sub.cacheTime > Date.now() ? (
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded w-fit border border-blue-100">有效</span>
+                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>过期: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded w-fit border border-green-100">已缓存</span>
+                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>更新: {new Date(sub.cacheTime).toLocaleString()}</span>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <span className="text-xs text-gray-300 italic">未缓存</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-xs">
                                                 <div className="flex flex-wrap gap-1 max-w-[200px]">
@@ -343,9 +362,21 @@ export default function AdminSubsClient({
                                 <div className="text-xs text-gray-400 font-mono bg-gray-50 p-2 rounded break-all border border-gray-100">
                                     Token: {sub.token}
                                 </div>
+                                <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-semibold text-gray-500">缓存:</span>
+                                    {sub.cacheTime ? (
+                                        sub.cacheTime > Date.now() ? (
+                                            <span className="text-blue-600">有效 (过期: {new Date(sub.cacheTime).toLocaleTimeString()})</span>
+                                        ) : (
+                                            <span className="text-green-600">已缓存 (更新: {new Date(sub.cacheTime).toLocaleString()})</span>
+                                        )
+                                    ) : (
+                                        <span className="text-gray-400">未缓存</span>
+                                    )}
+                                </div>
 
-                                <div className="text-xs">
-                                    <div className="font-semibold text-gray-500 mb-1">使用源:</div>
+                                <div className="text-xs flex items-center gap-2">
+                                    <div className="font-semibold text-gray-500 shrink-0">使用源:</div>
                                     <div className="flex flex-wrap gap-1">
                                         {(sub.selectedSources && sub.selectedSources.length > 0) ? (
                                             sub.selectedSources.map(sourceName => {

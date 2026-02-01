@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Verify token exists in DB (Check for revocation)
-        const storedToken = await db.getRefreshToken(refreshToken);
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        const ua = request.headers.get('user-agent') || 'unknown';
+
+        const storedToken = await db.getRefreshToken(refreshToken, ip, ua);
         if (!storedToken) {
             return NextResponse.json(
                 { error: 'Session revoked or expired' },
@@ -40,19 +43,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Update Last Active & IP (if changed)
-        // We could update IP/UA here if needed, but getRefreshToken updates last_active automatically in Postgres implementation
-        // If we want to capture new IP we would need an updateRefreshToken method or just ignore for now as refresh token IP usually doesn't change much
-        // For now, let's just rely on the getRefreshToken side-effect or implicit check.
-        // Actually, db.getRefreshToken in Postgres implementation does: "UPDATE refresh_tokens SET last_active = ...".
+        // IP/UA/LastActive are now updated by getRefreshToken if changed
 
-        // If we wanted to update IP:
-        /*
-        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-        if (ip !== storedToken.ip) {
-             // ... update logic ...
-        }
-        */
 
         // Create new access token with full avatar URL
         const fullAvatarUrl = getFullAvatarUrl(payload.avatar);

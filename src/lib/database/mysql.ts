@@ -522,7 +522,7 @@ export default class MysqlDatabase implements IDatabase {
                 newIsp = locInfo.isp;
             }
 
-            await this.query('UPDATE sessions SET ip = ?, ip_location = ?, isp = ?, last_active = ? WHERE session_id = ?', [currentIp, newLocation, newIsp, Date.now(), sessionId]);
+            await this.query('UPDATE sessions SET ip = ?, ip_location = ?, isp = ?, last_active = ?, expires_at = ? WHERE session_id = ?', [currentIp, newLocation, newIsp, Date.now(), Date.now() + 7 * 24 * 60 * 60 * 1000, sessionId]);
 
             // Update the row object for return
             row.ip = currentIp;
@@ -531,7 +531,7 @@ export default class MysqlDatabase implements IDatabase {
         }
         // Otherwise, optimize: Update last active only if more than 60 seconds have passed
         else if (Date.now() - lastActive > 60 * 1000) {
-            await this.query('UPDATE sessions SET last_active = ? WHERE session_id = ?', [Date.now(), sessionId]);
+            await this.query('UPDATE sessions SET last_active = ?, expires_at = ? WHERE session_id = ?', [Date.now(), Date.now() + 7 * 24 * 60 * 60 * 1000, sessionId]);
         }
 
         return {
@@ -656,14 +656,31 @@ export default class MysqlDatabase implements IDatabase {
         );
     }
 
-    async getRefreshToken(tokenString: string): Promise<RefreshToken | null> {
+    async getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null> {
         await this.ensureInitialized();
         const [rows] = await this.pool.query<any[]>('SELECT * FROM refresh_tokens WHERE token = ?', [tokenString]);
         if (rows.length === 0) return null;
 
         const row = rows[0];
-        // Update last active
-        await this.pool.query('UPDATE refresh_tokens SET last_active = ? WHERE id = ?', [Date.now(), row.id]);
+
+        // Update last active and optionally IP/UA
+        const now = Date.now();
+        let query = 'UPDATE refresh_tokens SET last_active = ?';
+        const params: any[] = [now];
+
+        if (currentIp && currentIp !== row.ip) {
+            query += ', ip = ?';
+            params.push(currentIp);
+        }
+        if (currentUa && currentUa !== row.ua) {
+            query += ', ua = ?';
+            params.push(currentUa);
+        }
+
+        query += ' WHERE id = ?';
+        params.push(row.id);
+
+        await this.pool.query(query, params);
 
         return {
             id: row.id,
@@ -846,47 +863,47 @@ export default class MysqlDatabase implements IDatabase {
         }));
     }
 
-    async getAllSubscriptions(page: number = 1, limit: number = 20, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
+    async getAllSubscriptions(limit: number, offset: number, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
         await this.ensureInitialized();
-        const offset = (page - 1) * limit;
-
-        let query = 'SELECT * FROM subscriptions';
-        let params: any[] = [];
+        let query = 'SELECT s.*, c.expires_at as cache_time FROM subscriptions s LEFT JOIN cache c ON c.`key` = CONCAT(\'cache:subscription:\', s.token)';
+        let countQuery = 'SELECT COUNT(*) as count FROM subscriptions s';
+        const params: any[] = [];
+        const countParams: any[] = [];
 
         if (search) {
-            // Search in username, remark, token, and selected_sources (JSON as text)
-            query += ' WHERE username LIKE ? OR remark LIKE ? OR token LIKE ? OR selected_sources LIKE ?';
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            // Search in username, remark, token
+            const searchClause = ' WHERE s.username LIKE ? OR s.remark LIKE ? OR s.token LIKE ?';
+            query += searchClause;
+            countQuery += searchClause;
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
+        const total = countRows[0].count;
+
+        query += ' ORDER BY s.created_at DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
 
-        let countQuery = 'SELECT COUNT(*) as total FROM subscriptions';
-        let countParams: any[] = [];
-        if (search) {
-            countQuery += ' WHERE username LIKE ? OR remark LIKE ? OR token LIKE ? OR selected_sources LIKE ?';
-            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
-        }
-
-        const [countRows] = await this.pool.query<any[]>(countQuery, countParams);
+        const data = rows.map((row) => ({
+            token: row.token,
+            username: row.username,
+            remark: row.remark,
+            groupId: row.group_id,
+            ruleId: row.rule_id,
+            customRules: row.custom_rules,
+            selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
+            enabled: Boolean(row.enabled),
+            autoDisabled: Boolean(row.auto_disabled),
+            createdAt: Number(row.created_at),
+            cacheTime: row.cache_time ? Number(row.cache_time) : undefined,
+        }));
 
         return {
-            data: rows.map(row => ({
-                token: row.token,
-                username: row.username,
-                remark: row.remark,
-                groupId: row.group_id,
-                ruleId: row.rule_id,
-                customRules: row.custom_rules,
-                selectedSources: typeof row.selected_sources === 'string' ? JSON.parse(row.selected_sources) : row.selected_sources,
-                enabled: !!row.enabled,
-                autoDisabled: !!row.auto_disabled,
-                createdAt: Number(row.created_at)
-            })),
-            total: countRows[0].total
+            data,
+            total,
         };
     }
 
@@ -1453,6 +1470,8 @@ export default class MysqlDatabase implements IDatabase {
             [randomUUID(), log.path, log.ip, log.ua, log.username, log.nickname, log.status, log.timestamp]
         ).catch(e => console.error('Log error', e));
     }
+
+
 
     async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<WebAccessLog>> {
         await this.ensureInitialized();

@@ -70,7 +70,23 @@ export function middleware(request: NextRequest) {
         }
     }
 
-    return NextResponse.next()
+    const response = NextResponse.next();
+
+    // Refresh session cookie if user is logged in (Rolling Expiration)
+    if (hasSession) {
+        const cookieValue = request.cookies.get('auth_session')?.value;
+        if (cookieValue) {
+            response.cookies.set('auth_session', cookieValue, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60, // 7 days
+                path: '/',
+            });
+        }
+    }
+
+    return response;
 }
 
 export const config = {

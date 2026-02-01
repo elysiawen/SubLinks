@@ -452,12 +452,12 @@ export default class PostgresDatabase implements IDatabase {
                     newIsp = locInfo.isp;
                 }
 
-                await this.pool.query('UPDATE sessions SET ip = $1, ip_location = $2, isp = $3, last_active = $4 WHERE session_id = $5', [currentIp, newLocation, newIsp, Date.now(), sessionId]);
+                await this.pool.query('UPDATE sessions SET ip = $1, ip_location = $2, isp = $3, last_active = $4, expires_at = $5 WHERE session_id = $6', [currentIp, newLocation, newIsp, Date.now(), Date.now() + 7 * 24 * 60 * 60 * 1000, sessionId]);
                 row.ip = currentIp;
                 row.ip_location = newLocation;
                 row.isp = newIsp;
             } else if (Date.now() - lastActive > 60 * 1000) {
-                await this.pool.query('UPDATE sessions SET last_active = $1 WHERE session_id = $2', [Date.now(), sessionId]);
+                await this.pool.query('UPDATE sessions SET last_active = $1, expires_at = $2 WHERE session_id = $3', [Date.now(), Date.now() + 7 * 24 * 60 * 60 * 1000, sessionId]);
             }
             return {
                 userId: row.user_id,
@@ -650,7 +650,7 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getRefreshToken(tokenString: string): Promise<RefreshToken | null> {
+    async getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null> {
         await this.ensureInitialized();
         // Cleanup expired
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
@@ -663,8 +663,25 @@ export default class PostgresDatabase implements IDatabase {
         if (result.rows.length === 0) return null;
         const row = result.rows[0];
 
-        // Update last active async
-        this.pool.query('UPDATE refresh_tokens SET last_active = $1 WHERE id = $2', [Date.now(), row.id]).catch(console.error);
+        // Update last active and optionally IP/UA
+        const now = Date.now();
+        let query = 'UPDATE refresh_tokens SET last_active = $1';
+        const params: any[] = [now];
+        let idx = 2;
+
+        if (currentIp && currentIp !== row.ip) {
+            query += `, ip = $${idx++}`;
+            params.push(currentIp);
+        }
+        if (currentUa && currentUa !== row.ua) {
+            query += `, ua = $${idx++}`;
+            params.push(currentUa);
+        }
+
+        query += ` WHERE id = $${idx++}`;
+        params.push(row.id);
+
+        this.pool.query(query, params).catch(console.error);
 
         return {
             id: row.id,
@@ -776,14 +793,14 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
         const offset = (page - 1) * limit;
 
-        let query = 'SELECT * FROM subscriptions';
-        let countQuery = 'SELECT COUNT(*) FROM subscriptions';
+        let query = 'SELECT s.*, c.expires_at as cache_time FROM subscriptions s LEFT JOIN cache c ON c.key = \'cache:subscription:\' || s.token';
+        let countQuery = 'SELECT COUNT(*) FROM subscriptions s';
         const params: any[] = [];
         const countParams: any[] = [];
 
         if (search) {
             // Search in username, remark, token, and selected_sources (JSON array as text)
-            const searchClause = ' WHERE username ILIKE $1 OR remark ILIKE $1 OR token ILIKE $1 OR selected_sources::text ILIKE $1';
+            const searchClause = ' WHERE s.username ILIKE $1 OR s.remark ILIKE $1 OR s.token ILIKE $1 OR s.selected_sources::text ILIKE $1';
             query += searchClause;
             countQuery += searchClause;
             params.push(`%${search}%`);
@@ -793,7 +810,7 @@ export default class PostgresDatabase implements IDatabase {
         const countResult = await this.pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
-        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        query += ` ORDER BY s.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
         params.push(limit, offset);
 
         const result = await this.pool.query(query, params);
@@ -809,6 +826,7 @@ export default class PostgresDatabase implements IDatabase {
             enabled: row.enabled,
             autoDisabled: row.auto_disabled,
             createdAt: parseInt(row.created_at),
+            cacheTime: row.cache_time ? parseInt(row.cache_time) : undefined,
         }));
 
         return { data, total };
