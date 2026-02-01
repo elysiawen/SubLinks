@@ -234,10 +234,8 @@ export default function AdminSubsClient({
                             <table className="w-full text-left text-sm text-gray-600">
                                 <thead className="bg-gray-50 text-gray-900 font-medium">
                                     <tr>
+                                        <th className="px-6 py-4 whitespace-nowrap">备注 / Token</th>
                                         <th className="px-6 py-4 whitespace-nowrap">用户</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">备注名称</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">Token</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">状态</th>
                                         <th className="px-6 py-4 whitespace-nowrap">缓存</th>
                                         <th className="px-6 py-4 whitespace-nowrap">上游源</th>
                                         <th className="px-6 py-4 whitespace-nowrap">配置</th>
@@ -248,14 +246,16 @@ export default function AdminSubsClient({
                                 <tbody className="divide-y divide-gray-100">
                                     {subs.map((sub) => (
                                         <tr key={sub.token} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{sub.username}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap max-w-[200px] truncate" title={sub.remark}>{sub.remark}</td>
-                                            <td className="px-6 py-4 font-mono text-xs text-gray-400 whitespace-nowrap">{sub.token.substring(0, 8)}...</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                                                    {sub.enabled ? '启用' : '禁用'}
-                                                </span>
+                                                <div className="flex flex-col max-w-[180px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-2 h-2 rounded-full shrink-0 ${sub.enabled ? 'bg-green-500' : 'bg-red-500'}`} title={sub.enabled ? '启用' : '禁用'} />
+                                                        <span className="truncate text-sm font-medium text-gray-700" title={sub.remark}>{sub.remark}</span>
+                                                    </div>
+                                                    <span className="truncate text-xs text-gray-400 font-mono" title={sub.token}>{sub.token}</span>
+                                                </div>
                                             </td>
+                                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{sub.username}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {sub.cacheTime ? (
                                                     sub.cacheTime > Date.now() ? (
