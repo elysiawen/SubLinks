@@ -670,8 +670,9 @@ export default class PostgresDatabase implements IDatabase {
         let idx = 2;
 
         if (currentIp && currentIp !== row.ip) {
-            query += `, ip = $${idx++}`;
-            params.push(currentIp);
+            const locInfo = await getLocation(currentIp).catch(() => ({ location: undefined, isp: undefined }));
+            query += `, ip = $${idx++}, ip_location = $${idx++}, isp = $${idx++}`;
+            params.push(currentIp, locInfo.location, locInfo.isp);
         }
         if (currentUa && currentUa !== row.ua) {
             query += `, ua = $${idx++}`;
