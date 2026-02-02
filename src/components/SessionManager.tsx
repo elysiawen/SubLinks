@@ -237,14 +237,14 @@ export default function SessionManager({
                                                         <span className="font-mono font-medium">{session.ip}</span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1">
+                                                    <div className="flex items-center gap-1 flex-wrap">
                                                         {session.ipLocation && (
                                                             <span className="px-1.5 py-0.5 text-[10px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md font-sans border border-indigo-100 dark:border-indigo-800/30 whitespace-nowrap">
                                                                 {session.ipLocation}
                                                             </span>
                                                         )}
                                                         {session.isp && (
-                                                            <span className="px-1.5 py-0.5 text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-md font-sans border border-emerald-100 dark:border-emerald-800/30 whitespace-nowrap">
+                                                            <span className="px-1.5 py-0.5 text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-md font-sans border border-emerald-100 dark:border-emerald-800/30 truncate max-w-[150px] sm:max-w-xs" title={session.isp}>
                                                                 {session.isp}
                                                             </span>
                                                         )}
