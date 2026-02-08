@@ -126,13 +126,13 @@ async function handleRefresh(request: NextRequest, body: any) {
         const precache = precacheParam === 'true' || precacheParam === true;
 
         // 4. Fetch sources to refresh
-        let sources;
+        let sources: import('@/lib/database/interface').UpstreamSource[] = [];
         if (sourceNames && sourceNames.length > 0) {
             // Refresh specific sources
-            sources = await Promise.all(
+            const rawSources = await Promise.all(
                 sourceNames.map(name => db.getUpstreamSourceByName(name))
             );
-            sources = sources.filter(s => s !== null) as import('@/lib/database/interface').UpstreamSource[];
+            sources = rawSources.filter(s => s !== null) as import('@/lib/database/interface').UpstreamSource[];
 
             if (sources.length === 0) {
                 return NextResponse.json(

@@ -34,17 +34,36 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         console.log(`   ✓ Effective sources: ${effectiveSources.join(', ')}`);
 
-        // 2. Get Other Upstream Config (dns, tun, etc.) - using EFFECTIVE sources
+        // 1.1 Pre-fetch custom groups (Logic for implicit sources removed per user request)
+        let groups: any[] | null = null;
+        if (sub.groupId && sub.groupId !== 'default') {
+            const user = await db.getUser(sub.username);
+            if (user) {
+                const customGroup = await db.getCustomGroup(sub.groupId, user.id);
+                if (customGroup) {
+                    const customGroups = yaml.load(customGroup.content);
+                    if (Array.isArray(customGroups)) {
+                        groups = customGroups;
+                    }
+                }
+            }
+        }
+
+        // Define sources for different purposes
+        const configSources = effectiveSources; // Only explicitly selected sources contribute to global config
+        const proxySources = effectiveSources;  // Only explicitly selected sources contribute proxies
+
+        // 2. Get Other Upstream Config (dns, tun, etc.) - using CONFIG sources
         // Fetch isolated config for effective sources (merged)
-        const upstreamConfig = await db.getUpstreamConfig(effectiveSources);
+        const upstreamConfig = await db.getUpstreamConfig(configSources);
         Object.assign(config, upstreamConfig);
 
-        // 2. Get Proxies - filter by EFFECTIVE sources
+        // 2. Get Proxies - filter by PROXY sources
         let allProxies = await db.getProxies();
 
-        // Filter by effective sources
-        allProxies = allProxies.filter(p => effectiveSources.includes(p.source));
-        console.log(`   ✓ Filtered proxies to ${allProxies.length} from effective sources`);
+        // Filter by proxy sources (explicit only)
+        allProxies = allProxies.filter(p => proxySources.includes(p.source));
+        console.log(`   ✓ Filtered proxies to ${allProxies.length} from proxy sources`);
 
         // Format proxies with proper field ordering
         config.proxies = allProxies.map(p => {
@@ -102,22 +121,7 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
             return formatted;
         });
 
-        // 3. Get Proxy Groups
-        let groups;
-        if (sub.groupId && sub.groupId !== 'default') {
-            // Use custom group set - get userId from subscription owner
-            const user = await db.getUser(sub.username);
-            if (user) {
-                const customGroup = await db.getCustomGroup(sub.groupId, user.id);
-                if (customGroup) {
-                    const customGroups = yaml.load(customGroup.content);
-                    if (Array.isArray(customGroups)) {
-                        groups = customGroups;
-                    }
-                }
-            }
-        }
-
+        // 3. Get Proxy Groups (If not already fetched as custom)
         if (!groups) {
             // Use upstream groups - filter by effective sources
             let upstreamGroups = await db.getProxyGroups();
@@ -135,28 +139,76 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
             const uniqueGroups = Array.from(groupMap.values());
             console.log(`   ✓ Deduplicated to ${uniqueGroups.length} unique groups`);
 
-            groups = uniqueGroups.map(g => {
-                // Build group object with proper field order
-                const group: any = {
-                    name: g.name,
-                    type: g.type,
-                    proxies: g.proxies,
-                };
-
-                // Add other config fields (url, interval, etc.) but avoid duplicating name/type/proxies
-                if (g.config) {
-                    for (const [key, value] of Object.entries(g.config)) {
-                        if (key !== 'name' && key !== 'type' && key !== 'proxies') {
-                            group[key] = value;
-                        }
-                    }
-                }
-
-                return group;
-            });
+            groups = uniqueGroups;
         }
 
-        config['proxy-groups'] = groups;
+        config['proxy-groups'] = groups.map((g: any) => {
+            // Expand dynamic proxies (SOURCE:xxx)
+            const expandedProxies: string[] = [];
+
+            if (g.proxies && Array.isArray(g.proxies)) {
+                for (const proxyName of g.proxies) {
+                    if (proxyName.startsWith('SOURCE:')) {
+                        const sourceName = proxyName.substring(7);
+                        // Find all proxies from this source
+                        const sourceProxies = allProxies
+                            .filter(p => p.source === sourceName)
+                            .map(p => p.config.name);
+
+                        if (sourceProxies.length > 0) {
+                            expandedProxies.push(...sourceProxies);
+                        }
+                    } else if (proxyName.startsWith('KEYWORD:')) {
+                        const keyword = proxyName.substring(8).toLowerCase();
+                        const matchedProxies = allProxies
+                            .filter(p => p.config.name.toLowerCase().includes(keyword))
+                            .map(p => p.config.name);
+                        expandedProxies.push(...matchedProxies);
+                    } else if (proxyName.startsWith('REGEX:')) {
+                        try {
+                            const regex = new RegExp(proxyName.substring(6));
+                            const matchedProxies = allProxies
+                                .filter(p => regex.test(p.config.name))
+                                .map(p => p.config.name);
+                            expandedProxies.push(...matchedProxies);
+                        } catch (e) {
+                            console.warn(`Invalid regex in group ${g.name}: ${proxyName}`);
+                        }
+                    } else {
+                        expandedProxies.push(proxyName);
+                    }
+                }
+            }
+
+            // Deduplicate proxies in the group
+            const uniqueProxies = Array.from(new Set(expandedProxies));
+
+            // Build group object with proper field order
+            const group: any = {
+                name: g.name,
+                type: g.type,
+                proxies: uniqueProxies.length > 0 ? uniqueProxies : ['REJECT'], // Fallback to REJECT if empty
+            };
+
+            // Add other config fields (url, interval, etc.) but avoid duplicating name/type/proxies
+            if (g.config) {
+                // Case 1: g is a ProxyGroup from DB (has .config)
+                for (const [key, value] of Object.entries(g.config)) {
+                    if (key !== 'name' && key !== 'type' && key !== 'proxies') {
+                        group[key] = value;
+                    }
+                }
+            } else {
+                // Case 2: g is a raw object from YAML (custom group)
+                for (const [key, value] of Object.entries(g)) {
+                    if (key !== 'name' && key !== 'type' && key !== 'proxies' && key !== 'config') {
+                        group[key] = value;
+                    }
+                }
+            }
+
+            return group;
+        });
 
         // 4. Get Rules
         let rules: string[] = [];

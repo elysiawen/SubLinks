@@ -5,7 +5,9 @@ import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveGroupSet, deleteGroupSet, type ConfigSet } from '@/lib/config-actions';
 import Modal from '@/components/Modal';
+import GroupEditor from '@/components/GroupEditor';
 import { useRouter } from 'next/navigation';
+import yaml from 'js-yaml';
 
 interface GroupsClientProps {
     groups: ConfigSet[];
@@ -23,103 +25,58 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
     const [groupContent, setGroupContent] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Mode toggle
-    const [groupMode, setGroupMode] = useState<'simple' | 'advanced'>('simple');
+    const getSourceDependencies = (content: string, availableProxies: Array<{ name: string; source: string }>) => {
+        try {
+            const parsed = yaml.load(content) as any;
+            const groups = Array.isArray(parsed) ? parsed : [parsed];
 
-    // Simple mode state
-    const [guiGroups, setGuiGroups] = useState<{ name: string, type: string, proxies: string[], id: string }[]>([]);
-    const [newGroupName, setNewGroupName] = useState('');
-    const [newGroupType, setNewGroupType] = useState('select');
+            const sources = new Set<string>();
 
-    // Proxy Selector State
-    const [showProxySelector, setShowProxySelector] = useState(false);
-    const [selectorGroupId, setSelectorGroupId] = useState<string | null>(null);
-    const [proxySearch, setProxySearch] = useState('');
-    const [selectedProxies, setSelectedProxies] = useState<string[]>([]);
+            groups.forEach((g: any) => {
+                if (Array.isArray(g.proxies)) {
+                    g.proxies.forEach((p: string) => {
+                        if (typeof p !== 'string') return;
 
-    // Helper functions
-    const parseGroups = (text: string) => {
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-        const result: { name: string, type: string, proxies: string[], id: string }[] = [];
-        let currentGroup: any = null;
-
-        for (const line of lines) {
-            if (line.startsWith('- name:')) {
-                if (currentGroup) result.push(currentGroup);
-                currentGroup = {
-                    name: line.replace('- name:', '').trim(),
-                    type: 'select',
-                    proxies: [],
-                    id: Math.random().toString(36).substr(2, 9)
-                };
-            } else if (line.startsWith('type:') && currentGroup) {
-                currentGroup.type = line.replace('type:', '').trim();
-            } else if (line.startsWith('- ') && currentGroup && !line.startsWith('- name:')) {
-                currentGroup.proxies.push(line.replace('- ', '').trim());
-            }
+                        if (p.startsWith('SOURCE:')) {
+                            sources.add(p.substring(7));
+                        } else if (p.startsWith('KEYWORD:')) {
+                            const keyword = p.substring(8).toLowerCase();
+                            availableProxies.forEach(proxy => {
+                                if (proxy.name.toLowerCase().includes(keyword)) {
+                                    sources.add(proxy.source);
+                                }
+                            });
+                        } else if (p.startsWith('REGEX:')) {
+                            try {
+                                const regex = new RegExp(p.substring(6));
+                                availableProxies.forEach(proxy => {
+                                    if (regex.test(proxy.name)) {
+                                        sources.add(proxy.source);
+                                    }
+                                });
+                            } catch (e) {
+                                // Ignore invalid regex
+                            }
+                        } else {
+                            // Exact match (manual node)
+                            const proxy = availableProxies.find(ap => ap.name === p);
+                            if (proxy) {
+                                sources.add(proxy.source);
+                            }
+                        }
+                    });
+                }
+            });
+            return Array.from(sources).filter(Boolean);
+        } catch (e) {
+            return [];
         }
-        if (currentGroup) result.push(currentGroup);
-        return result;
     };
-
-    const stringifyGroups = (groups: { name: string, type: string, proxies: string[] }[]) => {
-        return groups.map(g => {
-            const proxies = g.proxies.map(p => `    - ${p}`).join('\n');
-            return `- name: ${g.name}\n  type: ${g.type}\n  proxies:\n${proxies}`;
-        }).join('\n');
-    };
-
-    const syncTextToGui = (text: string) => {
-        setGuiGroups(parseGroups(text));
-    };
-
-    const updateGuiGroups = (newGroups: typeof guiGroups) => {
-        setGuiGroups(newGroups);
-        setGroupContent(stringifyGroups(newGroups));
-    };
-
-    const toggleProxySelection = (proxyName: string) => {
-        setSelectedProxies(prev =>
-            prev.includes(proxyName)
-                ? prev.filter(p => p !== proxyName)
-                : [...prev, proxyName]
-        );
-    };
-
-    const addSelectedProxies = () => {
-        if (!selectorGroupId || selectedProxies.length === 0) return;
-
-        const updatedGroups = guiGroups.map(g => {
-            if (g.id === selectorGroupId) {
-                const newProxies = [...g.proxies];
-                selectedProxies.forEach(p => {
-                    if (!newProxies.includes(p)) newProxies.push(p);
-                });
-                return { ...g, proxies: newProxies };
-            }
-            return g;
-        });
-
-        updateGuiGroups(updatedGroups);
-        setShowProxySelector(false);
-        setSelectedProxies([]);
-    };
-
-    const groupedProxies = useMemo(() => {
-        const grouped: Record<string, typeof proxies> = {};
-        proxies.filter(p => p.name.toLowerCase().includes(proxySearch.toLowerCase())).forEach(p => {
-            if (!grouped[p.source]) grouped[p.source] = [];
-            grouped[p.source].push(p);
-        });
-        return grouped;
-    }, [proxies, proxySearch]);
 
     const handleCreate = () => {
         setEditingGroup(null);
         setGroupName('');
         setGroupContent('');
-        setGroupMode('simple');
-        setGuiGroups([]);
         setIsModalOpen(true);
     };
 
@@ -127,8 +84,6 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
         setEditingGroup(group);
         setGroupName(group.name);
         setGroupContent(group.content);
-        setGroupMode('simple');
-        syncTextToGui(group.content);
         setIsModalOpen(true);
     };
 
@@ -174,42 +129,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
         }
     };
 
-    const addGuiGroup = () => {
-        if (!newGroupName.trim()) {
-            error('请填写策略组名称');
-            return;
-        }
-        const newGroup = {
-            name: newGroupName.trim(),
-            type: newGroupType,
-            proxies: [],
-            id: Math.random().toString(36).substr(2, 9)
-        };
-        updateGuiGroups([...guiGroups, newGroup]);
-        setNewGroupName('');
-        setNewGroupType('select');
-    };
 
-    const removeGuiGroup = (id: string) => {
-        updateGuiGroups(guiGroups.filter(g => g.id !== id));
-    };
-
-    const openProxySelector = (groupId: string) => {
-        setSelectorGroupId(groupId);
-        setProxySearch('');
-        setSelectedProxies([]);
-        setShowProxySelector(true);
-    };
-
-    const removeProxyFromGroup = (groupId: string, proxyIndex: number) => {
-        const updatedGroups = guiGroups.map(g => {
-            if (g.id === groupId) {
-                return { ...g, proxies: g.proxies.filter((_, i) => i !== proxyIndex) };
-            }
-            return g;
-        });
-        updateGuiGroups(updatedGroups);
-    };
 
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString('zh-CN', {
@@ -240,218 +160,110 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
 
             {/* Groups List */}
             {groups.length === 0 ? (
-                <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-                    <div className="text-6xl mb-4">📋</div>
+                <div className="bg-white rounded-xl p-12 text-center border border-gray-200 shadow-sm">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                        📋
+                    </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">暂无自定义分组</h3>
-                    <p className="text-gray-500 mb-6">创建您的第一个策略组配置</p>
+                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">创建您的第一个策略组配置，以便更灵活地管理节点分流策略。</p>
                     <button
                         onClick={handleCreate}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
                     >
                         立即创建
                     </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {groups.map((group) => (
-                        <div
-                            key={group.id}
-                            className="bg-white rounded-xl p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all"
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-lg font-semibold text-gray-800 truncate">
-                                            {group.name}
-                                        </h3>
-                                        {group.isGlobal && (
-                                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded border border-purple-200 shrink-0">
-                                                🌐 全局
-                                            </span>
-                                        )}
+                    {groups.map((group) => {
+                        const dependencies = getSourceDependencies(group.content, proxies);
+                        return (
+                            <div
+                                key={group.id}
+                                className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col overflow-hidden"
+                            >
+                                <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex items-start justify-between">
+                                    <div className="flex-1 min-w-0 pr-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-base font-semibold text-gray-800 truncate" title={group.name}>
+                                                {group.name}
+                                            </h3>
+                                            {group.isGlobal && (
+                                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded border border-purple-200 shrink-0">
+                                                    全局
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-gray-400 flex items-center gap-1.5">
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            {formatDate(group.updatedAt)}
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        更新于 {formatDate(group.updatedAt)}
-                                    </p>
+                                </div>
+
+                                <div className="p-4 flex-1 flex flex-col space-y-3">
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 relative group/code">
+                                        <pre className="text-[10px] leading-relaxed text-gray-600 font-mono overflow-hidden h-20 relative">
+                                            {group.content}
+                                            <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
+                                        </pre>
+                                    </div>
+
+                                    {dependencies.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                            {dependencies.map(source => (
+                                                <span key={source} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 truncate max-w-[150px]" title={source}>
+                                                    {source}
+                                                </span>
+                                            ))}
+                                            {dependencies.length > 3 && (
+                                                <span className="text-[10px] px-1.5 py-0.5 text-gray-400">+ {dependencies.length - 3}</span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="pt-1 text-[10px] text-gray-400 italic">
+                                            无特定源依赖
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-100 grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => handleEdit(group)}
+                                        disabled={group.isGlobal}
+                                        className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${group.isGlobal
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm'
+                                            }`}
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        编辑
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(group)}
+                                        disabled={group.isGlobal}
+                                        className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${group.isGlobal
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                : 'bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600 hover:shadow-sm'
+                                            }`}
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        删除
+                                    </button>
                                 </div>
                             </div>
-
-                            <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-32 overflow-y-auto">
-                                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-all">
-                                    {group.content.substring(0, 200)}
-                                    {group.content.length > 200 && '...'}
-                                </pre>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => handleEdit(group)}
-                                    disabled={group.isGlobal}
-                                    className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${group.isGlobal
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                                        }`}
-                                    title={group.isGlobal ? '全局配置不可编辑' : ''}
-                                >
-                                    编辑
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(group)}
-                                    disabled={group.isGlobal}
-                                    className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${group.isGlobal
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-red-50 text-red-600 hover:bg-red-100'
-                                        }`}
-                                    title={group.isGlobal ? '全局配置不可删除' : ''}
-                                >
-                                    删除
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
-            {/* Proxy Selector Modal */}
-            <Modal
-                isOpen={showProxySelector}
-                onClose={() => setShowProxySelector(false)}
-                title="选择节点"
-                maxWidth="max-w-2xl"
-                zIndex={60}
-            >
-                <div className="flex flex-col h-[60vh]">
-                    <div className="border-b space-y-3 shrink-0 pb-4">
-                        <input
-                            type="text"
-                            value={proxySearch}
-                            onChange={(e) => setProxySearch(e.target.value)}
-                            placeholder="搜索节点..."
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
 
-                        {selectedProxies.length > 0 && (
-                            <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
-                                <span className="text-sm text-blue-700">
-                                    已选 {selectedProxies.length} 个节点
-                                </span>
-                                <button
-                                    onClick={addSelectedProxies}
-                                    className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 transition-colors font-medium"
-                                >
-                                    确认添加
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 py-4 space-y-6">
-                        {/* Special Proxies */}
-                        <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">内置策略</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {['DIRECT', 'REJECT', '🚀 节点选择'].map(p => {
-                                    const isSelected = selectedProxies.includes(p);
-                                    const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p);
-
-                                    return (
-                                        <button
-                                            key={p}
-                                            onClick={() => {
-                                                if (isAdded) return;
-                                                toggleProxySelection(p);
-                                            }}
-                                            disabled={!!isAdded}
-                                            className={`text-left px-3 py-2 rounded-lg border transition-all text-sm font-medium flex items-center justify-between ${isAdded
-                                                ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                                                : isSelected
-                                                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
-                                                }`}
-                                        >
-                                            <span>{p}</span>
-                                            {isAdded ? (
-                                                <span className="text-xs">已添加</span>
-                                            ) : isSelected && (
-                                                <span className="text-blue-600">✓</span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Upstream Proxies */}
-                        {Object.entries(groupedProxies).map(([source, sourceProxies]) => (
-                            <div key={source}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                        {source}
-                                        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{sourceProxies.length}</span>
-                                    </h4>
-                                    <button
-                                        onClick={() => {
-                                            const proxiesToAdd = sourceProxies
-                                                .map(p => p.name)
-                                                .filter(name => !guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(name));
-
-                                            const allSelected = proxiesToAdd.every(name => selectedProxies.includes(name));
-
-                                            if (allSelected) {
-                                                setSelectedProxies(prev => prev.filter(p => !proxiesToAdd.includes(p)));
-                                            } else {
-                                                const newSelected = new Set([...selectedProxies, ...proxiesToAdd]);
-                                                setSelectedProxies(Array.from(newSelected));
-                                            }
-                                        }}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
-                                    >
-                                        全选/取消
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                    {sourceProxies.map(p => {
-                                        const isSelected = selectedProxies.includes(p.name);
-                                        const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p.name);
-
-                                        return (
-                                            <button
-                                                key={p.id}
-                                                onClick={() => {
-                                                    if (isAdded) return;
-                                                    toggleProxySelection(p.name);
-                                                }}
-                                                disabled={!!isAdded}
-                                                className={`text-left px-3 py-2 rounded-lg border transition-all text-sm truncate flex items-center justify-between ${isAdded
-                                                    ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                                                    : isSelected
-                                                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                                        : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
-                                                    }`}
-                                                title={p.name}
-                                            >
-                                                <span className="truncate">{p.name}</span>
-                                                {isSelected && !isAdded && (
-                                                    <span className="text-blue-600 ml-2 flex-shrink-0">✓</span>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200">
-                        <button
-                            onClick={() => setShowProxySelector(false)}
-                            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            关闭
-                        </button>
-                    </div>
-                </div>
-            </Modal>
 
             {/* Edit/Create Modal */}
             <Modal
@@ -476,136 +288,11 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                         </div>
 
                         <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    分组内容
-                                </label>
-                                <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
-                                    <button
-                                        onClick={() => {
-                                            setGroupMode('simple');
-                                            syncTextToGui(groupContent);
-                                        }}
-                                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
-                                    >
-                                        简易模式
-                                    </button>
-                                    <button
-                                        onClick={() => setGroupMode('advanced')}
-                                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
-                                    >
-                                        高级模式
-                                    </button>
-                                </div>
-                            </div>
-
-                            {groupMode === 'advanced' ? (
-                                <div>
-                                    <textarea
-                                        value={groupContent}
-                                        onChange={(e) => setGroupContent(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                                        rows={15}
-                                        placeholder="- name: 🚀 节点选择&#10;  type: select&#10;  proxies:&#10;    - DIRECT&#10;    - 🇭🇰 香港节点"
-                                    />
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        YAML 格式的策略组配置
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {/* Add Group Form */}
-                                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <input
-                                                type="text"
-                                                value={newGroupName}
-                                                onChange={(e) => setNewGroupName(e.target.value)}
-                                                onKeyPress={(e) => e.key === 'Enter' && addGuiGroup()}
-                                                placeholder="策略组名称"
-                                                className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-1"
-                                            />
-                                            <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-2">
-                                                <select
-                                                    value={newGroupType}
-                                                    onChange={(e) => setNewGroupType(e.target.value)}
-                                                    className="flex-1 sm:w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                >
-                                                    <option value="select">select</option>
-                                                    <option value="url-test">url-test</option>
-                                                    <option value="fallback">fallback</option>
-                                                    <option value="load-balance">load-balance</option>
-                                                </select>
-                                                <button
-                                                    onClick={addGuiGroup}
-                                                    className="shrink-0 bg-blue-600 text-white rounded-lg px-4 hover:bg-blue-700 transition-colors text-sm font-medium"
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Groups List */}
-                                    {guiGroups.length === 0 ? (
-                                        <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
-                                            暂无策略组，请添加
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {guiGroups.map((group) => (
-                                                <div key={group.id} className="border border-gray-200 rounded-lg p-4">
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-semibold text-gray-800">{group.name}</span>
-                                                            <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">
-                                                                {group.type}
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => removeGuiGroup(group.id)}
-                                                            className="text-red-500 hover:text-red-700 text-sm"
-                                                        >
-                                                            删除组
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Proxies */}
-                                                    <div className="space-y-2">
-                                                        {group.proxies.length > 0 && (
-                                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                                {group.proxies.map((proxy, idx) => (
-                                                                    <span
-                                                                        key={idx}
-                                                                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
-                                                                    >
-                                                                        {proxy}
-                                                                        <button
-                                                                            onClick={() => removeProxyFromGroup(group.id, idx)}
-                                                                            className="hover:text-red-600"
-                                                                        >
-                                                                            ✕
-                                                                        </button>
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        <button
-                                                            onClick={() => openProxySelector(group.id)}
-                                                            className="w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm transition-colors flex items-center justify-center gap-1"
-                                                        >
-                                                            <span>+ 添加节点</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <p className="text-xs text-gray-400">
-                                        共 {guiGroups.length} 个策略组
-                                    </p>
-                                </div>
-                            )}
+                            <GroupEditor
+                                value={groupContent}
+                                onChange={setGroupContent}
+                                proxies={proxies}
+                            />
                         </div>
                     </div>
 

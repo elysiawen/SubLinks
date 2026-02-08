@@ -5,6 +5,7 @@ import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useToast } from '@/components/ToastProvider';
+import Modal from '@/components/Modal';
 
 export interface SubscriptionFormProps {
     initialData?: {
@@ -74,6 +75,99 @@ export default function SubscriptionForm({
     }, [initialData, availableSources]);
 
     const [showAdvanced, setShowAdvanced] = useState(false);
+
+    // Source Dependency Warning State
+    const [showDependencyWarning, setShowDependencyWarning] = useState(false);
+    const [missingSources, setMissingSources] = useState<string[]>([]);
+
+    // Helper: Calculate source dependencies from group content
+    const getGroupDependencies = (content: string): string[] => {
+        try {
+            const parsed = yaml.load(content) as any;
+            const groups = Array.isArray(parsed) ? parsed : [parsed];
+            const sources = new Set<string>();
+            let hasDynamicFilter = false;
+
+            groups.forEach((g: any) => {
+                if (Array.isArray(g.proxies)) {
+                    g.proxies.forEach((p: string) => {
+                        if (typeof p !== 'string') return;
+
+                        if (p.startsWith('SOURCE:')) {
+                            sources.add(p.substring(7));
+                        } else if (p.startsWith('KEYWORD:') || p.startsWith('REGEX:')) {
+                            // For dynamic filters, we can't know which sources are affected
+                            // without proxy data, so mark this group as having dynamic filters
+                            hasDynamicFilter = true;
+                        }
+                        // Manual nodes can't be resolved without proxy data
+                    });
+                }
+            });
+
+            // If we have dynamic filters, add all enabled sources as potential dependencies
+            if (hasDynamicFilter) {
+                availableSources
+                    .filter(s => s.enabled !== false)
+                    .forEach(s => sources.add(s.name));
+            }
+
+            return Array.from(sources).filter(Boolean);
+        } catch (e) {
+            return [];
+        }
+    };
+
+    // Handle group selection - just set the groupId, we'll check dependencies on save
+    const handleGroupChange = (newGroupId: string) => {
+        setGroupId(newGroupId);
+    };
+
+    // Confirm adding missing sources and proceed with save
+    const confirmAddMissingSources = async () => {
+        const newSelectedSources = [...selectedSources, ...missingSources];
+        setSelectedSources(newSelectedSources);
+        setShowDependencyWarning(false);
+        setMissingSources([]);
+
+        // Proceed with save using updated sources
+        setLoading(true);
+        try {
+            await onSubmit({
+                name,
+                remark: name,
+                enabled,
+                groupId,
+                ruleId,
+                customRules,
+                selectedSources: newSelectedSources
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Decline adding missing sources - proceed with save anyway
+    const declineAddMissingSources = async () => {
+        setShowDependencyWarning(false);
+        setMissingSources([]);
+
+        // Proceed with save using current sources (groups will become REJECT)
+        setLoading(true);
+        try {
+            await onSubmit({
+                name,
+                remark: name,
+                enabled,
+                groupId,
+                ruleId,
+                customRules,
+                selectedSources
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Rule Builder State
     const [ruleMode, setRuleMode] = useState<'simple' | 'advanced'>('simple');
@@ -182,6 +276,22 @@ export default function SubscriptionForm({
             return;
         }
 
+        // Check for missing dependencies if a custom group is selected
+        if (groupId !== 'default') {
+            const selectedSet = configSets.groups.find(g => g.id === groupId);
+            if (selectedSet) {
+                const dependencies = getGroupDependencies(selectedSet.content);
+                const missing = dependencies.filter(dep => !selectedSources.includes(dep));
+
+                if (missing.length > 0) {
+                    setMissingSources(missing);
+                    setShowDependencyWarning(true);
+                    return; // Don't submit yet, wait for user decision
+                }
+            }
+        }
+
+        // No missing dependencies, proceed with save
         setLoading(true);
         try {
             await onSubmit({
@@ -332,7 +442,7 @@ export default function SubscriptionForm({
                                 <select
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
                                     value={groupId}
-                                    onChange={e => setGroupId(e.target.value)}
+                                    onChange={e => handleGroupChange(e.target.value)}
                                 >
                                     <option value="default">默认 (跟随上游)</option>
                                     {configSets.groups.map(g => (
@@ -478,6 +588,69 @@ export default function SubscriptionForm({
                     className="flex-1 px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20"
                 />
             </div>
+
+            {/* Source Dependency Warning Modal */}
+            <Modal
+                isOpen={showDependencyWarning}
+                onClose={declineAddMissingSources}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <span>检测到上游源依赖</span>
+                    </div>
+                }
+                maxWidth="max-w-md"
+            >
+                <p className="text-sm text-gray-500 mb-4">该策略组引用了您未选择的上游源</p>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+                    <div>
+                        <span className="text-xs text-gray-500 font-medium">策略组依赖的上游源:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {missingSources.map(source => (
+                                <span key={source} className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-lg border border-amber-200">
+                                    {source}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <span className="text-xs text-gray-500 font-medium">您已选择的上游源:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {selectedSources.length > 0 ? selectedSources.map(source => (
+                                <span key={source} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg border border-blue-200">
+                                    {source}
+                                </span>
+                            )) : (
+                                <span className="text-xs text-gray-400">无</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <p className="text-sm text-gray-600 mb-4">
+                    是否将缺失的上游源一并勾选？如果选择 <strong className="text-gray-900">否</strong>，未选择上游源中涉及的节点将显示为 <code className="px-1 py-0.5 bg-red-100 text-red-600 rounded text-xs">REJECT</code> 或不包含该源的节点。
+                </p>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={declineAddMissingSources}
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                        否，继续使用
+                    </button>
+                    <button
+                        onClick={confirmAddMissingSources}
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        是，一并勾选
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 }

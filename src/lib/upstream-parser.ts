@@ -13,16 +13,28 @@ export async function parseAndStoreUpstream(
     logger?: (msg: string, type?: 'info' | 'success' | 'error') => void
 ): Promise<void> {
     try {
-        let config: any = yaml.load(yamlContent);
+        let config: any = null;
+        let isRawList = false;
 
-        // Handle Base64 encoded node list (string output from yaml.load)
-        if (typeof config === 'string') {
+        try {
+            config = yaml.load(yamlContent);
+        } catch (e) {
+            // Not valid YAML, treat as raw list
+            config = yamlContent;
+        }
+
+        // Handle Base64 encoded node list or raw text list
+        if (typeof config === 'string' || !config || (typeof config === 'object' && !config.proxies && !config['proxy-groups'])) {
             const parsedProxies = parseBase64Links(yamlContent);
             if (parsedProxies.length > 0) {
-                const msg = `  ℹ️ Detected Base64 node list with ${parsedProxies.length} proxies`;
+                const msg = `  ℹ️ Detected node list with ${parsedProxies.length} proxies`;
                 console.log(msg);
                 if (logger) logger(msg, 'info');
                 config = { proxies: parsedProxies };
+                isRawList = true;
+            } else if (typeof config === 'string') {
+                // If parsing failed and it was a string, valid config is null
+                config = { proxies: [] };
             }
         }
 
@@ -30,10 +42,11 @@ export async function parseAndStoreUpstream(
         console.log(startMsg);
         if (logger) logger(startMsg, 'info');
 
-        // Don't clear - allow merging from multiple sources
+        // Track saved proxies for fallback group
+        let savedProxyNames: string[] = [];
 
         // 1. Store Proxies
-        if (config.proxies && Array.isArray(config.proxies)) {
+        if (config && config.proxies && Array.isArray(config.proxies)) {
             const proxies: Proxy[] = config.proxies.map((p: any) => ({
                 id: nanoid(),
                 name: p.name || 'Unnamed',
@@ -46,13 +59,16 @@ export async function parseAndStoreUpstream(
             }));
 
             await db.saveProxies(proxies);
+            savedProxyNames = proxies.map(p => p.name);
+
             const proxyMsg = `  ✓ Saved ${proxies.length} proxies from [${sourceName}]`;
             console.log(proxyMsg);
             if (logger) logger(proxyMsg, 'success');
         }
 
         // 2. Store Proxy Groups
-        if (config['proxy-groups'] && Array.isArray(config['proxy-groups'])) {
+        let hasGroups = false;
+        if (config && config['proxy-groups'] && Array.isArray(config['proxy-groups'])) {
             const groups: ProxyGroup[] = config['proxy-groups'].map((g: any, index: number) => {
                 const { name, type, proxies, ...otherConfig } = g;
                 return {
@@ -67,14 +83,36 @@ export async function parseAndStoreUpstream(
                 };
             });
 
-            await db.saveProxyGroups(groups);
-            const groupMsg = `  ✓ Saved ${groups.length} proxy groups from [${sourceName}]`;
-            console.log(groupMsg);
-            if (logger) logger(groupMsg, 'success');
+            if (groups.length > 0) {
+                await db.saveProxyGroups(groups);
+                hasGroups = true;
+                const groupMsg = `  ✓ Saved ${groups.length} proxy groups from [${sourceName}]`;
+                console.log(groupMsg);
+                if (logger) logger(groupMsg, 'success');
+            }
+        }
+
+        // Fallback: Create default group if no groups exist but proxies do
+        if (!hasGroups && savedProxyNames.length > 0) {
+            const defaultGroup: ProxyGroup = {
+                id: nanoid(),
+                name: sourceName, // Use source name as group name
+                type: 'select',
+                proxies: [`SOURCE:${sourceName}`], // Dynamic: Select all from this source
+                config: {},
+                source: sourceName,
+                priority: 0,
+                createdAt: Date.now()
+            };
+
+            await db.saveProxyGroups([defaultGroup]);
+            const fallbackMsg = `  ℹ️ Created default proxy group [${sourceName}] with dynamic node selection`;
+            console.log(fallbackMsg);
+            if (logger) logger(fallbackMsg, 'info');
         }
 
         // 3. Store Rules
-        if (config.rules && Array.isArray(config.rules)) {
+        if (config && config.rules && Array.isArray(config.rules)) {
             const rules: Rule[] = config.rules.map((r: string, index: number) => ({
                 id: nanoid(),
                 ruleText: r,
@@ -90,11 +128,13 @@ export async function parseAndStoreUpstream(
         }
 
         // 4. Store Other Config Items (dns, tun, experimental, etc.)
-        const excludeKeys = ['proxies', 'proxy-groups', 'rules'];
-        for (const [key, value] of Object.entries(config)) {
-            if (!excludeKeys.includes(key)) {
-                // Save config item with source namespacing
-                await db.saveUpstreamConfigItem(key, value, sourceName);
+        if (config && typeof config === 'object') {
+            const excludeKeys = ['proxies', 'proxy-groups', 'rules'];
+            for (const [key, value] of Object.entries(config)) {
+                if (!excludeKeys.includes(key)) {
+                    // Save config item with source namespacing
+                    await db.saveUpstreamConfigItem(key, value, sourceName);
+                }
             }
         }
 
