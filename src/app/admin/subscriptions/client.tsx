@@ -43,7 +43,7 @@ export default function AdminSubsClient({
     itemsPerPage: number,
     currentPage: number,
     configSets: ConfigSets,
-    defaultGroups: string[],
+    defaultGroups: { name: string; source: string }[],
     availableSources: { name: string; url: string; enabled?: boolean }[],
     users: { username: string; nickname?: string }[]
 }) {

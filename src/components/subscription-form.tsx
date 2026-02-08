@@ -20,7 +20,7 @@ export interface SubscriptionFormProps {
         groups: ConfigSet[];
         rules: ConfigSet[];
     };
-    defaultGroups?: string[];
+    defaultGroups?: { name: string; source: string }[];
     availableSources: {
         name: string;
         url: string;
@@ -126,7 +126,11 @@ export default function SubscriptionForm({
         let extraGroups: string[] = [];
 
         if (groupId === 'default') {
-            extraGroups = defaultGroups;
+            if (selectedSources.length === 0) {
+                extraGroups = defaultGroups.map(g => g.name);
+            } else {
+                extraGroups = defaultGroups.filter(g => selectedSources.includes(g.source)).map(g => g.name);
+            }
         } else {
             const selectedSet = configSets.groups.find(g => g.id === groupId);
             if (selectedSet) {
@@ -149,7 +153,7 @@ export default function SubscriptionForm({
 
         const all = [...basePolicies, ...extraGroups];
         return Array.from(new Set(all));
-    }, [groupId, configSets.groups, defaultGroups]);
+    }, [groupId, configSets.groups, defaultGroups, selectedSources]);
 
     // Validate policy
     useEffect(() => {

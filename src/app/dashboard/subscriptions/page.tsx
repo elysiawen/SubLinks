@@ -32,7 +32,7 @@ export default async function SubscriptionsPage() {
     // Filter and map default groups
     const defaultGroups = proxyGroups
         .filter(g => g.source !== 'custom')
-        .map(g => g.name);
+        .map(g => ({ name: g.name, source: g.source }));
 
     // Map database fields to frontend fields
     const mappedSubs = subs.map(sub => ({

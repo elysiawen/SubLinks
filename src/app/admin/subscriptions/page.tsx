@@ -20,7 +20,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
     const allGroups = await db.getProxyGroups();
     const defaultGroups = allGroups
         .filter(g => g.source !== 'custom')
-        .map(g => g.name);
+        .map(g => ({ name: g.name, source: g.source }));
 
     const availableSources = await db.getUpstreamSources();
 
