@@ -177,13 +177,20 @@ export async function updateNickname(nickname: string) {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get('auth_session')?.value;
     if (sessionId) {
+        const existingSession = await db.getSession(sessionId);
         await db.createSession(sessionId, {
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0,
             nickname: nickname || undefined,
-            avatar: user.avatar
+            avatar: user.avatar,
+            loginMethod: existingSession?.loginMethod,
+            // Preserve other fields if needed, but createSession args override some
+            ip: existingSession?.ip,
+            ua: existingSession?.ua,
+            deviceInfo: existingSession?.deviceInfo,
+            lastActive: existingSession?.lastActive
         }, 7 * 24 * 60 * 60); // 7 days
     }
 
@@ -262,13 +269,19 @@ export async function uploadAvatar(formData: FormData) {
         const cookieStore = await cookies();
         const sessionId = cookieStore.get('auth_session')?.value;
         if (sessionId) {
+            const existingSession = await db.getSession(sessionId);
             await db.createSession(sessionId, {
                 userId: user.id,
                 username: user.username,
                 role: user.role,
                 tokenVersion: user.tokenVersion || 0,
                 nickname: user.nickname,
-                avatar: avatarUrl
+                avatar: avatarUrl,
+                loginMethod: existingSession?.loginMethod,
+                ip: existingSession?.ip,
+                ua: existingSession?.ua,
+                deviceInfo: existingSession?.deviceInfo,
+                lastActive: existingSession?.lastActive
             }, 7 * 24 * 60 * 60);
         }
 
@@ -327,7 +340,8 @@ export async function deleteAvatar() {
             ip: existingSession?.ip,
             ua: existingSession?.ua,
             deviceInfo: existingSession?.deviceInfo,
-            lastActive: existingSession?.lastActive
+            lastActive: existingSession?.lastActive,
+            loginMethod: existingSession?.loginMethod
         }, 7 * 24 * 60 * 60);
     }
 
@@ -365,7 +379,8 @@ export async function getUserSessionsList() {
                 ua: s.ua || 'unknown',
                 deviceInfo: s.deviceInfo || 'Web Browser',
                 lastActive: s.lastActive || 0,
-                current: s.sessionId === currentSessionId
+                current: s.sessionId === currentSessionId,
+                loginMethod: s.loginMethod
             })),
         ...clientSessions.map((s: RefreshToken) => ({
             id: s.id,
@@ -420,7 +435,6 @@ export async function revokeSession(sessionId: string) {
         return { error: 'Unauthorized' };
     }
 
-    await db.deleteUserSession(session.userId, sessionId);
     await db.deleteUserRefreshToken(session.userId, sessionId);
 
     return { success: true };

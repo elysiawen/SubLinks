@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.969.0",
+    "@simplewebauthn/browser": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.16.0",
     "@uiw/react-md-editor": "^4.0.11",

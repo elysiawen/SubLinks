@@ -33,6 +33,7 @@ export interface UnifiedSessionItem {
     deviceInfo?: string; // Parsed device info
     lastActive: number;
     current?: boolean;
+    loginMethod?: 'password' | 'qr' | 'passkey';
 }
 
 export interface UnifiedSessionManagerProps {
@@ -227,6 +228,16 @@ export default function SessionManager({
                                                 }`}>
                                                 {session.type === 'web' ? (isAdmin ? 'Web' : '网页端') : (isAdmin ? 'API' : '客户端 API')}
                                             </span>
+                                            {session.loginMethod && (
+                                                <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap ${session.loginMethod === 'passkey'
+                                                    ? 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20'
+                                                    : session.loginMethod === 'qr'
+                                                        ? 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-500/10 dark:text-orange-300 dark:border-orange-500/20'
+                                                        : 'bg-gray-50 text-gray-600 border-gray-100 dark:bg-gray-500/10 dark:text-gray-300 dark:border-gray-500/20'
+                                                    }`}>
+                                                    {session.loginMethod === 'passkey' ? 'Passkey' : session.loginMethod === 'qr' ? '扫码' : '密码'}
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="flex flex-col gap-2">

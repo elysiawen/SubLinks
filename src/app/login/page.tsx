@@ -1,18 +1,277 @@
 'use client'
 
-import { useActionState, Suspense, useRef, useState, useEffect } from 'react';
+import { useActionState, Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { login } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
+import { login, generateQrToken, checkQrStatus } from '@/lib/actions';
 import Modal from '@/components/Modal';
-import QrCodeLogin from '@/components/QrCodeLogin';
-
+import { useToast } from '@/components/ToastProvider';
+import { startAuthentication } from '@simplewebauthn/browser';
+import { generatePasskeyLoginOptions, verifyPasskeyLogin } from '@/lib/passkey-actions';
+import QRCode from 'qrcode';
 import { SubmitButton } from '@/components/SubmitButton';
+
+function PasskeyLogin() {
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const { error: toastError, info } = useToast();
+
+    const handleLogin = async () => {
+        setLoading(true);
+
+        try {
+            // 1. Get options
+            const res = await generatePasskeyLoginOptions();
+            if (!res.options) {
+                throw new Error('无法获取登录选项');
+            }
+
+            // 2. Browser interaction
+            const authResp = await startAuthentication({ optionsJSON: res.options });
+
+            // 3. Verify
+            const verifyRes = await verifyPasskeyLogin(authResp, res.flowId!);
+            if (verifyRes.error) {
+                throw new Error(verifyRes.error);
+            }
+
+            // Success
+            router.push('/dashboard');
+        } catch (err: any) {
+            // Check for user cancellation or timeout
+            const isNotAllowed = err.name === 'NotAllowedError' ||
+                err.message?.includes('not allowed') ||
+                err.message?.includes('The operation either timed out or was not allowed');
+
+            if (isNotAllowed) {
+                // User cancelled or timed out
+                // Optionally show info or just ignore/reset
+                // For login, maybe just clear error or show "Cancelled"
+                info('用户取消了操作');
+            } else if (err.message === 'Passkey not found') {
+                // Known error - do not log to console
+                toastError('未找到该通行密钥，请确认是否已注册或被删除');
+            } else {
+                console.error(err);
+                toastError(err.message || '登录失败');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <button
+                type="button"
+                onClick={handleLogin}
+                disabled={loading}
+                className="w-full py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200"
+            >
+                {loading ? (
+                    <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        正在验证...
+                    </>
+                ) : (
+                    '🔐 使用通行密钥登录'
+                )}
+            </button>
+        </div>
+    );
+}
+
+function QrCodeLogin() {
+    const [qrUrl, setQrUrl] = useState<string>('');
+    const [status, setStatus] = useState<'loading' | 'pending' | 'scanned' | 'confirmed' | 'expired' | 'error' | 'success' | 'rejected'>('loading');
+    const [token, setToken] = useState<string>('');
+    const [expiresAt, setExpiresAt] = useState<number>(0);
+    const router = useRouter();
+    const { success, error: toastError } = useToast();
+    const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Function to generate new QR code
+    const loadQrCode = useCallback(async () => {
+        try {
+            setStatus('loading');
+            if (pollingRef.current) clearInterval(pollingRef.current);
+
+            const { token, expiresAt } = await generateQrToken();
+            setToken(token);
+            setExpiresAt(expiresAt);
+
+            const dataToEncode = `sublinks://login/${token}`;
+            const url = await QRCode.toDataURL(dataToEncode, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            });
+            setQrUrl(url);
+            setStatus('pending');
+        } catch (err) {
+            console.error('Failed to generate QR', err);
+            setStatus('error');
+        }
+    }, []);
+
+    // Initial load
+    useEffect(() => {
+        loadQrCode();
+        return () => {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+        };
+    }, [loadQrCode]);
+
+    // Polling logic
+    useEffect(() => {
+        if (!token || (status !== 'pending' && status !== 'scanned')) return;
+
+        pollingRef.current = setInterval(async () => {
+            // Check expiry
+            if (Date.now() > expiresAt) {
+                setStatus('expired');
+                if (pollingRef.current) clearInterval(pollingRef.current);
+                return;
+            }
+
+            try {
+                const res = await checkQrStatus(token);
+
+                if (res.status === 'scanned') {
+                    if (status !== 'scanned') setStatus('scanned');
+                } else if (res.status === 'rejected') {
+                    setStatus('rejected');
+                    if (pollingRef.current) clearInterval(pollingRef.current);
+                } else if (res.status === 'success') {
+                    setStatus('success');
+                    if (pollingRef.current) clearInterval(pollingRef.current);
+                    success('登录成功');
+                    router.push('/dashboard');
+                    router.refresh();
+                } else if (res.status === 'expired') {
+                    setStatus('expired');
+                    if (pollingRef.current) clearInterval(pollingRef.current);
+                }
+            } catch (err) {
+                console.error('Polling error', err);
+            }
+        }, 2000);
+
+        return () => {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+        };
+    }, [token, status, expiresAt, router, success]);
+
+    const handleRefresh = () => {
+        loadQrCode();
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center space-y-4 py-4 min-h-[300px]">
+            {status === 'loading' && (
+                <div className="animate-pulse flex flex-col items-center">
+                    <div className="w-48 h-48 bg-gray-200 rounded-lg"></div>
+                    <div className="h-4 bg-gray-200 rounded w-32 mt-4"></div>
+                </div>
+            )}
+
+            {(status === 'pending' || status === 'scanned') && qrUrl && (
+                <div className="relative group">
+                    <div className={`p-2 bg-white rounded-lg border-2 ${status === 'scanned' ? 'border-green-500' : 'border-gray-200'} transition-colors duration-300`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrUrl} alt="Login QR Code" className={`w-48 h-48 ${status === 'scanned' ? 'opacity-50' : ''}`} />
+
+                        {status === 'scanned' && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-green-500 text-white rounded-full p-2 shadow-lg animate-bounce">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    {status === 'scanned' ? (
+                        <p className="text-green-600 font-medium text-center mt-4">
+                            扫码成功，请在手机上确认
+                        </p>
+                    ) : (
+                        <p className="text-gray-500 text-sm text-center mt-4">
+                            请使用 SubLinks 手机端扫码登录
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {status === 'expired' && (
+                <div className="text-center">
+                    <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
+                        <span className="text-gray-400 text-3xl">⚠️</span>
+                    </div>
+                    <p className="text-gray-600 mb-2">二维码已过期</p>
+                    <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                    >
+                        刷新二维码
+                    </button>
+                </div>
+            )}
+            {status === 'error' && (
+                <div className="text-center">
+                    <div className="w-48 h-48 bg-red-50 rounded-lg flex items-center justify-center mb-4 border-2 border-red-100">
+                        <span className="text-red-400 text-3xl">❌</span>
+                    </div>
+                    <p className="text-red-600 mb-2">生成二维码失败</p>
+                    <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                    >
+                        重试
+                    </button>
+                </div>
+            )}
+
+            {status === 'rejected' && (
+                <div className="text-center">
+                    <div className="w-48 h-48 bg-red-50 rounded-lg flex items-center justify-center mb-4 border-2 border-red-100">
+                        <span className="text-red-400 text-3xl">🚫</span>
+                    </div>
+                    <p className="text-red-600 mb-2">登录已拒绝</p>
+                    <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                    >
+                        重试
+                    </button>
+                </div>
+            )}
+
+            {status === 'success' && (
+                <div className="text-center">
+                    <div className="w-48 h-48 bg-green-50 rounded-lg flex items-center justify-center mb-4 border-2 border-green-100">
+                        <span className="text-green-500 text-4xl">✅</span>
+                    </div>
+                    <p className="text-green-600 font-bold">登录成功！</p>
+                    <p className="text-gray-500 text-sm">正在跳转...</p>
+                </div>
+            )}
+        </div>
+    );
+}
 
 function PasswordLogin() {
     const [state, formAction, isPending] = useActionState(login, null);
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl');
     const formRef = useRef<HTMLFormElement>(null);
+    const { error: toastError } = useToast();
 
     // 2FA State
     const [show2FAModal, setShow2FAModal] = useState(false);
@@ -22,21 +281,18 @@ function PasswordLogin() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
-    // Local validation error
-    const [localError, setLocalError] = useState<string | null>(null);
-
     useEffect(() => {
         if (state?.error === '2fa_required') {
             setShow2FAModal(true);
+        } else if (state?.error) {
+            toastError(state.error);
         }
-    }, [state]);
+    }, [state, toastError]);
 
     const handleSubmit = () => {
-        setLocalError(null);
-
         // Client-side validation
         if (!username.trim() || !password.trim()) {
-            setLocalError('请输入用户名和密码');
+            toastError('请输入用户名和密码');
             return;
         }
 
@@ -62,10 +318,9 @@ function PasswordLogin() {
                     // Client-side validation before submission
                     if (!username.trim() || !password.trim()) {
                         e.preventDefault();
-                        setLocalError('请输入用户名和密码');
+                        toastError('请输入用户名和密码');
                         return;
                     }
-                    setLocalError(null);
                     // Let form submit normally
                 }}
             >
@@ -111,13 +366,6 @@ function PasswordLogin() {
                     </div>
                 </div>
 
-                {(localError || (state?.error && state.error !== '2fa_required')) && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-shake">
-                        <span>⚠️</span>
-                        <span>{localError || state?.error}</span>
-                    </div>
-                )}
-
                 <div>
                     <SubmitButton
                         text="🔐 登录"
@@ -162,12 +410,6 @@ function PasswordLogin() {
                         />
                     </div>
 
-                    {state?.error && state.error !== '2fa_required' && (
-                        <div className="bg-red-50 text-red-600 text-sm py-2 px-3 rounded-lg text-center animate-shake">
-                            {state.error}
-                        </div>
-                    )}
-
                     <div className="pt-2">
                         <button
                             type="button"
@@ -199,6 +441,20 @@ function LoginBox() {
 
     return (
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">
+            {/* Passkey Login Button (Always Visible) */}
+            <div className="mb-6">
+                <PasskeyLogin />
+
+                <div className="relative mt-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-gray-500">或者使用其他方式</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Tabs */}
             <div className="flex p-1 bg-gray-100/50 rounded-xl mb-6 relative">
                 <button
@@ -209,7 +465,7 @@ function LoginBox() {
                         }`}
                 >
                     <span className="mr-2">🔑</span>
-                    密码登录
+                    密码
                 </button>
                 <button
                     onClick={() => setLoginMethod('qr')}
@@ -219,7 +475,7 @@ function LoginBox() {
                         }`}
                 >
                     <span className="mr-2">📱</span>
-                    扫码登录
+                    扫码
                 </button>
             </div>
 

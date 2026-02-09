@@ -1,5 +1,5 @@
 import { createPool, Pool } from 'mysql2/promise';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, UpstreamSource, APIAccessLog, WebAccessLog, SystemLog } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, UpstreamSource, APIAccessLog, WebAccessLog, SystemLog, PasskeyCredentials } from './interface';
 import { nanoid } from 'nanoid';
 import { randomUUID } from 'crypto';
 import { getLocation } from '../ip-location';
@@ -157,6 +157,12 @@ export default class MysqlDatabase implements IDatabase {
             PREPARE stmt FROM @query;
             EXECUTE stmt;
 
+            -- Ensure login_method column exists
+            SELECT count(*) INTO @exist_login_method FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'sessions' AND column_name = 'login_method';
+            SET @query = IF(@exist_login_method=0, 'ALTER TABLE sessions ADD COLUMN login_method VARCHAR(50)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
             CREATE TABLE IF NOT EXISTS refresh_tokens (
                 id VARCHAR(255) PRIMARY KEY,
                 user_id CHAR(36) NOT NULL,
@@ -299,6 +305,18 @@ export default class MysqlDatabase implements IDatabase {
                 timestamp BIGINT,
                 INDEX idx_sys_logs_category (category),
                 INDEX idx_sys_logs_timestamp (timestamp)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE IF NOT EXISTS passkeys (
+                id VARCHAR(255) PRIMARY KEY,
+                user_id CHAR(36) NOT NULL,
+                public_key TEXT NOT NULL,
+                counter BIGINT NOT NULL DEFAULT 0,
+                transports JSON,
+                name VARCHAR(255),
+                created_at BIGINT NOT NULL,
+                last_used BIGINT NOT NULL,
+                INDEX idx_passkeys_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
@@ -477,8 +495,8 @@ export default class MysqlDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO sessions (session_id, username, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO sessions (session_id, username, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, login_method)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 username = VALUES(username),
                 role = VALUES(role),
@@ -486,8 +504,9 @@ export default class MysqlDatabase implements IDatabase {
                 token_version = VALUES(token_version),
                 nickname = VALUES(nickname),
                 avatar = VALUES(avatar),
-                last_active = VALUES(last_active)`,
-            [sessionId, data.username, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || 0, data.nickname, data.avatar, data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || Date.now()]
+                last_active = VALUES(last_active),
+                login_method = VALUES(login_method)`,
+            [sessionId, data.username, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || 0, data.nickname, data.avatar, data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || Date.now(), data.loginMethod]
         );
     }
 
@@ -546,7 +565,8 @@ export default class MysqlDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
-            lastActive: Number(row.last_active)
+            lastActive: Number(row.last_active),
+            loginMethod: row.login_method
         };
     }
 
@@ -575,7 +595,8 @@ export default class MysqlDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
-            lastActive: Number(row.last_active)
+            lastActive: Number(row.last_active),
+            loginMethod: row.login_method
         }));
     }
 
@@ -1580,5 +1601,64 @@ export default class MysqlDatabase implements IDatabase {
             this.pool.query('TRUNCATE TABLE web_access_logs'),
             this.pool.query('TRUNCATE TABLE system_logs')
         ]);
+    }
+
+    // Passkey operations
+    async addPasskey(passkey: PasskeyCredentials): Promise<void> {
+        await this.ensureInitialized();
+        await this.pool.query(
+            `INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, created_at, last_used)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                passkey.id,
+                passkey.userId,
+                passkey.publicKey,
+                passkey.counter,
+                JSON.stringify(passkey.transports),
+                passkey.name,
+                passkey.createdAt,
+                passkey.lastUsed
+            ]
+        );
+    }
+
+    async getPasskey(id: string): Promise<PasskeyCredentials | null> {
+        await this.ensureInitialized();
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM passkeys WHERE id = ?', [id]);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        return {
+            id: row.id,
+            userId: row.user_id,
+            publicKey: row.public_key,
+            counter: Number(row.counter),
+            transports: typeof row.transports === 'string' ? JSON.parse(row.transports) : row.transports || [],
+            name: row.name,
+            createdAt: Number(row.created_at),
+            lastUsed: Number(row.last_used)
+        };
+    }
+
+    async getUserPasskeys(userId: string): Promise<PasskeyCredentials[]> {
+        await this.ensureInitialized();
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM passkeys WHERE user_id = ? ORDER BY last_used DESC', [userId]);
+        return rows.map(row => ({
+            id: row.id,
+            userId: row.user_id,
+            publicKey: row.public_key,
+            counter: Number(row.counter),
+            transports: typeof row.transports === 'string' ? JSON.parse(row.transports) : row.transports || [],
+            name: row.name,
+            createdAt: Number(row.created_at),
+            lastUsed: Number(row.last_used)
+        }));
+    }
+
+    async deletePasskey(id: string, userId: string): Promise<void> {
+        await this.pool.query('DELETE FROM passkeys WHERE id = ? AND user_id = ?', [id, userId]);
+    }
+
+    async updatePasskeyCounter(id: string, counter: number): Promise<void> {
+        await this.pool.query('UPDATE passkeys SET counter = ?, last_used = ? WHERE id = ?', [counter, Date.now(), id]);
     }
 }

@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, PasskeyCredentials } from './interface';
 import { nanoid } from 'nanoid';
 import { getLocation } from '../ip-location';
 
@@ -111,6 +111,7 @@ export default class PostgresDatabase implements IDatabase {
                 
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS login_method VARCHAR(50);
 
                 CREATE TABLE IF NOT EXISTS refresh_tokens (
                     id VARCHAR(255) PRIMARY KEY,
@@ -250,13 +251,20 @@ export default class PostgresDatabase implements IDatabase {
 
                 -- Add ua_policy and custom_ua_filter columns to upstream_sources if they don't exist
                 -- Drop legacy ua_policy and custom_ua_filter columns
-                DO $$ 
-                BEGIN
-                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS custom_ua_filter;
-                   ALTER TABLE upstream_sources DROP COLUMN IF EXISTS ua_whitelist;
                    -- Add enabled column if not exists
                    ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE;
-                END $$;
+
+                CREATE TABLE IF NOT EXISTS passkeys (
+                    id VARCHAR(255) PRIMARY KEY,
+                    user_id UUID NOT NULL,
+                    public_key TEXT NOT NULL,
+                    counter BIGINT NOT NULL DEFAULT 0,
+                    transports JSONB,
+                    name VARCHAR(255),
+                    created_at BIGINT NOT NULL,
+                    last_used BIGINT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_passkeys_user ON passkeys(user_id);
             `);
 
         } finally {
@@ -398,8 +406,8 @@ export default class PostgresDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, created_at, expires_at, login_method)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
                  username = EXCLUDED.username,
@@ -414,10 +422,11 @@ export default class PostgresDatabase implements IDatabase {
                  device_info = EXCLUDED.device_info,
                  last_active = EXCLUDED.last_active,
                  created_at = EXCLUDED.created_at,
-                 expires_at = EXCLUDED.expires_at`,
+                 expires_at = EXCLUDED.expires_at,
+                 login_method = EXCLUDED.login_method`,
             [
                 sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar,
-                data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt
+                data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt, data.loginMethod
             ]
         );
     }
@@ -472,6 +481,7 @@ export default class PostgresDatabase implements IDatabase {
                 ua: row.ua,
                 deviceInfo: row.device_info,
                 lastActive: parseInt(row.last_active || '0'),
+                loginMethod: row.login_method,
             };
         } catch (error) {
             console.error('Error in getSession:', error);
@@ -532,7 +542,8 @@ export default class PostgresDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
-            lastActive: parseInt(row.last_active || '0'),
+            lastActive: Number(row.last_active),
+            loginMethod: row.login_method
         }));
     }
 
@@ -573,7 +584,8 @@ export default class PostgresDatabase implements IDatabase {
                 isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
-                lastActive: parseInt(row.last_active || '0')
+                lastActive: parseInt(row.last_active || '0'),
+                loginMethod: row.login_method
             })),
             total: parseInt(countResult.rows[0].count)
         };
@@ -1837,5 +1849,64 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('UPDATE upstream_sources SET is_default = false');
         // Then set the specified one as default
         await this.pool.query('UPDATE upstream_sources SET is_default = true WHERE name = $1', [name]);
+    }
+
+    // Passkey operations
+    async addPasskey(passkey: PasskeyCredentials): Promise<void> {
+        await this.ensureInitialized();
+        await this.pool.query(
+            `INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, created_at, last_used)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+                passkey.id,
+                passkey.userId,
+                passkey.publicKey,
+                passkey.counter,
+                JSON.stringify(passkey.transports),
+                passkey.name,
+                passkey.createdAt,
+                passkey.lastUsed
+            ]
+        );
+    }
+
+    async getPasskey(id: string): Promise<PasskeyCredentials | null> {
+        await this.ensureInitialized();
+        const result = await this.pool.query('SELECT * FROM passkeys WHERE id = $1', [id]);
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+        return {
+            id: row.id,
+            userId: row.user_id,
+            publicKey: row.public_key,
+            counter: parseInt(row.counter),
+            transports: row.transports || [],
+            name: row.name,
+            createdAt: parseInt(row.created_at),
+            lastUsed: parseInt(row.last_used)
+        };
+    }
+
+    async getUserPasskeys(userId: string): Promise<PasskeyCredentials[]> {
+        await this.ensureInitialized();
+        const result = await this.pool.query('SELECT * FROM passkeys WHERE user_id = $1 ORDER BY last_used DESC', [userId]);
+        return result.rows.map(row => ({
+            id: row.id,
+            userId: row.user_id,
+            publicKey: row.public_key,
+            counter: parseInt(row.counter),
+            transports: row.transports || [],
+            name: row.name,
+            createdAt: parseInt(row.created_at),
+            lastUsed: parseInt(row.last_used)
+        }));
+    }
+
+    async deletePasskey(id: string, userId: string): Promise<void> {
+        await this.pool.query('DELETE FROM passkeys WHERE id = $1 AND user_id = $2', [id, userId]);
+    }
+
+    async updatePasskeyCounter(id: string, counter: number): Promise<void> {
+        await this.pool.query('UPDATE passkeys SET counter = $1, last_used = $2 WHERE id = $3', [counter, Date.now(), id]);
     }
 }

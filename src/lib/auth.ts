@@ -7,7 +7,7 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 
-export async function createSession(username: string, role: string, ip?: string, ua?: string) {
+export async function createSession(username: string, role: string, ip?: string, ua?: string, loginMethod?: 'password' | 'qr' | 'passkey') {
     const sessionId = nanoid(32);
     // Get user to obtain userId
     const user = await db.getUser(username);
@@ -27,7 +27,8 @@ export async function createSession(username: string, role: string, ip?: string,
         avatar: user.avatar,
         ip,
         ua,
-        deviceInfo
+        deviceInfo,
+        loginMethod
     }, SESSION_TTL);
     return sessionId;
 }

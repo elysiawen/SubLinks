@@ -43,6 +43,7 @@ export interface Session {
     ua?: string;         // User Agent
     deviceInfo?: string; // Parsed device info
     lastActive?: number; // Last active timestamp
+    loginMethod?: 'password' | 'qr' | 'passkey'; // Login method
 }
 
 export interface RefreshToken {
@@ -204,6 +205,18 @@ export interface Rule {
     createdAt: number;
 }
 
+// Passkey Credentials
+export interface PasskeyCredentials {
+    id: string;          // Credential ID (base64url)
+    userId: string;
+    publicKey: string;   // Base64url encoded public key
+    counter: number;
+    transports: string[]; // Authenticator transports
+    name: string;        // User-friendly name (e.g. "My MacBook")
+    createdAt: number;
+    lastUsed: number;
+}
+
 // Database interface
 export interface IDatabase {
     // User operations
@@ -314,5 +327,12 @@ export interface IDatabase {
     cleanupLogs(retentionDays: number, logTypes?: string[]): Promise<void>;
     deleteAllLogs(): Promise<void>;
     cleanupQrCache(): Promise<void>;
+
+    // Passkey operations
+    addPasskey(passkey: PasskeyCredentials): Promise<void>;
+    getPasskey(id: string): Promise<PasskeyCredentials | null>;
+    getUserPasskeys(userId: string): Promise<PasskeyCredentials[]>;
+    deletePasskey(id: string, userId: string): Promise<void>;
+    updatePasskeyCounter(id: string, counter: number): Promise<void>;
 }
 

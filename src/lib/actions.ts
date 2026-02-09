@@ -85,7 +85,7 @@ export async function login(prevState: any, formData: FormData) {
     const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
     const ua = headersList.get('user-agent') || 'unknown';
 
-    const sessionId = await createSession(username, user.role, ip, ua); // Pass IP and UA
+    const sessionId = await createSession(username, user.role, ip, ua, 'password'); // Pass IP and UA
 
     // 4. Set Cookie
     (await cookies()).set(COOKIE_NAME, sessionId, {
@@ -171,7 +171,7 @@ export async function checkQrStatus(token: string) {
         const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
         const ua = headersList.get('user-agent') || 'unknown';
 
-        const sessionId = await createSession(user.username, user.role, ip, ua);
+        const sessionId = await createSession(user.username, user.role, ip, ua, 'qr');
 
         (await cookies()).set(COOKIE_NAME, sessionId, {
             httpOnly: true,
