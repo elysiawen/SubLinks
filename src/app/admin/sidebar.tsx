@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { logout } from '@/lib/actions';
-import { useConfirm } from '@/components/ConfirmProvider';
+
 
 interface SidebarProps {
     username: string;
@@ -11,7 +10,7 @@ interface SidebarProps {
 
 export default function AdminSidebar({ username }: SidebarProps) {
     const pathname = usePathname();
-    const { confirm } = useConfirm();
+
 
     const isActive = (path: string) => pathname === path;
 
@@ -80,20 +79,7 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors font-medium">
                     🏠 返回用户中心
                 </Link>
-                <button
-                    onClick={() => {
-                        confirm('确定要退出登录吗？', {
-                            confirmText: '退出',
-                            confirmColor: 'red',
-                            onConfirm: async () => {
-                                await logout();
-                            }
-                        });
-                    }}
-                    className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                    退出登录
-                </button>
+
             </div>
         </aside>
     );

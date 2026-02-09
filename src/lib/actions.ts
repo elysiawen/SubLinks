@@ -95,12 +95,10 @@ export async function login(prevState: any, formData: FormData) {
         maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
-    // 5. Redirect to callback URL or default based on role
+    // 5. Redirect to callback URL or default
     if (callbackUrl && callbackUrl.startsWith('/')) {
         // Validate callback URL is internal
         redirect(callbackUrl);
-    } else if (user.role === 'admin') {
-        redirect('/admin');
     } else {
         redirect('/dashboard');
     }

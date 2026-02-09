@@ -36,7 +36,12 @@ function PasskeyLogin() {
             }
 
             // Success
-            router.push('/dashboard');
+            const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl');
+            if (callbackUrl && callbackUrl.startsWith('/')) {
+                router.push(callbackUrl);
+            } else {
+                router.push('/dashboard');
+            }
         } catch (err: any) {
             // Check for user cancellation or timeout
             const isNotAllowed = err.name === 'NotAllowedError' ||

@@ -295,23 +295,19 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                         isActive={pathname === '/dashboard/sessions'}
                                         onItemClick={handleItemClick}
                                     />
-
-                                    {role === 'admin' && (
-                                        <>
-                                            <div className="my-4 h-px bg-gray-100 mx-2" />
-                                            <SidebarItem
-                                                icon="🛡️"
-                                                label="后台管理"
-                                                href="/admin"
-                                                isActive={false}
-                                                onItemClick={handleItemClick}
-                                            />
-                                        </>
-                                    )}
                                 </nav>
 
                                 {/* Footer / Logout */}
-                                <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                                <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-2">
+                                    {role === 'admin' && (
+                                        <Link
+                                            href="/admin"
+                                            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-blue-600 bg-blue-50 border border-blue-100/60 rounded-xl hover:bg-blue-100 hover:border-blue-200 hover:shadow-sm transition-all duration-200 group"
+                                        >
+                                            <span className="group-hover:scale-110 transition-transform duration-200">🛡️</span>
+                                            <span>后台管理</span>
+                                        </Link>
+                                    )}
                                     <button
                                         onClick={() => {
                                             confirm('确定要退出登录吗？', {

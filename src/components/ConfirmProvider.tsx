@@ -45,14 +45,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             setIsLoading(true);
             try {
                 await config.options.onConfirm();
-                if (resolveRef.current) {
-                    resolveRef.current(true);
-                }
-                setIsOpen(false);
             } catch (error) {
                 console.error('Confirm action failed:', error);
             } finally {
                 setIsLoading(false);
+                setIsOpen(false);
             }
         } else {
             if (resolveRef.current) {
