@@ -8,7 +8,20 @@ import { SubData } from '@/lib/database/interface';
 
 // User Management
 export async function getUsers(page: number = 1, limit: number = 10, search?: string) {
-    return await db.getAllUsers(page, limit, search);
+    const result = await db.getAllUsers(page, limit, search);
+
+    const usersWithPasskeys = await Promise.all(result.data.map(async (user) => {
+        const passkeys = await db.getUserPasskeys(user.id);
+        return {
+            ...user,
+            passkeyCount: passkeys.length
+        };
+    }));
+
+    return {
+        data: usersWithPasskeys,
+        total: result.total
+    };
 }
 
 export async function createUser(formData: FormData) {
@@ -322,4 +335,25 @@ export async function resetUser2FA(username: string) {
 
     revalidatePath('/admin/users');
     return { success: true };
+}
+
+export async function adminGetUserPasskeys(userId: string) {
+    try {
+        const passkeys = await db.getUserPasskeys(userId);
+        return { success: true, passkeys };
+    } catch (error) {
+        console.error('Failed to fetch user passkeys:', error);
+        return { error: '获取通行密钥失败' };
+    }
+}
+
+export async function adminDeletePasskey(passkeyId: string, userId: string) {
+    try {
+        await db.deletePasskey(passkeyId, userId);
+        revalidatePath('/admin/users');
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to delete passkey:', error);
+        return { error: '删除通行密钥失败' };
+    }
 }

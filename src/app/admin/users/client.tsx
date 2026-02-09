@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA } from './actions';
+import { useState, useEffect } from 'react';
+import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -28,7 +28,11 @@ export default function AdminUsersClient({
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
-    const [editingUser, setEditingUser] = useState<{ username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ id: string, username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
+
+    // Passkey State
+    const [userPasskeys, setUserPasskeys] = useState<any[]>([]);
+    const [loadingPasskeys, setLoadingPasskeys] = useState(false);
 
     // Avatar State
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -44,6 +48,37 @@ export default function AdminUsersClient({
         } else {
             success('用户创建成功');
             // No need to reset form - modal will close
+        }
+    };
+
+    // Passkey Management
+    useEffect(() => {
+        if (editingUser?.id) {
+            setLoadingPasskeys(true);
+            adminGetUserPasskeys(editingUser.id).then(res => {
+                if (res.success) {
+                    setUserPasskeys(res.passkeys || []);
+                } else {
+                    error(res.error || '获取通行密钥失败');
+                }
+                setLoadingPasskeys(false);
+            });
+        } else {
+            setUserPasskeys([]);
+        }
+    }, [editingUser?.id]);
+
+    const handleDeletePasskey = async (passkeyId: string) => {
+        if (!editingUser) return;
+        if (await confirm('确定要删除此通行密钥吗？')) {
+            const res = await adminDeletePasskey(passkeyId, editingUser.id);
+            if (res.success) {
+                // Remove from local state
+                setUserPasskeys(prev => prev.filter(pk => pk.id !== passkeyId));
+                success('通行密钥已删除');
+            } else {
+                error(res.error || '删除失败');
+            }
         }
     };
 
@@ -247,9 +282,8 @@ export default function AdminUsersClient({
                     <table className="min-w-full divide-y divide-gray-100">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户名</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">昵称</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">角色</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">安全状态</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">订阅限制</th>
                                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">操作</th>
@@ -260,32 +294,42 @@ export default function AdminUsersClient({
                                 <tr key={user.username} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold overflow-hidden">
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold overflow-hidden flex-shrink-0">
                                                 {user.avatar ? (
                                                     <img src={user.avatar} alt="头像" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <span>{user.username.slice(0, 2).toUpperCase()}</span>
                                                 )}
                                             </div>
-                                            <span>{user.username}</span>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-900 font-medium">{user.username}</span>
+                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-medium rounded border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                                                        {user.role === 'admin' ? '管理员' : '用户'}
+                                                    </span>
+                                                </div>
+                                                {user.nickname ? (
+                                                    <span className="text-xs text-gray-500">{user.nickname}</span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400 italic">未设置昵称</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {user.nickname ? (
-                                            <span className="text-gray-900">{user.nickname}</span>
-                                        ) : (
-                                            <span className="text-gray-400 italic">未设置</span>
-                                        )}
-                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
-                                                {user.role === 'admin' ? '管理员' : '用户'}
-                                            </span>
+                                        <div className="flex flex-col gap-1 items-start">
                                             {user.totpEnabled && (
                                                 <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title="2FA 已启用">
                                                     2FA
                                                 </span>
+                                            )}
+                                            {user.passkeyCount > 0 && (
+                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter" title={`${user.passkeyCount} 个通行密钥`}>
+                                                    KEY
+                                                </span>
+                                            )}
+                                            {!user.totpEnabled && user.passkeyCount === 0 && (
+                                                <span className="text-gray-400 text-xs pl-1">-</span>
                                             )}
                                         </div>
                                     </td>
@@ -302,6 +346,7 @@ export default function AdminUsersClient({
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
                                             onClick={() => setEditingUser({
+                                                id: user.id,
                                                 username: user.username,
                                                 newUsername: user.username,
                                                 newPassword: '',
@@ -361,28 +406,39 @@ export default function AdminUsersClient({
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="font-medium text-gray-900 mb-1">
-                                                {user.username}
+                                            <div className="mb-2">
+                                                <span className="font-medium text-gray-900">{user.username}</span>
                                                 {user.nickname && (
-                                                    <span className="ml-2 text-sm font-normal text-gray-600">({user.nickname})</span>
+                                                    <span className="ml-1 text-sm text-gray-500">({user.nickname})</span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                                     {user.role === 'admin' ? '管理员' : '用户'}
                                                 </span>
-                                                {user.totpEnabled && (
-                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter">
-                                                        2FA
-                                                    </span>
-                                                )}
-                                                <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                                                <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+                                                    {user.totpEnabled && (
+                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter">
+                                                            2FA
+                                                        </span>
+                                                    )}
+                                                    {user.passkeyCount > 0 && (
+                                                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter">
+                                                            KEY
+                                                        </span>
+                                                    )}
+                                                    {!user.totpEnabled && user.passkeyCount === 0 && (
+                                                        <span className="text-xs text-gray-400">无安全设置</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className={`px-2.5 py-0.5 inline-flex font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                                                     {user.status === 'active' ? '正常' : '已停用'}
                                                 </span>
-                                            </div>
-                                            <div className="mt-2 text-xs text-gray-600">
-                                                订阅限制: <span className="font-medium text-gray-900">
-                                                    {user.maxSubscriptions === null ? `${globalMaxSubs} (全局)` : user.maxSubscriptions}
+                                                <span className="text-gray-400">|</span>
+                                                <span className="text-gray-600">
+                                                    订阅: <span className="font-medium text-gray-900">{user.maxSubscriptions === null ? `${globalMaxSubs} (全局)` : user.maxSubscriptions}</span>
                                                 </span>
                                             </div>
                                         </div>
@@ -391,6 +447,7 @@ export default function AdminUsersClient({
                                 <div className="flex flex-wrap gap-2 pt-2">
                                     <button
                                         onClick={() => setEditingUser({
+                                            id: user.id,
                                             username: user.username,
                                             newUsername: user.username,
                                             newPassword: '',
@@ -460,7 +517,7 @@ export default function AdminUsersClient({
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold text-gray-900 mb-1">用户头像</h3>
+                                <h3 className="text-sm font-semibold text-gray-900 mb-1">{editingUser.username}</h3>
                                 <div className="flex items-center gap-3">
                                     <label className={`inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         {editingUser.avatar ? '更换头像' : '上传头像'}
@@ -486,16 +543,7 @@ export default function AdminUsersClient({
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
-                            <input
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50"
-                                value={editingUser.newUsername}
-                                disabled
-                                readOnly
-                            />
-                            <p className="text-xs text-gray-500 mt-1">用户名不可修改</p>
-                        </div>
+
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
                             <input
@@ -515,6 +563,46 @@ export default function AdminUsersClient({
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, newPassword: e.target.value })}
                                 placeholder="留空则不修改密码"
                             />
+                        </div>
+
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">通行密钥 (Passkeys)</label>
+                            {loadingPasskeys ? (
+                                <div className="text-center py-4 text-gray-500 text-sm">加载中...</div>
+                            ) : userPasskeys.length > 0 ? (
+                                <div className="space-y-2">
+                                    {userPasskeys.map((passkey: any) => (
+                                        <div key={passkey.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                                    <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                                    </svg>
+                                                    {passkey.name || '未命名密钥'}
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    创建于: {new Date(passkey.createdAt).toLocaleDateString()}
+                                                    {passkey.lastUsed ? ` · 上次使用: ${new Date(passkey.lastUsed).toLocaleDateString()}` : ''}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeletePasskey(passkey.id)}
+                                                className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                                                title="删除密钥"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
+                                    <span className="text-sm text-gray-500">暂无通行密钥</span>
+                                </div>
+                            )}
                         </div>
                         <div className="border-t border-gray-200 pt-4">
                             <label className="block text-sm font-semibold text-gray-700 mb-3">安全选项</label>
@@ -609,8 +697,9 @@ export default function AdminUsersClient({
                             </button>
                         </div>
                     </div>
-                )}
-            </Modal>
+                )
+                }
+            </Modal >
 
             <Pagination
                 total={total}
@@ -618,16 +707,18 @@ export default function AdminUsersClient({
                 itemsPerPage={itemsPerPage}
             />
 
-            {showCropper && avatarPreview && (
-                <AvatarCropper
-                    image={avatarPreview}
-                    onCropComplete={handleAdminAvatarUpload}
-                    onCancel={() => {
-                        setShowCropper(false);
-                        setAvatarPreview(null);
-                    }}
-                />
-            )}
-        </div>
+            {
+                showCropper && avatarPreview && (
+                    <AvatarCropper
+                        image={avatarPreview}
+                        onCropComplete={handleAdminAvatarUpload}
+                        onCancel={() => {
+                            setShowCropper(false);
+                            setAvatarPreview(null);
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 }

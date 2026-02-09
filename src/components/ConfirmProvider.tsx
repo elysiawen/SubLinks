@@ -7,6 +7,7 @@ interface ConfirmOptions {
     confirmText?: string;
     cancelText?: string;
     confirmColor?: 'blue' | 'red';
+    onConfirm?: () => Promise<void>;
 }
 
 interface ConfirmContextType {
@@ -25,23 +26,40 @@ export function useConfirm() {
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [config, setConfig] = useState<{ message: string, options: ConfirmOptions }>({ message: '', options: {} });
     const resolveRef = useRef<(value: boolean) => void>(null);
 
     const confirm = useCallback((message: string, options: ConfirmOptions = {}) => {
         setConfig({ message, options });
         setIsOpen(true);
+        setIsLoading(false);
         return new Promise<boolean>((resolve) => {
             // @ts-ignore
             resolveRef.current = resolve;
         });
     }, []);
 
-    const handleConfirm = () => {
-        if (resolveRef.current) {
-            resolveRef.current(true);
+    const handleConfirm = async () => {
+        if (config.options.onConfirm) {
+            setIsLoading(true);
+            try {
+                await config.options.onConfirm();
+                if (resolveRef.current) {
+                    resolveRef.current(true);
+                }
+                setIsOpen(false);
+            } catch (error) {
+                console.error('Confirm action failed:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            if (resolveRef.current) {
+                resolveRef.current(true);
+            }
+            setIsOpen(false);
         }
-        setIsOpen(false);
     };
 
     const handleCancel = () => {
@@ -72,18 +90,26 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={handleCancel}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
+                                disabled={isLoading}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {cancelText}
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className={`px-4 py-2 text-sm font-medium text-white rounded-xl shadow-lg transition-all transform active:scale-95 ${isDestructive
+                                disabled={isLoading}
+                                className={`px-4 py-2 text-sm font-medium text-white rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2 ${isDestructive
                                     ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
                                     : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
                                     }`}
                             >
-                                {confirmText}
+                                {isLoading && (
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                )}
+                                {isLoading ? '处理中...' : confirmText}
                             </button>
                         </div>
                     </div>

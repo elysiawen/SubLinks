@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ToastProvider } from '@/components/ToastProvider';
-import { ConfirmProvider } from '@/components/ConfirmProvider';
+import { ConfirmProvider, useConfirm } from '@/components/ConfirmProvider';
 
 interface DashboardLayoutClientProps {
     children: React.ReactNode;
@@ -103,6 +103,7 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
 
 export default function DashboardLayoutClient({ children, username, role, nickname, avatar }: DashboardLayoutClientProps) {
     const pathname = usePathname();
+    const { confirm } = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Initialize with open submenus if current path matches
     const [openSubmenus, setOpenSubmenus] = useState<string[]>(() => {
@@ -311,15 +312,22 @@ export default function DashboardLayoutClient({ children, username, role, nickna
 
                                 {/* Footer / Logout */}
                                 <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-                                    <form action={async () => {
-                                        const { logout } = await import('@/lib/actions');
-                                        await logout();
-                                    }}>
-                                        <button className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-red-600 bg-white border border-gray-200/60 rounded-xl hover:bg-red-50 hover:border-red-100 hover:text-red-700 hover:shadow-sm transition-all duration-200 group">
-                                            <span className="group-hover:-translate-x-0.5 transition-transform duration-200">🚪</span>
-                                            <span>退出登录</span>
-                                        </button>
-                                    </form>
+                                    <button
+                                        onClick={() => {
+                                            confirm('确定要退出登录吗？', {
+                                                confirmText: '退出',
+                                                confirmColor: 'red',
+                                                onConfirm: async () => {
+                                                    const { logout } = await import('@/lib/actions');
+                                                    await logout();
+                                                }
+                                            });
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-red-600 bg-white border border-gray-200/60 rounded-xl hover:bg-red-50 hover:border-red-100 hover:text-red-700 hover:shadow-sm transition-all duration-200 group"
+                                    >
+                                        <span className="group-hover:-translate-x-0.5 transition-transform duration-200">🚪</span>
+                                        <span>退出登录</span>
+                                    </button>
                                 </div>
                             </div>
                         </aside>
