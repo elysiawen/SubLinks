@@ -213,8 +213,14 @@ export interface PasskeyCredentials {
     counter: number;
     transports: string[]; // Authenticator transports
     name: string;        // User-friendly name (e.g. "My MacBook")
+    aaguid?: string;     // Authenticator Attestation GUID
     createdAt: number;
     lastUsed: number;
+}
+
+export interface PasskeyProfile extends PasskeyCredentials {
+    providerName?: string; // Resolved provider name (e.g. "iCloud Keychain")
+    providerIcon?: string; // Resolved provider icon (base64 SVG)
 }
 
 // Database interface

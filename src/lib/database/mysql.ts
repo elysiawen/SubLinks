@@ -314,10 +314,17 @@ export default class MysqlDatabase implements IDatabase {
                 counter BIGINT NOT NULL DEFAULT 0,
                 transports JSON,
                 name VARCHAR(255),
+                aaguid VARCHAR(36),
                 created_at BIGINT NOT NULL,
                 last_used BIGINT NOT NULL,
                 INDEX idx_passkeys_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure aaguid column exists (Migration)
+            SELECT count(*) INTO @exist_aaguid FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'passkeys' AND column_name = 'aaguid';
+            SET @query = IF(@exist_aaguid=0, 'ALTER TABLE passkeys ADD COLUMN aaguid VARCHAR(36)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
         `;
 
         await this.pool.query(sql);
@@ -1607,8 +1614,8 @@ export default class MysqlDatabase implements IDatabase {
     async addPasskey(passkey: PasskeyCredentials): Promise<void> {
         await this.ensureInitialized();
         await this.pool.query(
-            `INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, created_at, last_used)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, aaguid, created_at, last_used)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 passkey.id,
                 passkey.userId,
@@ -1616,6 +1623,7 @@ export default class MysqlDatabase implements IDatabase {
                 passkey.counter,
                 JSON.stringify(passkey.transports),
                 passkey.name,
+                passkey.aaguid,
                 passkey.createdAt,
                 passkey.lastUsed
             ]
@@ -1649,6 +1657,7 @@ export default class MysqlDatabase implements IDatabase {
             counter: Number(row.counter),
             transports: typeof row.transports === 'string' ? JSON.parse(row.transports) : row.transports || [],
             name: row.name,
+            aaguid: row.aaguid,
             createdAt: Number(row.created_at),
             lastUsed: Number(row.last_used)
         }));

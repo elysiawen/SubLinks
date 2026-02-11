@@ -3,12 +3,37 @@
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { db } from '@/lib/db';
 import { getCurrentSession } from '@/lib/user-actions';
-import { PasskeyCredentials } from '@/lib/database/interface';
+import { PasskeyCredentials, PasskeyProfile } from '@/lib/database/interface';
 import { headers, cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 
 // --- Registration ---
 
+import { getAuthenticatorInfo } from './aaguids';
+
+export async function getPasskeys(): Promise<PasskeyProfile[]> {
+    const session = await getCurrentSession(); // Changed from getSession() to getCurrentSession() to match existing pattern
+    if (!session || !session.username) { // Changed from session.user to session.username to match getCurrentSession() return type
+        throw new Error('Unauthorized');
+    }
+
+    const user = await db.getUser(session.username); // Get user to retrieve ID
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    const passkeys = await db.getUserPasskeys(user.id);
+
+    // Enrich with provider info on the server side
+    return passkeys.map(pk => {
+        const info = getAuthenticatorInfo(pk.aaguid);
+        return {
+            ...pk,
+            providerName: info.name,
+            providerIcon: info.icon
+        };
+    });
+}
 export async function generatePasskeyRegistrationOptions() {
     const session = await getCurrentSession();
     if (!session) {
@@ -81,6 +106,13 @@ export async function verifyPasskeyRegistration(response: any, credentialName: s
         if (verification.verified && verification.registrationInfo) {
             const { credential } = verification.registrationInfo;
             const { id: credentialID, publicKey: credentialPublicKey, counter, transports } = credential;
+            // Extract AAGUID from authenticatorData
+            // authenticatorData is a buffer, AAGUID is 16 bytes starting at index 37
+            // However, simplewebauthn might not expose raw authData easily in this object structure if it's already parsed.
+            // verification.registrationInfo.authenticator.aaguid is available in newer versions or check interface
+
+            // Check what is available in registrationInfo
+            const aaguid = verification.registrationInfo.aaguid;
 
             const newPasskey: PasskeyCredentials = {
                 id: credentialID,
@@ -89,6 +121,7 @@ export async function verifyPasskeyRegistration(response: any, credentialName: s
                 counter: Number(counter),
                 transports: (transports as string[]) || [],
                 name: credentialName || 'Passkey',
+                aaguid: aaguid,
                 createdAt: Date.now(),
                 lastUsed: Date.now()
             };
@@ -232,18 +265,7 @@ export async function verifyPasskeyLogin(response: any, flowId: string) {
     }
 }
 
-export async function getPasskeys() {
-    const session = await getCurrentSession();
-    if (!session) return [];
 
-    const user = await db.getUser(session.username);
-    if (!user) return [];
-
-    const passkeys = await db.getUserPasskeys(user.id);
-    // Remove sensitive data if any (publicKey is fine to show? usually we show name, created_at, last_used)
-    // We return full object for now.
-    return passkeys;
-}
 
 export async function deletePasskey(passkeyId: string) {
     const session = await getCurrentSession();

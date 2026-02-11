@@ -261,10 +261,14 @@ export default class PostgresDatabase implements IDatabase {
                     counter BIGINT NOT NULL DEFAULT 0,
                     transports JSONB,
                     name VARCHAR(255),
+                    aaguid VARCHAR(36),
                     created_at BIGINT NOT NULL,
                     last_used BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_passkeys_user ON passkeys(user_id);
+                
+                -- Ensure aaguid column exists
+                ALTER TABLE passkeys ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36);
             `);
 
         } finally {
@@ -1855,18 +1859,8 @@ export default class PostgresDatabase implements IDatabase {
     async addPasskey(passkey: PasskeyCredentials): Promise<void> {
         await this.ensureInitialized();
         await this.pool.query(
-            `INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, created_at, last_used)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
-                passkey.id,
-                passkey.userId,
-                passkey.publicKey,
-                passkey.counter,
-                JSON.stringify(passkey.transports),
-                passkey.name,
-                passkey.createdAt,
-                passkey.lastUsed
-            ]
+            'INSERT INTO passkeys (id, user_id, public_key, counter, transports, name, aaguid, created_at, last_used) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [passkey.id, passkey.userId, passkey.publicKey, passkey.counter, JSON.stringify(passkey.transports), passkey.name, passkey.aaguid, passkey.createdAt, passkey.lastUsed]
         );
     }
 
@@ -1895,8 +1889,9 @@ export default class PostgresDatabase implements IDatabase {
             userId: row.user_id,
             publicKey: row.public_key,
             counter: parseInt(row.counter),
-            transports: row.transports || [],
+            transports: row.transports as string[],
             name: row.name,
+            aaguid: row.aaguid,
             createdAt: parseInt(row.created_at),
             lastUsed: parseInt(row.last_used)
         }));

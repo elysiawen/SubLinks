@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { useRouter } from 'next/navigation';
 import { generatePasskeyRegistrationOptions, verifyPasskeyRegistration, getPasskeys, deletePasskey } from '@/lib/passkey-actions';
-import { PasskeyCredentials } from '@/lib/database/interface';
+import { PasskeyCredentials, PasskeyProfile } from '@/lib/database/interface';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { SubmitButton } from '@/components/SubmitButton';
 
 export default function PasskeySection() {
-    const [passkeys, setPasskeys] = useState<PasskeyCredentials[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [passkeys, setPasskeys] = useState<PasskeyProfile[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const router = useRouter();
     const { success, error: toastError, info } = useToast();
     const { confirm } = useConfirm();
@@ -31,11 +32,16 @@ export default function PasskeySection() {
             setPasskeys(keys);
         } catch (err) {
             console.error('Failed to load passkeys', err);
+            toastError('无法加载通行密钥列表');
+        } finally {
+            setLoading(false);
         }
     };
 
     const startAddFlow = () => {
-        setPasskeyName(`Passkey (${new Date().toLocaleDateString()})`);
+        // Find the next available number
+        const nextIndex = passkeys.length + 1;
+        setPasskeyName(`密钥 #${nextIndex}`);
         setShowNameModal(true);
     };
 
@@ -127,7 +133,15 @@ export default function PasskeySection() {
                 </div>
 
                 <div className="space-y-3">
-                    {passkeys.length === 0 ? (
+                    {loading && passkeys.length === 0 ? (
+                        <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span className="text-sm">加载中...</span>
+                        </div>
+                    ) : passkeys.length === 0 ? (
                         <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
                             还没有添加通行密钥
                         </div>
@@ -139,8 +153,18 @@ export default function PasskeySection() {
                                         🔑
                                     </div>
                                     <div>
-                                        <div className="font-semibold text-gray-800">{key.name || '未命名密钥'}</div>
-                                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                                        <div className="font-semibold text-gray-800 flex items-center gap-2">
+                                            {key.name || '未命名密钥'}
+                                            <span className="text-xs font-normal px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1" title={`AAGUID: ${key.aaguid || 'N/A'}`}>
+                                                <img
+                                                    src={key.providerIcon || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIxMSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4='}
+                                                    alt={key.providerName || 'Unknown'}
+                                                    className="w-4 h-4 object-contain"
+                                                />
+                                                <span>{key.providerName || 'Unknown Provider'}</span>
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
                                             <span>创建于 {new Date(key.createdAt).toLocaleDateString()}</span>
                                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                             <span>上次使用 {new Date(key.lastUsed).toLocaleDateString()}</span>
