@@ -147,6 +147,12 @@ export default function SubscriptionForm({
         }
     };
 
+    // Just close the warning without proceeding
+    const closeDependencyWarning = () => {
+        setShowDependencyWarning(false);
+        setMissingSources([]);
+    };
+
     // Decline adding missing sources - proceed with save anyway
     const declineAddMissingSources = async () => {
         setShowDependencyWarning(false);
@@ -592,7 +598,7 @@ export default function SubscriptionForm({
             {/* Source Dependency Warning Modal */}
             <Modal
                 isOpen={showDependencyWarning}
-                onClose={declineAddMissingSources}
+                onClose={closeDependencyWarning}
                 title={
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">

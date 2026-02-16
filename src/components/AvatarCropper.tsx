@@ -139,7 +139,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                 </div>
 
                 {/* Cropper */}
-                <div className="relative bg-gray-100 p-8 flex items-center justify-center max-h-[60vh] overflow-auto">
+                <div className="relative bg-gray-100 p-8 flex items-center justify-center max-h-[60vh] overflow-hidden">
                     <ReactCrop
                         crop={crop}
                         onChange={(c) => setCrop(c)}
