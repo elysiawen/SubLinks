@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import Modal from '@/components/Modal';
 
 interface ProxyItem {
@@ -17,7 +17,7 @@ interface GroupEditorProps {
     className?: string;
 }
 
-export default function GroupEditor({ value, onChange, proxies, className }: GroupEditorProps) {
+const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, className }: GroupEditorProps) {
     // Group Builder State
     const [groupMode, setGroupMode] = useState<'simple' | 'advanced'>('simple');
     const [isSwitching, setIsSwitching] = useState(false);
@@ -690,4 +690,6 @@ export default function GroupEditor({ value, onChange, proxies, className }: Gro
             </Modal>
         </div>
     );
-}
+});
+
+export default GroupEditor;

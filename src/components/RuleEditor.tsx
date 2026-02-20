@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import Modal from '@/components/Modal';
 
 interface ProxyGroup {
@@ -16,7 +16,7 @@ interface RuleEditorProps {
     className?: string;
 }
 
-export default function RuleEditor({ value, onChange, proxyGroups = [], className }: RuleEditorProps) {
+const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [], className }: RuleEditorProps) {
     // Mode toggle
     const [ruleMode, setRuleMode] = useState<'simple' | 'advanced'>('simple');
     const [isSwitching, setIsSwitching] = useState(false);
@@ -400,4 +400,6 @@ export default function RuleEditor({ value, onChange, proxyGroups = [], classNam
             </Modal>
         </div>
     );
-}
+});
+
+export default RuleEditor;

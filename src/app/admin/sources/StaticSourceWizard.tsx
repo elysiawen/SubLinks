@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, Fragment } from 'react';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
 import GroupEditor from '@/components/GroupEditor';
@@ -41,17 +41,26 @@ const PROTOCOLS = [
     { value: 'hysteria2', label: 'Hysteria2' },
 ];
 
+const PROTOCOL_COLORS: Record<string, string> = {
+    vmess: 'bg-blue-100 text-blue-700',
+    vless: 'bg-violet-100 text-violet-700',
+    trojan: 'bg-red-100 text-red-700',
+    ss: 'bg-green-100 text-green-700',
+    hysteria2: 'bg-orange-100 text-orange-700',
+};
+
 let nextId = 0;
 const genId = () => `tmp_${++nextId}_${Date.now()}`;
 
 interface StaticSourceWizardContentProps {
     initialName?: string;
+    onNameChange?: (name: string) => void;
     existingNames: string[];
     onSuccess: () => void;
     onCancel: () => void;
 }
 
-export function StaticSourceWizardContent({ initialName = '', existingNames, onSuccess, onCancel }: StaticSourceWizardContentProps) {
+export function StaticSourceWizardContent({ initialName = '', onNameChange, existingNames, onSuccess, onCancel }: StaticSourceWizardContentProps) {
     const { success, error } = useToast();
 
     // Wizard step: 0=name, 1=nodes, 2=groups, 3=rules
@@ -64,6 +73,11 @@ export function StaticSourceWizardContent({ initialName = '', existingNames, onS
     // Editor text states
     const [groupsText, setGroupsText] = useState('');
     const [rulesText, setRulesText] = useState('');
+
+    // Sync sourceName with initialName if it changes from parent
+    useEffect(() => {
+        setSourceName(initialName);
+    }, [initialName]);
 
     const [saving, setSaving] = useState(false);
 
@@ -130,6 +144,21 @@ export function StaticSourceWizardContent({ initialName = '', existingNames, onS
         }
         setStep(1);
     };
+
+    // Memoize stable data for editors to prevent flickers
+    const stableProxies = useMemo(() =>
+        nodes.map(n => ({ id: n.id, name: n.name, type: n.type, source: sourceName })),
+        [nodes, sourceName]
+    );
+
+    const stableProxyGroups = useMemo(() => {
+        try {
+            const parsed = yaml.load(groupsText) as any[] || [];
+            return parsed.map((g: any) => ({ name: g.name, type: g.type, source: sourceName }));
+        } catch (e) {
+            return [];
+        }
+    }, [groupsText, sourceName]);
 
     // === Step 1: Add Nodes ===
 
@@ -337,342 +366,439 @@ export function StaticSourceWizardContent({ initialName = '', existingNames, onS
     // Protocol-specific password label
     const passwordLabel = ['vmess', 'vless'].includes(manualProtocol) ? 'UUID' : '密码';
 
-    const stepTitles = ['命名', '添加节点', '策略组', '分流规则'];
+    const stepTitles = ['命名', '添加节点', '策略组', '分流规则', '确认'];
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {/* Step indicator */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', justifyContent: 'center' }}>
+            <div className="flex gap-2 sm:gap-4 mb-8 justify-center items-center">
                 {stepTitles.map((title, i) => (
-                    <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                    }}>
-                        <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '13px', fontWeight: 600,
-                            background: i <= step ? '#3b82f6' : '#e5e7eb',
-                            color: i <= step ? '#fff' : '#9ca3af',
-                            transition: 'all 0.2s',
-                        }}>
-                            {i < step ? '✓' : i + 1}
+                    <Fragment key={i}>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <div className={`
+                                w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300
+                                ${i <= step ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-400'}
+                            `}>
+                                {i < step ? '✓' : i + 1}
+                            </div>
+                            <span className={`
+                                text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap
+                                ${i === step ? 'text-gray-900 font-bold block' : 'text-gray-400 font-medium hidden md:block'}
+                            `}>
+                                {title}
+                            </span>
                         </div>
-                        <span style={{
-                            fontSize: '13px', color: i <= step ? '#1f2937' : '#9ca3af',
-                            fontWeight: i === step ? 600 : 400,
-                        }}>{title}</span>
                         {i < stepTitles.length - 1 && (
-                            <span style={{ color: '#d1d5db', margin: '0 4px' }}>→</span>
+                            <div className={`h-px transition-colors duration-300 ${i < step ? 'bg-blue-200' : 'bg-gray-200'} flex-1 min-w-[1rem] max-w-[2rem] sm:max-w-none sm:w-8`} />
                         )}
-                    </div>
+                    </Fragment>
                 ))}
             </div>
 
             {/* Step 0: Name */}
             {step === 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '6px', color: '#374151' }}>
-                            上游源名称 <span style={{ color: '#ef4444' }}>*</span>
+                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="space-y-2">
+                        <label className="block text-sm font-bold text-gray-700">
+                            上游源名称 <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             value={sourceName}
-                            onChange={e => setSourceName(e.target.value)}
-                            placeholder="例：我的节点集"
-                            onKeyDown={e => e.key === 'Enter' && handleNameNext()}
-                            style={{
-                                width: '100%', padding: '10px 14px', border: '1px solid #d1d5db',
-                                borderRadius: '8px', fontSize: '14px', outline: 'none',
-                                boxSizing: 'border-box',
+                            onChange={(e) => {
+                                setSourceName(e.target.value);
+                                onNameChange?.(e.target.value);
                             }}
+                            placeholder="例如：机场A、备用源"
+                            onKeyDown={e => e.key === 'Enter' && handleNameNext()}
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all"
                             autoFocus
                         />
-                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                            名称创建后不可修改，用于标识该上游源
+                        <p className="text-xs text-gray-400 flex items-center gap-1.5 ml-1">
+                            <span>ℹ️</span> 名称创建后不可修改，用于标识该上游源
                         </p>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button onClick={handleClose} style={{
-                            padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: '8px',
-                            background: '#fff', color: '#374151', cursor: 'pointer', fontSize: '14px',
-                        }}>取消</button>
-                        <button onClick={handleNameNext} style={{
-                            padding: '8px 20px', border: 'none', borderRadius: '8px',
-                            background: '#3b82f6', color: '#fff', cursor: 'pointer', fontSize: '14px',
-                            fontWeight: 500,
-                        }}>下一步</button>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button
+                            onClick={handleClose}
+                            className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                        >
+                            取消
+                        </button>
+                        <button
+                            onClick={handleNameNext}
+                            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all font-semibold text-sm"
+                        >
+                            下一步
+                        </button>
                     </div>
                 </div>
             )}
 
             {/* Step 1: Nodes */}
-            {step === 1 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Input method tabs */}
-                    <div style={{ display: 'flex', gap: '6px', background: '#f3f4f6', padding: '4px', borderRadius: '8px', width: 'fit-content' }}>
-                        {([
-                            { key: 'links', label: '🔗 分享链接' },
-                            { key: 'manual', label: '✏️ 手动填写' },
-                            { key: 'config', label: '📄 配置导入' },
-                        ] as const).map(tab => (
-                            <button key={tab.key} onClick={() => setNodeTab(tab.key)} style={{
-                                padding: '6px 14px', border: 'none', cursor: 'pointer',
-                                fontSize: '13px', fontWeight: nodeTab === tab.key ? 500 : 400,
-                                color: nodeTab === tab.key ? '#1d4ed8' : '#4b5563',
-                                background: nodeTab === tab.key ? '#fff' : 'transparent',
-                                borderRadius: '6px',
-                                boxShadow: nodeTab === tab.key ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                                transition: 'all 0.15s',
-                            }}>{tab.label}</button>
-                        ))}
-                    </div>
-
-                    {/* Links input */}
-                    {nodeTab === 'links' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <textarea
-                                value={linksText}
-                                onChange={e => setLinksText(e.target.value)}
-                                placeholder={'粘贴分享链接，每行一个：\nvmess://...\nss://...\nvless://...\ntrojan://...\nhysteria2://...\n\n也支持 Base64 编码的订阅内容'}
-                                rows={6}
-                                style={{
-                                    width: '100%', padding: '10px 14px', border: '1px solid #d1d5db',
-                                    borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace',
-                                    resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                                }}
-                            />
-                            <button onClick={handleParseLinks} disabled={linksParsing} style={{
-                                padding: '8px 16px', border: 'none', borderRadius: '8px',
-                                background: linksParsing ? '#93c5fd' : '#3b82f6', color: '#fff',
-                                cursor: linksParsing ? 'not-allowed' : 'pointer', fontSize: '14px',
-                                alignSelf: 'flex-start',
-                            }}>{linksParsing ? '解析中...' : '解析链接'}</button>
-                        </div>
-                    )}
-
-                    {/* Manual form */}
-                    {nodeTab === 'manual' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#374151' }}>协议</label>
-                                    <select value={manualProtocol} onChange={e => setManualProtocol(e.target.value)} style={{
-                                        width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                        borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                                    }}>
-                                        {PROTOCOLS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#374151' }}>节点名称 *</label>
-                                    <input type="text" value={manualName} onChange={e => setManualName(e.target.value)}
-                                        placeholder="例：香港-1" style={{
-                                            width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                            borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                                        }} />
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#374151' }}>服务器地址 *</label>
-                                    <input type="text" value={manualServer} onChange={e => setManualServer(e.target.value)}
-                                        placeholder="example.com" style={{
-                                            width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                            borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                                        }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#374151' }}>端口 *</label>
-                                    <input type="number" value={manualPort} onChange={e => setManualPort(e.target.value)}
-                                        placeholder="443" style={{
-                                            width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                            borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                                        }} />
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#374151' }}>{passwordLabel}</label>
-                                <input type="text" value={manualPassword} onChange={e => setManualPassword(e.target.value)}
-                                    placeholder={['vmess', 'vless'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' : '密码'}
-                                    style={{
-                                        width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                        borderRadius: '8px', fontSize: '14px', fontFamily: 'monospace',
-                                        outline: 'none', boxSizing: 'border-box',
-                                    }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: '#6b7280' }}>
-                                    附加配置 <span style={{ fontWeight: 400 }}>(可选, JSON 格式)</span>
-                                </label>
-                                <textarea value={manualExtra} onChange={e => setManualExtra(e.target.value)}
-                                    placeholder='{"tls": true, "network": "ws", "ws-opts": {"path": "/ws"}}'
-                                    rows={2} style={{
-                                        width: '100%', padding: '8px 10px', border: '1px solid #d1d5db',
-                                        borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace',
-                                        resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                                    }} />
-                            </div>
-                            <button onClick={handleAddManualNode} style={{
-                                padding: '8px 16px', border: 'none', borderRadius: '8px',
-                                background: '#3b82f6', color: '#fff', cursor: 'pointer', fontSize: '14px',
-                                alignSelf: 'flex-start',
-                            }}>添加节点</button>
-                        </div>
-                    )}
-
-                    {/* Config import */}
-                    {nodeTab === 'config' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <textarea
-                                value={configText}
-                                onChange={e => setConfigText(e.target.value)}
-                                placeholder={'粘贴 Clash / Clash Meta YAML 配置文件内容\n\n将自动解析其中的节点、策略组和分流规则'}
-                                rows={8}
-                                style={{
-                                    width: '100%', padding: '10px 14px', border: '1px solid #d1d5db',
-                                    borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace',
-                                    resize: 'vertical', outline: 'none', boxSizing: 'border-box',
-                                }}
-                            />
-                            <button onClick={handleParseConfig} disabled={configParsing} style={{
-                                padding: '8px 16px', border: 'none', borderRadius: '8px',
-                                background: configParsing ? '#93c5fd' : '#3b82f6', color: '#fff',
-                                cursor: configParsing ? 'not-allowed' : 'pointer', fontSize: '14px',
-                                alignSelf: 'flex-start',
-                            }}>{configParsing ? '解析中...' : '解析配置'}</button>
-                        </div>
-                    )}
-
-                    {/* Node list */}
-                    <div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
-                            已添加节点 ({nodes.length})
-                        </div>
-                        {nodes.length === 0 ? (
-                            <div style={{
-                                padding: '24px', textAlign: 'center', color: '#9ca3af',
-                                border: '2px dashed #e5e7eb', borderRadius: '8px', fontSize: '14px',
-                            }}>
-                                暂无节点，请通过上方方式添加
-                            </div>
-                        ) : (
-                            <div style={{
-                                maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb',
-                                borderRadius: '8px',
-                            }}>
-                                {nodes.map(node => (
-                                    <div key={node.id} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '8px 12px', borderBottom: '1px solid #f3f4f6',
-                                        fontSize: '13px',
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                            <span style={{
-                                                padding: '2px 6px', borderRadius: '4px', fontSize: '11px',
-                                                fontWeight: 600, background: '#dbeafe', color: '#1d4ed8',
-                                                flexShrink: 0,
-                                            }}>{node.type}</span>
-                                            <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</span>
-                                            <span style={{ color: '#9ca3af', fontSize: '12px', flexShrink: 0 }}>{node.server}:{node.port}</span>
-                                        </div>
-                                        <button onClick={() => handleRemoveNode(node.id)} style={{
-                                            border: 'none', background: 'none', color: '#ef4444',
-                                            cursor: 'pointer', fontSize: '16px', padding: '2px 4px', flexShrink: 0,
-                                        }}>×</button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Navigation */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                        <button onClick={() => initialName ? handleClose() : setStep(0)} style={{
-                            padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: '8px',
-                            background: '#fff', color: '#374151', cursor: 'pointer', fontSize: '14px',
-                        }}>{initialName ? '取消' : '上一步'}</button>
-                        <button onClick={handleNodesNext} style={{
-                            padding: '8px 20px', border: 'none', borderRadius: '8px',
-                            background: nodes.length > 0 ? '#3b82f6' : '#93c5fd',
-                            color: '#fff', cursor: nodes.length > 0 ? 'pointer' : 'not-allowed',
-                            fontSize: '14px', fontWeight: 500,
-                        }}>下一步</button>
-                    </div>
+            <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 1 ? 'block' : 'hidden'}`}>
+                {/* Input method tabs */}
+                <div className="flex p-0.5 sm:p-1 bg-gray-100/50 rounded-xl w-fit">
+                    {([
+                        { key: 'links', label: '🔗 链接' },
+                        { key: 'manual', label: '✏️ 手动' },
+                        { key: 'config', label: '📄 配置' },
+                    ] as const).map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setNodeTab(tab.key)}
+                            className={`
+                                    px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200
+                                    ${nodeTab === tab.key
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'}
+                                `}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
-            )}
+
+                {/* Links input */}
+                {nodeTab === 'links' && (
+                    <div className="flex flex-col gap-4">
+                        <textarea
+                            value={linksText}
+                            onChange={e => setLinksText(e.target.value)}
+                            placeholder={'粘贴分享链接，每行一个：\nvmess://...\nss://...\nvless://...\ntrojan://...\nhysteria2://...\n\n也支持 Base64 编码的订阅内容'}
+                            rows={6}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
+                        />
+                        <button
+                            onClick={handleParseLinks}
+                            disabled={linksParsing}
+                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 transition-all font-bold text-sm self-start flex items-center gap-2"
+                        >
+                            {linksParsing ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    解析中...
+                                </>
+                            ) : '解析链接'}
+                        </button>
+                    </div>
+                )}
+
+                {/* Manual form */}
+                {nodeTab === 'manual' && (
+                    <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">协议</label>
+                                <select
+                                    value={manualProtocol}
+                                    onChange={e => setManualProtocol(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                >
+                                    {PROTOCOLS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">节点名称 *</label>
+                                <input
+                                    type="text"
+                                    value={manualName}
+                                    onChange={e => setManualName(e.target.value)}
+                                    placeholder="例：香港-1"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="sm:col-span-2 space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">服务器地址 *</label>
+                                <input
+                                    type="text"
+                                    value={manualServer}
+                                    onChange={e => setManualServer(e.target.value)}
+                                    placeholder="example.com"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">端口 *</label>
+                                <input
+                                    type="number"
+                                    value={manualPort}
+                                    onChange={e => setManualPort(e.target.value)}
+                                    placeholder="443"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">{passwordLabel}</label>
+                            <input
+                                type="text"
+                                value={manualPassword}
+                                onChange={e => setManualPassword(e.target.value)}
+                                placeholder={['vmess', 'vless'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' : '密码'}
+                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                                附加配置 <span className="font-normal text-[10px]">(可选, JSON 格式)</span>
+                            </label>
+                            <textarea
+                                value={manualExtra}
+                                onChange={e => setManualExtra(e.target.value)}
+                                placeholder='{"tls": true, "network": "ws", "ws-opts": {"path": "/ws"}}'
+                                rows={2}
+                                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-xs font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
+                            />
+                        </div>
+                        <button
+                            onClick={handleAddManualNode}
+                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold text-sm self-start flex items-center gap-2"
+                        >
+                            <span>+</span> 添加节点
+                        </button>
+                    </div>
+                )}
+
+                {/* Config import */}
+                {nodeTab === 'config' && (
+                    <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+                        <textarea
+                            value={configText}
+                            onChange={e => setConfigText(e.target.value)}
+                            placeholder={'粘贴 Clash / Clash Meta YAML 配置文件内容\n\n将自动解析其中的节点、策略组和分流规则'}
+                            rows={8}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
+                        />
+                        <button
+                            onClick={handleParseConfig}
+                            disabled={configParsing}
+                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 transition-all font-bold text-sm self-start flex items-center gap-2"
+                        >
+                            {configParsing ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    解析中...
+                                </>
+                            ) : '解析配置'}
+                        </button>
+                    </div>
+                )}
+
+                {/* Node list */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-sm font-bold text-gray-700">已添加节点</span>
+                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full ring-1 ring-blue-100">{nodes.length}</span>
+                    </div>
+                    {nodes.length === 0 ? (
+                        <div className="py-12 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-100 rounded-2xl text-gray-300">
+                            <div className="p-3 bg-gray-50 rounded-full">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <span className="text-sm font-medium">暂无节点，请从上方添加</span>
+                        </div>
+                    ) : (
+                        <div className="max-h-[220px] overflow-y-auto rounded-2xl border border-gray-200/50 divide-y divide-gray-50">
+                            {nodes.map(node => (
+                                <div key={node.id} className="group flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className={`
+                                                shrink-0 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider
+                                                ${PROTOCOL_COLORS[node.type] || 'bg-gray-100 text-gray-600'}
+                                            `}>
+                                            {node.type}
+                                        </span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-[13px] font-bold text-gray-700 truncate">{node.name}</span>
+                                            <span className="text-[10px] text-gray-400 font-mono tracking-tight">{node.server}:{node.port}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveNode(node.id)}
+                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        title="移除节点"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Navigation */}
+                <div className="flex justify-between gap-3 sm:gap-4 pt-4 border-t border-gray-50">
+                    <button
+                        onClick={() => initialName ? handleClose() : setStep(0)}
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                    >
+                        {initialName ? '取消' : '上一步'}
+                    </button>
+                    <button
+                        onClick={handleNodesNext}
+                        className={`
+                                flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl text-white transition-all font-bold text-sm
+                                ${nodes.length > 0
+                                ? 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'
+                                : 'bg-gray-200 cursor-not-allowed'}
+                            `}
+                    >
+                        下一步
+                    </button>
+                </div>
+            </div>
 
             {/* Step 2: Proxy Groups */}
-            {step === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                        策略组用于组织节点。系统会自动创建一个默认策略组包含所有节点。你也可以通过编辑器或手动添加更多。
-                    </p>
+            <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 2 ? 'block' : 'hidden'}`}>
+                <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
+                    <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
+                    策略组用于组织节点。系统会自动创建一个默认策略组包含所有节点。你也可以通过编辑器或手动添加更多。
+                </p>
 
-                    <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '2px' }}>
-                        <GroupEditor
-                            value={groupsText}
-                            onChange={setGroupsText}
-                            proxies={nodes.map(n => ({ id: n.id, name: n.name, type: n.type, source: sourceName }))}
-                        />
-                    </div>
-
-                    {/* Navigation */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginTop: '12px' }}>
-                        <button onClick={() => setStep(1)} style={{
-                            padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: '8px',
-                            background: '#fff', color: '#374151', cursor: 'pointer', fontSize: '14px',
-                        }}>上一步</button>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => setStep(3)} style={{
-                                padding: '8px 20px', border: 'none', borderRadius: '8px',
-                                background: '#3b82f6', color: '#fff', cursor: 'pointer', fontSize: '14px',
-                                fontWeight: 500,
-                            }}>下一步</button>
-                        </div>
-                    </div>
+                <div className="max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                    <GroupEditor
+                        value={groupsText}
+                        onChange={setGroupsText}
+                        proxies={stableProxies}
+                    />
                 </div>
-            )}
+
+                {/* Navigation */}
+                <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                    <button
+                        onClick={() => setStep(1)}
+                        className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                    >
+                        上一步
+                    </button>
+                    <button
+                        onClick={() => setStep(3)}
+                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
+                    >
+                        下一步
+                    </button>
+                </div>
+            </div>
 
             {/* Step 3: Rules */}
-            {step === 3 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                        分流规则决定流量如何路由。每行一条规则，格式如：DOMAIN-SUFFIX,google.com,PROXY。你可以通过编辑器管理。
-                    </p>
+            <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 3 ? 'block' : 'hidden'}`}>
+                <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
+                    <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
+                    分流规则决定流量如何路由。每行一条规则，格式如：DOMAIN-SUFFIX,google.com,PROXY。你可以通过编辑器管理。
+                </p>
 
-                    <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '2px' }}>
-                        <RuleEditor
-                            value={rulesText}
-                            onChange={setRulesText}
-                            proxyGroups={(yaml.load(groupsText) as any[] || []).map(g => ({ name: g.name, type: g.type, source: sourceName }))}
-                        />
+                <div className="max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                    <RuleEditor
+                        value={rulesText}
+                        onChange={setRulesText}
+                        proxyGroups={stableProxyGroups}
+                    />
+                </div>
+
+                {/* Navigation */}
+                <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                    <button
+                        onClick={() => setStep(2)}
+                        className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                    >
+                        上一步
+                    </button>
+                    <button
+                        onClick={() => setStep(4)}
+                        className="px-8 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
+                    >
+                        下一步
+                    </button>
+                </div>
+            </div>
+
+            {/* Step 4: Confirm */}
+            {step === 4 && (
+                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
+                        <h4 className="text-sm font-bold text-blue-800 mb-1 flex items-center gap-2">
+                            <span>🔍</span> 最后确认
+                        </h4>
+                        <p className="text-xs text-blue-600 leading-relaxed">
+                            请检查以下配置摘要。点击“完成创建”后，系统将为您生成静态上游源及其关联的策略组和规则。
+                        </p>
                     </div>
 
-                    {/* Summary & Save */}
-                    <div style={{
-                        padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0',
-                        borderRadius: '8px', fontSize: '13px', color: '#475569',
-                    }}>
-                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>📊 创建摘要</div>
-                        <div>名称: <strong>{sourceName.trim()}</strong></div>
-                        <div>节点: <strong>{nodes.length}</strong> 个</div>
-                        <div>策略组: <strong>{(yaml.load(groupsText) as any[] || []).length}</strong> 个</div>
-                        <div>规则: <strong>{rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length}</strong> 条</div>
+                    <div className="p-5 sm:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
+                        <div className="font-bold text-gray-800 text-xs sm:text-sm flex items-center gap-2 uppercase tracking-wider pb-3 border-b border-gray-50">
+                            <span>📊</span> 配置摘要
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-12 animate-in fade-in slide-in-from-top-1 duration-500">
+                            <div className="space-y-1.5 group">
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-blue-400"></span>
+                                    上游源名称
+                                </div>
+                                <div className="text-sm text-gray-800 font-black pl-2.5 border-l-2 border-blue-100 group-hover:border-blue-400 transition-colors">{sourceName.trim()}</div>
+                            </div>
+
+                            <div className="space-y-1.5 group">
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
+                                    节点数量
+                                </div>
+                                <div className="text-sm text-emerald-600 font-black pl-2.5 border-l-2 border-emerald-100 group-hover:border-emerald-400 transition-colors">{nodes.length} <span className="text-[10px] font-medium text-gray-400 ml-1">个已就绪节点</span></div>
+                            </div>
+
+                            <div className="space-y-1.5 group">
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
+                                    策略组配置
+                                </div>
+                                <div className="text-sm text-indigo-600 font-black pl-2.5 border-l-2 border-indigo-100 group-hover:border-indigo-400 transition-colors">
+                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-gray-400 ml-1">个可视化分组</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5 group">
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-purple-400"></span>
+                                    路由规则
+                                </div>
+                                <div className="text-sm text-purple-600 font-black pl-2.5 border-l-2 border-purple-100 group-hover:border-purple-400 transition-colors">
+                                    {rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} <span className="text-[10px] font-medium text-gray-400 ml-1">条分流逻辑</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Navigation */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                        <button onClick={() => setStep(2)} style={{
-                            padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: '8px',
-                            background: '#fff', color: '#374151', cursor: 'pointer', fontSize: '14px',
-                        }}>上一步</button>
-                        <button onClick={handleSave} disabled={saving} style={{
-                            padding: '8px 24px', border: 'none', borderRadius: '8px',
-                            background: saving ? '#86efac' : '#22c55e', color: '#fff',
-                            cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px',
-                            fontWeight: 600,
-                        }}>{saving ? '创建中...' : '✓ 完成创建'}</button>
+                    <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                        <button
+                            onClick={() => setStep(3)}
+                            className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                        >
+                            上一步
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="px-8 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 disabled:bg-blue-300 transition-all font-bold text-sm flex items-center gap-2"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    创建中...
+                                </>
+                            ) : (
+                                <>
+                                    <span>✓</span> 完成并创建
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             )}

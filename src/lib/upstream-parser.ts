@@ -96,7 +96,7 @@ export async function parseAndStoreUpstream(
         if (!hasGroups && savedProxyNames.length > 0) {
             const defaultGroup: ProxyGroup = {
                 id: nanoid(),
-                name: sourceName, // Use source name as group name
+                name: 'default', // Unified default group name
                 type: 'select',
                 proxies: [`SOURCE:${sourceName}`], // Dynamic: Select all from this source
                 config: {},
@@ -106,7 +106,7 @@ export async function parseAndStoreUpstream(
             };
 
             await db.saveProxyGroups([defaultGroup]);
-            const fallbackMsg = `  ℹ️ Created default proxy group [${sourceName}] with dynamic node selection`;
+            const fallbackMsg = `  ℹ️ Created default proxy group [default] with dynamic node selection from [${sourceName}]`;
             console.log(fallbackMsg);
             if (logger) logger(fallbackMsg, 'info');
         }

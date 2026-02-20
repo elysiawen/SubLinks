@@ -418,7 +418,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     <button
                                         type="button"
                                         onClick={() => setFormType('static')}
-                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                                     >
                                         📋 静态内容
                                     </button>
@@ -450,64 +450,59 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         )}
 
                         {/* URL-type fields */}
-                        {formType === 'url' && (
-                            <>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
-                                    <input
-                                        type="url"
-                                        value={formUrl}
-                                        onChange={(e) => setFormUrl(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        placeholder="https://..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="number"
-                                            value={formCacheDuration}
-                                            onChange={(e) => setFormCacheDuration(e.target.value)}
-                                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                            min="0.1"
-                                            step="0.1"
-                                        />
-                                        <select
-                                            value={formDurationUnit}
-                                            onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
-                                            className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                                        >
-                                            <option value="hours">小时</option>
-                                            <option value="minutes">分钟</option>
-                                        </select>
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
-                                        {formCacheDuration !== '0' && (
-                                            <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
-                                        )}
-                                    </p>
-                                </div>
-                            </>
-                        )}
-
-                        {/* Static Content Wizard Integrated directly */}
-                        {isAdding && !editingSource && formType === 'static' && (
-                            <div className="mt-2">
-                                <StaticSourceWizardContent
-                                    initialName={formName}
-                                    existingNames={sources.map(s => s.name)}
-                                    onSuccess={() => {
-                                        setIsAdding(false);
-                                        window.location.reload();
-                                    }}
-                                    onCancel={() => {
-                                        setFormType('url');
-                                    }}
+                        <div className={formType === 'url' ? 'block space-y-4' : 'hidden'}>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
+                                <input
+                                    type="url"
+                                    value={formUrl}
+                                    onChange={(e) => setFormUrl(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    placeholder="https://..."
                                 />
                             </div>
-                        )}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        value={formCacheDuration}
+                                        onChange={(e) => setFormCacheDuration(e.target.value)}
+                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        min="0.1"
+                                        step="0.1"
+                                    />
+                                    <select
+                                        value={formDurationUnit}
+                                        onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
+                                        className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                    >
+                                        <option value="hours">小时</option>
+                                        <option value="minutes">分钟</option>
+                                    </select>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
+                                    {formCacheDuration !== '0' && (
+                                        <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Static Content Wizard Integrated directly */}
+                        <div className={isAdding && !editingSource && formType === 'static' ? 'mt-2 block' : 'hidden'}>
+                            <StaticSourceWizardContent
+                                initialName={formName}
+                                onNameChange={setFormName}
+                                existingNames={sources.map(s => s.name)}
+                                onSuccess={() => {
+                                    setIsAdding(false);
+                                    window.location.reload();
+                                }}
+                                onCancel={() => setIsAdding(false)}
+                            />
+                        </div>
 
                         {/* Static-type editing: show append textarea */}
                         {formType === 'static' && editingSource && (
