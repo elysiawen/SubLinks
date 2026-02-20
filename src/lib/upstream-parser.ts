@@ -148,3 +148,64 @@ export async function parseAndStoreUpstream(
         throw error;
     }
 }
+
+/**
+ * Parse content and return structured data WITHOUT saving to database.
+ * Used by the wizard to preview parsed results before committing.
+ */
+export function parseContentPreview(content: string): {
+    proxies: any[];
+    groups: any[];
+    rules: string[];
+} {
+    const result = { proxies: [] as any[], groups: [] as any[], rules: [] as string[] };
+
+    try {
+        let config: any = null;
+
+        try {
+            config = yaml.load(content);
+        } catch (e) {
+            config = content;
+        }
+
+        // Handle Base64 encoded node list or raw text list
+        if (typeof config === 'string' || !config || (typeof config === 'object' && !config.proxies && !config['proxy-groups'])) {
+            const parsedProxies = parseBase64Links(content);
+            if (parsedProxies.length > 0) {
+                config = { proxies: parsedProxies };
+            } else {
+                return result;
+            }
+        }
+
+        // Extract proxies
+        if (config && config.proxies && Array.isArray(config.proxies)) {
+            result.proxies = config.proxies.map((p: any) => ({
+                name: p.name || 'Unnamed',
+                type: p.type || 'unknown',
+                server: p.server,
+                port: p.port,
+                config: p,
+            }));
+        }
+
+        // Extract proxy groups
+        if (config && config['proxy-groups'] && Array.isArray(config['proxy-groups'])) {
+            result.groups = config['proxy-groups'].map((g: any) => ({
+                name: g.name || 'Unnamed Group',
+                type: g.type || 'select',
+                proxies: g.proxies || [],
+            }));
+        }
+
+        // Extract rules
+        if (config && config.rules && Array.isArray(config.rules)) {
+            result.rules = config.rules;
+        }
+    } catch (e) {
+        console.error('parseContentPreview error:', e);
+    }
+
+    return result;
+}

@@ -24,7 +24,7 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: { name: string; source: string }[], availableSources?: { name: string; url: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[] }) {
+export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: { name: string; source: string }[], availableSources?: { name: string; url?: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[] }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
@@ -32,7 +32,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     // Data State
     const [configSets, setConfigSets] = useState<{ groups: ConfigSet[], rules: ConfigSet[] }>(initialConfigSets || { groups: [], rules: [] });
     const [defaultGroups, setDefaultGroups] = useState<{ name: string; source: string }[]>(initialDefaultGroups || []);
-    const [availableSources, setAvailableSources] = useState<{ name: string; url: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[]>(initialAvailableSources || []);
+    const [availableSources, setAvailableSources] = useState<{ name: string; url?: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[]>(initialAvailableSources || []);
     const [dataLoaded, setDataLoaded] = useState(!!initialConfigSets);
 
     // Fetch additional data on mount if not provided

@@ -54,20 +54,24 @@ export async function POST(request: NextRequest) {
         // Create tokens with full avatar URL
         const fullAvatarUrl = getFullAvatarUrl(user.avatar);
 
-        const accessToken = await createAccessToken({
-            userId: user.id,
-            username: user.username,
-            role: user.role,
-            tokenVersion: user.tokenVersion || 0,
-            nickname: user.nickname,
-            avatar: fullAvatarUrl || user.avatar // Use full URL in token
-        });
+        // Generate refresh token ID first so we can embed it in the access token
+        const refreshTokenDbId = nanoid(32);
 
         const refreshToken = await createRefreshToken({
             userId: user.id,
             username: user.username,
             role: user.role,
             tokenVersion: user.tokenVersion || 0
+        });
+
+        const accessToken = await createAccessToken({
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            tokenVersion: user.tokenVersion || 0,
+            nickname: user.nickname,
+            avatar: fullAvatarUrl || user.avatar,
+            refreshTokenId: refreshTokenDbId // Embed device ID for session validation
         });
 
         // Store Refresh Token in DB
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
 
         try {
             await db.createRefreshToken({
-                id: nanoid(32),
+                id: refreshTokenDbId,
                 userId: user.id,
                 username: user.username,
                 token: refreshToken,
@@ -90,10 +94,6 @@ export async function POST(request: NextRequest) {
             });
         } catch (e) {
             console.error('Failed to store refresh token:', e);
-            // Non-blocking error? Or should we fail login?
-            // If we fail to store, the user won't be able to refresh.
-            // It is better to fail or at least log. Proceeding implies they have a token that works technically but not via our check if validation is strict.
-            // Since we enforce DB check in refresh route, this token will be useless for refreshing.
         }
 
         // Log successful login

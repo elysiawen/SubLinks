@@ -19,9 +19,13 @@ interface RuleEditorProps {
 export default function RuleEditor({ value, onChange, proxyGroups = [], className }: RuleEditorProps) {
     // Mode toggle
     const [ruleMode, setRuleMode] = useState<'simple' | 'advanced'>('simple');
+    const [isSwitching, setIsSwitching] = useState(false);
 
     // Simple mode state
     const [guiRules, setGuiRules] = useState<{ type: string, value: string, policy: string, id: string }[]>([]);
+    const [ruleSearch, setRuleSearch] = useState('');
+    const [isParsing, setIsParsing] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(100);
     const [newRuleType, setNewRuleType] = useState('DOMAIN-SUFFIX');
     const [newRuleValue, setNewRuleValue] = useState('');
     const [newRulePolicy, setNewRulePolicy] = useState('Proxy');
@@ -63,13 +67,17 @@ export default function RuleEditor({ value, onChange, proxyGroups = [], classNam
     // Initialize GUI from text when component mounts or mode changes to simple
     useEffect(() => {
         if (ruleMode === 'simple' && value) {
-            setGuiRules(parseRules(value));
+            setIsParsing(true);
+            // Use setTimeout to move parsing out of the main thread and allow UI to update (show loader)
+            const timer = setTimeout(() => {
+                const parsed = parseRules(value);
+                setGuiRules(parsed);
+                setIsParsing(false);
+                setVisibleCount(100); // Reset visible count on parse
+            }, 10);
+            return () => clearTimeout(timer);
         }
-    }, [ruleMode]);
-
-    const syncTextToGui = () => {
-        setGuiRules(parseRules(value));
-    };
+    }, [ruleMode, value]);
 
     const updateGuiRules = (newRules: typeof guiRules) => {
         setGuiRules(newRules);
@@ -106,6 +114,30 @@ export default function RuleEditor({ value, onChange, proxyGroups = [], classNam
         updateGuiRules(guiRules.filter(r => r.id !== id));
     };
 
+    const filteredRules = useMemo(() => {
+        if (!ruleSearch) return guiRules;
+        const lowSearch = ruleSearch.toLowerCase();
+        return guiRules.filter(r =>
+            r.type.toLowerCase().includes(lowSearch) ||
+            r.value.toLowerCase().includes(lowSearch) ||
+            r.policy.toLowerCase().includes(lowSearch)
+        );
+    }, [guiRules, ruleSearch]);
+
+    const visibleRules = useMemo(() => {
+        return filteredRules.slice(0, visibleCount);
+    }, [filteredRules, visibleCount]);
+
+    const handleSwitchMode = (mode: 'simple' | 'advanced') => {
+        if (ruleMode === mode) return;
+        setIsSwitching(true);
+        // Delay switching to allow UI to render the loader first
+        setTimeout(() => {
+            setRuleMode(mode);
+            setIsSwitching(false);
+        }, 50);
+    };
+
     return (
         <div className={className}>
             <div className="flex justify-between items-center mb-2">
@@ -114,24 +146,28 @@ export default function RuleEditor({ value, onChange, proxyGroups = [], classNam
                 </label>
                 <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
                     <button
-                        onClick={() => {
-                            setRuleMode('simple');
-                            syncTextToGui();
-                        }}
-                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
+                        onClick={() => handleSwitchMode('simple')}
+                        disabled={isSwitching}
+                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         简易模式
                     </button>
                     <button
-                        onClick={() => setRuleMode('advanced')}
-                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
+                        onClick={() => handleSwitchMode('advanced')}
+                        disabled={isSwitching}
+                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         高级模式
                     </button>
                 </div>
             </div>
 
-            {ruleMode === 'advanced' ? (
+            {isSwitching ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
+                    <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    <span className="text-xs italic">切换编辑器模式中...</span>
+                </div>
+            ) : ruleMode === 'advanced' ? (
                 <div>
                     <textarea
                         value={value}
@@ -204,36 +240,72 @@ export default function RuleEditor({ value, onChange, proxyGroups = [], classNam
                         </div>
                     </div>
 
+                    {/* Search Bar */}
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            value={ruleSearch}
+                            onChange={(e) => {
+                                setRuleSearch(e.target.value);
+                                setVisibleCount(100);
+                            }}
+                            placeholder="搜索规则内容、策略名称..."
+                            className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                        />
+                    </div>
+
                     {/* Rules List */}
-                    {guiRules.length === 0 ? (
+                    {isParsing ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg">
+                            <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                            <span className="text-xs italic">解析规则中...</span>
+                        </div>
+                    ) : filteredRules.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
-                            暂无规则，请添加
+                            {ruleSearch ? '没有找到匹配的规则' : '暂无规则，请添加'}
                         </div>
                     ) : (
-                        <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-96 overflow-y-auto">
-                            {guiRules.map((rule) => (
-                                <div key={rule.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
-                                    <div className="flex items-center gap-3 flex-1 font-mono text-sm">
-                                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-semibold">
-                                            {rule.type}
-                                        </span>
-                                        <span className="text-gray-700 break-all">{rule.value}</span>
-                                        <span className="text-gray-400">→</span>
-                                        <span className="text-green-600 font-medium">{rule.policy}</span>
+                        <div className="space-y-3">
+                            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                                {visibleRules.map((rule) => (
+                                    <div key={rule.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
+                                        <div className="flex items-center gap-3 flex-1 font-mono text-sm">
+                                            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-semibold">
+                                                {rule.type}
+                                            </span>
+                                            <span className="text-gray-700 break-all">{rule.value}</span>
+                                            <span className="text-gray-400">→</span>
+                                            <span className="text-green-600 font-medium">{rule.policy}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => removeGuiRule(rule.id)}
+                                            className="text-red-500 hover:text-red-700 text-sm px-2 shrink-0"
+                                        >
+                                            ✕
+                                        </button>
                                     </div>
+                                ))}
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-400">
+                                    展示 {visibleRules.length} / 共 {filteredRules.length} 条{ruleSearch && '结果'} (总 {guiRules.length}条)
+                                </p>
+                                {visibleCount < filteredRules.length && (
                                     <button
-                                        onClick={() => removeGuiRule(rule.id)}
-                                        className="text-red-500 hover:text-red-700 text-sm px-2 shrink-0"
+                                        onClick={() => setVisibleCount(prev => prev + 200)}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition"
                                     >
-                                        ✕
+                                        加载更多 (+200)
                                     </button>
-                                </div>
-                            ))}
+                                )}
+                            </div>
                         </div>
                     )}
-                    <p className="text-xs text-gray-400">
-                        共 {guiRules.length} 条规则
-                    </p>
                 </div>
             )}
 

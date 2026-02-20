@@ -211,7 +211,7 @@ export async function GET(
             // Refresh stale sources in parallel
             await Promise.all(staleSources.map(async (sourceName) => {
                 const source = upstreamSources.find(s => s.name === sourceName);
-                if (source) {
+                if (source && source.type !== 'static' && source.url) {
                     await refreshSingleUpstreamSource(sourceName, source.url, undefined, {
                         reason: 'Stale Auto-Refresh',
                         trigger: 'auto'

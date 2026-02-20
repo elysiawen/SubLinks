@@ -260,14 +260,15 @@ export async function refreshUpstreamCache(
             console.log(msg);
             if (logger) logger(msg, 'info');
 
-            // Run sequentially to avoid overwhelming
-            for (let i = 0; i < sources.length; i++) {
-                const source = sources[i];
-                const progressMsg = `   Processing source ${i + 1}/${sources.length} [${source.name}]...`;
+            // Run sequentially to avoid overwhelming (skip static sources)
+            const urlSources = sources.filter(s => s.type !== 'static' && s.url);
+            for (let i = 0; i < urlSources.length; i++) {
+                const source = urlSources[i];
+                const progressMsg = `   Processing source ${i + 1}/${urlSources.length} [${source.name}]...`;
                 console.log(progressMsg);
                 if (logger) logger(progressMsg, 'info');
 
-                await refreshSingleUpstreamSource(source.name, source.url, logger, options);
+                await refreshSingleUpstreamSource(source.name, source.url!, logger, options);
             }
 
             const successMsg = '✅ All upstream sources refreshed successfully.';

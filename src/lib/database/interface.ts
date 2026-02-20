@@ -125,8 +125,9 @@ export interface ConfigSet {
 
 export interface UpstreamSource {
     name: string;
-    url: string;
-    cacheDuration?: number; // Cache duration in hours
+    type?: 'url' | 'static'; // 'url' = traditional URL-fetched source (default), 'static' = manually configured static source
+    url?: string; // Required for 'url' type, not used for 'static' type
+    cacheDuration?: number; // Cache duration in hours (only for 'url' type)
 
     isDefault?: boolean; // Mark as default source for new users/subscriptions
     enabled?: boolean;   // Whether the source is enabled (default: true)
@@ -302,16 +303,19 @@ export interface IDatabase {
     saveProxies(proxies: Proxy[]): Promise<void>;
     getProxies(source?: string): Promise<Proxy[]>;
     clearProxies(source: string): Promise<void>;
+    deleteProxy(id: string): Promise<void>;
 
     // Proxy Groups
     saveProxyGroups(groups: ProxyGroup[]): Promise<void>;
     getProxyGroups(source?: string): Promise<ProxyGroup[]>;
     clearProxyGroups(source: string): Promise<void>;
+    deleteProxyGroup(id: string): Promise<void>;
 
     // Rules
     saveRules(rules: Rule[]): Promise<void>;
     getRules(source?: string): Promise<Rule[]>;
     clearRules(source: string): Promise<void>;
+    deleteRule(id: string): Promise<void>;
 
     // Upstream Config
     saveUpstreamConfigItem(key: string, value: any, source?: string): Promise<void>;

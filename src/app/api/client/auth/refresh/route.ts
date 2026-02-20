@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
             tokenVersion: payload.tokenVersion,
             nickname: payload.nickname,
             avatar: fullAvatarUrl,
+            refreshTokenId: storedToken.id, // Carry forward the device's DB ID for session validation
         });
 
         return NextResponse.json({

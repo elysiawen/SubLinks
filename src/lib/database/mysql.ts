@@ -223,6 +223,15 @@ export default class MysqlDatabase implements IDatabase {
             PREPARE stmt FROM @query;
             EXECUTE stmt;
 
+            -- Ensure type column exists in upstream_sources (for static sources)
+            SELECT count(*) INTO @exist_us_type FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'upstream_sources' AND column_name = 'type';
+            SET @query = IF(@exist_us_type=0, 'ALTER TABLE upstream_sources ADD COLUMN type VARCHAR(50) DEFAULT ''url''', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Make url column nullable for static sources
+            ALTER TABLE upstream_sources MODIFY COLUMN url TEXT NULL;
+
             CREATE TABLE IF NOT EXISTS cache (
                 \`key\` VARCHAR(255) PRIMARY KEY,
                 value LONGTEXT NOT NULL,
@@ -1085,9 +1094,9 @@ export default class MysqlDatabase implements IDatabase {
     async createUpstreamSource(source: UpstreamSource): Promise<void> {
         await this.ensureInitialized();
         await this.pool.query(
-            `INSERT INTO upstream_sources (name, url, cache_duration, is_default, last_updated, status, error, traffic_upload, traffic_download, traffic_total, traffic_expire)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [source.name, source.url, source.cacheDuration || 60, source.isDefault, source.lastUpdated || 0, source.status || 'pending', source.error, 0, 0, 0, 0]
+            `INSERT INTO upstream_sources (name, type, url, cache_duration, is_default, last_updated, status, error, traffic_upload, traffic_download, traffic_total, traffic_expire)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [source.name, source.type || 'url', source.url || null, source.cacheDuration || 60, source.isDefault, source.lastUpdated || 0, source.status || 'pending', source.error, 0, 0, 0, 0]
         );
     }
 
@@ -1096,6 +1105,7 @@ export default class MysqlDatabase implements IDatabase {
         const params: any[] = [];
 
         if (source.url !== undefined) { updates.push('url = ?'); params.push(source.url); }
+        if (source.type !== undefined) { updates.push('type = ?'); params.push(source.type); }
         if (source.cacheDuration !== undefined) { updates.push('cache_duration = ?'); params.push(source.cacheDuration); }
         if (source.isDefault !== undefined) { updates.push('is_default = ?'); params.push(source.isDefault); }
         if (source.enabled !== undefined) { updates.push('enabled = ?'); params.push(source.enabled); }
@@ -1138,9 +1148,11 @@ export default class MysqlDatabase implements IDatabase {
     private mapUpstreamSource(row: any): UpstreamSource {
         return {
             name: row.name,
+            type: row.type || 'url',
             url: row.url,
             cacheDuration: row.cache_duration,
             isDefault: !!row.is_default,
+            enabled: row.enabled === undefined ? true : !!row.enabled,
             lastUpdated: Number(row.last_updated),
             status: row.status,
             error: row.error,
@@ -1246,6 +1258,10 @@ export default class MysqlDatabase implements IDatabase {
         await this.pool.query('DELETE FROM proxies WHERE source = ?', [source]);
     }
 
+    async deleteProxy(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM proxies WHERE id = ?', [id]);
+    }
+
     async saveProxyGroups(groups: ProxyGroup[]): Promise<void> {
         await this.ensureInitialized();
         if (groups.length === 0) return;
@@ -1315,6 +1331,10 @@ export default class MysqlDatabase implements IDatabase {
         await this.pool.query('DELETE FROM proxy_groups WHERE source = ?', [source]);
     }
 
+    async deleteProxyGroup(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM proxy_groups WHERE id = ?', [id]);
+    }
+
     async saveRules(rules: Rule[]): Promise<void> {
         await this.ensureInitialized();
         if (rules.length === 0) return;
@@ -1377,6 +1397,10 @@ export default class MysqlDatabase implements IDatabase {
 
     async clearRules(source: string): Promise<void> {
         await this.pool.query('DELETE FROM rules WHERE source = ?', [source]);
+    }
+
+    async deleteRule(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM rules WHERE id = ?', [id]);
     }
 
     async saveUpstreamConfigItem(key: string, value: any, source: string = 'global'): Promise<void> {

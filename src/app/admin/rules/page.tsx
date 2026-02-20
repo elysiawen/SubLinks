@@ -39,5 +39,11 @@ export default async function AdminRulesPage() {
         );
     }
 
-    return <AdminRulesClient rulesBySource={rulesBySource} totalCount={totalCount} customSets={customSets} />;
+    const sourcesList = await db.getUpstreamSources();
+    const sourceTypes: Record<string, string> = {};
+    sourcesList.forEach(s => {
+        sourceTypes[s.name] = s.type || 'url';
+    });
+
+    return <AdminRulesClient rulesBySource={rulesBySource} totalCount={totalCount} customSets={customSets} sourceTypes={sourceTypes} />;
 }

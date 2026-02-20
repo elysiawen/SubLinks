@@ -251,8 +251,14 @@ export default class PostgresDatabase implements IDatabase {
 
                 -- Add ua_policy and custom_ua_filter columns to upstream_sources if they don't exist
                 -- Drop legacy ua_policy and custom_ua_filter columns
-                   -- Add enabled column if not exists
+                -- Add enabled column if not exists
                    ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE;
+
+                -- Add type column for static sources (default 'url' for existing sources)
+                   ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'url';
+
+                -- Make url column nullable for static sources
+                   ALTER TABLE upstream_sources ALTER COLUMN url DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS passkeys (
                     id VARCHAR(255) PRIMARY KEY,
@@ -1358,6 +1364,10 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM proxies WHERE source = $1', [source]);
     }
 
+    async deleteProxy(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM proxies WHERE id = $1', [id]);
+    }
+
     // Proxy Groups
     async saveProxyGroups(groups: ProxyGroup[]): Promise<void> {
         if (groups.length === 0) return;
@@ -1404,6 +1414,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async clearProxyGroups(source: string): Promise<void> {
         await this.pool.query('DELETE FROM proxy_groups WHERE source = $1', [source]);
+    }
+
+    async deleteProxyGroup(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM proxy_groups WHERE id = $1', [id]);
     }
 
     // Rules - Store as single JSON array for performance
@@ -1462,6 +1476,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async clearRules(source: string): Promise<void> {
         await this.pool.query('DELETE FROM rules WHERE source = $1', [source]);
+    }
+
+    async deleteRule(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM rules WHERE id = $1', [id]);
     }
 
     // Upstream Config
@@ -1730,10 +1748,11 @@ export default class PostgresDatabase implements IDatabase {
         );
         return result.rows.map(row => ({
             name: row.name,
+            type: row.type || 'url',
             url: row.url,
             cacheDuration: row.cache_duration,
             isDefault: row.is_default,
-            enabled: row.enabled,
+            enabled: row.enabled === undefined ? true : row.enabled,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
             error: row.error,
@@ -1750,10 +1769,11 @@ export default class PostgresDatabase implements IDatabase {
         const row = result.rows[0];
         return {
             name: row.name,
+            type: row.type || 'url',
             url: row.url,
             cacheDuration: row.cache_duration,
             isDefault: row.is_default,
-            enabled: row.enabled,
+            enabled: row.enabled === undefined ? true : row.enabled,
             lastUpdated: parseInt(row.last_updated),
             status: row.status as 'pending' | 'success' | 'failure',
             error: row.error,
@@ -1769,12 +1789,13 @@ export default class PostgresDatabase implements IDatabase {
         const currentTime = Date.now();
         await this.pool.query(`
             INSERT INTO upstream_sources (
-                name, url, cache_duration, is_default, enabled,
+                name, type, url, cache_duration, is_default, enabled,
                 last_updated, status, error, traffic, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
             source.name,
-            source.url,
+            source.type || 'url',
+            source.url || null,
             source.cacheDuration || 24,
             source.isDefault || false,
             source.enabled !== false,
@@ -1799,6 +1820,10 @@ export default class PostgresDatabase implements IDatabase {
         if (source.url !== undefined) {
             updates.push(`url = $${paramIndex++}`);
             values.push(source.url);
+        }
+        if (source.type !== undefined) {
+            updates.push(`type = $${paramIndex++}`);
+            values.push(source.type);
         }
         if (source.cacheDuration !== undefined) {
             updates.push(`cache_duration = $${paramIndex++}`);

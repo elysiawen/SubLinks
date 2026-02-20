@@ -36,5 +36,11 @@ export default async function AdminProxiesPage() {
         );
     }
 
-    return <AdminProxiesClient proxiesBySource={proxiesBySource} totalCount={totalCount} />;
+    const sourcesList = await db.getUpstreamSources();
+    const sourceTypes: Record<string, string> = {};
+    sourcesList.forEach(s => {
+        sourceTypes[s.name] = s.type || 'url';
+    });
+
+    return <AdminProxiesClient proxiesBySource={proxiesBySource} totalCount={totalCount} sourceTypes={sourceTypes} />;
 }

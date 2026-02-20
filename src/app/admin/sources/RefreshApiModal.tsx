@@ -7,7 +7,7 @@ import { nanoid } from 'nanoid';
 
 interface UpstreamSource {
     name: string;
-    url: string;
+    url?: string;
 }
 
 export default function RefreshApiModal({

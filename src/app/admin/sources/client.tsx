@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource, toggleUpstreamSourceEnabled } from './actions';
+import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource, toggleUpstreamSourceEnabled, addStaticUpstreamSource, appendNodesToStaticSource } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
@@ -10,10 +10,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import RefreshApiModal from './RefreshApiModal';
 import { SubmitButton } from '@/components/SubmitButton';
+import StaticSourceWizard, { StaticSourceWizardContent } from './StaticSourceWizard';
+import StaticSourceEditor from './StaticSourceEditor';
 
 interface UpstreamSource {
     name: string;
-    url: string;
+    type?: 'url' | 'static';
+    url?: string;
     cacheDuration?: number;
     enabled?: boolean;
     isDefault?: boolean;
@@ -47,6 +50,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     const [loadingSaveAndUpdate, setLoadingSaveAndUpdate] = useState(false);
     const [loadingAction, setLoadingAction] = useState(false); // For refresh/delete operations
     const [showApiModal, setShowApiModal] = useState(false);
+    const [editingStaticSource, setEditingStaticSource] = useState<string | null>(null);
 
     // Stream Refresh Logic
     const handleStreamRefresh = async (sourceName?: string) => {
@@ -109,13 +113,18 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
     // Form state
     const [formName, setFormName] = useState('');
+    const [formType, setFormType] = useState<'url' | 'static'>('url');
     const [formUrl, setFormUrl] = useState('');
+    const [formStaticContent, setFormStaticContent] = useState('');
     const [formCacheDuration, setFormCacheDuration] = useState<string>('24');
     const [formDurationUnit, setFormDurationUnit] = useState<'hours' | 'minutes'>('hours');
+    const [loadingStaticSave, setLoadingStaticSave] = useState(false);
 
     const resetForm = () => {
         setFormName('');
+        setFormType('url');
         setFormUrl('');
+        setFormStaticContent('');
         setFormCacheDuration('24');
         setFormDurationUnit('hours');
     };
@@ -125,21 +134,29 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             error('请输入上游源名称');
             return false;
         }
-        if (!formUrl.trim()) {
-            error('请输入订阅URL');
-            return false;
+        if (formType === 'url') {
+            if (!formUrl.trim()) {
+                error('请输入订阅URL');
+                return false;
+            }
+            if (!formUrl.startsWith('http://') && !formUrl.startsWith('https://')) {
+                error('订阅URL必须以 http:// 或 https:// 开头');
+                return false;
+            }
+        } else {
+            if (!formStaticContent.trim()) {
+                error('请输入节点内容');
+                return false;
+            }
         }
-        if (!formUrl.startsWith('http://') && !formUrl.startsWith('https://')) {
-            error('订阅URL必须以 http:// 或 https:// 开头');
-            return false;
-        }
-        // Duplicate check removed, redundant with next check
         return true;
     };
 
     const openEditModal = (source: UpstreamSource) => {
         setFormName(source.name);
-        setFormUrl(source.url);
+        setFormType(source.type || 'url');
+        setFormUrl(source.url || '');
+        setFormStaticContent('');
 
         // Smart unit detection
         const duration = source.cacheDuration;
@@ -169,12 +186,33 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             return;
         }
 
+        if (formType === 'static') {
+            // Static source: parse content and save
+            setLoadingStaticSave(true);
+            try {
+                await addStaticUpstreamSource(
+                    formName.trim(),
+                    formStaticContent.trim(),
+                    true // enabled
+                );
+                setLoadingStaticSave(false);
+                resetForm();
+                setIsAdding(false);
+                success('静态上游源添加成功');
+                window.location.reload();
+            } catch (e) {
+                setLoadingStaticSave(false);
+                error(`添加失败: ${e}`);
+            }
+            return;
+        }
+
+        // URL source: original logic
         if (shouldRefresh) {
             setLoadingSaveAndUpdate(true);
         } else {
             setLoadingSave(true);
         }
-
 
         let duration = parseFloat(formCacheDuration);
         if (isNaN(duration) || duration < 0) duration = 24;
@@ -192,10 +230,8 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
-            // Don't close modal, keep loading
             success('保存成功，正在更新...');
             await handleStreamRefresh(sourceName);
-            // handleStreamRefresh will reload page, so no need to clean up state
         } else {
             setLoadingSave(false);
             resetForm();
@@ -355,82 +391,167 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     setIsAdding(false);
                 }}
                 title={editingSource ? '编辑上游源' : '添加新的上游源'}
+                maxWidth={formType === 'static' && isAdding ? 'max-w-2xl' : 'max-w-lg'}
             >
                 {(isAdding || editingSource) && (
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">上游源名称 *</label>
-                            <input
-                                type="text"
-                                value={formName}
-                                onChange={(e) => setFormName(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                placeholder="例如：机场A、备用源"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
-                            <input
-                                type="url"
-                                value={formUrl}
-                                onChange={(e) => setFormUrl(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                placeholder="https://..."
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    value={formCacheDuration}
-                                    onChange={(e) => setFormCacheDuration(e.target.value)}
-                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                    min="0.1"
-                                    step="0.1"
-                                />
-                                <select
-                                    value={formDurationUnit}
-                                    onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
-                                    className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                                >
-                                    <option value="hours">小时</option>
-                                    <option value="minutes">分钟</option>
-                                </select>
+                        {/* Segmented Switcher for Adding */}
+                        {isAdding && !editingSource && (
+                            <div className="flex justify-center mb-6">
+                                <div className="relative flex p-1 bg-gray-100 rounded-xl w-full max-w-sm">
+                                    <div
+                                        className={`absolute h-full top-0 w-1/2 bg-white rounded-lg shadow-sm transition-all duration-300 ease-out`}
+                                        style={{
+                                            left: formType === 'url' ? '4px' : '50%',
+                                            width: 'calc(50% - 4px)',
+                                            height: 'calc(100% - 8px)',
+                                            top: '4px'
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormType('url')}
+                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'url' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        🔗 URL 订阅
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormType('static')}
+                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        📋 静态内容
+                                    </button>
+                                </div>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                                设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
-                                {formCacheDuration !== '0' && (
-                                    <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
-                                )}
-                            </p>
-                        </div>
+                        )}
 
+                        {/* Common Name field - Only for URL type since Static has its own name step or accepts it */}
+                        {(editingSource || (isAdding && formType === 'url')) && (
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">上游源名称 *</label>
+                                <input
+                                    type="text"
+                                    value={formName}
+                                    onChange={(e) => setFormName(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    placeholder="例如：机场A、备用源"
+                                    autoFocus
+                                />
+                            </div>
+                        )}
 
-                        <div className="flex gap-2">
-                            <SubmitButton
-                                onClick={() => editingSource ? handleUpdate(false) : handleAdd(false)}
-                                isLoading={loadingSave}
-                                text={editingSource ? '保存' : '保存'}
-                                className="flex-1"
-                            />
-                            <SubmitButton
-                                onClick={() => editingSource ? handleUpdate(true) : handleAdd(true)}
-                                isLoading={loadingSaveAndUpdate}
-                                text={editingSource ? '保存并更新' : '保存并更新'}
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                            />
-                            <button
-                                onClick={() => {
-                                    resetForm();
-                                    setEditingSource(null);
-                                    setIsAdding(false);
-                                }}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                            >
-                                取消
-                            </button>
-                        </div>
+                        {/* Editing a static source: show type badge */}
+                        {editingSource && editingSource.type === 'static' && (
+                            <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+                                <span>📋</span>
+                                <span>静态来源（类型创建后不可更改）</span>
+                            </div>
+                        )}
+
+                        {/* URL-type fields */}
+                        {formType === 'url' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
+                                    <input
+                                        type="url"
+                                        value={formUrl}
+                                        onChange={(e) => setFormUrl(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            value={formCacheDuration}
+                                            onChange={(e) => setFormCacheDuration(e.target.value)}
+                                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                            min="0.1"
+                                            step="0.1"
+                                        />
+                                        <select
+                                            value={formDurationUnit}
+                                            onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
+                                            className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                        >
+                                            <option value="hours">小时</option>
+                                            <option value="minutes">分钟</option>
+                                        </select>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
+                                        {formCacheDuration !== '0' && (
+                                            <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Static Content Wizard Integrated directly */}
+                        {isAdding && !editingSource && formType === 'static' && (
+                            <div className="mt-2">
+                                <StaticSourceWizardContent
+                                    initialName={formName}
+                                    existingNames={sources.map(s => s.name)}
+                                    onSuccess={() => {
+                                        setIsAdding(false);
+                                        window.location.reload();
+                                    }}
+                                    onCancel={() => {
+                                        setFormType('url');
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Static-type editing: show append textarea */}
+                        {formType === 'static' && editingSource && (
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    追加新节点（可选）
+                                </label>
+                                <textarea
+                                    value={formStaticContent}
+                                    onChange={(e) => setFormStaticContent(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-sm"
+                                    rows={5}
+                                    placeholder={`粘贴新的分享链接或 YAML 配置以追加节点...\n\n如需管理已有节点，请前往 代理节点管理 页面。`}
+                                />
+                            </div>
+                        )}
+
+                        {/* Action Buttons - Only for URL type or Editing */}
+                        {(editingSource || (isAdding && formType === 'url')) && (
+                            <div className="flex gap-2 pt-2">
+                                <SubmitButton
+                                    onClick={() => editingSource ? handleUpdate(false) : handleAdd(false)}
+                                    isLoading={loadingSave}
+                                    text={editingSource ? '保存' : '保存'}
+                                    className="flex-1"
+                                />
+                                <SubmitButton
+                                    onClick={() => editingSource ? handleUpdate(true) : handleAdd(true)}
+                                    isLoading={loadingSaveAndUpdate}
+                                    text={editingSource ? '保存并更新' : '保存并更新'}
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                />
+                                <button
+                                    onClick={() => {
+                                        resetForm();
+                                        setEditingSource(null);
+                                        setIsAdding(false);
+                                    }}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                >
+                                    取消
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>
@@ -479,16 +600,22 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
+                                    {source.type === 'static' ? (
+                                        <p className="text-xs text-gray-400 mb-2">📋 静态来源 · 手动配置的节点</p>
+                                    ) : (
+                                        <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
+                                    )}
                                     <div className="flex flex-wrap gap-2 text-xs">
-                                        <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
-                                            {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
-                                                ? '♾️ 永不自动失效'
-                                                : `🕒 ${(source.cacheDuration ?? 24) < 1
-                                                    ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
-                                                    : `${source.cacheDuration ?? 24}h`}`
-                                            }
-                                        </span>
+                                        {source.type !== 'static' && (
+                                            <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
+                                                {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
+                                                    ? '♾️ 永不自动失效'
+                                                    : `🕒 ${(source.cacheDuration ?? 24) < 1
+                                                        ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
+                                                        : `${source.cacheDuration ?? 24}h`}`
+                                                }
+                                            </span>
+                                        )}
 
                                         {source.lastUpdated && (
                                             <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
@@ -531,22 +658,24 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     )}
                                 </div>
 
-                                {/* Right: Action Buttons (Only 3) */}
+                                {/* Right: Action Buttons */}
                                 <div className="flex md:flex-col gap-2 md:w-32 shrink-0">
+                                    {source.type !== 'static' && (
+                                        <button
+                                            onClick={() => handleRefreshSingle(source.name)}
+                                            disabled={loadingAction}
+                                            className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                            title="刷新此上游源"
+                                        >
+                                            🔄 刷新
+                                        </button>
+                                    )}
                                     <button
-                                        onClick={() => handleRefreshSingle(source.name)}
-                                        disabled={loadingAction}
-                                        className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
-                                        title="刷新此上游源"
-                                    >
-                                        🔄 刷新
-                                    </button>
-                                    <button
-                                        onClick={() => openEditModal(source)}
+                                        onClick={() => source.type === 'static' ? setEditingStaticSource(source.name) : openEditModal(source)}
                                         disabled={loadingAction}
                                         className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
-                                        ✏️ 编辑
+                                        ✏️ {source.type === 'static' ? '管理' : '编辑'}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(source.name)}
@@ -572,6 +701,17 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     return await updateRefreshApiKey(apiKey);
                 }}
             />
+
+
+            {/* Static Source Editor */}
+            {editingStaticSource && (
+                <StaticSourceEditor
+                    sourceName={editingStaticSource}
+                    open={!!editingStaticSource}
+                    onClose={() => setEditingStaticSource(null)}
+                    onUpdate={() => router.refresh()}
+                />
+            )}
         </div>
     );
 }

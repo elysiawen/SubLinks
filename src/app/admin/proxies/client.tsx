@@ -3,13 +3,23 @@
 import { useState, useMemo } from 'react';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
+import StaticSourceEditor from '../sources/StaticSourceEditor';
 
-export default function AdminProxiesClient({ proxiesBySource, totalCount }: { proxiesBySource: Record<string, any[]>, totalCount: number }) {
+export default function AdminProxiesClient({
+    proxiesBySource,
+    totalCount,
+    sourceTypes = {}
+}: {
+    proxiesBySource: Record<string, any[]>,
+    totalCount: number,
+    sourceTypes?: Record<string, string>
+}) {
     const { success } = useToast();
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
     const [selectedProxyIndex, setSelectedProxyIndex] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [mobileView, setMobileView] = useState<'list' | 'detail'>('list'); // Mobile view state
+    const [editingSource, setEditingSource] = useState<string | null>(null);
 
     const sources = Object.keys(proxiesBySource).sort();
     const currentSourceProxies = selectedSource ? proxiesBySource[selectedSource] : [];
@@ -65,6 +75,11 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                                     📡 {source}
+                                    {sourceTypes[source] === 'static' && (
+                                        <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                            静态
+                                        </span>
+                                    )}
                                 </h3>
                             </div>
                             <div className="space-y-2 mb-4">
@@ -80,17 +95,27 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
                                     ))}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setSelectedSource(source);
-                                    setSelectedProxyIndex(0);
-                                    setSearchTerm('');
-                                    setMobileView('list');
-                                }}
-                                className="w-full bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
-                            >
-                                查看详情
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        setSelectedSource(source);
+                                        setSelectedProxyIndex(0);
+                                        setSearchTerm('');
+                                        setMobileView('list');
+                                    }}
+                                    className={`bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                >
+                                    查看详情
+                                </button>
+                                {sourceTypes[source] === 'static' && (
+                                    <button
+                                        onClick={() => setEditingSource(source)}
+                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                    >
+                                        ⚙️ 管理
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     );
                 })}
@@ -198,7 +223,7 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
                                         <div className="flex items-start justify-between border-b pb-4 mb-6">
                                             <div>
                                                 <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedProxy.name}</h3>
-                                                <div className="flex gap-2 flex-wrap">
+                                                <div className="flex gap-2 flex-wrap items-center">
                                                     <span className="px-2.5 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                                                         {selectedProxy.type.toUpperCase()}
                                                     </span>
@@ -380,6 +405,20 @@ export default function AdminProxiesClient({ proxiesBySource, totalCount }: { pr
                     </div>
                 )}
             </Modal>
+
+            {editingSource && (
+                <StaticSourceEditor
+                    sourceName={editingSource}
+                    open={!!editingSource}
+                    onClose={() => setEditingSource(null)}
+                    onUpdate={() => {
+                        // In a real app, we might need a way to refresh the parent data
+                        // For now we just close or hope it revalidates soon.
+                        // window.location.reload(); 
+                    }}
+                    defaultTab="nodes"
+                />
+            )}
         </div>
     );
 }

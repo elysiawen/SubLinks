@@ -108,6 +108,10 @@ export async function refreshUpstreamSource(
     if (!source) {
         throw new Error(`Source not found: ${sourceName}`);
     }
+    // Static sources cannot be refreshed via URL
+    if (source.type === 'static' || !source.url) {
+        throw new Error(`Source "${sourceName}" is a static source and cannot be refreshed via URL`);
+    }
 
     // Call the actual refresh logic from analysis.ts
     const { refreshSingleUpstreamSource } = await import('@/lib/analysis');

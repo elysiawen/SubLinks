@@ -20,7 +20,9 @@ interface GroupEditorProps {
 export default function GroupEditor({ value, onChange, proxies, className }: GroupEditorProps) {
     // Group Builder State
     const [groupMode, setGroupMode] = useState<'simple' | 'advanced'>('simple');
+    const [isSwitching, setIsSwitching] = useState(false);
     const [guiGroups, setGuiGroups] = useState<{ name: string, type: string, proxies: string[], id: string }[]>([]);
+    const [groupSearch, setGroupSearch] = useState('');
 
     // Form State
     const [newGroupName, setNewGroupName] = useState('');
@@ -74,15 +76,24 @@ export default function GroupEditor({ value, onChange, proxies, className }: Gro
         if (groupMode === 'simple' && value) {
             setGuiGroups(parseGroups(value));
         }
-    }, [groupMode]); // Only re-parse if switching mode, not on every value change to avoid loops
+    }, [groupMode, value]);
 
     const syncTextToGui = () => {
         setGuiGroups(parseGroups(value));
     };
 
-    const updateGuiGroups = (newGroups: typeof guiGroups) => {
-        setGuiGroups(newGroups);
-        onChange(stringifyGroups(newGroups));
+    const updateGuiGroups = (newRules: typeof guiGroups) => {
+        setGuiGroups(newRules);
+        onChange(stringifyGroups(newRules));
+    };
+
+    const handleSwitchMode = (mode: 'simple' | 'advanced') => {
+        if (groupMode === mode) return;
+        setIsSwitching(true);
+        setTimeout(() => {
+            setGroupMode(mode);
+            setIsSwitching(false);
+        }, 50);
     };
 
     // Group logic
@@ -158,6 +169,15 @@ export default function GroupEditor({ value, onChange, proxies, className }: Gro
         );
     };
 
+    const filteredGroups = useMemo(() => {
+        if (!groupSearch) return guiGroups;
+        const lowSearch = groupSearch.toLowerCase();
+        return guiGroups.filter(g =>
+            g.name.toLowerCase().includes(lowSearch) ||
+            g.type.toLowerCase().includes(lowSearch)
+        );
+    }, [guiGroups, groupSearch]);
+
     const groupedProxies = useMemo(() => {
         const grouped: Record<string, typeof proxies> = {};
         proxies.filter(p => p.name.toLowerCase().includes(proxySearch.toLowerCase())).forEach(p => {
@@ -175,24 +195,28 @@ export default function GroupEditor({ value, onChange, proxies, className }: Gro
                 </label>
                 <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
                     <button
-                        onClick={() => {
-                            setGroupMode('simple');
-                            syncTextToGui();
-                        }}
-                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
+                        onClick={() => handleSwitchMode('simple')}
+                        disabled={isSwitching}
+                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         简易模式
                     </button>
                     <button
-                        onClick={() => setGroupMode('advanced')}
-                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
+                        onClick={() => handleSwitchMode('advanced')}
+                        disabled={isSwitching}
+                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         高级模式
                     </button>
                 </div>
             </div>
 
-            {groupMode === 'advanced' ? (
+            {isSwitching ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
+                    <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    <span className="text-xs italic">切换编辑器模式中...</span>
+                </div>
+            ) : groupMode === 'advanced' ? (
                 <div>
                     <textarea
                         value={value}
@@ -239,14 +263,30 @@ export default function GroupEditor({ value, onChange, proxies, className }: Gro
                         </div>
                     </div>
 
+                    {/* Search Bar */}
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            value={groupSearch}
+                            onChange={(e) => setGroupSearch(e.target.value)}
+                            placeholder="搜索策略组名称、类型..."
+                            className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                        />
+                    </div>
+
                     {/* Groups List */}
-                    {guiGroups.length === 0 ? (
+                    {filteredGroups.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
-                            暂无策略组，请添加
+                            {groupSearch ? '没有找到匹配的策略组' : '暂无策略组，请添加'}
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {guiGroups.map((group) => (
+                            {filteredGroups.map((group) => (
                                 <div key={group.id} className="border border-gray-200 rounded-lg p-4">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">

@@ -33,6 +33,8 @@ export function parseLink(link: string): ProxyConfig | null {
             return parseTrojan(url, hashName);
         } else if (protocol === 'ss') {
             return parseShadowsocks(url, hashName);
+        } else if (protocol === 'ssr') {
+            return parseShadowsocksR(link);
         }
 
         return null;
@@ -43,13 +45,19 @@ export function parseLink(link: string): ProxyConfig | null {
 }
 
 function parseHysteria2(url: URL, name: string): ProxyConfig {
+    const sni = url.searchParams.get('sni') || url.searchParams.get('peer');
+    const insecure = url.searchParams.get('insecure') || url.searchParams.get('allowInsecure') || url.searchParams.get('allowinsecure');
+
     const config: ProxyConfig = {
         name: name || `Hysteria2 ${url.hostname}`,
         type: 'hysteria2',
         server: url.hostname,
         port: parseInt(url.port) || 443,
         password: url.username,
-        ...parseQueryParams(url.searchParams)
+        sni: sni || undefined,
+        'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
+        obfs: url.searchParams.get('obfs') || undefined,
+        'obfs-password': url.searchParams.get('obfs-password') || undefined,
     };
     return config;
 }
@@ -84,6 +92,10 @@ function parseVmess(link: string): ProxyConfig | null {
 }
 
 function parseVless(url: URL, name: string): ProxyConfig {
+    const sni = url.searchParams.get('sni') || url.searchParams.get('peer');
+    const insecure = url.searchParams.get('insecure') || url.searchParams.get('allowInsecure') || url.searchParams.get('allowinsecure');
+    const network = url.searchParams.get('type') || url.searchParams.get('network') || 'tcp';
+
     const config: ProxyConfig = {
         name: name || `Vless ${url.hostname}`,
         type: 'vless',
@@ -91,16 +103,21 @@ function parseVless(url: URL, name: string): ProxyConfig {
         port: parseInt(url.port) || 443,
         uuid: url.username,
         cipher: 'auto',
-        tls: url.searchParams.get('security') === 'tls',
+        tls: url.searchParams.get('security') === 'tls' || url.searchParams.get('security') === 'reality',
+        'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
         'flow': url.searchParams.get('flow') || undefined,
-        servername: url.searchParams.get('sni'),
-        network: url.searchParams.get('type') || 'tcp',
+        servername: sni || undefined,
+        network: network,
     };
 
     if (config.network === 'ws') {
         config['ws-opts'] = {
-            path: url.searchParams.get('path'),
-            headers: url.searchParams.get('host') ? { Host: url.searchParams.get('host') } : undefined
+            path: url.searchParams.get('path') || '/',
+            headers: (url.searchParams.get('host') || sni) ? { Host: url.searchParams.get('host') || sni } : undefined
+        };
+    } else if (config.network === 'grpc') {
+        config['grpc-opts'] = {
+            'grpc-service-name': url.searchParams.get('serviceName') || url.searchParams.get('path') || '',
         };
     }
 
@@ -117,15 +134,32 @@ function parseVless(url: URL, name: string): ProxyConfig {
 }
 
 function parseTrojan(url: URL, name: string): ProxyConfig {
+    const sni = url.searchParams.get('sni') || url.searchParams.get('peer');
+    const insecure = url.searchParams.get('insecure') || url.searchParams.get('allowInsecure') || url.searchParams.get('allowinsecure');
+    const network = url.searchParams.get('type') || url.searchParams.get('network') || 'tcp';
+
     const config: ProxyConfig = {
         name: name || `Trojan ${url.hostname}`,
         type: 'trojan',
         server: url.hostname,
         port: parseInt(url.port) || 443,
         password: url.username,
-        sni: url.searchParams.get('sni'),
-        'skip-cert-verify': url.searchParams.get('allowInsecure') === '1',
+        sni: sni || undefined,
+        'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
+        network: network !== 'tcp' ? network : undefined,
     };
+
+    if (config.network === 'ws') {
+        config['ws-opts'] = {
+            path: url.searchParams.get('path') || '/',
+            headers: (url.searchParams.get('host') || sni) ? { Host: url.searchParams.get('host') || sni } : undefined
+        };
+    } else if (config.network === 'grpc') {
+        config['grpc-opts'] = {
+            'grpc-service-name': url.searchParams.get('serviceName') || url.searchParams.get('path') || '',
+        };
+    }
+
     return config;
 }
 
@@ -212,6 +246,76 @@ function parseQueryParams(params: URLSearchParams): any {
     if (params.has('sni')) config.sni = params.get('sni');
     if (params.has('insecure')) config['skip-cert-verify'] = params.get('insecure') === '1';
     return config;
+}
+
+function parseShadowsocksR(link: string): ProxyConfig | null {
+    try {
+        const base64Part = link.replace(/^ssr:\/\//i, '');
+        // SSR base64 is often url-safe
+        let b64 = base64Part.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4 !== 0) b64 += '=';
+
+        const decoded = Buffer.from(b64, 'base64').toString('utf-8');
+        // format: server:port:protocol:method:obfs:password_base64/?params
+
+        const parts = decoded.split('/');
+        const mainPart = parts[0];
+        const paramPart = parts.length > 1 ? parts.slice(1).join('/') : '';
+
+        const mainParts = mainPart.split(':');
+        if (mainParts.length < 6) return null;
+
+        const server = mainParts[0];
+        const port = parseInt(mainParts[1]);
+        const protocol = mainParts[2];
+        const method = mainParts[3];
+        const obfs = mainParts[4];
+
+        let passwordB64 = mainParts[5];
+        passwordB64 = passwordB64.replace(/-/g, '+').replace(/_/g, '/');
+        while (passwordB64.length % 4 !== 0) passwordB64 += '=';
+        const password = Buffer.from(passwordB64, 'base64').toString('utf-8');
+
+        const config: ProxyConfig = {
+            name: `SSR ${server}`,
+            type: 'ssr',
+            server,
+            port,
+            cipher: method,
+            password,
+            protocol,
+            obfs,
+        };
+
+        if (paramPart && paramPart.startsWith('?')) {
+            const qs = paramPart.substring(1);
+            const params = new URLSearchParams(qs);
+
+            if (params.has('obfsparam')) {
+                let p = params.get('obfsparam')!;
+                p = p.replace(/-/g, '+').replace(/_/g, '/');
+                while (p.length % 4 !== 0) p += '=';
+                config['obfs-param'] = Buffer.from(p, 'base64').toString('utf-8');
+            }
+            if (params.has('protoparam')) {
+                let p = params.get('protoparam')!;
+                p = p.replace(/-/g, '+').replace(/_/g, '/');
+                while (p.length % 4 !== 0) p += '=';
+                config['protocol-param'] = Buffer.from(p, 'base64').toString('utf-8');
+            }
+            if (params.has('remarks')) {
+                let p = params.get('remarks')!;
+                p = p.replace(/-/g, '+').replace(/_/g, '/');
+                while (p.length % 4 !== 0) p += '=';
+                config.name = Buffer.from(p, 'base64').toString('utf-8');
+            }
+        }
+
+        return config;
+    } catch (e) {
+        console.warn('Failed to parse ssr', e);
+        return null;
+    }
 }
 
 /**

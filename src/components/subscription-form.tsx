@@ -24,7 +24,7 @@ export interface SubscriptionFormProps {
     defaultGroups?: { name: string; source: string }[];
     availableSources: {
         name: string;
-        url: string;
+        url?: string;
         isDefault?: boolean;
         enabled?: boolean;
         status?: 'pending' | 'success' | 'failure';

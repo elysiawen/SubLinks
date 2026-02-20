@@ -51,6 +51,11 @@ export async function GET(req: NextRequest) {
                         controller.close();
                         return;
                     }
+                    if (source.type === 'static' || !source.url) {
+                        send(`Source "${sourceName}" is a static source and cannot be refreshed via URL`, 'error');
+                        controller.close();
+                        return;
+                    }
 
                     await refreshSingleUpstreamSource(source.name, source.url, send, {
                         reason: 'Manual Admin Refresh',

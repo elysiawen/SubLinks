@@ -3,14 +3,22 @@
 import { useState, useMemo } from 'react';
 import Modal from '@/components/Modal';
 import { Search } from 'lucide-react';
+import StaticSourceEditor from '../sources/StaticSourceEditor';
 
-export default function AdminRulesClient({ rulesBySource, totalCount, customSets }: {
+export default function AdminRulesClient({
+    rulesBySource,
+    totalCount,
+    customSets,
+    sourceTypes = {}
+}: {
     rulesBySource: Record<string, string[]>,
     totalCount: number,
-    customSets: any[]
+    customSets: any[],
+    sourceTypes?: Record<string, string>
 }) {
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [editingSource, setEditingSource] = useState<string | null>(null);
 
     const sources = Object.keys(rulesBySource).sort();
     const selectedRules = selectedSource ? rulesBySource[selectedSource] : [];
@@ -71,6 +79,11 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                                     📡 {source}
+                                    {sourceTypes[source] === 'static' && (
+                                        <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                            静态
+                                        </span>
+                                    )}
                                 </h3>
                             </div>
                             <div className="space-y-2 mb-4">
@@ -79,12 +92,22 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
                                     <span className="font-semibold text-orange-600">{rules.length}</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelectedSource(source)}
-                                className="w-full bg-orange-50 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm"
-                            >
-                                查看详情
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setSelectedSource(source)}
+                                    className={`bg-orange-50 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                >
+                                    查看详情
+                                </button>
+                                {sourceTypes[source] === 'static' && (
+                                    <button
+                                        onClick={() => setEditingSource(source)}
+                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                    >
+                                        ⚙️ 管理
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     );
                 })}
@@ -150,6 +173,18 @@ export default function AdminRulesClient({ rulesBySource, totalCount, customSets
                     </div>
                 )}
             </Modal>
+
+            {editingSource && (
+                <StaticSourceEditor
+                    sourceName={editingSource}
+                    open={!!editingSource}
+                    onClose={() => setEditingSource(null)}
+                    onUpdate={() => {
+                        // Trigger refresh if needed
+                    }}
+                    defaultTab="rules"
+                />
+            )}
         </div>
     );
 }

@@ -14,6 +14,7 @@ export interface TokenPayload {
     tokenVersion?: number;
     nickname?: string;
     avatar?: string;
+    refreshTokenId?: string; // DB ID of the device's refresh token, for device-level session validation
 }
 
 /**
@@ -55,6 +56,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
             tokenVersion: payload.tokenVersion as number | undefined,
             nickname: payload.nickname as string | undefined,
             avatar: payload.avatar as string | undefined,
+            refreshTokenId: payload.refreshTokenId as string | undefined,
         };
 
         // Verify token version to invalidate tokens after password change

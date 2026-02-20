@@ -44,5 +44,11 @@ export default async function AdminGroupsPage() {
         );
     }
 
-    return <AdminGroupsClient groupsBySource={groupsBySource} totalCount={totalCount} customSets={customSets} />;
+    const sourcesList = await db.getUpstreamSources();
+    const sourceTypes: Record<string, string> = {};
+    sourcesList.forEach(s => {
+        sourceTypes[s.name] = s.type || 'url';
+    });
+
+    return <AdminGroupsClient groupsBySource={groupsBySource} totalCount={totalCount} customSets={customSets} sourceTypes={sourceTypes} />;
 }

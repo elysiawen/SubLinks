@@ -3,14 +3,22 @@
 import { useState, useMemo } from 'react';
 import Modal from '@/components/Modal';
 import { Search } from 'lucide-react';
+import StaticSourceEditor from '../sources/StaticSourceEditor';
 
-export default function AdminGroupsClient({ groupsBySource, totalCount, customSets }: {
+export default function AdminGroupsClient({
+    groupsBySource,
+    totalCount,
+    customSets,
+    sourceTypes = {}
+}: {
     groupsBySource: Record<string, any[]>,
     totalCount: number,
-    customSets: any[]
+    customSets: any[],
+    sourceTypes?: Record<string, string>
 }) {
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [editingSource, setEditingSource] = useState<string | null>(null);
 
     const sources = Object.keys(groupsBySource).sort();
     const selectedGroups = selectedSource ? groupsBySource[selectedSource] : [];
@@ -77,6 +85,11 @@ export default function AdminGroupsClient({ groupsBySource, totalCount, customSe
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                                     📡 {source}
+                                    {sourceTypes[source] === 'static' && (
+                                        <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                            静态
+                                        </span>
+                                    )}
                                 </h3>
                             </div>
                             <div className="space-y-2 mb-4">
@@ -85,12 +98,22 @@ export default function AdminGroupsClient({ groupsBySource, totalCount, customSe
                                     <span className="font-semibold text-green-600">{groups.length}</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelectedSource(source)}
-                                className="w-full bg-green-50 text-green-600 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
-                            >
-                                查看详情
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setSelectedSource(source)}
+                                    className={`bg-green-50 text-green-600 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                >
+                                    查看详情
+                                </button>
+                                {sourceTypes[source] === 'static' && (
+                                    <button
+                                        onClick={() => setEditingSource(source)}
+                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                    >
+                                        ⚙️ 管理
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     );
                 })}
@@ -177,6 +200,18 @@ export default function AdminGroupsClient({ groupsBySource, totalCount, customSe
                     </div>
                 )}
             </Modal>
+
+            {editingSource && (
+                <StaticSourceEditor
+                    sourceName={editingSource}
+                    open={!!editingSource}
+                    onClose={() => setEditingSource(null)}
+                    onUpdate={() => {
+                        // Optional: trigger refresh
+                    }}
+                    defaultTab="groups"
+                />
+            )}
         </div>
     );
 }

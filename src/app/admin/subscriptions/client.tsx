@@ -44,7 +44,7 @@ export default function AdminSubsClient({
     currentPage: number,
     configSets: ConfigSets,
     defaultGroups: { name: string; source: string }[],
-    availableSources: { name: string; url: string; enabled?: boolean }[],
+    availableSources: { name: string; url?: string; enabled?: boolean }[],
     users: { username: string; nickname?: string }[]
 }) {
     const { success, error, info, addToast, updateToast, removeToast } = useToast();
