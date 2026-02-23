@@ -66,8 +66,9 @@ export async function addStaticUpstreamSource(
     await parseAndStoreUpstream(content, name);
     console.log(`✅ Static upstream source parsed and stored successfully`);
 
-    // 3. Clear all subscription caches so users immediately get the new nodes
-    await db.clearAllSubscriptionCaches();
+    // 3. Clear subscription caches affected by this source
+    await clearSubscriptionCachesForSource(name);
+
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/proxies');
@@ -104,8 +105,9 @@ export async function appendNodesToStaticSource(
         lastUpdated: Date.now()
     });
 
-    // Clear subscription caches
-    await db.clearAllSubscriptionCaches();
+    // Clear subscription caches affected by this source
+    await clearSubscriptionCachesForSource(sourceName);
+
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/proxies');
@@ -158,7 +160,20 @@ async function validateAndDisableSubscriptions(affectedSubs: any[], enabledSourc
     }
 }
 
+// Helper: Clear caches only for subscriptions affected by a source
+async function clearSubscriptionCachesForSource(sourceName: string) {
+    const affectedSubs = await db.getSubscriptionsBySource(sourceName);
+    if (affectedSubs.length === 0) return;
+
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < affectedSubs.length; i += CHUNK_SIZE) {
+        const chunk = affectedSubs.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map(sub => db.clearSubscriptionCache(sub.token)));
+    }
+}
+
 export async function deleteUpstreamSource(sourceName: string) {
+
     // 1. Find affected subscriptions BEFORE deleting (so we know who used this source)
     const affectedSubs = await db.getSubscriptionsBySource(sourceName);
 
@@ -266,9 +281,13 @@ export async function updateUpstreamSource(
     }
 
     if (isStatic) {
-        // Static sources: clear subscription caches to propagate any name/enabled changes
-        await db.clearAllSubscriptionCaches();
+        // Static sources: clear subscription caches affected by this source (and new name if changed)
+        await clearSubscriptionCachesForSource(oldName);
+        if (oldName !== newName) {
+            await clearSubscriptionCachesForSource(newName);
+        }
     } else {
+
         // URL sources: conditionally trigger immediate refresh after update
         if (!skipRefresh && url) {
             console.log(`🔄 Refreshing updated upstream source: ${newName}`);
@@ -553,8 +572,9 @@ export async function createStaticSource(
         await db.saveRules(ruleEntries);
     }
 
-    // 5. Clear subscription caches
-    await db.clearAllSubscriptionCaches();
+    // 5. Clear subscription caches affected by this source
+    await clearSubscriptionCachesForSource(name);
+
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/proxies');
@@ -590,9 +610,10 @@ export async function addNodesToStaticSource(
     await db.saveProxies(proxyEntries);
 
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/proxies');
     return { success: true };
 }
@@ -608,9 +629,10 @@ export async function deleteStaticSourceNode(sourceName: string, nodeId: string)
 
     await db.deleteProxy(nodeId);
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/proxies');
     return { success: true };
 }
@@ -632,7 +654,8 @@ export async function deleteStaticSourceNodes(sourceName: string, nodeIds: strin
     }
 
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
+
 
     revalidatePath('/admin/sources');
     revalidatePath('/admin/proxies');
@@ -668,9 +691,10 @@ export async function saveStaticSourceGroups(
     await db.saveProxyGroups(groupEntries);
 
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/groups');
     return { success: true };
 }
@@ -691,9 +715,10 @@ export async function deleteStaticSourceGroup(sourceName: string, groupId: strin
 
     await db.deleteProxyGroup(groupId);
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/groups');
     return { success: true };
 }
@@ -726,9 +751,10 @@ export async function saveStaticSourceRules(
     }
 
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/rules');
     return { success: true };
 }
@@ -744,9 +770,10 @@ export async function deleteStaticSourceRule(sourceName: string, ruleId: string)
 
     await db.deleteRule(ruleId);
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/rules');
     return { success: true };
 }
@@ -846,9 +873,10 @@ export async function importStaticSourceData(
     }
 
     await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
-    await db.clearAllSubscriptionCaches();
+    await clearSubscriptionCachesForSource(sourceName);
 
     revalidatePath('/admin/sources');
+
     revalidatePath('/admin/proxies');
     revalidatePath('/admin/groups');
     revalidatePath('/admin/rules');

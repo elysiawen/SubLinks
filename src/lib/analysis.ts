@@ -186,11 +186,14 @@ export async function refreshSingleUpstreamSource(
                 upstreamLastUpdated: Date.now() // Keep precise global tracking
             });
 
-            // Clear all subscription caches to ensure they pick up the new/updated source data
-            const cacheMsg = '   🗑️ Clearing all subscription caches (triggered by single source update)...';
+            // Clear subscription caches that use this source (or all sources)
+            const cacheMsg = `   🗑️ Clearing subscription caches affected by source [${sourceName}]...`;
             console.log(cacheMsg);
             if (logger) logger(cacheMsg, 'info');
-            await db.clearAllSubscriptionCaches();
+            const affectedSubs = await db.getSubscriptionsBySource(sourceName);
+            for (const sub of affectedSubs) {
+                await db.clearSubscriptionCache(sub.token);
+            }
 
             return true;
         } catch (e) {
