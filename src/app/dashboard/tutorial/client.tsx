@@ -796,6 +796,22 @@ function ClientDownloads() {
                             <p className="text-sm text-blue-800 mb-4">支持 Windows 10/11</p>
 
                             <div className="space-y-4">
+                                {/* SubLinks Client Desktop Official */}
+                                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                                    <p className="text-sm font-semibold text-gray-900 mb-2">SubLinks Client (官方客户端)</p>
+                                    <p className="text-xs text-gray-600 mb-3">专为 SubLinks 开发的 Windows 桌面客户端，支持自动刷新和设备管理</p>
+                                    <a
+                                        href="https://vermanager-api.135150.xyz/api/download/latest?app=sublinks-client-desktop&platform=windows&arch=x64&buildType=release&redirect=true"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                    >
+                                        <span>💻</span>
+                                        <span className="hidden sm:inline">下载 Windows 官方版 (x64)</span>
+                                        <span className="sm:hidden">下载</span>
+                                    </a>
+                                </div>
+
                                 {/* Clash Verge */}
                                 <div className="bg-white rounded-xl p-4 border border-blue-200">
                                     <p className="text-sm font-semibold text-gray-900 mb-2">Clash Verge (推荐)</p>
