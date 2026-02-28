@@ -37,6 +37,10 @@ export function parseLink(link: string): ProxyConfig | null {
             return parseShadowsocksR(link);
         } else if (protocol === 'anytls') {
             return parseAnyTls(url, hashName);
+        } else if (protocol === 'tuic') {
+            return parseTuic(url, hashName);
+        } else if (protocol === 'wireguard' || protocol === 'wg') {
+            return parseWireGuard(url, hashName);
         }
 
         return null;
@@ -78,6 +82,43 @@ function parseAnyTls(url: URL, name: string): ProxyConfig {
         sni: sni || undefined,
         'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
         'client-fingerprint': fp || undefined,
+    };
+    return config;
+}
+
+
+
+function parseTuic(url: URL, name: string): ProxyConfig {
+    const config: ProxyConfig = {
+        name: name || `TUIC ${url.hostname}`,
+        type: 'tuic',
+        server: url.hostname,
+        port: parseInt(url.port) || 443,
+        uuid: url.username,
+        password: url.password,
+        sni: url.searchParams.get('sni') || undefined,
+        alpn: url.searchParams.get('alpn')?.split(',') || undefined,
+        'congestion-control': url.searchParams.get('congestion_control') || url.searchParams.get('congestion-control') || undefined,
+        'udp-relay-mode': url.searchParams.get('udp_relay_mode') || url.searchParams.get('udp-relay-mode') || undefined,
+        'reduce-rtt': url.searchParams.get('reduce_rtt') === '1' || url.searchParams.get('reduce-rtt') === '1' || undefined,
+    };
+    return config;
+}
+
+function parseWireGuard(url: URL, name: string): ProxyConfig {
+    const ip = url.searchParams.get('address') || url.searchParams.get('ip');
+    const config: ProxyConfig = {
+        name: name || `WireGuard ${url.hostname}`,
+        type: 'wireguard',
+        server: url.hostname,
+        port: parseInt(url.port) || 51820,
+        ip: ip || undefined,
+        'public-key': url.searchParams.get('public_key') || url.searchParams.get('public-key'),
+        'private-key': url.searchParams.get('private_key') || url.searchParams.get('private-key') || url.username,
+        'pre-shared-key': url.searchParams.get('preshared_key') || url.searchParams.get('pre-shared-key') || undefined,
+        mtu: parseInt(url.searchParams.get('mtu') || '') || undefined,
+        udp: url.searchParams.get('udp') !== '0',
+        reserved: url.searchParams.get('reserved')?.split(',').map(Number) || undefined,
     };
     return config;
 }

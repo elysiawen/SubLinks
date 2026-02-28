@@ -39,6 +39,9 @@ const PROTOCOLS = [
     { value: 'trojan', label: 'Trojan' },
     { value: 'ss', label: 'Shadowsocks' },
     { value: 'hysteria2', label: 'Hysteria2' },
+    { value: 'anytls', label: 'AnyTLS' },
+    { value: 'tuic', label: 'TUIC' },
+    { value: 'wireguard', label: 'WireGuard' },
 ];
 
 const PROTOCOL_COLORS: Record<string, string> = {
@@ -47,6 +50,9 @@ const PROTOCOL_COLORS: Record<string, string> = {
     trojan: 'bg-red-100 text-red-700',
     ss: 'bg-green-100 text-green-700',
     hysteria2: 'bg-orange-100 text-orange-700',
+    anytls: 'bg-cyan-100 text-cyan-700',
+    tuic: 'bg-pink-100 text-pink-700',
+    wireguard: 'bg-emerald-100 text-emerald-700',
 };
 
 let nextId = 0;
@@ -181,8 +187,10 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
         };
 
         // Add password/uuid based on protocol
-        if (['vmess', 'vless'].includes(manualProtocol)) {
+        if (['vmess', 'vless', 'tuic'].includes(manualProtocol)) {
             config.uuid = manualPassword;
+        } else if (manualProtocol === 'wireguard') {
+            config['private-key'] = manualPassword;
         } else {
             config.password = manualPassword;
         }
@@ -364,7 +372,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
     };
 
     // Protocol-specific password label
-    const passwordLabel = ['vmess', 'vless'].includes(manualProtocol) ? 'UUID' : '密码';
+    const passwordLabel = manualProtocol === 'wireguard' ? 'Private Key' : (['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'UUID' : '密码');
 
     const stepTitles = ['命名', '添加节点', '策略组', '分流规则', '确认'];
 
@@ -537,7 +545,10 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                 type="text"
                                 value={manualPassword}
                                 onChange={e => setManualPassword(e.target.value)}
-                                placeholder={['vmess', 'vless'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' : '密码'}
+                                placeholder={
+                                    ['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' :
+                                        (manualProtocol === 'wireguard' ? 'PrivateKey (Base64)' : '密码')
+                                }
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
                             />
                         </div>

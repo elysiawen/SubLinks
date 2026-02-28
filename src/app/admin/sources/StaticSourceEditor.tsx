@@ -55,6 +55,9 @@ const PROTOCOLS = [
     { value: 'trojan', label: 'Trojan' },
     { value: 'ss', label: 'Shadowsocks' },
     { value: 'hysteria2', label: 'Hysteria2' },
+    { value: 'anytls', label: 'AnyTLS' },
+    { value: 'tuic', label: 'TUIC' },
+    { value: 'wireguard', label: 'WireGuard' },
 ];
 
 const PROTOCOL_COLORS: Record<string, string> = {
@@ -63,6 +66,9 @@ const PROTOCOL_COLORS: Record<string, string> = {
     trojan: 'bg-red-100 text-red-700',
     ss: 'bg-green-100 text-green-700',
     hysteria2: 'bg-orange-100 text-orange-700',
+    anytls: 'bg-cyan-100 text-cyan-700',
+    tuic: 'bg-pink-100 text-pink-700',
+    wireguard: 'bg-emerald-100 text-emerald-700',
 };
 
 export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate, defaultTab = 'nodes' }: StaticSourceEditorProps) {
@@ -249,7 +255,8 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         const port = parseInt(manualPort);
         if (isNaN(port) || port < 1 || port > 65535) { error('端口号无效'); return; }
         const config: any = { name: manualName.trim(), type: manualProtocol, server: manualServer.trim(), port };
-        if (['vmess', 'vless'].includes(manualProtocol)) config.uuid = manualPassword;
+        if (['vmess', 'vless', 'tuic'].includes(manualProtocol)) config.uuid = manualPassword;
+        else if (manualProtocol === 'wireguard') config['private-key'] = manualPassword;
         else config.password = manualPassword;
         if (manualExtra.trim()) {
             try { Object.assign(config, JSON.parse(manualExtra)); }
@@ -354,7 +361,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         setSavingRules(false);
     };
 
-    const passwordLabel = ['vmess', 'vless'].includes(manualProtocol) ? 'UUID' : '密码';
+    const passwordLabel = manualProtocol === 'wireguard' ? 'Private Key' : (['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'UUID' : '密码');
 
     const tabs = [
         { key: 'nodes' as const, label: '节点', emoji: '📦', count: nodes.length },
@@ -482,7 +489,10 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                         <label className="text-xs font-medium text-gray-600">{passwordLabel}</label>
                                         <input
                                             type="text" value={manualPassword} onChange={e => setManualPassword(e.target.value)}
-                                            placeholder={['vmess', 'vless'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' : '密码'}
+                                            placeholder={
+                                                ['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' :
+                                                    (manualProtocol === 'wireguard' ? 'PrivateKey (Base64)' : '密码')
+                                            }
                                             className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white transition placeholder:text-gray-400"
                                         />
                                     </div>
