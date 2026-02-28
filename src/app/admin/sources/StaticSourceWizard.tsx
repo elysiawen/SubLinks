@@ -5,6 +5,8 @@ import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
 import GroupEditor from '@/components/GroupEditor';
 import RuleEditor from '@/components/RuleEditor';
+import NodeInputPanel, { type ManualNodeConfig } from '@/components/NodeInputPanel';
+import { PROTOCOL_COLORS } from '@/lib/constants';
 import yaml from 'js-yaml';
 import { previewParseContent, createStaticSource } from './actions';
 
@@ -33,27 +35,6 @@ interface StaticSourceWizardProps {
 }
 
 // Protocol form field definitions
-const PROTOCOLS = [
-    { value: 'vmess', label: 'VMess' },
-    { value: 'vless', label: 'VLESS' },
-    { value: 'trojan', label: 'Trojan' },
-    { value: 'ss', label: 'Shadowsocks' },
-    { value: 'hysteria2', label: 'Hysteria2' },
-    { value: 'anytls', label: 'AnyTLS' },
-    { value: 'tuic', label: 'TUIC' },
-    { value: 'wireguard', label: 'WireGuard' },
-];
-
-const PROTOCOL_COLORS: Record<string, string> = {
-    vmess: 'bg-blue-100 text-blue-700',
-    vless: 'bg-violet-100 text-violet-700',
-    trojan: 'bg-red-100 text-red-700',
-    ss: 'bg-green-100 text-green-700',
-    hysteria2: 'bg-orange-100 text-orange-700',
-    anytls: 'bg-cyan-100 text-cyan-700',
-    tuic: 'bg-pink-100 text-pink-700',
-    wireguard: 'bg-emerald-100 text-emerald-700',
-};
 
 let nextId = 0;
 const genId = () => `tmp_${++nextId}_${Date.now()}`;
@@ -85,26 +66,8 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
         setSourceName(initialName);
     }, [initialName]);
 
+
     const [saving, setSaving] = useState(false);
-
-    // Node input tab: 'manual' | 'links' | 'config'
-    const [nodeTab, setNodeTab] = useState<'manual' | 'links' | 'config'>('links');
-
-    // Manual form state
-    const [manualProtocol, setManualProtocol] = useState('vmess');
-    const [manualName, setManualName] = useState('');
-    const [manualServer, setManualServer] = useState('');
-    const [manualPort, setManualPort] = useState('');
-    const [manualPassword, setManualPassword] = useState(''); // uuid / password
-    const [manualExtra, setManualExtra] = useState(''); // extra JSON fields
-
-    // Links textarea
-    const [linksText, setLinksText] = useState('');
-    const [linksParsing, setLinksParsing] = useState(false);
-
-    // Config textarea
-    const [configText, setConfigText] = useState('');
-    const [configParsing, setConfigParsing] = useState(false);
 
     const resetWizard = () => {
         setStep(initialName ? 1 : 0);
@@ -112,14 +75,6 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
         setNodes([]);
         setGroups([]);
         setRules([]);
-        setNodeTab('links');
-        setManualName('');
-        setManualServer('');
-        setManualPort('');
-        setManualPassword('');
-        setManualExtra('');
-        setLinksText('');
-        setConfigText('');
         setGroupsText('');
         setRulesText('');
     };
@@ -168,143 +123,71 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 
     // === Step 1: Add Nodes ===
 
-    const handleAddManualNode = () => {
-        if (!manualName.trim() || !manualServer.trim() || !manualPort.trim()) {
-            error('请填写节点名称、服务器地址和端口');
-            return;
-        }
-        const port = parseInt(manualPort);
-        if (isNaN(port) || port < 1 || port > 65535) {
-            error('端口号无效');
-            return;
-        }
-
-        const config: any = {
-            name: manualName.trim(),
-            type: manualProtocol,
-            server: manualServer.trim(),
-            port,
-        };
-
-        // Add password/uuid based on protocol
-        if (['vmess', 'vless', 'tuic'].includes(manualProtocol)) {
-            config.uuid = manualPassword;
-        } else if (manualProtocol === 'wireguard') {
-            config['private-key'] = manualPassword;
-        } else {
-            config.password = manualPassword;
-        }
-
-        // Parse extra JSON fields
-        if (manualExtra.trim()) {
-            try {
-                const extra = JSON.parse(manualExtra);
-                Object.assign(config, extra);
-            } catch {
-                error('附加配置不是有效的 JSON');
-                return;
-            }
-        }
-
-        const node: ParsedNode = {
+    const handleAddManualNode = (node: ManualNodeConfig) => {
+        const parsedNode = {
             id: genId(),
-            name: config.name,
-            type: config.type,
-            server: config.server,
-            port: config.port,
-            config,
+            ...node,
         };
-
-        setNodes(prev => [...prev, node]);
-        setManualName('');
-        setManualServer('');
-        setManualPort('');
-        setManualPassword('');
-        setManualExtra('');
+        setNodes(prev => [...prev, parsedNode]);
         success(`已添加节点: ${node.name}`);
     };
 
-    const handleParseLinks = useCallback(async () => {
-        const text = linksText.trim();
-        if (!text) {
-            error('请输入分享链接');
+    const handleParseLinks = useCallback(async (text: string) => {
+        const result = await previewParseContent(text);
+        if (result.proxies.length === 0) {
+            error('未能解析到任何节点，请检查链接格式');
             return;
         }
-        setLinksParsing(true);
-        try {
-            const result = await previewParseContent(text);
-            if (result.proxies.length === 0) {
-                error('未能解析到任何节点，请检查链接格式');
-                setLinksParsing(false);
-                return;
-            }
-            const newNodes: ParsedNode[] = result.proxies.map((p: any) => ({
-                id: genId(),
-                name: p.name,
-                type: p.type,
-                server: p.server || p.config?.server,
-                port: p.port || p.config?.port,
-                config: p.config || p,
-            }));
+        const newNodes: ParsedNode[] = result.proxies.map((p: any) => ({
+            id: genId(),
+            name: p.name,
+            type: p.type,
+            server: p.server || p.config?.server,
+            port: p.port || p.config?.port,
+            config: p.config || p,
+        }));
+        setNodes(prev => [...prev, ...newNodes]);
+        success(`已解析 ${newNodes.length} 个节点`);
+    }, [error, success]);
+
+    const handleParseConfig = useCallback(async (text: string) => {
+        const result = await previewParseContent(text);
+        const newNodes: ParsedNode[] = (result.proxies || []).map((p: any) => ({
+            id: genId(),
+            name: p.name,
+            type: p.type,
+            server: p.server || p.config?.server,
+            port: p.port || p.config?.port,
+            config: p.config || p,
+        }));
+        if (newNodes.length > 0) {
             setNodes(prev => [...prev, ...newNodes]);
-            setLinksText('');
-            success(`已解析 ${newNodes.length} 个节点`);
-        } catch (e) {
-            error('解析失败: ' + String(e));
         }
-        setLinksParsing(false);
-    }, [linksText, error, success]);
-
-    const handleParseConfig = useCallback(async () => {
-        const text = configText.trim();
-        if (!text) {
-            error('请输入或粘贴 Clash 配置');
-            return;
-        }
-        setConfigParsing(true);
-        try {
-            const result = await previewParseContent(text);
-            const newNodes: ParsedNode[] = (result.proxies || []).map((p: any) => ({
-                id: genId(),
-                name: p.name,
-                type: p.type,
-                server: p.server || p.config?.server,
-                port: p.port || p.config?.port,
-                config: p.config || p,
+        // Import groups and rules from config
+        if (result.groups && result.groups.length > 0) {
+            const incomingGroups = result.groups.map((g: any) => ({
+                name: g.name,
+                type: g.type,
+                proxies: g.proxies || [],
             }));
-            if (newNodes.length > 0) {
-                setNodes(prev => [...prev, ...newNodes]);
-            }
-            // Import groups and rules from config
-            if (result.groups && result.groups.length > 0) {
-                const incomingGroups = result.groups.map((g: any) => ({
-                    name: g.name,
-                    type: g.type,
-                    proxies: g.proxies || [],
-                }));
-                setGroups(prev => [...prev, ...incomingGroups]);
+            setGroups(prev => [...prev, ...incomingGroups]);
 
-                // Also update groupsText for GroupEditor
-                const currentGroups = yaml.load(groupsText) as any[] || [];
-                const mergedGroups = [...currentGroups, ...incomingGroups];
-                setGroupsText(yaml.dump(mergedGroups));
-            }
-            if (result.rules && result.rules.length > 0) {
-                setRules(prev => [...prev, ...result.rules]);
-                // Also update rulesText for RuleEditor
-                setRulesText(prev => (prev ? prev + '\n' : '') + result.rules.join('\n'));
-            }
-            setConfigText('');
-            const parts = [];
-            if (newNodes.length > 0) parts.push(`${newNodes.length} 个节点`);
-            if (result.groups?.length > 0) parts.push(`${result.groups.length} 个策略组`);
-            if (result.rules?.length > 0) parts.push(`${result.rules.length} 条规则`);
-            success(`已解析: ${parts.join(', ') || '无内容'}`);
-        } catch (e) {
-            error('解析失败: ' + String(e));
+            // Also update groupsText for GroupEditor
+            const currentGroups = yaml.load(groupsText) as any[] || [];
+            const mergedGroups = [...currentGroups, ...incomingGroups];
+            setGroupsText(yaml.dump(mergedGroups));
         }
-        setConfigParsing(false);
-    }, [configText, error, success]);
+        if (result.rules && result.rules.length > 0) {
+            setRules(prev => [...prev, ...result.rules]);
+            // Also update rulesText for RuleEditor
+            setRulesText(prev => (prev ? prev + '\n' : '') + result.rules.join('\n'));
+        }
+        const parts = [];
+        if (newNodes.length > 0) parts.push(`${newNodes.length} 个节点`);
+        if (result.groups?.length > 0) parts.push(`${result.groups.length} 个策略组`);
+        if (result.rules?.length > 0) parts.push(`${result.rules.length} 条规则`);
+        success(`已解析: ${parts.join(', ') || '无内容'}`);
+    }, [error, success]);
 
     const handleRemoveNode = (id: string) => {
         setNodes(prev => prev.filter(n => n.id !== id));
@@ -371,8 +254,6 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
         setSaving(false);
     };
 
-    // Protocol-specific password label
-    const passwordLabel = manualProtocol === 'wireguard' ? 'Private Key' : (['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'UUID' : '密码');
 
     const stepTitles = ['命名', '添加节点', '策略组', '分流规则', '确认'];
 
@@ -446,157 +327,12 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             {/* Step 1: Nodes */}
             <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 1 ? 'block' : 'hidden'}`}>
                 {/* Input method tabs */}
-                <div className="flex p-0.5 sm:p-1 bg-gray-100/50 rounded-xl w-fit">
-                    {([
-                        { key: 'links', label: '🔗 链接' },
-                        { key: 'manual', label: '✏️ 手动' },
-                        { key: 'config', label: '📄 配置' },
-                    ] as const).map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setNodeTab(tab.key)}
-                            className={`
-                                    px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200
-                                    ${nodeTab === tab.key
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'}
-                                `}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Links input */}
-                {nodeTab === 'links' && (
-                    <div className="flex flex-col gap-4">
-                        <textarea
-                            value={linksText}
-                            onChange={e => setLinksText(e.target.value)}
-                            placeholder={'粘贴分享链接，每行一个：\nvmess://...\nss://...\nvless://...\ntrojan://...\nhysteria2://...\n\n也支持 Base64 编码的订阅内容'}
-                            rows={6}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
-                        />
-                        <button
-                            onClick={handleParseLinks}
-                            disabled={linksParsing}
-                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 transition-all font-bold text-sm self-start flex items-center gap-2"
-                        >
-                            {linksParsing ? (
-                                <>
-                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    解析中...
-                                </>
-                            ) : '解析链接'}
-                        </button>
-                    </div>
-                )}
-
-                {/* Manual form */}
-                {nodeTab === 'manual' && (
-                    <div className="flex flex-col gap-4 animate-in fade-in duration-200">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">协议</label>
-                                <select
-                                    value={manualProtocol}
-                                    onChange={e => setManualProtocol(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                                >
-                                    {PROTOCOLS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">节点名称 *</label>
-                                <input
-                                    type="text"
-                                    value={manualName}
-                                    onChange={e => setManualName(e.target.value)}
-                                    placeholder="例：香港-1"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="sm:col-span-2 space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">服务器地址 *</label>
-                                <input
-                                    type="text"
-                                    value={manualServer}
-                                    onChange={e => setManualServer(e.target.value)}
-                                    placeholder="example.com"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">端口 *</label>
-                                <input
-                                    type="number"
-                                    value={manualPort}
-                                    onChange={e => setManualPort(e.target.value)}
-                                    placeholder="443"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">{passwordLabel}</label>
-                            <input
-                                type="text"
-                                value={manualPassword}
-                                onChange={e => setManualPassword(e.target.value)}
-                                placeholder={
-                                    ['vmess', 'vless', 'tuic'].includes(manualProtocol) ? 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' :
-                                        (manualProtocol === 'wireguard' ? 'PrivateKey (Base64)' : '密码')
-                                }
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                                附加配置 <span className="font-normal text-[10px]">(可选, JSON 格式)</span>
-                            </label>
-                            <textarea
-                                value={manualExtra}
-                                onChange={e => setManualExtra(e.target.value)}
-                                placeholder='{"tls": true, "network": "ws", "ws-opts": {"path": "/ws"}}'
-                                rows={2}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-xs font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
-                            />
-                        </div>
-                        <button
-                            onClick={handleAddManualNode}
-                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold text-sm self-start flex items-center gap-2"
-                        >
-                            <span>+</span> 添加节点
-                        </button>
-                    </div>
-                )}
-
-                {/* Config import */}
-                {nodeTab === 'config' && (
-                    <div className="flex flex-col gap-4 animate-in fade-in duration-200">
-                        <textarea
-                            value={configText}
-                            onChange={e => setConfigText(e.target.value)}
-                            placeholder={'粘贴 Clash / Clash Meta YAML 配置文件内容\n\n将自动解析其中的节点、策略组和分流规则'}
-                            rows={8}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
-                        />
-                        <button
-                            onClick={handleParseConfig}
-                            disabled={configParsing}
-                            className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 transition-all font-bold text-sm self-start flex items-center gap-2"
-                        >
-                            {configParsing ? (
-                                <>
-                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    解析中...
-                                </>
-                            ) : '解析配置'}
-                        </button>
-                    </div>
-                )}
+                <NodeInputPanel
+                    onAddManualNode={handleAddManualNode}
+                    onParseLinks={handleParseLinks}
+                    onParseConfig={handleParseConfig}
+                    onError={error}
+                />
 
                 {/* Node list */}
                 <div className="space-y-3">

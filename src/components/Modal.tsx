@@ -10,6 +10,7 @@ interface ModalProps {
     children: React.ReactNode;
     className?: string;
     maxWidth?: string;
+    footer?: React.ReactNode;
 }
 
 export default function Modal({
@@ -19,7 +20,8 @@ export default function Modal({
     children,
     className = "",
     maxWidth = "max-w-lg",
-    zIndex = 50
+    zIndex = 50,
+    footer
 }: ModalProps & { zIndex?: number }) {
     const [mounted, setMounted] = useState(false);
 
@@ -73,6 +75,13 @@ export default function Modal({
                 <div className="p-6 overflow-y-auto custom-scrollbar">
                     {children}
                 </div>
+
+                {/* Footer (Fixed) */}
+                {footer && (
+                    <div className="shrink-0 rounded-b-xl overflow-hidden">
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>,
         document.body

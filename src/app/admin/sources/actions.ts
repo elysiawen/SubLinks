@@ -663,6 +663,42 @@ export async function deleteStaticSourceNodes(sourceName: string, nodeIds: strin
 }
 
 /**
+ * Save all nodes for a static source (replaces all existing nodes).
+ */
+export async function saveStaticSourceNodes(
+    sourceName: string,
+    nodes: { name: string; type: string; server: string; port: number; config: any }[]
+) {
+    const source = await db.getUpstreamSource(sourceName);
+    if (!source || source.type !== 'static') {
+        return { error: '源不存在或不是静态类型' };
+    }
+
+    const { nanoid } = await import('nanoid');
+
+    // Clear existing and save new
+    await db.clearProxies(sourceName);
+    const proxyEntries = nodes.map(n => ({
+        id: nanoid(),
+        name: n.name,
+        type: n.type,
+        server: n.server,
+        port: n.port,
+        config: n.config,
+        source: sourceName,
+        createdAt: Date.now(),
+    }));
+    await db.saveProxies(proxyEntries);
+
+    await db.updateUpstreamSource(sourceName, { lastUpdated: Date.now() });
+    await clearSubscriptionCachesForSource(sourceName);
+
+    revalidatePath('/admin/sources');
+    revalidatePath('/admin/proxies');
+    return { success: true };
+}
+
+/**
  * Save proxy groups for a static source (replaces all existing groups).
  */
 export async function saveStaticSourceGroups(
