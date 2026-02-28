@@ -35,6 +35,8 @@ export function parseLink(link: string): ProxyConfig | null {
             return parseShadowsocks(url, hashName);
         } else if (protocol === 'ssr') {
             return parseShadowsocksR(link);
+        } else if (protocol === 'anytls') {
+            return parseAnyTls(url, hashName);
         }
 
         return null;
@@ -58,6 +60,24 @@ function parseHysteria2(url: URL, name: string): ProxyConfig {
         'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
         obfs: url.searchParams.get('obfs') || undefined,
         'obfs-password': url.searchParams.get('obfs-password') || undefined,
+    };
+    return config;
+}
+
+function parseAnyTls(url: URL, name: string): ProxyConfig {
+    const sni = url.searchParams.get('sni') || url.searchParams.get('peer');
+    const insecure = url.searchParams.get('insecure') || url.searchParams.get('allowInsecure') || url.searchParams.get('allowinsecure');
+    const fp = url.searchParams.get('fp') || url.searchParams.get('fingerprint');
+
+    const config: ProxyConfig = {
+        name: name || `AnyTLS ${url.hostname}`,
+        type: 'anytls',
+        server: url.hostname,
+        port: parseInt(url.port) || 443,
+        password: url.username,
+        sni: sni || undefined,
+        'skip-cert-verify': insecure === '1' || insecure === 'true' || undefined,
+        'client-fingerprint': fp || undefined,
     };
     return config;
 }
