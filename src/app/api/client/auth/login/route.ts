@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { username, password, deviceInfo: customDeviceInfo } = body;
+        const { username, password, code, deviceInfo: customDeviceInfo } = body;
 
         // Validate input
         if (!username || !password) {
@@ -49,6 +49,34 @@ export async function POST(request: NextRequest) {
                 { error: '账户已被停用或封禁' },
                 { status: 403 }
             );
+        }
+
+        // 2FA TOTP Verification
+        if (user.totpEnabled) {
+            if (!code) {
+                // Phase 1: Signal client that 2FA code is required
+                return NextResponse.json({
+                    requires2FA: true,
+                    message: '该账户已启用两步验证，请提供 TOTP 验证码'
+                });
+            }
+
+            // Phase 2: Verify the TOTP code
+            const { verify } = await import('otplib');
+            let isValid2FA = false;
+            try {
+                const result = await verify({ token: code, secret: user.totpSecret || '' });
+                isValid2FA = !!(result && result.valid);
+            } catch {
+                isValid2FA = false;
+            }
+
+            if (!isValid2FA) {
+                return NextResponse.json(
+                    { error: '两步验证码错误或已过期' },
+                    { status: 401 }
+                );
+            }
         }
 
         // Create tokens with full avatar URL
