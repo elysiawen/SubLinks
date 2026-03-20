@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
@@ -261,9 +261,13 @@ export default function SessionManager({
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1.5">
+                                                <div 
+                                                    className="flex items-center gap-1.5 group/time cursor-pointer outline-none active:scale-95 transition-transform"
+                                                    tabIndex={0}
+                                                >
                                                     <Clock className="w-4 h-4 text-orange-500/60" />
-                                                    <span>{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: zhCN })}活跃</span>
+                                                    <span className="block group-hover/time:hidden group-focus/time:hidden">{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: zhCN })}活跃</span>
+                                                    <span className="hidden group-hover/time:block group-focus/time:block">{format(session.lastActive, 'yyyy-MM-dd HH:mm:ss')} 活跃</span>
                                                 </div>
                                             </div>
 
