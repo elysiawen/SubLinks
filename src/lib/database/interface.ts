@@ -337,6 +337,7 @@ export interface IDatabase {
     cleanupLogs(retentionDays: number, logTypes?: string[]): Promise<void>;
     deleteAllLogs(): Promise<void>;
     cleanupQrCache(): Promise<void>;
+    cleanupExpiredPasskeyCache(): Promise<number>;
 
     // Passkey operations
     addPasskey(passkey: PasskeyCredentials): Promise<void>;

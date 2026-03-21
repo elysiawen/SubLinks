@@ -1282,7 +1282,37 @@ export default class PostgresDatabase implements IDatabase {
 
     // Cache operations
     async getCache(key: string): Promise<string | null> {
-        // No expiration check needed as per new infinite cache strategy
+        // Lazy cleanup: Always clean up expired passkey cache (100% chance)
+        if (key.startsWith('passkey:')) {
+            this.cleanupExpiredPasskeyCache().catch(e => 
+                console.error('Passkey cache cleanup failed:', e)
+            );
+        }
+
+        // Check expiration for passkey challenges (TTL-based cache)
+        // Other caches use infinite strategy
+        if (key.startsWith('passkey:')) {
+            const result = await this.pool.query(
+                'SELECT value, expires_at FROM cache WHERE key = $1',
+                [key]
+            );
+            if (result.rows.length === 0) return null;
+            
+            const row = result.rows[0];
+            const createdAt = parseInt(row.expires_at);
+            const ttl = 300 * 1000; // 5 minutes in milliseconds
+            
+            // Check if expired (created more than 5 minutes ago)
+            if (Date.now() - createdAt > ttl) {
+                // Delete expired cache
+                await this.pool.query('DELETE FROM cache WHERE key = $1', [key]);
+                return null;
+            }
+            
+            return row.value;
+        }
+        
+        // Infinite cache for other keys
         const result = await this.pool.query(
             'SELECT value FROM cache WHERE key = $1',
             [key]
@@ -1292,6 +1322,13 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async setCache(key: string, value: string, ttl?: number): Promise<void> {
+        // Lazy cleanup: Always clean up expired passkey cache (100% chance)
+        if (key.startsWith('passkey:')) {
+            this.cleanupExpiredPasskeyCache().catch(e => 
+                console.error('Passkey cache cleanup failed:', e)
+            );
+        }
+
         // expires_at column is reused to store 'created_at' timestamp since we removed expiration logic.
         const expiresAt = Date.now();
         await this.pool.query(
@@ -1314,6 +1351,16 @@ export default class PostgresDatabase implements IDatabase {
 
     async clearSubscriptionCache(token: string): Promise<void> {
         await this.pool.query('DELETE FROM cache WHERE key = $1', [`cache:subscription:${token}`]);
+    }
+
+    async cleanupExpiredPasskeyCache(): Promise<number> {
+        // Delete passkey challenges older than 5 minutes
+        const threshold = Date.now() - (5 * 60 * 1000);
+        const result = await this.pool.query(
+            "DELETE FROM cache WHERE key LIKE 'passkey:%' AND expires_at < $1",
+            [threshold]
+        );
+        return result.rowCount || 0;
     }
 
     // Structured upstream data operations
