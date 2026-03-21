@@ -95,13 +95,11 @@ export async function login(prevState: any, formData: FormData) {
         maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
-    // 5. Redirect to callback URL or default
-    if (callbackUrl && callbackUrl.startsWith('/')) {
-        // Validate callback URL is internal
-        redirect(callbackUrl);
-    } else {
-        redirect('/dashboard');
-    }
+    // 5. Return success status (redirect will be handled by client)
+    return { 
+        success: true, 
+        callbackUrl: callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/dashboard'
+    };
 }
 
 export async function logout() {

@@ -14,7 +14,7 @@ import { SubmitButton } from '@/components/SubmitButton';
 function PasskeyLogin() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { error: toastError, info } = useToast();
+    const { error: toastError, info, success: toastSuccess } = useToast();
 
     const handleLogin = async () => {
         setLoading(true);
@@ -36,12 +36,15 @@ function PasskeyLogin() {
             }
 
             // Success
+            toastSuccess('登录成功');
             const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl');
-            if (callbackUrl && callbackUrl.startsWith('/')) {
-                router.push(callbackUrl);
-            } else {
-                router.push('/dashboard');
-            }
+            setTimeout(() => {
+                if (callbackUrl && callbackUrl.startsWith('/')) {
+                    router.push(callbackUrl);
+                } else {
+                    router.push('/dashboard');
+                }
+            }, 500);
         } catch (err: any) {
             // Check for user cancellation or timeout
             const isNotAllowed = err.name === 'NotAllowedError' ||
@@ -276,7 +279,8 @@ function PasswordLogin() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl');
     const formRef = useRef<HTMLFormElement>(null);
-    const { error: toastError } = useToast();
+    const { error: toastError, success: toastSuccess } = useToast();
+    const router = useRouter();
 
     // 2FA State
     const [show2FAModal, setShow2FAModal] = useState(false);
@@ -291,8 +295,14 @@ function PasswordLogin() {
             setShow2FAModal(true);
         } else if (state?.error) {
             toastError(state.error);
+        } else if (state?.success) {
+            toastSuccess('登录成功');
+            // Small delay to show the success message before redirecting
+            setTimeout(() => {
+                router.push(state.callbackUrl || '/dashboard');
+            }, 500);
         }
-    }, [state, toastError]);
+    }, [state, toastError, toastSuccess, router]);
 
     const handleSubmit = () => {
         // Client-side validation
