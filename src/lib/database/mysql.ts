@@ -1694,4 +1694,14 @@ export default class MysqlDatabase implements IDatabase {
     async updatePasskeyCounter(id: string, counter: number): Promise<void> {
         await this.pool.query('UPDATE passkeys SET counter = ?, last_used = ? WHERE id = ?', [counter, Date.now(), id]);
     }
+
+    async cleanupExpiredPasskeyCache(): Promise<number> {
+        // Delete passkey challenges older than 5 minutes
+        const threshold = Date.now() - (5 * 60 * 1000);
+        const [result] = await this.pool.query<any>(
+            "DELETE FROM cache WHERE `key` LIKE 'passkey:%' AND expires_at < ?",
+            [threshold]
+        );
+        return result.affectedRows || 0;
+    }
 }
