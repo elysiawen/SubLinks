@@ -349,7 +349,7 @@ export async function deleteAvatar() {
     return { success: true };
 }
 
-export async function getUserSessionsList() {
+export async function getUserSessionsList(search?: string) {
     const session = await getCurrentSession();
     if (!session) {
         return { error: 'Unauthorized' };
@@ -367,7 +367,7 @@ export async function getUserSessionsList() {
     const currentSessionId = cookieStore.get('auth_session')?.value;
 
     // Normalize and filter data
-    const sessions = [
+    let sessions = [
         ...webSessions
             .filter((s: Session) => (s.tokenVersion || 0) === currentTokenVersion)
             .map((s: Session & { sessionId?: string }) => ({
@@ -394,6 +394,18 @@ export async function getUserSessionsList() {
             current: false
         }))
     ];
+
+    // Apply search filter if provided
+    if (search) {
+        const term = search.toLowerCase();
+        sessions = sessions.filter(s => 
+            s.ip.toLowerCase().includes(term) || 
+            s.deviceInfo.toLowerCase().includes(term) || 
+            s.ua.toLowerCase().includes(term) ||
+            (s.ipLocation && s.ipLocation.toLowerCase().includes(term)) ||
+            (s.isp && s.isp.toLowerCase().includes(term))
+        );
+    }
 
     // Sort: Current session first, then by last active
     sessions.sort((a, b) => {
@@ -429,13 +441,29 @@ export async function disable2FA(password: string) {
     return { success: true };
 }
 
-export async function revokeSession(sessionId: string) {
+export async function revokeSession(sessionId: string, type: 'web' | 'client') {
     const session = await getCurrentSession();
     if (!session) {
         return { error: 'Unauthorized' };
     }
 
-    await db.deleteUserRefreshToken(session.userId, sessionId);
+    const cookieStore = await cookies();
+    const currentSessionId = cookieStore.get('auth_session')?.value;
 
-    return { success: true };
+    if (type === 'web' && sessionId === currentSessionId) {
+        return { success: false, message: '无法下线当前正在使用的会话' };
+    }
+
+    let success = false;
+    if (type === 'web') {
+        success = await db.deleteUserSession(session.userId, sessionId);
+    } else {
+        success = await db.deleteUserRefreshToken(session.userId, sessionId);
+    }
+
+    return { 
+        success: true, // We still return success as true to indicate the request finished
+        revoked: success, // But add a 'revoked' field for actual deletion status
+        message: success ? '强制下线命令已发出，设备将立即退出' : '会话不存在或已过期'
+    };
 }

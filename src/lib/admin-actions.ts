@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { getCurrentSession } from '@/lib/user-actions';
 import { Session, RefreshToken } from '@/lib/database/interface';
+import { cookies } from 'next/headers';
 
 export async function checkAdmin() {
     const session = await getCurrentSession();
@@ -20,6 +21,9 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         db.getAllRefreshTokens(page, limit, search)
     ]);
 
+    const cookieStore = await cookies();
+    const currentSessionId = cookieStore.get('auth_session')?.value;
+
     // Normalize Web Sessions
     const webSessions = sessionsResult.data.map(s => ({
         id: s.sessionId,
@@ -33,7 +37,7 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         ua: s.ua || 'unknown',
         deviceInfo: s.deviceInfo || 'Web Browser',
         lastActive: s.lastActive || 0,
-        current: false // Handled by client-side if needed
+        current: s.sessionId === currentSessionId
     }));
 
     // Normalize Client Sessions
@@ -65,11 +69,23 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
 export async function revokeAnySession(sessionId: string, type: 'web' | 'client') {
     await checkAdmin();
 
-    if (type === 'web') {
-        await db.deleteSession(sessionId);
-    } else {
-        await db.deleteRefreshTokenById(sessionId);
+    const cookieStore = await cookies();
+    const currentSessionId = cookieStore.get('auth_session')?.value;
+
+    if (type === 'web' && sessionId === currentSessionId) {
+        return { success: false, revoked: false, message: '无法注销当前正在使用的管理会话' };
     }
 
-    return { success: true };
+    let success = false;
+    if (type === 'web') {
+        success = await db.deleteSession(sessionId);
+    } else {
+        success = await db.deleteRefreshTokenById(sessionId);
+    }
+
+    return { 
+        success: true, 
+        revoked: success,
+        message: success ? '会话已强制下线' : '该会话已失效或不存在'
+    };
 }

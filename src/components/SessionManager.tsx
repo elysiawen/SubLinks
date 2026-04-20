@@ -17,7 +17,8 @@ import {
     User as UserIcon,
     Search,
     RefreshCcw,
-    AlertCircle
+    AlertCircle,
+    Filter
 } from 'lucide-react';
 
 export interface UnifiedSessionItem {
@@ -39,7 +40,7 @@ export interface UnifiedSessionItem {
 export interface UnifiedSessionManagerProps {
     isAdmin?: boolean;
     fetchSessions: (search?: string) => Promise<{ sessions?: UnifiedSessionItem[]; error?: string; total?: number }>;
-    onRevoke: (id: string, type: 'web' | 'client') => Promise<{ success?: boolean; error?: string }>;
+    onRevoke: (id: string, type: 'web' | 'client') => Promise<{ success?: boolean; revoked?: boolean; message?: string; error?: string }>;
     title?: string;
     currentSessionId?: string;
 }
@@ -90,6 +91,7 @@ export default function SessionManager({
     const [sessions, setSessions] = useState<UnifiedSessionItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterTypes, setFilterTypes] = useState<('web' | 'client')[]>(['web', 'client']);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const { success, error } = useToast();
     const { confirm } = useConfirm();
@@ -112,15 +114,23 @@ export default function SessionManager({
     };
 
     useEffect(() => {
-        if (!isAdmin) {
-            loadData();
-        } else {
-            const timer = setTimeout(() => {
-                loadData(searchTerm);
-            }, 500);
-            return () => clearTimeout(timer);
-        }
+        const timer = setTimeout(() => {
+            loadData(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
     }, [searchTerm, isAdmin]);
+
+    const filteredSessions = sessions.filter(s => filterTypes.includes(s.type));
+
+    const toggleFilterType = (type: 'web' | 'client') => {
+        setFilterTypes(prev => {
+            if (prev.includes(type)) {
+                if (prev.length === 1) return prev; // Keep at least one selected
+                return prev.filter(t => t !== type);
+            }
+            return [...prev, type];
+        });
+    };
 
     const handleRevokeAction = async (id: string, type: 'web' | 'client', isCurrent?: boolean) => {
         const warning = isAdmin
@@ -136,8 +146,16 @@ export default function SessionManager({
         try {
             const result = await onRevoke(id, type);
             if (result.success) {
-                setSessions(prev => prev.filter(s => s.id !== id));
-                success(isAdmin ? '会话已强制下线' : '强制下线命令已发出，设备将立即退出。');
+                // If it was revoked (deleted from DB), remove from UI
+                if (result.revoked) {
+                    setSessions(prev => prev.filter(s => s.id !== id));
+                    success(result.message || (isAdmin ? '会话已强制下线' : '强制下线命令已发出，设备将立即退出。'));
+                } else {
+                    // If backend returned success but nothing was revoked (e.g. already gone)
+                    // We still refresh the list to stay in sync
+                    loadData(isAdmin ? searchTerm : undefined);
+                    error(result.message || '该会话已不存在');
+                }
             } else {
                 error(result.error || '注销失败');
             }
@@ -150,34 +168,78 @@ export default function SessionManager({
 
     return (
         <div className="space-y-6">
-            {/* Search Bar (Admin Only) */}
-            {isAdmin && (
+            <div className="bg-gray-50/50 dark:bg-zinc-900/20 rounded-[2.5rem] p-4 sm:p-6 border border-gray-100 dark:border-zinc-800/50 space-y-5">
+                {/* Filter Options */}
+                {!loading && sessions.length > 0 && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-1">
+                        <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500">
+                            <Filter className="w-4 h-4" />
+                            <span className="text-xs font-bold uppercase tracking-widest">筛选会话</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-zinc-800 rounded-2xl border border-gray-200/50 dark:border-zinc-700/30 shadow-sm">
+                            <button
+                                onClick={() => toggleFilterType('web')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                                    filterTypes.includes('web')
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                                }`}
+                            >
+                                <Monitor className="w-3.5 h-3.5" />
+                                <span>网页端</span>
+                                {filterTypes.includes('web') && (
+                                    <span className="flex w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                )}
+                            </button>
+                            
+                            <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700" />
+                            
+                            <button
+                                onClick={() => toggleFilterType('client')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                                    filterTypes.includes('client')
+                                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                                }`}
+                            >
+                                <Box className="w-3.5 h-3.5" />
+                                <span>客户端 API</span>
+                                {filterTypes.includes('client') && (
+                                    <span className="flex w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Search Bar */}
                 <div className="relative group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder="搜索用户名、IP 或 设备名..."
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-700/50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium text-sm"
+                        placeholder={isAdmin ? "搜索用户名、IP 或 设备名..." : "搜索 IP 或 设备名..."}
+                        className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700/50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium text-sm shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-            )}
+            </div>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <RefreshCcw className="w-10 h-10 text-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                     <p className="text-sm text-gray-400 font-medium animate-pulse">正在获取安全会话数据...</p>
                 </div>
-            ) : sessions.length === 0 ? (
+            ) : filteredSessions.length === 0 ? (
                 <div className="text-center py-20 bg-gray-50/30 dark:bg-zinc-900/10 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
                     <ShieldCheck className="w-16 h-16 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">无活跃会话</h3>
-                    <p className="text-sm text-gray-500 mt-2">目前没有任何符合条件的登录记录。</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">无匹配会话</h3>
+                    <p className="text-sm text-gray-500 mt-2">目前没有任何符合过滤条件的登录记录。</p>
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {sessions.map(session => {
+                    {filteredSessions.map(session => {
                         const info = parseUA(session.ua, session.type);
                         const isCurrent = session.current || session.id === currentSessionId;
 

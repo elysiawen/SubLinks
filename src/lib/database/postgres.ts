@@ -517,12 +517,14 @@ export default class PostgresDatabase implements IDatabase {
         }
     }
 
-    async deleteSession(sessionId: string): Promise<void> {
-        await this.pool.query('DELETE FROM sessions WHERE session_id = $1', [sessionId]);
+    async deleteSession(sessionId: string): Promise<boolean> {
+        const result = await this.pool.query('DELETE FROM sessions WHERE session_id = $1', [sessionId]);
+        return (result.rowCount || 0) > 0;
     }
 
-    async deleteUserSession(userId: string, sessionId: string): Promise<void> {
-        await this.pool.query('DELETE FROM sessions WHERE session_id = $1 AND user_id = $2', [sessionId, userId]);
+    async deleteUserSession(userId: string, sessionId: string): Promise<boolean> {
+        const result = await this.pool.query('DELETE FROM sessions WHERE session_id = $1 AND user_id = $2', [sessionId, userId]);
+        return (result.rowCount || 0) > 0;
     }
 
     async deleteAllUserSessions(userId: string): Promise<void> {
@@ -722,16 +724,19 @@ export default class PostgresDatabase implements IDatabase {
         };
     }
 
-    async deleteRefreshToken(tokenString: string): Promise<void> {
-        await this.pool.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenString]);
+    async deleteRefreshToken(tokenString: string): Promise<boolean> {
+        const result = await this.pool.query('DELETE FROM refresh_tokens WHERE token = $1', [tokenString]);
+        return (result.rowCount || 0) > 0;
     }
 
-    async deleteRefreshTokenById(id: string): Promise<void> {
-        await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1', [id]);
+    async deleteRefreshTokenById(id: string): Promise<boolean> {
+        const result = await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1', [id]);
+        return (result.rowCount || 0) > 0;
     }
 
-    async deleteUserRefreshToken(userId: string, tokenId: string): Promise<void> {
-        await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1 AND user_id = $2', [tokenId, userId]);
+    async deleteUserRefreshToken(userId: string, tokenId: string): Promise<boolean> {
+        const result = await this.pool.query('DELETE FROM refresh_tokens WHERE id = $1 AND user_id = $2', [tokenId, userId]);
+        return (result.rowCount || 0) > 0;
     }
 
     async deleteAllUserRefreshTokens(userId: string): Promise<void> {

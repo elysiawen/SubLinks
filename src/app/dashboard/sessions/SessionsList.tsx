@@ -7,17 +7,19 @@ export default function SessionsList() {
     return (
         <SessionManager
             isAdmin={false}
-            fetchSessions={async () => {
-                const result = await getUserSessionsList();
+            fetchSessions={async (search) => {
+                const result = await getUserSessionsList(search);
                 return {
                     sessions: result.sessions as any,
                     error: result.error
                 };
             }}
-            onRevoke={async (id) => {
-                const result = await revokeSession(id);
+            onRevoke={async (id, type) => {
+                const result = await revokeSession(id, type);
                 return {
                     success: !!result.success,
+                    revoked: !!result.revoked,
+                    message: result.message,
                     error: result.error
                 };
             }}

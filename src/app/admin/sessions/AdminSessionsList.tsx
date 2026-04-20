@@ -17,7 +17,9 @@ export default function AdminSessionsList() {
             onRevoke={async (id, type) => {
                 const result = await revokeAnySession(id, type);
                 return {
-                    success: !!result.success
+                    success: !!result.success,
+                    revoked: !!result.revoked,
+                    message: result.message
                 };
             }}
         />

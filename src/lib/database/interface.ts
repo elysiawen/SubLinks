@@ -237,8 +237,8 @@ export interface IDatabase {
     // Session operations
     createSession(sessionId: string, data: Session, ttl: number): Promise<void>;
     getSession(sessionId: string, currentIp?: string): Promise<Session | null>;
-    deleteSession(sessionId: string): Promise<void>; // Delete by Session ID
-    deleteUserSession(userId: string, sessionId: string): Promise<void>; // Delete by UserID + SessionID (Security)
+    deleteSession(sessionId: string): Promise<boolean>; // Delete by Session ID
+    deleteUserSession(userId: string, sessionId: string): Promise<boolean>; // Delete by UserID + SessionID (Security)
     getUserSessions(userId: string): Promise<Session[]>; // Get all web sessions for user
     getAllSessions(page?: number, limit?: number, search?: string): Promise<PaginatedResult<Session & { sessionId: string }>>; // Admin: Get all sessions
     deleteAllUserSessions(userId: string): Promise<void>; // Delete ALL web sessions for a user
@@ -247,9 +247,9 @@ export interface IDatabase {
     // Refresh Token operations (Client Sessions)
     createRefreshToken(token: RefreshToken): Promise<void>;
     getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null>;
-    deleteRefreshToken(tokenString: string): Promise<void>; // Delete by token string
-    deleteRefreshTokenById(id: string): Promise<void>; // Delete by UUID
-    deleteUserRefreshToken(userId: string, tokenId: string): Promise<void>; // Delete by ID (Revoke)
+    deleteRefreshToken(tokenString: string): Promise<boolean>; // Delete by token string
+    deleteRefreshTokenById(id: string): Promise<boolean>; // Delete by UUID
+    deleteUserRefreshToken(userId: string, tokenId: string): Promise<boolean>; // Delete by ID (Revoke)
     deleteAllUserRefreshTokens(userId: string): Promise<void>; // Delete ALL refresh tokens for a user
     getUserRefreshTokens(userId: string): Promise<RefreshToken[]>;
     getAllRefreshTokens(page?: number, limit?: number, search?: string): Promise<PaginatedResult<RefreshToken>>; // Admin: Get all refresh tokens
