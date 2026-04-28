@@ -37,7 +37,8 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         ua: s.ua || 'unknown',
         deviceInfo: s.deviceInfo || 'Web Browser',
         lastActive: s.lastActive || 0,
-        current: s.sessionId === currentSessionId
+        current: s.sessionId === currentSessionId,
+        loginMethod: s.loginMethod
     }));
 
     // Normalize Client Sessions

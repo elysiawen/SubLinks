@@ -147,8 +147,7 @@ export default class PostgresDatabase implements IDatabase {
                     port INTEGER,
                     config JSONB NOT NULL,
                     source VARCHAR(255) NOT NULL,
-                    created_at BIGINT NOT NULL DEFAULT 0,
-                    data JSONB
+                    created_at BIGINT NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_proxies_source ON proxies(source);
 
@@ -160,8 +159,7 @@ export default class PostgresDatabase implements IDatabase {
                     config JSONB NOT NULL,
                     source VARCHAR(255) NOT NULL,
                     priority INTEGER NOT NULL DEFAULT 0,
-                    created_at BIGINT NOT NULL DEFAULT 0,
-                    data JSONB
+                    created_at BIGINT NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_proxy_groups_source ON proxy_groups(source);
 
@@ -170,8 +168,7 @@ export default class PostgresDatabase implements IDatabase {
                     source VARCHAR(255) NOT NULL,
                     rule_text JSONB NOT NULL,
                     priority INTEGER NOT NULL DEFAULT 0,
-                    created_at BIGINT NOT NULL DEFAULT 0,
-                    data JSONB
+                    created_at BIGINT NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_rules_source ON rules(source);
 
@@ -1489,13 +1486,12 @@ export default class PostgresDatabase implements IDatabase {
         for (const [source, sourceRules] of Object.entries(rulesBySource)) {
             const rulesJson = JSON.stringify(sourceRules.map(r => r.ruleText));
             await this.pool.query(
-                `INSERT INTO rules (id, rule_text, priority, source, created_at, data)
-                 VALUES ($1, $2, $3, $4, $5, $6)
+                `INSERT INTO rules (id, rule_text, priority, source, created_at)
+                 VALUES ($1, $2, $3, $4, $5)
                  ON CONFLICT (id) DO UPDATE SET
                      rule_text = EXCLUDED.rule_text,
-                     priority = EXCLUDED.priority,
-                     data = EXCLUDED.data`,
-                [source, rulesJson, 0, source, Date.now(), rulesJson]
+                     priority = EXCLUDED.priority`,
+                [source, rulesJson, 0, source, Date.now()]
             );
         }
     }
