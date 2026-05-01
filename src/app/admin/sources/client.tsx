@@ -51,9 +51,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     const [loadingAction, setLoadingAction] = useState(false); // For refresh/delete operations
     const [showApiModal, setShowApiModal] = useState(false);
     const [editingStaticSource, setEditingStaticSource] = useState<string | null>(null);
+    const [showRefreshModal, setShowRefreshModal] = useState(false);
+    const [refreshTarget, setRefreshTarget] = useState<string | null>(null); // null = all, string = single source name
+    const [refreshAndCache, setRefreshAndCache] = useState(false);
 
     // Stream Refresh Logic
-    const handleStreamRefresh = async (sourceName?: string) => {
+    const handleStreamRefresh = async (sourceName?: string, shouldCache: boolean = false) => {
         const toastId = addToast(
             sourceName ? `正在刷新上游源 "${sourceName}"...` : '正在刷新所有上游源...',
             'info',
@@ -95,8 +98,44 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 }
             }
 
-            // Final success state
-            // updateToast(toastId, 'Refresh completed', 'success');
+            // If shouldCache, trigger subscription rebuild after refresh
+            if (shouldCache) {
+                updateToast(toastId, '上游源刷新完成，正在缓存订阅...', 'info');
+                try {
+                    const rebuildRes = await fetch('/api/subscriptions/stream-rebuild?force=true', {
+                        cache: 'no-store'
+                    });
+
+                    if (rebuildRes.ok && rebuildRes.body) {
+                        const rebuildReader = rebuildRes.body.getReader();
+                        const rebuildDecoder = new TextDecoder();
+                        let rebuildBuffer = '';
+
+                        while (true) {
+                            const { done, value } = await rebuildReader.read();
+                            if (done) break;
+
+                            rebuildBuffer += rebuildDecoder.decode(value, { stream: true });
+                            const lines = rebuildBuffer.split('\n');
+                            rebuildBuffer = lines.pop() || '';
+
+                            for (const line of lines) {
+                                if (!line.trim()) continue;
+                                try {
+                                    const data = JSON.parse(line);
+                                    updateToast(toastId, data.message, data.type);
+                                } catch (e) {
+                                    console.error('JSON parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                } catch (cacheErr) {
+                    console.error('Subscription cache rebuild error:', cacheErr);
+                    updateToast(toastId, `订阅缓存重建失败: ${cacheErr}`, 'error');
+                }
+            }
+
             // Allow user to see final message for a moment before removal
             setTimeout(() => removeToast(toastId), 2000);
             window.location.reload();
@@ -109,6 +148,19 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         } finally {
             setLoadingAction(false);
         }
+    };
+
+    const openRefreshModal = (sourceName?: string) => {
+        setRefreshTarget(sourceName || null);
+        setRefreshAndCache(false);
+        setShowRefreshModal(true);
+    };
+
+    const handleRefreshConfirm = async () => {
+        const target = refreshTarget;
+        const shouldCache = refreshAndCache;
+        setShowRefreshModal(false);
+        await handleStreamRefresh(target || undefined, shouldCache);
     };
 
     // Form state
@@ -316,18 +368,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         window.location.reload();
     };
 
-    const handleForceRefresh = async () => {
-        if (!await confirm('确定要强制刷新所有上游源吗？\n\n这将重新获取所有上游订阅数据并清空所有订阅缓存。')) {
-            return;
-        }
-        await handleStreamRefresh();
+    const handleForceRefresh = () => {
+        openRefreshModal();
     };
 
-    const handleRefreshSingle = async (sourceName: string) => {
-        if (!await confirm(`确定要刷新上游源 "${sourceName}" 吗？\n\n这将重新获取该上游源的订阅数据。`)) {
-            return;
-        }
-        await handleStreamRefresh(sourceName);
+    const handleRefreshSingle = (sourceName: string) => {
+        openRefreshModal(sourceName);
     };
 
     const handleSetDefault = async (sourceName: string) => {
@@ -696,6 +742,63 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     return await updateRefreshApiKey(apiKey);
                 }}
             />
+
+            {/* Refresh Confirmation Modal */}
+            <Modal
+                isOpen={showRefreshModal}
+                onClose={() => setShowRefreshModal(false)}
+                title={refreshTarget ? `刷新上游源 - ${refreshTarget}` : '强制刷新所有上游源'}
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        {refreshTarget
+                            ? `即将重新获取上游源 "${refreshTarget}" 的订阅数据。`
+                            : '即将重新获取所有上游源的订阅数据。'
+                        }
+                    </p>
+
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                checked={refreshAndCache}
+                                onChange={(e) => setRefreshAndCache(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+                            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-medium text-gray-900 text-sm">同时缓存订阅</div>
+                            <div className="text-xs text-gray-500">刷新完成后自动重建所有订阅缓存，用户可立即获取最新配置</div>
+                        </div>
+                    </label>
+
+                    {refreshAndCache && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p className="text-xs text-yellow-800">
+                                ⚠️ 缓存订阅会为所有订阅重新生成配置，订阅数量较多时可能需要较长时间。
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                        <button
+                            onClick={handleRefreshConfirm}
+                            disabled={loadingAction}
+                            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+                        >
+                            {refreshAndCache ? '刷新并缓存' : '开始刷新'}
+                        </button>
+                        <button
+                            onClick={() => setShowRefreshModal(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                        >
+                            取消
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
 
             {/* Static Source Editor */}
