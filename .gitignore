@@ -49,3 +49,4 @@ run-migration.js
 .build-log.txt
 
 .history
+.claude
