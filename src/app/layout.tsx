@@ -5,6 +5,7 @@ import AccessLogger from '@/components/AccessLogger';
 import ProgressBar from '@/components/ProgressBar';
 import { Providers } from '@/components/Providers';
 import { Suspense } from 'react';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,22 +17,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "SubLinks - 订阅管理系统",
-  description: "强大的订阅链接管理与分发系统",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('common.metadata');
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
+        <Providers locale={locale} messages={messages}>
           <AccessLogger />
           <Suspense fallback={null}>
             <ProgressBar />
@@ -39,6 +46,6 @@ export default function RootLayout({
           {children}
         </Providers>
       </body>
-    </html >
+    </html>
   );
 }

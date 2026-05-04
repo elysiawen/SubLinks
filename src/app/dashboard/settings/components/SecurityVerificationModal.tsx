@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from '@/components/Modal';
 import { SubmitButton } from '@/components/SubmitButton';
+import { useTranslations } from 'next-intl';
 
 interface SecurityVerificationModalProps {
     isOpen: boolean;
@@ -20,9 +21,10 @@ export default function SecurityVerificationModal({
     title,
     description,
     onConfirm,
-    confirmText = '确认',
+    confirmText,
     isLoading = false
 }: SecurityVerificationModalProps) {
+    const t = useTranslations('dashboard');
     const [password, setPassword] = useState('');
 
     const handleConfirm = async () => {
@@ -41,7 +43,7 @@ export default function SecurityVerificationModal({
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
                     <span className="text-2xl">🛡️</span>
                     <div>
-                        <h4 className="font-bold text-yellow-800">安全验证</h4>
+                        <h4 className="font-bold text-yellow-800">{t('settings.securityModal.heading')}</h4>
                         <p className="text-sm text-yellow-700 mt-1">
                             {description}
                         </p>
@@ -49,14 +51,14 @@ export default function SecurityVerificationModal({
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">输入密码</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.securityModal.passwordLabel')}</label>
                     <input
                         type="password"
                         autoFocus
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                        placeholder="请输入您的当前密码"
+                        placeholder={t('settings.securityModal.passwordPlaceholder')}
                     />
                 </div>
 
@@ -65,14 +67,14 @@ export default function SecurityVerificationModal({
                         onClick={handleConfirm}
                         disabled={!password}
                         isLoading={isLoading}
-                        text={confirmText}
+                        text={confirmText || 'Confirm'}
                         className="flex-1 bg-red-600 hover:bg-red-700 shadow-none py-2"
                     />
                     <button
                         onClick={onClose}
                         className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                     >
-                        取消
+                        {t('settings.securityModal.cancel')}
                     </button>
                 </div>
             </div>

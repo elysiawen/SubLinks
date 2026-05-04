@@ -454,7 +454,7 @@ export async function previewParseContent(content: string) {
 export async function getStaticSourceData(sourceName: string) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const proxies = await db.getProxies(sourceName);
@@ -497,13 +497,13 @@ export async function createStaticSource(
     enabled: boolean = true
 ) {
     if (nodes.length === 0) {
-        return { error: '至少需要一个节点' };
+        return { error: 'needAtLeastOneNode' };
     }
 
     // Check name uniqueness
     const existing = await db.getUpstreamSource(name);
     if (existing) {
-        return { error: '上游源名称已存在' };
+        return { error: 'nameExists' };
     }
 
     // 1. Create upstream source entry
@@ -593,7 +593,7 @@ export async function addNodesToStaticSource(
 ) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const { nanoid } = await import('nanoid');
@@ -624,7 +624,7 @@ export async function addNodesToStaticSource(
 export async function deleteStaticSourceNode(sourceName: string, nodeId: string) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     await db.deleteProxy(nodeId);
@@ -645,7 +645,7 @@ export async function deleteStaticSourceNodes(sourceName: string, nodeIds: strin
 
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     // Loop and delete
@@ -671,7 +671,7 @@ export async function saveStaticSourceNodes(
 ) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const { nanoid } = await import('nanoid');
@@ -707,7 +707,7 @@ export async function saveStaticSourceGroups(
 ) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const { nanoid } = await import('nanoid');
@@ -741,12 +741,12 @@ export async function saveStaticSourceGroups(
 export async function deleteStaticSourceGroup(sourceName: string, groupId: string) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const groups = await db.getProxyGroups(sourceName);
     if (groups.length <= 1) {
-        return { error: '至少保留一个策略组，不能删除唯一的策略组' };
+        return { error: 'keepAtLeastOneGroup' };
     }
 
     await db.deleteProxyGroup(groupId);
@@ -768,7 +768,7 @@ export async function saveStaticSourceRules(
 ) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const { nanoid } = await import('nanoid');
@@ -801,7 +801,7 @@ export async function saveStaticSourceRules(
 export async function deleteStaticSourceRule(sourceName: string, ruleId: string) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     await db.deleteRule(ruleId);
@@ -836,7 +836,7 @@ export async function importStaticSourceData(
 ) {
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
-        return { error: '源不存在或不是静态类型' };
+        return { error: 'notStaticType' };
     }
 
     const { nanoid } = await import('nanoid');

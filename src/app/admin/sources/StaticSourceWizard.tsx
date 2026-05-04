@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, Fragment } from 'react';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
+import { useTranslations } from 'next-intl';
 import GroupEditor from '@/components/GroupEditor';
 import RuleEditor from '@/components/RuleEditor';
 import NodeInputPanel, { type ManualNodeConfig } from '@/components/NodeInputPanel';
@@ -49,6 +50,7 @@ interface StaticSourceWizardContentProps {
 
 export function StaticSourceWizardContent({ initialName = '', onNameChange, existingNames, onSuccess, onCancel }: StaticSourceWizardContentProps) {
     const { success, error } = useToast();
+    const t = useTranslations('admin.staticSourceWizard');
 
     // Wizard step: 0=name, 1=nodes, 2=groups, 3=rules
     const [step, setStep] = useState(initialName ? 1 : 0);
@@ -96,11 +98,11 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
     const handleNameNext = () => {
         const name = sourceName.trim();
         if (!name) {
-            error('请输入上游源名称');
+            error(t('nameRequired'));
             return;
         }
         if (existingNames.includes(name)) {
-            error('上游源名称已存在');
+            error(t('nameExists'));
             return;
         }
         setStep(1);
@@ -129,13 +131,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             ...node,
         };
         setNodes(prev => [...prev, parsedNode]);
-        success(`已添加节点: ${node.name}`);
+        success(t('nodeAdded', { name: node.name }));
     };
 
     const handleParseLinks = useCallback(async (text: string) => {
         const result = await previewParseContent(text);
         if (result.proxies.length === 0) {
-            error('未能解析到任何节点，请检查链接格式');
+            error(t('parseNoNodes'));
             return;
         }
         const newNodes: ParsedNode[] = result.proxies.map((p: any) => ({
@@ -147,8 +149,8 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             config: p.config || p,
         }));
         setNodes(prev => [...prev, ...newNodes]);
-        success(`已解析 ${newNodes.length} 个节点`);
-    }, [error, success]);
+        success(t('parsedNodes', { count: newNodes.length }));
+    }, [error, success, t]);
 
     const handleParseConfig = useCallback(async (text: string) => {
         const result = await previewParseContent(text);
@@ -183,11 +185,11 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             setRulesText(prev => (prev ? prev + '\n' : '') + result.rules.join('\n'));
         }
         const parts = [];
-        if (newNodes.length > 0) parts.push(`${newNodes.length} 个节点`);
-        if (result.groups?.length > 0) parts.push(`${result.groups.length} 个策略组`);
-        if (result.rules?.length > 0) parts.push(`${result.rules.length} 条规则`);
-        success(`已解析: ${parts.join(', ') || '无内容'}`);
-    }, [error, success]);
+        if (newNodes.length > 0) parts.push(t('parsedNodesCount', { count: newNodes.length }));
+        if (result.groups?.length > 0) parts.push(t('parsedGroupsCount', { count: result.groups.length }));
+        if (result.rules?.length > 0) parts.push(t('parsedRulesCount', { count: result.rules.length }));
+        success(t('parsedResult', { summary: parts.join(', ') || t('noContent') }));
+    }, [error, success, t, groupsText]);
 
     const handleRemoveNode = (id: string) => {
         setNodes(prev => prev.filter(n => n.id !== id));
@@ -195,7 +197,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 
     const handleNodesNext = () => {
         if (nodes.length === 0) {
-            error('至少添加一个节点才能继续');
+            error(t('atLeastOneNode'));
             return;
         }
         // If step 2 is empty, initialize it with a default group
@@ -217,7 +219,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             // Parse groupsText back to array
             const finalGroupsArr = yaml.load(groupsText) as any[] || [];
             if (finalGroupsArr.length === 0) {
-                error('请至少添加一个策略组');
+                error(t('atLeastOneGroup'));
                 setSaving(false);
                 return;
             }
@@ -241,21 +243,21 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 finalRulesArr
             );
             if ('error' in result) {
-                error(result.error!);
+                error(t('createFailed', { error: result.error! }));
                 setSaving(false);
                 return;
             }
-            success('静态上游源创建成功');
+            success(t('createdSuccess'));
             resetWizard();
             onSuccess();
         } catch (e) {
-            error('创建失败: ' + String(e));
+            error(t('createFailed', { error: String(e) }));
         }
         setSaving(false);
     };
 
 
-    const stepTitles = ['命名', '添加节点', '策略组', '分流规则', '确认'];
+    const stepTitles = [t('stepName'), t('stepNodes'), t('stepGroups'), t('stepRules'), t('stepConfirm')];
 
     return (
         <div className="space-y-6">
@@ -289,7 +291,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-2">
                         <label className="block text-sm font-bold text-gray-700">
-                            上游源名称 <span className="text-red-500">*</span>
+                            {t('nameLabel')} <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -298,13 +300,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                 setSourceName(e.target.value);
                                 onNameChange?.(e.target.value);
                             }}
-                            placeholder="例如：机场A、备用源"
+                            placeholder={t('namePlaceholder')}
                             onKeyDown={e => e.key === 'Enter' && handleNameNext()}
                             className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all"
                             autoFocus
                         />
                         <p className="text-xs text-gray-400 flex items-center gap-1.5 ml-1">
-                            <span>ℹ️</span> 名称创建后不可修改，用于标识该上游源
+                            <span>ℹ️</span> {t('nameHint')}
                         </p>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
@@ -312,13 +314,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             onClick={handleClose}
                             className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
                         >
-                            取消
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={handleNameNext}
                             className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all font-semibold text-sm"
                         >
-                            下一步
+                            {t('next')}
                         </button>
                     </div>
                 </div>
@@ -337,7 +339,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 {/* Node list */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
-                        <span className="text-sm font-bold text-gray-700">已添加节点</span>
+                        <span className="text-sm font-bold text-gray-700">{t('addedNodes')}</span>
                         <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full ring-1 ring-blue-100">{nodes.length}</span>
                     </div>
                     {nodes.length === 0 ? (
@@ -347,7 +349,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                             </div>
-                            <span className="text-sm font-medium">暂无节点，请从上方添加</span>
+                            <span className="text-sm font-medium">{t('noNodesHint')}</span>
                         </div>
                     ) : (
                         <div className="max-h-[220px] overflow-y-auto rounded-2xl border border-gray-200/50 divide-y divide-gray-50">
@@ -368,7 +370,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                     <button
                                         onClick={() => handleRemoveNode(node.id)}
                                         className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                        title="移除节点"
+                                        title={t('removeNode')}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -386,7 +388,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         onClick={() => initialName ? handleClose() : setStep(0)}
                         className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
                     >
-                        {initialName ? '取消' : '上一步'}
+                        {initialName ? t('cancel') : t('prev')}
                     </button>
                     <button
                         onClick={handleNodesNext}
@@ -397,7 +399,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                 : 'bg-gray-200 cursor-not-allowed'}
                             `}
                     >
-                        下一步
+                        {t('next')}
                     </button>
                 </div>
             </div>
@@ -406,7 +408,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 2 ? 'block' : 'hidden'}`}>
                 <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
                     <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
-                    策略组用于组织节点。系统会自动创建一个默认策略组包含所有节点。你也可以通过编辑器或手动添加更多。
+                    {t('groupsTip')}
                 </p>
 
                 <div className="max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
@@ -423,13 +425,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         onClick={() => setStep(1)}
                         className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
                     >
-                        上一步
+                        {t('prev')}
                     </button>
                     <button
                         onClick={() => setStep(3)}
                         className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
                     >
-                        下一步
+                        {t('next')}
                     </button>
                 </div>
             </div>
@@ -438,7 +440,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 3 ? 'block' : 'hidden'}`}>
                 <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
                     <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
-                    分流规则决定流量如何路由。每行一条规则，格式如：DOMAIN-SUFFIX,google.com,PROXY。你可以通过编辑器管理。
+                    {t('rulesTip')}
                 </p>
 
                 <div className="max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
@@ -455,13 +457,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         onClick={() => setStep(2)}
                         className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
                     >
-                        上一步
+                        {t('prev')}
                     </button>
                     <button
                         onClick={() => setStep(4)}
                         className="px-8 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
                     >
-                        下一步
+                        {t('next')}
                     </button>
                 </div>
             </div>
@@ -471,23 +473,23 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
                         <h4 className="text-sm font-bold text-blue-800 mb-1 flex items-center gap-2">
-                            <span>🔍</span> 最后确认
+                            <span>🔍</span> {t('confirmTitle')}
                         </h4>
                         <p className="text-xs text-blue-600 leading-relaxed">
-                            请检查以下配置摘要。点击“完成创建”后，系统将为您生成静态上游源及其关联的策略组和规则。
+                            {t('confirmDesc')}
                         </p>
                     </div>
 
                     <div className="p-5 sm:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
                         <div className="font-bold text-gray-800 text-xs sm:text-sm flex items-center gap-2 uppercase tracking-wider pb-3 border-b border-gray-50">
-                            <span>📊</span> 配置摘要
+                            <span>📊</span> {t('configSummary')}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-12 animate-in fade-in slide-in-from-top-1 duration-500">
                             <div className="space-y-1.5 group">
                                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-blue-400"></span>
-                                    上游源名称
+                                    {t('sourceNameLabel')}
                                 </div>
                                 <div className="text-sm text-gray-800 font-black pl-2.5 border-l-2 border-blue-100 group-hover:border-blue-400 transition-colors">{sourceName.trim()}</div>
                             </div>
@@ -495,28 +497,28 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             <div className="space-y-1.5 group">
                                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
-                                    节点数量
+                                    {t('nodeCountLabel')}
                                 </div>
-                                <div className="text-sm text-emerald-600 font-black pl-2.5 border-l-2 border-emerald-100 group-hover:border-emerald-400 transition-colors">{nodes.length} <span className="text-[10px] font-medium text-gray-400 ml-1">个已就绪节点</span></div>
+                                <div className="text-sm text-emerald-600 font-black pl-2.5 border-l-2 border-emerald-100 group-hover:border-emerald-400 transition-colors">{nodes.length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('nodesReady')}</span></div>
                             </div>
 
                             <div className="space-y-1.5 group">
                                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
-                                    策略组配置
+                                    {t('groupConfigLabel')}
                                 </div>
                                 <div className="text-sm text-indigo-600 font-black pl-2.5 border-l-2 border-indigo-100 group-hover:border-indigo-400 transition-colors">
-                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-gray-400 ml-1">个可视化分组</span>
+                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('visualGroups')}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-1.5 group">
                                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-purple-400"></span>
-                                    路由规则
+                                    {t('routingRulesLabel')}
                                 </div>
                                 <div className="text-sm text-purple-600 font-black pl-2.5 border-l-2 border-purple-100 group-hover:border-purple-400 transition-colors">
-                                    {rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} <span className="text-[10px] font-medium text-gray-400 ml-1">条分流逻辑</span>
+                                    {rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('ruleLogic')}</span>
                                 </div>
                             </div>
                         </div>
@@ -528,7 +530,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             onClick={() => setStep(3)}
                             className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
                         >
-                            上一步
+                            {t('prev')}
                         </button>
                         <button
                             onClick={handleSave}
@@ -538,11 +540,11 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             {saving ? (
                                 <>
                                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    创建中...
+                                    {t('creating')}
                                 </>
                             ) : (
                                 <>
-                                    <span>✓</span> 完成并创建
+                                    <span>✓</span> {t('create')}
                                 </>
                             )}
                         </button>
@@ -554,10 +556,11 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 }
 
 export default function StaticSourceWizard({ open, onClose, onSuccess, existingNames }: StaticSourceWizardProps) {
+    const t = useTranslations('admin.staticSourceWizard');
     if (!open) return null;
 
     return (
-        <Modal isOpen={open} title="新增静态上游源" onClose={onClose} maxWidth="max-w-2xl">
+        <Modal isOpen={open} title={t('newTitle')} onClose={onClose} maxWidth="max-w-2xl">
             <StaticSourceWizardContent
                 existingNames={existingNames}
                 onSuccess={onSuccess}

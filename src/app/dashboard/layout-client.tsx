@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ToastProvider } from '@/components/ToastProvider';
 import { ConfirmProvider, useConfirm } from '@/components/ConfirmProvider';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslations } from 'next-intl';
 
 interface DashboardLayoutClientProps {
     children: React.ReactNode;
@@ -104,6 +106,8 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
 export default function DashboardLayoutClient({ children, username, role, nickname, avatar }: DashboardLayoutClientProps) {
     const pathname = usePathname();
     const { confirm } = useConfirm();
+    const t = useTranslations('dashboard.sidebar');
+    const tCommon = useTranslations('common.status');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Initialize with open submenus if current path matches
     const [openSubmenus, setOpenSubmenus] = useState<string[]>(() => {
@@ -197,7 +201,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                             <p className="text-sm font-semibold text-gray-900 truncate">{nickname || username}</p>
                                             <p className="text-xs text-gray-500 truncate flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
-                                                已连接
+                                                {tCommon('connected')}
                                             </p>
                                         </div>
                                     </div>
@@ -206,51 +210,51 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                 {/* Navigation */}
                                 <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-6">
                                     <div className="px-3 pb-2 pt-1">
-                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">主要功能</p>
+                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('mainFeatures')}</p>
                                     </div>
 
                                     <SidebarItem
                                         icon="📊"
-                                        label="概览"
+                                        label={t('overview')}
                                         href="/dashboard"
                                         isActive={pathname === '/dashboard'}
                                         onItemClick={handleItemClick}
                                     />
                                     <SidebarItem
                                         icon="📋"
-                                        label="订阅中心"
+                                        label={t('subscriptionCenter')}
                                         href="/dashboard/subscriptions"
                                         isActive={pathname === '/dashboard/subscriptions'}
                                         onItemClick={handleItemClick}
                                     />
                                     <SidebarItem
                                         icon="📚"
-                                        label="使用教程"
+                                        label={t('tutorial')}
                                         href="/dashboard/tutorial"
                                         isActive={pathname === '/dashboard/tutorial'}
                                         onItemClick={handleItemClick}
                                     />
 
                                     <div className="px-3 pb-2 pt-4">
-                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">高级配置</p>
+                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('advancedConfig')}</p>
                                     </div>
 
                                     <SidebarItem
                                         icon="📦"
-                                        label="自定义配置"
+                                        label={t('customConfig')}
                                         isActive={pathname.startsWith('/dashboard/custom')}
                                         hasSubmenu
                                         isOpen={openSubmenus.includes('custom')}
                                         onToggle={() => toggleSubmenu('custom')}
                                     >
                                         <SidebarSubItem
-                                            label="自定义分组"
+                                            label={t('customGroups')}
                                             href="/dashboard/custom/groups"
                                             isActive={pathname === '/dashboard/custom/groups'}
                                             onItemClick={handleItemClick}
                                         />
                                         <SidebarSubItem
-                                            label="自定义规则"
+                                            label={t('customRules')}
                                             href="/dashboard/custom/rules"
                                             isActive={pathname === '/dashboard/custom/rules'}
                                             onItemClick={handleItemClick}
@@ -259,20 +263,20 @@ export default function DashboardLayoutClient({ children, username, role, nickna
 
                                     <SidebarItem
                                         icon="📜"
-                                        label="操作日志"
+                                        label={t('operationLogs')}
                                         isActive={pathname.startsWith('/dashboard/logs')}
                                         hasSubmenu
                                         isOpen={openSubmenus.includes('logs')}
                                         onToggle={() => toggleSubmenu('logs')}
                                     >
                                         <SidebarSubItem
-                                            label="订阅日志"
+                                            label={t('subscriptionLogs')}
                                             href="/dashboard/logs/subscription"
                                             isActive={pathname === '/dashboard/logs/subscription'}
                                             onItemClick={handleItemClick}
                                         />
                                         <SidebarSubItem
-                                            label="访问日志"
+                                            label={t('accessLogs')}
                                             href="/dashboard/logs/web"
                                             isActive={pathname === '/dashboard/logs/web'}
                                             onItemClick={handleItemClick}
@@ -283,14 +287,14 @@ export default function DashboardLayoutClient({ children, username, role, nickna
 
                                     <SidebarItem
                                         icon="⚙️"
-                                        label="账户设置"
+                                        label={t('accountSettings')}
                                         href="/dashboard/settings"
                                         isActive={pathname === '/dashboard/settings'}
                                         onItemClick={handleItemClick}
                                     />
                                     <SidebarItem
                                         icon="📱"
-                                        label="登录设备管理"
+                                        label={t('sessionManagement')}
                                         href="/dashboard/sessions"
                                         isActive={pathname === '/dashboard/sessions'}
                                         onItemClick={handleItemClick}
@@ -299,19 +303,22 @@ export default function DashboardLayoutClient({ children, username, role, nickna
 
                                 {/* Footer / Logout */}
                                 <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-2">
+                                    <div className="flex justify-center mb-1">
+                                        <LanguageSwitcher />
+                                    </div>
                                     {role === 'admin' && (
                                         <Link
                                             href="/admin"
                                             className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-blue-600 bg-blue-50 border border-blue-100/60 rounded-xl hover:bg-blue-100 hover:border-blue-200 hover:shadow-sm transition-all duration-200 group"
                                         >
                                             <span className="group-hover:scale-110 transition-transform duration-200">🛡️</span>
-                                            <span>后台管理</span>
+                                            <span>{t('adminPanel')}</span>
                                         </Link>
                                     )}
                                     <button
                                         onClick={() => {
-                                            confirm('确定要退出登录吗？', {
-                                                confirmText: '退出',
+                                            confirm(t('logoutConfirm'), {
+                                                confirmText: t('logoutButton'),
                                                 confirmColor: 'red',
                                                 onConfirm: async () => {
                                                     const { logout } = await import('@/lib/actions');
@@ -322,7 +329,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                         className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-red-600 bg-white border border-gray-200/60 rounded-xl hover:bg-red-50 hover:border-red-100 hover:text-red-700 hover:shadow-sm transition-all duration-200 group"
                                     >
                                         <span className="group-hover:-translate-x-0.5 transition-transform duration-200">🚪</span>
-                                        <span>退出登录</span>
+                                        <span>{t('logout')}</span>
                                     </button>
                                 </div>
                             </div>

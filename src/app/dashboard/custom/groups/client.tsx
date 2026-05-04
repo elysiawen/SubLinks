@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import GroupEditor from '@/components/GroupEditor';
 import { useRouter } from 'next/navigation';
 import yaml from 'js-yaml';
+import { useTranslations } from 'next-intl';
 
 interface GroupsClientProps {
     groups: ConfigSet[];
@@ -18,6 +19,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const router = useRouter();
+    const t = useTranslations('dashboard');
     const [groups, setGroups] = useState(initialGroups);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<ConfigSet | null>(null);
@@ -89,12 +91,12 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
 
     const handleSave = async () => {
         if (!groupName.trim()) {
-            error('请输入分组名称');
+            error(t('custom.groups.nameRequired'));
             return;
         }
 
         if (!groupContent.trim()) {
-            error('请输入分组内容');
+            error(t('custom.groups.contentRequired'));
             return;
         }
 
@@ -102,12 +104,12 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
         setLoading(true);
         try {
             await saveGroupSet(editingGroup?.id || null, groupName, groupContent);
-            success(editingGroup ? '分组已更新' : '分组已创建');
+            success(editingGroup ? t('custom.groups.updated') : t('custom.groups.created'));
             setIsModalOpen(false);
             // Refresh the page to get updated data
             window.location.reload();
         } catch (err) {
-            error('保存失败: ' + (err as Error).message);
+            error(t('custom.groups.saveFailed') + (err as Error).message);
         } finally {
             setLoading(false);
         }
@@ -115,17 +117,17 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
 
     const handleDelete = async (group: ConfigSet) => {
         const confirmed = await confirm(
-            `确定要删除分组 "${group.name}" 吗？此操作不可撤销。`
+            t('custom.groups.deleteConfirm', { name: group.name })
         );
 
         if (!confirmed) return;
 
         try {
             await deleteGroupSet(group.id);
-            success('分组已删除');
+            success(t('custom.groups.deleted'));
             router.refresh();
         } catch (err) {
-            error('删除失败: ' + (err as Error).message);
+            error(t('custom.groups.deleteFailed') + (err as Error).message);
         }
     };
 
@@ -146,15 +148,15 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">自定义分组</h1>
-                    <p className="text-sm text-gray-500 mt-1">管理您的策略组配置</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{t('custom.groups.heading')}</h1>
+                    <p className="text-sm text-gray-500 mt-1">{t('custom.groups.description')}</p>
                 </div>
                 <button
                     onClick={handleCreate}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                     <span>➕</span>
-                    <span>新建分组</span>
+                    <span>{t('custom.groups.create')}</span>
                 </button>
             </div>
 
@@ -164,13 +166,13 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                         📋
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">暂无自定义分组</h3>
-                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">创建您的第一个策略组配置，以便更灵活地管理节点分流策略。</p>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('custom.groups.empty')}</h3>
+                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">{t('custom.groups.emptyDesc')}</p>
                     <button
                         onClick={handleCreate}
                         className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
                     >
-                        立即创建
+                        {t('custom.groups.createNow')}
                     </button>
                 </div>
             ) : (
@@ -190,7 +192,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                             </h3>
                                             {group.isGlobal && (
                                                 <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded border border-purple-200 shrink-0">
-                                                    全局
+                                                    {t('custom.groups.global')}
                                                 </span>
                                             )}
                                         </div>
@@ -224,7 +226,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                         </div>
                                     ) : (
                                         <div className="pt-1 text-[10px] text-gray-400 italic">
-                                            无特定源依赖
+                                            {t('custom.groups.noDependencies')}
                                         </div>
                                     )}
                                 </div>
@@ -241,7 +243,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        编辑
+                                        {t('custom.groups.edit')}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(group)}
@@ -254,7 +256,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                        删除
+                                        {t('custom.groups.delete')}
                                     </button>
                                 </div>
                             </div>
@@ -269,21 +271,21 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={editingGroup ? '编辑分组' : '新建分组'}
+                title={editingGroup ? t('custom.groups.editTitle') : t('custom.groups.createTitle')}
                 maxWidth="max-w-4xl"
             >
                 <div>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                分组名称
+                                {t('custom.groups.name')}
                             </label>
                             <input
                                 type="text"
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="例如: 我的策略组"
+                                placeholder={t('custom.groups.namePlaceholder')}
                             />
                         </div>
 
@@ -302,14 +304,14 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                             className="px-6 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                             disabled={loading}
                         >
-                            取消
+                            {t('custom.groups.cancel')}
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                             disabled={loading}
                         >
-                            {loading ? '保存中...' : '保存'}
+                            {loading ? t('custom.groups.saving') : t('custom.groups.save')}
                         </button>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { PROTOCOLS, getPasswordLabel, getPasswordPlaceholder, buildNodeConfig } from '@/lib/constants';
 
 export interface ManualNodeConfig {
@@ -26,12 +27,6 @@ interface NodeInputPanelProps {
     hideConfigInput?: boolean;
 }
 
-const NODE_INPUT_TABS = [
-    { key: 'links' as const, label: '🔗 链接' },
-    { key: 'manual' as const, label: '✏️ 手动' },
-    { key: 'config' as const, label: '📄 配置' },
-];
-
 export default function NodeInputPanel({
     onAddManualNode,
     onParseLinks,
@@ -40,8 +35,16 @@ export default function NodeInputPanel({
     hideLinksInput = false,
     hideConfigInput = false,
 }: NodeInputPanelProps) {
+    const t = useTranslations('common.nodeInput');
+    const tConst = useTranslations('common.constants');
     const [nodeTab, setNodeTab] = useState<'links' | 'manual' | 'config'>('links');
     const [animKey, setAnimKey] = useState(0);
+
+    const NODE_INPUT_TABS = [
+        { key: 'links' as const, label: t('tabs.links') },
+        { key: 'manual' as const, label: t('tabs.manual') },
+        { key: 'config' as const, label: t('tabs.config') },
+    ];
 
     // Sliding indicator
     const tabBarRef = useRef<HTMLDivElement>(null);
@@ -89,15 +92,17 @@ export default function NodeInputPanel({
     const [extra, setExtra] = useState('');
     const [manualSubmitting, setManualSubmitting] = useState(false);
 
-    const passwordLabel = getPasswordLabel(protocol);
-    const passwordPlaceholder = getPasswordPlaceholder(protocol);
+    const passwordLabelKey = getPasswordLabel(protocol);
+    const passwordPlaceholderKey = getPasswordPlaceholder(protocol);
+    const passwordLabel = passwordLabelKey.startsWith('constants.') ? tConst(passwordLabelKey.replace('constants.', '')) : passwordLabelKey;
+    const passwordPlaceholder = passwordPlaceholderKey.startsWith('constants.') ? tConst(passwordPlaceholderKey.replace('constants.', '')) : passwordPlaceholderKey;
 
     // --- Handlers ---
 
     const handleParseLinks = async () => {
         const text = linksText.trim();
         if (!text) {
-            onError('请输入分享链接');
+            onError(t('errors.enterLinks'));
             return;
         }
         setLinksParsing(true);
@@ -112,7 +117,7 @@ export default function NodeInputPanel({
     const handleParseConfig = async () => {
         const text = configText.trim();
         if (!text) {
-            onError('请输入配置内容');
+            onError(t('errors.enterConfig'));
             return;
         }
         setConfigParsing(true);
@@ -126,19 +131,21 @@ export default function NodeInputPanel({
 
     const handleManualSubmit = async () => {
         if (!name.trim() || !server.trim() || !port.trim()) {
-            onError('请填写节点名称、服务器地址和端口');
+            onError(t('errors.fillRequired'));
             return;
         }
         const portNum = parseInt(port);
         if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
-            onError('端口号无效');
+            onError(t('errors.invalidPort'));
             return;
         }
         const { config, error } = buildNodeConfig(
             protocol, name.trim(), server.trim(), portNum, password, extra
         );
         if (error) {
-            onError(error);
+            // Translate error key from constants
+            const translatedError = error.startsWith('constants.') ? tConst(error.replace('constants.', '')) : error;
+            onError(translatedError);
             return;
         }
         setManualSubmitting(true);
@@ -185,17 +192,17 @@ export default function NodeInputPanel({
                     className="absolute top-1 bottom-1 rounded-md bg-white shadow-sm border border-gray-200 transition-all duration-250 ease-out pointer-events-none z-0"
                     style={{ left: indicator.left, width: indicator.width }}
                 />
-                {NODE_INPUT_TABS.map(t => (
+                {NODE_INPUT_TABS.map(tab => (
                     <button
-                        key={t.key}
-                        ref={el => { if (el) tabRefs.current.set(t.key, el); }}
-                        onClick={() => handleTabChange(t.key)}
-                        className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${nodeTab === t.key
+                        key={tab.key}
+                        ref={el => { if (el) tabRefs.current.set(tab.key, el); }}
+                        onClick={() => handleTabChange(tab.key)}
+                        className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${nodeTab === tab.key
                             ? 'text-blue-600'
                             : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
-                        {t.label}
+                        {tab.label}
                     </button>
                 ))}
             </div>
@@ -208,7 +215,7 @@ export default function NodeInputPanel({
                         <textarea
                             value={linksText}
                             onChange={e => setLinksText(e.target.value)}
-                            placeholder={'粘贴分享链接，每行一个：\nvmess://...\nss://...\nvless://...\ntrojan://...\nhysteria2://...\n\n也支持 Base64 编码的订阅内容'}
+                            placeholder={t('linksPlaceholder')}
                             rows={4}
                             className={textareaClass}
                         />
@@ -216,9 +223,9 @@ export default function NodeInputPanel({
                             {linksParsing ? (
                                 <>
                                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    解析中...
+                                    {t('parsing')}
                                 </>
-                            ) : '解析链接'}
+                            ) : t('parseLinks')}
                         </button>
                     </div>
                 )}
@@ -228,7 +235,7 @@ export default function NodeInputPanel({
                     <div className="flex flex-col gap-3">
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">协议</label>
+                                <label className="text-xs font-medium text-gray-600">{t('protocol')}</label>
                                 <select
                                     value={protocol}
                                     onChange={e => setProtocol(e.target.value)}
@@ -238,17 +245,17 @@ export default function NodeInputPanel({
                                 </select>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">节点名称 <span className="text-red-400">*</span></label>
-                                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="例：香港-1" className={inputClass} />
+                                <label className="text-xs font-medium text-gray-600">{t('nodeName')} <span className="text-red-400">*</span></label>
+                                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('namePlaceholder')} className={inputClass} />
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                             <div className="col-span-2 flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">服务器地址 <span className="text-red-400">*</span></label>
+                                <label className="text-xs font-medium text-gray-600">{t('serverAddress')} <span className="text-red-400">*</span></label>
                                 <input type="text" value={server} onChange={e => setServer(e.target.value)} placeholder="example.com" className={monoInputClass} />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">端口 <span className="text-red-400">*</span></label>
+                                <label className="text-xs font-medium text-gray-600">{t('port')} <span className="text-red-400">*</span></label>
                                 <input type="number" value={port} onChange={e => setPort(e.target.value)} placeholder="443" className={monoInputClass} />
                             </div>
                         </div>
@@ -257,7 +264,7 @@ export default function NodeInputPanel({
                             <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder={passwordPlaceholder} className={monoInputClass} />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-500">附加配置 <span className="font-normal">(可选, JSON)</span></label>
+                            <label className="text-xs font-medium text-gray-500">{t('extraConfig')} <span className="font-normal">({t('optional')}, JSON)</span></label>
                             <textarea
                                 value={extra}
                                 onChange={e => setExtra(e.target.value)}
@@ -267,7 +274,7 @@ export default function NodeInputPanel({
                             />
                         </div>
                         <button onClick={handleManualSubmit} disabled={manualSubmitting} className={btnClass}>
-                            {manualSubmitting ? '添加中...' : '添加节点'}
+                            {manualSubmitting ? t('adding') : t('addNode')}
                         </button>
                     </div>
                 )}
@@ -278,7 +285,7 @@ export default function NodeInputPanel({
                         <textarea
                             value={configText}
                             onChange={e => setConfigText(e.target.value)}
-                            placeholder={'粘贴 Clash / Clash Meta YAML 配置文件内容\n\n将自动解析其中的节点、策略组和分流规则'}
+                            placeholder={t('configPlaceholder')}
                             rows={4}
                             className={textareaClass}
                         />
@@ -286,9 +293,9 @@ export default function NodeInputPanel({
                             {configParsing ? (
                                 <>
                                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    解析中...
+                                    {t('parsing')}
                                 </>
-                            ) : '解析配置'}
+                            ) : t('parseConfig')}
                         </button>
                     </div>
                 )}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
+import { useTranslations } from 'next-intl';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 
@@ -48,8 +49,9 @@ interface OverviewClientProps {
 
 export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username, nickname, announcement }: OverviewClientProps) {
     const { success, error } = useToast();
+    const t = useTranslations('dashboard.overview');
 
-    const [hitokoto, setHitokoto] = useState('一言加载中...');
+    const [hitokoto, setHitokoto] = useState(t('hitokotoLoading'));
 
     // Fetch Hitokoto
     useEffect(() => {
@@ -88,7 +90,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"></div>
                     )}
                     <div className="relative z-10 flex flex-col justify-center h-full">
-                        <h1 className="text-3xl font-bold mb-2">欢迎回来，{nickname || username}！</h1>
+                        <h1 className="text-3xl font-bold mb-2">{t('welcome', { name: nickname || username })}</h1>
                         <p className="text-blue-100">{hitokoto}</p>
                     </div>
                 </div>
@@ -102,21 +104,21 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                 {/* Combined Subscription Stats */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-blue-900">订阅统计</h3>
+                        <h3 className="text-sm font-medium text-blue-900">{t('subscriptionStats')}</h3>
                         <span className="text-2xl">📋</span>
                     </div>
                     <div className="flex items-end justify-between">
                         <div>
                             <p className="text-4xl font-bold text-blue-900">{totalSubs}</p>
-                            <p className="text-xs text-blue-700 mt-1">总订阅数</p>
+                            <p className="text-xs text-blue-700 mt-1">{t('totalSubs')}</p>
                         </div>
                         <div className="text-right space-y-1">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-blue-700">已启用</span>
+                                <span className="text-xs text-blue-700">{t('enabled')}</span>
                                 <span className="text-lg font-bold text-green-600">{enabledSubs}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-blue-700">未启用</span>
+                                <span className="text-xs text-blue-700">{t('disabled')}</span>
                                 <span className="text-lg font-bold text-gray-500">{totalSubs - enabledSubs}</span>
                             </div>
                         </div>
@@ -126,14 +128,14 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                 {/* Registration Time */}
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-purple-900">注册时间</h3>
+                        <h3 className="text-sm font-medium text-purple-900">{t('registrationTime')}</h3>
                         <span className="text-2xl">📅</span>
                     </div>
                     <div>
                         <p className="text-3xl font-bold text-purple-900">{formatDate(userCreatedAt)}</p>
                         <div className="mt-3 pt-3 border-t border-purple-200">
                             <p className="text-xs text-purple-700">
-                                已使用 <span className="font-bold text-purple-900">{Math.floor((Date.now() - userCreatedAt) / (1000 * 60 * 60 * 24))}</span> 天
+                                {t('daysUsed', { days: Math.floor((Date.now() - userCreatedAt) / (1000 * 60 * 60 * 24)) })}
                             </p>
                         </div>
                     </div>
@@ -142,13 +144,13 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                 {/* 24h API Count */}
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-green-900">24小时请求</h3>
+                        <h3 className="text-sm font-medium text-green-900">{t('requests24h')}</h3>
                         <span className="text-2xl">📊</span>
                     </div>
                     <div>
                         <p className="text-4xl font-bold text-green-900">{apiCount24h}</p>
                         <div className="mt-3 pt-3 border-t border-green-200">
-                            <p className="text-xs text-green-700">API 访问次数</p>
+                            <p className="text-xs text-green-700">{t('apiAccessCount')}</p>
                         </div>
                     </div>
                 </div>
@@ -157,7 +159,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
             {/* Upstream Sources */}
             {upstreamSources.length > 0 && (
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">上游源信息</h2>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('upstreamInfo')}</h2>
                     <div className="space-y-4">
                         {upstreamSources.map((source) => {
                             const formatBytes = (bytes: number) => {
@@ -168,8 +170,8 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                 return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
                             };
 
-                            const formatDate = (timestamp?: number) => {
-                                if (!timestamp) return '未更新';
+                            const formatSourceDate = (timestamp?: number) => {
+                                if (!timestamp) return t('notUpdated');
                                 const date = new Date(timestamp);
                                 return date.toLocaleString('zh-CN', {
                                     year: 'numeric',
@@ -192,13 +194,13 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                             };
 
                             const getStatusText = (source: UpstreamSource) => {
-                                if (source.enabled === false) return '⛔ 已禁用';
+                                if (source.enabled === false) return t('statusDisabled');
 
                                 switch (source.status) {
-                                    case 'success': return '✓ 正常';
-                                    case 'failure': return '✗ 失败';
-                                    case 'pending': return '⏳ 更新中';
-                                    default: return '未知';
+                                    case 'success': return t('statusNormal');
+                                    case 'failure': return t('statusFailed');
+                                    case 'pending': return t('statusUpdating');
+                                    default: return t('statusUnknown');
                                 }
                             };
 
@@ -214,13 +216,13 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                     {source.traffic ? (
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">已用流量</span>
+                                                <span className="text-gray-600">{t('usedTraffic')}</span>
                                                 <span className="font-medium text-gray-800">
                                                     {formatBytes(source.traffic.upload + source.traffic.download)}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">总流量</span>
+                                                <span className="text-gray-600">{t('totalTraffic')}</span>
                                                 <span className="font-medium text-gray-800">
                                                     {formatBytes(source.traffic.total)}
                                                 </span>
@@ -234,18 +236,18 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                                 />
                                             </div>
                                             <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                                <span>使用率: {Math.round(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100)}%</span>
+                                                <span>{t('usageRate', { rate: Math.round(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100) })}</span>
                                                 {source.traffic.expire > 0 && (
-                                                    <span>到期: {new Date(source.traffic.expire * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
+                                                    <span>{t('expire', { date: new Date(source.traffic.expire * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) })}</span>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">暂无流量信息</p>
+                                        <p className="text-sm text-gray-500">{t('noTrafficInfo')}</p>
                                     )}
 
                                     <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-                                        最后更新: {formatDate(source.lastUpdated)}
+                                        {t('lastUpdated', { time: formatSourceDate(source.lastUpdated) })}
                                     </div>
                                 </div>
                             );
@@ -258,12 +260,12 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
             {accessLogs.length > 0 && (
                 <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base md:text-lg font-semibold text-gray-800">访问日志</h2>
-                        <span className="text-xs md:text-sm text-gray-500">最近 {accessLogs.length} 条</span>
+                        <h2 className="text-base md:text-lg font-semibold text-gray-800">{t('accessLogs')}</h2>
+                        <span className="text-xs md:text-sm text-gray-500">{t('recentCount', { count: accessLogs.length })}</span>
                     </div>
                     <div className="space-y-2 md:space-y-3">
                         {accessLogs.map((log) => {
-                            const formatDate = (timestamp: number) => {
+                            const formatLogDate = (timestamp: number) => {
                                 const date = new Date(timestamp);
                                 return date.toLocaleString('zh-CN', {
                                     month: '2-digit',
@@ -284,7 +286,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-medium text-gray-800 text-xs md:text-sm truncate">
-                                                {log.apiType || '订阅请求'}
+                                                {log.apiType || t('subscriptionRequest')}
                                             </span>
                                             <span className={`text-xs font-mono ${getStatusColor(log.status)}`}>
                                                 {log.status}
@@ -297,7 +299,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between md:flex-col md:items-end md:text-right md:ml-4 flex-shrink-0">
-                                        <p className="text-xs text-gray-500">{formatDate(log.timestamp)}</p>
+                                        <p className="text-xs text-gray-500">{formatLogDate(log.timestamp)}</p>
                                         {log.requestMethod && (
                                             <p className="text-xs text-gray-400">{log.requestMethod}</p>
                                         )}

@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource, toggleUpstreamSourceEnabled, addStaticUpstreamSource, appendNodesToStaticSource } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { zhCN, enUS } from 'date-fns/locale';
 import RefreshApiModal from './RefreshApiModal';
 import { SubmitButton } from '@/components/SubmitButton';
 import StaticSourceWizard, { StaticSourceWizardContent } from './StaticSourceWizard';
@@ -40,6 +41,9 @@ const formatBytes = (bytes: number) => {
 };
 
 export default function UpstreamSourcesClient({ sources: initialSources, currentApiKey }: { sources: UpstreamSource[], currentApiKey?: string }) {
+    const t = useTranslations('admin.sources');
+    const locale = useLocale();
+    const dateFnsLocale = locale === 'zh' ? zhCN : enUS;
     const router = useRouter();
     const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
@@ -58,7 +62,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     // Stream Refresh Logic
     const handleStreamRefresh = async (sourceName?: string, shouldCache: boolean = false) => {
         const toastId = addToast(
-            sourceName ? `正在刷新上游源 "${sourceName}"...` : '正在刷新所有上游源...',
+            sourceName ? t('refreshingSource', { name: sourceName }) : t('refreshingAll'),
             'info',
             Infinity // Persistent toast
         );
@@ -100,7 +104,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
             // If shouldCache, trigger subscription rebuild after refresh
             if (shouldCache) {
-                updateToast(toastId, '上游源刷新完成，正在缓存订阅...', 'info');
+                updateToast(toastId, t('cacheRebuilding'), 'info');
                 try {
                     const rebuildRes = await fetch('/api/subscriptions/stream-rebuild?force=true', {
                         cache: 'no-store'
@@ -132,7 +136,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     }
                 } catch (cacheErr) {
                     console.error('Subscription cache rebuild error:', cacheErr);
-                    updateToast(toastId, `订阅缓存重建失败: ${cacheErr}`, 'error');
+                    updateToast(toastId, t('cacheRebuildFailed', { error: String(cacheErr) }), 'error');
                 }
             }
 
@@ -142,7 +146,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
         } catch (e) {
             console.error('Refresh error:', e);
-            updateToast(toastId, `刷新失败: ${e}`, 'error');
+            updateToast(toastId, t('refreshFailed', { error: String(e) }), 'error');
             // Keep error toast for a while
             setTimeout(() => removeToast(toastId), 5000);
         } finally {
@@ -183,21 +187,21 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
     const validateForm = () => {
         if (!formName.trim()) {
-            error('请输入上游源名称');
+            error(t('errorNameRequired'));
             return false;
         }
         if (formType === 'url') {
             if (!formUrl.trim()) {
-                error('请输入订阅URL');
+                error(t('errorUrlRequired'));
                 return false;
             }
             if (!formUrl.startsWith('http://') && !formUrl.startsWith('https://')) {
-                error('订阅URL必须以 http:// 或 https:// 开头');
+                error(t('errorUrlFormat'));
                 return false;
             }
         } else {
             if (!formStaticContent.trim()) {
-                error('请输入节点内容');
+                error(t('errorContentRequired'));
                 return false;
             }
         }
@@ -234,7 +238,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         if (!validateForm()) return;
 
         if (sources.some(s => s.name === formName.trim())) {
-            error('上游源名称已存在');
+            error(t('errorNameExists'));
             return;
         }
 
@@ -250,11 +254,11 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 setLoadingStaticSave(false);
                 resetForm();
                 setIsAdding(false);
-                success('静态上游源添加成功');
+                success(t('successCreated'));
                 window.location.reload();
             } catch (e) {
                 setLoadingStaticSave(false);
-                error(`添加失败: ${e}`);
+                error(t('addFailed', { error: String(e) }));
             }
             return;
         }
@@ -282,13 +286,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
-            success('保存成功，正在更新...');
+            success(t('successSaved'));
             await handleStreamRefresh(sourceName);
         } else {
             setLoadingSave(false);
             resetForm();
             setIsAdding(false);
-            success('上游源添加成功');
+            success(t('successAdded'));
             window.location.reload();
         }
     };
@@ -302,13 +306,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
         try {
             await toggleUpstreamSourceEnabled(source.name, newStatus);
-            success(`已${newStatus ? '启用' : '禁用'}源 "${source.name}"`);
+            success(t('togglingSource', { action: newStatus ? t('enabled') : t('disabled'), name: source.name }));
         } catch (e) {
             // Revert on error
             setSources(prev => prev.map(s =>
                 s.name === source.name ? { ...s, enabled: source.enabled } : s
             ));
-            error('操作失败');
+            error(t('errorOperation'));
         }
     };
 
@@ -343,7 +347,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
         if (shouldRefresh) {
             // Don't close modal, keep loading
-            success('保存成功，正在更新...');
+            success(t('successSaved'));
             await handleStreamRefresh(sourceName);
             // handleStreamRefresh will reload page
         } else {
@@ -351,20 +355,20 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             resetForm();
             setEditingSource(null);
             setIsAdding(false);
-            success('上游源更新成功');
+            success(t('successUpdated'));
             window.location.reload();
         }
     };
 
     const handleDelete = async (sourceName: string) => {
-        if (!await confirm(`确定要删除上游源 "${sourceName}" 吗？\n\n这将同时删除该上游源的所有节点、策略组和规则数据。`, { confirmColor: 'red', confirmText: '删除' })) {
+        if (!await confirm(t('confirmDelete', { name: sourceName }), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
             return;
         }
 
         setLoadingAction(true);
         await deleteUpstreamSource(sourceName);
         setLoadingAction(false);
-        success('上游源已删除');
+        success(t('successDeleted'));
         window.location.reload();
     };
 
@@ -383,14 +387,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             setLoadingAction(false);
 
             if (result.success) {
-                success(`已将 "${sourceName}" 设为默认源`);
+                success(t('successSetDefault', { name: sourceName }));
                 window.location.reload();
             } else {
-                error(`设置默认源失败`);
+                error(t('errorSetDefault'));
             }
         } catch (e) {
             setLoadingAction(false);
-            error(`设置默认源失败: ${e}`);
+            error(t('errorSetDefault'));
         }
     };
 
@@ -398,7 +402,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    📡 上游订阅源管理
+                    📡 {t('title')}
                     <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{sources.length}</span>
                 </h2>
                 <div className="flex gap-2">
@@ -406,14 +410,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         onClick={() => setShowApiModal(true)}
                         className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
                     >
-                        🔗 刷新API
+                        🔗 {t('refreshApi')}
                     </button>
                     <button
                         onClick={handleForceRefresh}
                         disabled={loadingAction}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium text-sm"
                     >
-                        🔄 强制刷新
+                        🔄 {t('forceRefresh')}
                     </button>
                     <button
                         onClick={() => {
@@ -423,7 +427,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         }}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
                     >
-                        {isAdding ? '取消' : '+ 添加上游源'}
+                        {isAdding ? t('cancelAdd') : t('addSource')}
                     </button>
                 </div>
             </div>
@@ -436,7 +440,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     setEditingSource(null);
                     setIsAdding(false);
                 }}
-                title={editingSource ? '编辑上游源' : '添加新的上游源'}
+                title={editingSource ? t('editSource') : t('addNewSource')}
                 maxWidth={formType === 'static' && isAdding ? 'max-w-2xl' : 'max-w-lg'}
             >
                 {(isAdding || editingSource) && (
@@ -459,14 +463,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         onClick={() => setFormType('url')}
                                         className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'url' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        🔗 URL 订阅
+                                        🔗 {t('urlSubscription')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setFormType('static')}
                                         className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        📋 静态内容
+                                        📋 {t('staticContent')}
                                     </button>
                                 </div>
                             </div>
@@ -475,13 +479,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {/* Common Name field - Only for URL type since Static has its own name step or accepts it */}
                         {(editingSource || (isAdding && formType === 'url')) && (
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">上游源名称 *</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('sourceName')}</label>
                                 <input
                                     type="text"
                                     value={formName}
                                     onChange={(e) => setFormName(e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                    placeholder="例如：机场A、备用源"
+                                    placeholder={t('sourceNamePlaceholder')}
                                     autoFocus
                                 />
                             </div>
@@ -491,14 +495,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {editingSource && editingSource.type === 'static' && (
                             <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
                                 <span>📋</span>
-                                <span>静态来源（类型创建后不可更改）</span>
+                                <span>{t('staticTypeHint')}</span>
                             </div>
                         )}
 
                         {/* URL-type fields */}
                         <div className={formType === 'url' ? 'block space-y-4' : 'hidden'}>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">订阅URL *</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('subscriptionUrl')}</label>
                                 <input
                                     type="url"
                                     value={formUrl}
@@ -508,7 +512,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">缓存时长</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('cacheDuration')}</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="number"
@@ -523,14 +527,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
                                         className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                                     >
-                                        <option value="hours">小时</option>
-                                        <option value="minutes">分钟</option>
+                                        <option value="hours">{t('hours')}</option>
+                                        <option value="minutes">{t('minutes')}</option>
                                     </select>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    设置多久从上游源重新获取一次订阅数据。设置 0 表示永不失效 (仅手动刷新)。
+                                    {t('cacheHint')}
                                     {formCacheDuration !== '0' && (
-                                        <span>(当前: {formDurationUnit === 'minutes' ? `${formCacheDuration}分钟` : `${formCacheDuration}小时`})</span>
+                                        <span>{t('currentDuration', { value: formCacheDuration, unit: formDurationUnit === 'minutes' ? t('minutes') : t('hours') })}</span>
                                     )}
                                 </p>
                             </div>
@@ -554,14 +558,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {formType === 'static' && editingSource && (
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    追加新节点（可选）
+                                    {t('appendNodes')}
                                 </label>
                                 <textarea
                                     value={formStaticContent}
                                     onChange={(e) => setFormStaticContent(e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-sm"
                                     rows={5}
-                                    placeholder={`粘贴新的分享链接或 YAML 配置以追加节点...\n\n如需管理已有节点，请前往 代理节点管理 页面。`}
+                                    placeholder={t('appendPlaceholder')}
                                 />
                             </div>
                         )}
@@ -572,13 +576,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 <SubmitButton
                                     onClick={() => editingSource ? handleUpdate(false) : handleAdd(false)}
                                     isLoading={loadingSave}
-                                    text={editingSource ? '保存' : '保存'}
+                                    text={t('save')}
                                     className="flex-1"
                                 />
                                 <SubmitButton
                                     onClick={() => editingSource ? handleUpdate(true) : handleAdd(true)}
                                     isLoading={loadingSaveAndUpdate}
-                                    text={editingSource ? '保存并更新' : '保存并更新'}
+                                    text={t('saveAndUpdate')}
                                     className="flex-1 bg-green-600 hover:bg-green-700"
                                 />
                                 <button
@@ -589,7 +593,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     }}
                                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                                 >
-                                    取消
+                                    {t('cancelAdd')}
                                 </button>
                             </div>
                         )}
@@ -599,7 +603,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
             {sources.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                    暂无上游源,点击上方按钮添加
+                    {t('noSources')}
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -620,29 +624,29 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                     ? 'bg-green-50 text-green-600 hover:bg-green-100'
                                                     : 'bg-red-50 text-red-600 hover:bg-red-100'
                                                     }`}
-                                                title={source.enabled !== false ? '点击禁用' : '点击启用'}
+                                                title={source.enabled !== false ? t('clickToDisable') : t('clickToEnable')}
                                             >
-                                                {source.enabled !== false ? '✅ 已启用' : '⛔ 已禁用'}
+                                                {source.enabled !== false ? `✅ ${t('enabled')}` : `⛔ ${t('disabled')}`}
                                             </button>
 
                                             {source.isDefault ? (
                                                 <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
-                                                    ⭐ 默认
+                                                    ⭐ {t('default')}
                                                 </span>
                                             ) : (
                                                 <button
                                                     onClick={() => handleSetDefault(source.name)}
                                                     disabled={loadingAction}
                                                     className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
-                                                    title="设为默认上游源"
+                                                    title={t('setAsDefault')}
                                                 >
-                                                    ☆ 设为默认
+                                                    ☆ {t('setAsDefault')}
                                                 </button>
                                             )}
                                         </div>
                                     </div>
                                     {source.type === 'static' ? (
-                                        <p className="text-xs text-gray-400 mb-2">📋 静态来源 · 手动配置的节点</p>
+                                        <p className="text-xs text-gray-400 mb-2">📋 {t('staticSource')}</p>
                                     ) : (
                                         <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
                                     )}
@@ -650,7 +654,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         {source.type !== 'static' && (
                                             <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
                                                 {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
-                                                    ? '♾️ 永不自动失效'
+                                                    ? `♾️ ${t('neverExpire')}`
                                                     : `🕒 ${(source.cacheDuration ?? 24) < 1
                                                         ? `${Math.round((source.cacheDuration ?? 0) * 60)}m`
                                                         : `${source.cacheDuration ?? 24}h`}`
@@ -661,7 +665,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         {source.lastUpdated && (
                                             <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
                                                 {source.status === 'failure' ? '❌' : '✅'}
-                                                {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: zhCN })}
+                                                {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: dateFnsLocale })}
                                             </span>
                                         )}
                                         {source.status === 'failure' && source.error && (
@@ -674,7 +678,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     {source.traffic && (
                                         <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs border border-gray-100">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-gray-500 font-medium">流量使用</span>
+                                                <span className="text-gray-500 font-medium">{t('trafficUsage')}</span>
                                                 <span className="text-blue-600 font-bold">
                                                     {formatBytes(source.traffic.upload + source.traffic.download)} / {formatBytes(source.traffic.total)}
                                                 </span>
@@ -692,7 +696,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                     ↓ {formatBytes(source.traffic.download)}
                                                 </div>
                                                 <div className="text-right text-gray-400">
-                                                    {source.traffic.expire ? `过期: ${new Date(source.traffic.expire * 1000).toLocaleDateString()}` : '无过期时间'}
+                                                    {source.traffic.expire ? t('expireDate', { date: new Date(source.traffic.expire * 1000).toLocaleDateString() }) : t('noExpire')}
                                                 </div>
                                             </div>
                                         </div>
@@ -706,9 +710,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             onClick={() => handleRefreshSingle(source.name)}
                                             disabled={loadingAction}
                                             className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
-                                            title="刷新此上游源"
+                                            title={t('refreshTitle')}
                                         >
-                                            🔄 刷新
+                                            🔄 {t('refresh')}
                                         </button>
                                     )}
                                     <button
@@ -716,14 +720,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         disabled={loadingAction}
                                         className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
-                                        ✏️ {source.type === 'static' ? '管理' : '编辑'}
+                                        ✏️ {source.type === 'static' ? t('manage') : t('edit')}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(source.name)}
                                         disabled={loadingAction}
                                         className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
-                                        🗑️ 删除
+                                        🗑️ {t('delete')}
                                     </button>
                                 </div>
                             </div>
@@ -747,13 +751,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             <Modal
                 isOpen={showRefreshModal}
                 onClose={() => setShowRefreshModal(false)}
-                title={refreshTarget ? `刷新上游源 - ${refreshTarget}` : '强制刷新所有上游源'}
+                title={refreshTarget ? t('refreshSource', { name: refreshTarget }) : t('refreshAll')}
             >
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600">
                         {refreshTarget
-                            ? `即将重新获取上游源 "${refreshTarget}" 的订阅数据。`
-                            : '即将重新获取所有上游源的订阅数据。'
+                            ? t('refreshConfirm', { name: refreshTarget })
+                            : t('refreshAllConfirm')
                         }
                     </p>
 
@@ -769,15 +773,15 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                             <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
                         </div>
                         <div className="flex-1">
-                            <div className="font-medium text-gray-900 text-sm">同时缓存订阅</div>
-                            <div className="text-xs text-gray-500">刷新完成后自动重建所有订阅缓存，用户可立即获取最新配置</div>
+                            <div className="font-medium text-gray-900 text-sm">{t('cacheSubscriptions')}</div>
+                            <div className="text-xs text-gray-500">{t('cacheSubscriptionsDesc')}</div>
                         </div>
                     </label>
 
                     {refreshAndCache && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                             <p className="text-xs text-yellow-800">
-                                ⚠️ 缓存订阅会为所有订阅重新生成配置，订阅数量较多时可能需要较长时间。
+                                ⚠️ {t('cacheWarning')}
                             </p>
                         </div>
                     )}
@@ -788,13 +792,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                             disabled={loadingAction}
                             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
                         >
-                            {refreshAndCache ? '刷新并缓存' : '开始刷新'}
+                            {refreshAndCache ? t('refreshAndCache') : t('startRefresh')}
                         </button>
                         <button
                             onClick={() => setShowRefreshModal(false)}
                             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                         >
-                            取消
+                            {t('cancelAdd')}
                         </button>
                     </div>
                 </div>

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslations } from 'next-intl';
 
 
 interface SidebarProps {
@@ -10,6 +12,7 @@ interface SidebarProps {
 
 export default function AdminSidebar({ username }: SidebarProps) {
     const pathname = usePathname();
+    const t = useTranslations('admin.sidebar');
 
 
     const isActive = (path: string) => pathname === path;
@@ -23,61 +26,64 @@ export default function AdminSidebar({ username }: SidebarProps) {
     return (
         <aside className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
             <div className="p-6 border-b border-gray-100">
-                <h1 className="text-xl font-bold text-gray-800">管理后台</h1>
+                <h1 className="text-xl font-bold text-gray-800">{t('title')}</h1>
                 <p className="text-xs text-gray-400 mt-1">SubLinks</p>
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-2">系统管理</div>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-2">{t('systemManagement')}</div>
                 <Link href="/admin" className={linkClass('/admin')}>
-                    📊 概览
+                    📊 {t('overview')}
                 </Link>
                 <Link href="/admin/settings" className={linkClass('/admin/settings')}>
-                    ⚙️ 全局设置
+                    ⚙️ {t('globalSettings')}
                 </Link>
                 <Link href="/admin/status" className={linkClass('/admin/status')}>
-                    🖥️ 服务器状态
+                    🖥️ {t('serverStatus')}
                 </Link>
 
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">用户</div>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">{t('users')}</div>
                 <Link href="/admin/users" className={linkClass('/admin/users')}>
-                    👤 用户管理
+                    👤 {t('userManagement')}
                 </Link>
                 <Link href="/admin/sessions" className={linkClass('/admin/sessions')}>
-                    🔑 会话管理
+                    🔑 {t('sessionManagement')}
                 </Link>
 
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅</div>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">{t('subscriptions')}</div>
                 <Link href="/admin/sources" className={linkClass('/admin/sources')}>
-                    📡 上游源管理
+                    📡 {t('sourceManagement')}
                 </Link>
                 <Link href="/admin/subscriptions" className={linkClass('/admin/subscriptions')}>
-                    📑 订阅管理
+                    📑 {t('subscriptionManagement')}
                 </Link>
 
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">订阅内容分析</div>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">{t('contentAnalysis')}</div>
                 <Link href="/admin/proxies" className={linkClass('/admin/proxies')}>
-                    🌍 节点列表
+                    🌍 {t('proxyList')}
                 </Link>
                 <Link href="/admin/groups" className={linkClass('/admin/groups')}>
-                    🤖 策略组
+                    🤖 {t('proxyGroups')}
                 </Link>
                 <Link href="/admin/rules" className={linkClass('/admin/rules')}>
-                    ⚡ 分流规则
+                    ⚡ {t('routingRules')}
                 </Link>
 
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">日志</div>
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4 mt-6">{t('logs')}</div>
                 <Link href="/admin/logs" className={linkClass('/admin/logs')}>
-                    📊 日志审计
+                    📊 {t('logAudit')}
                 </Link>
             </nav>
 
             <div className="p-4 border-t border-gray-100">
                 <div className="px-4 py-2 mb-2 text-xs text-gray-500">
-                    当前管理员: <span className="font-bold text-gray-700">{username}</span>
+                    {t('currentAdmin')}: <span className="font-bold text-gray-700">{username}</span>
+                </div>
+                <div className="flex justify-center mb-2">
+                    <LanguageSwitcher />
                 </div>
                 <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors font-medium">
-                    🏠 返回用户中心
+                    🏠 {t('backToDashboard')}
                 </Link>
 
             </div>

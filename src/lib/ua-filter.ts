@@ -53,41 +53,43 @@ export function checkUaFilter(ua: string, config: UaFilterConfig): boolean {
 }
 
 /**
- * UA Presets for quick configuration
+ * UA Presets for quick configuration.
+ * Description values are translation keys under 'common.uaPresets'.
+ * Use t(key) to get the localized description.
  */
 export const UA_PRESETS: Record<string, UaRule> = {
     // Proxy clients (recommended for whitelist)
-    clash: { pattern: 'clash', matchType: 'contains', description: 'Clash 系列客户端' },
-    clashMeta: { pattern: 'ClashMeta', matchType: 'contains', description: 'Clash Meta' },
-    clashVerge: { pattern: 'clash-verge', matchType: 'contains', description: 'Clash Verge' },
-    shadowrocket: { pattern: 'Shadowrocket', matchType: 'contains', description: 'Shadowrocket' },
-    quantumult: { pattern: 'Quantumult', matchType: 'contains', description: 'Quantumult X' },
-    surge: { pattern: 'Surge', matchType: 'contains', description: 'Surge' },
-    v2rayN: { pattern: 'v2rayN', matchType: 'contains', description: 'v2rayN' },
-    v2rayNG: { pattern: 'v2rayNG', matchType: 'contains', description: 'v2rayNG (Android)' },
-    stash: { pattern: 'Stash', matchType: 'contains', description: 'Stash' },
-    loon: { pattern: 'Loon', matchType: 'contains', description: 'Loon' },
+    clash: { pattern: 'clash', matchType: 'contains', description: 'uaPresets.clash' },
+    clashMeta: { pattern: 'ClashMeta', matchType: 'contains', description: 'uaPresets.clashMeta' },
+    clashVerge: { pattern: 'clash-verge', matchType: 'contains', description: 'uaPresets.clashVerge' },
+    shadowrocket: { pattern: 'Shadowrocket', matchType: 'contains', description: 'uaPresets.shadowrocket' },
+    quantumult: { pattern: 'Quantumult', matchType: 'contains', description: 'uaPresets.quantumult' },
+    surge: { pattern: 'Surge', matchType: 'contains', description: 'uaPresets.surge' },
+    v2rayN: { pattern: 'v2rayN', matchType: 'contains', description: 'uaPresets.v2rayN' },
+    v2rayNG: { pattern: 'v2rayNG', matchType: 'contains', description: 'uaPresets.v2rayNG' },
+    stash: { pattern: 'Stash', matchType: 'contains', description: 'uaPresets.stash' },
+    loon: { pattern: 'Loon', matchType: 'contains', description: 'uaPresets.loon' },
 
     // Browsers (optional for whitelist)
-    chrome: { pattern: 'Chrome/', matchType: 'contains', description: 'Chrome 浏览器' },
-    firefox: { pattern: 'Firefox/', matchType: 'contains', description: 'Firefox 浏览器' },
-    safari: { pattern: 'Safari/', matchType: 'contains', description: 'Safari 浏览器' },
-    edge: { pattern: 'Edg/', matchType: 'contains', description: 'Edge 浏览器' },
-    opera: { pattern: 'OPR/', matchType: 'contains', description: 'Opera 浏览器' },
+    chrome: { pattern: 'Chrome/', matchType: 'contains', description: 'uaPresets.chrome' },
+    firefox: { pattern: 'Firefox/', matchType: 'contains', description: 'uaPresets.firefox' },
+    safari: { pattern: 'Safari/', matchType: 'contains', description: 'uaPresets.safari' },
+    edge: { pattern: 'Edg/', matchType: 'contains', description: 'uaPresets.edge' },
+    opera: { pattern: 'OPR/', matchType: 'contains', description: 'uaPresets.opera' },
 
     // Social app browsers (recommended for blacklist, but already blocked in middleware)
-    wechat: { pattern: 'MicroMessenger', matchType: 'contains', description: '微信内置浏览器' },
-    qq: { pattern: 'QQ/', matchType: 'contains', description: 'QQ 内置浏览器' },
-    weibo: { pattern: 'Weibo', matchType: 'contains', description: '微博内置浏览器' },
-    douyin: { pattern: 'aweme', matchType: 'contains', description: '抖音内置浏览器' },
+    wechat: { pattern: 'MicroMessenger', matchType: 'contains', description: 'uaPresets.wechat' },
+    qq: { pattern: 'QQ/', matchType: 'contains', description: 'uaPresets.qq' },
+    weibo: { pattern: 'Weibo', matchType: 'contains', description: 'uaPresets.weibo' },
+    douyin: { pattern: 'aweme', matchType: 'contains', description: 'uaPresets.douyin' },
 
     // Crawlers and automation (recommended for blacklist)
-    curl: { pattern: 'curl/', matchType: 'startsWith', description: 'cURL' },
-    wget: { pattern: 'Wget/', matchType: 'startsWith', description: 'Wget' },
-    pythonRequests: { pattern: 'python-requests', matchType: 'contains', description: 'Python Requests' },
-    goHttp: { pattern: 'Go-http-client', matchType: 'contains', description: 'Go HTTP Client' },
-    axios: { pattern: 'axios/', matchType: 'contains', description: 'Axios (Node.js)' },
-    postman: { pattern: 'PostmanRuntime', matchType: 'contains', description: 'Postman' },
+    curl: { pattern: 'curl/', matchType: 'startsWith', description: 'uaPresets.curl' },
+    wget: { pattern: 'Wget/', matchType: 'startsWith', description: 'uaPresets.wget' },
+    pythonRequests: { pattern: 'python-requests', matchType: 'contains', description: 'uaPresets.pythonRequests' },
+    goHttp: { pattern: 'Go-http-client', matchType: 'contains', description: 'uaPresets.goHttp' },
+    axios: { pattern: 'axios/', matchType: 'contains', description: 'uaPresets.axios' },
+    postman: { pattern: 'PostmanRuntime', matchType: 'contains', description: 'uaPresets.postman' },
 };
 
 /**

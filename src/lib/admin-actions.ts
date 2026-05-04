@@ -74,7 +74,7 @@ export async function revokeAnySession(sessionId: string, type: 'web' | 'client'
     const currentSessionId = cookieStore.get('auth_session')?.value;
 
     if (type === 'web' && sessionId === currentSessionId) {
-        return { success: false, revoked: false, message: '无法注销当前正在使用的管理会话' };
+        return { success: false, revoked: false, message: 'cannotLogoutCurrentSession' };
     }
 
     let success = false;
@@ -87,6 +87,6 @@ export async function revokeAnySession(sessionId: string, type: 'web' | 'client'
     return { 
         success: true, 
         revoked: success,
-        message: success ? '会话已强制下线' : '该会话已失效或不存在'
+        message: success ? 'sessionForceOffline' : 'sessionInvalid'
     };
 }

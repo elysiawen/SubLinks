@@ -40,13 +40,13 @@ export async function createAdminSubscription(
     if (!session) return { error: 'Unauthorized' };
 
     if (!username || username.trim() === '') {
-        return { error: '请选择用户' };
+        return { error: 'selectUser' };
     }
 
     // Check user exists
     const user = await db.getUser(username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     const token = generateToken();
@@ -54,7 +54,7 @@ export async function createAdminSubscription(
 
     const newSub: SubData = {
         username: username.trim(),
-        remark: data.remark || '未命名订阅',
+        remark: data.remark || 'unnamedSubscription',
         enabled: true,
         createdAt: now,
         customRules: data.customRules || '',
@@ -66,7 +66,7 @@ export async function createAdminSubscription(
 
     // Ensure at least one source is selected
     if (!newSub.selectedSources || newSub.selectedSources.length === 0) {
-        return { error: '请至少选择一个上游源' };
+        return { error: 'selectAtLeastOne' };
     }
 
     await db.createSubscription(token, username.trim(), newSub);
@@ -172,7 +172,7 @@ export async function rebuildSubscriptionCache(token: string) {
             return { error: `Failed to rebuild: Server returned ${response.status}` };
         }
 
-        return { success: true, message: '已重建订阅缓存' };
+        return { success: true, message: 'rebuiltSubscriptionCache' };
     } catch (e) {
         console.error('Rebuild error:', e);
         return { error: 'Failed to rebuild cache' };
@@ -237,8 +237,8 @@ export async function precacheAllSubscriptions(force: boolean = false) {
         return {
             success: true,
             message: force
-                ? `已重建 ${successful}/${allSubs.length} 个订阅缓存`
-                : `已预热 ${successful}/${allSubs.length} 个订阅缓存`,
+                ? `rebuiltSubscriptionCacheCount:${successful}/${allSubs.length}`
+                : `prewarmedSubscriptionCacheCount:${successful}/${allSubs.length}`,
             total: allSubs.length,
             cached: successful
         };

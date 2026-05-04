@@ -2,6 +2,7 @@
 
 import type { APIAccessLog } from '@/lib/database/interface';
 import Pagination from '@/components/Pagination';
+import { useTranslations } from 'next-intl';
 
 interface SubscriptionLogsClientProps {
     logs: APIAccessLog[];
@@ -16,6 +17,8 @@ export default function SubscriptionLogsClient({
     currentPage,
     itemsPerPage
 }: SubscriptionLogsClientProps) {
+    const t = useTranslations('dashboard');
+
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString('zh-CN', {
             year: 'numeric',
@@ -31,8 +34,8 @@ export default function SubscriptionLogsClient({
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">订阅日志</h1>
-                    <p className="text-sm text-gray-500 mt-1">查看您的订阅链接访问记录</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{t('logs.subscription.heading')}</h1>
+                    <p className="text-sm text-gray-500 mt-1">{t('logs.subscription.description')}</p>
                 </div>
             </div>
 
@@ -40,7 +43,7 @@ export default function SubscriptionLogsClient({
                 {/* Mobile View (Cards) */}
                 <div className="md:hidden divide-y divide-gray-100">
                     {logs.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">暂无日志记录</div>
+                        <div className="p-6 text-center text-gray-500">{t('logs.subscription.empty')}</div>
                     ) : (
                         logs.map((log) => (
                             <div key={log.id} className="p-4 space-y-3">
@@ -60,7 +63,7 @@ export default function SubscriptionLogsClient({
                                             ? 'bg-green-50 text-green-700'
                                             : 'bg-blue-50 text-blue-700'
                                         }`}>
-                                        {log.apiType || '未知'}
+                                        {log.apiType || t('logs.subscription.unknown')}
                                     </span>
                                     <span className="text-sm font-mono text-gray-600">{log.ip}</span>
                                 </div>
@@ -77,18 +80,18 @@ export default function SubscriptionLogsClient({
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4">时间</th>
-                                <th className="px-6 py-4">类型</th>
-                                <th className="px-6 py-4">IP地址</th>
-                                <th className="px-6 py-4">请求客户端</th>
-                                <th className="px-6 py-4">状态码</th>
+                                <th className="px-6 py-4">{t('logs.subscription.time')}</th>
+                                <th className="px-6 py-4">{t('logs.subscription.type')}</th>
+                                <th className="px-6 py-4">{t('logs.subscription.ip')}</th>
+                                <th className="px-6 py-4">{t('logs.subscription.client')}</th>
+                                <th className="px-6 py-4">{t('logs.subscription.status')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {logs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                        暂无日志记录
+                                        {t('logs.subscription.empty')}
                                     </td>
                                 </tr>
                             ) : (
@@ -102,7 +105,7 @@ export default function SubscriptionLogsClient({
                                                     ? 'bg-green-50 text-green-700'
                                                     : 'bg-blue-50 text-blue-700'
                                                 }`}>
-                                                {log.apiType || '未知'}
+                                                {log.apiType || t('logs.subscription.unknown')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-mono text-gray-600">

@@ -12,7 +12,7 @@ export async function login(prevState: any, formData: FormData) {
     const password = formData.get('password') as string;
     const callbackUrl = formData.get('callbackUrl') as string | null;
 
-    if (!username || !password) return { error: '请输入用户名和密码' };
+    if (!username || !password) return { error: 'emptyCredentials' };
 
     // 1. Check for Admin Init (First Run)
     const { data: allUsers } = await db.getAllUsers(1, 100); // Check first 100 users for admin
@@ -32,25 +32,25 @@ export async function login(prevState: any, formData: FormData) {
                 createdAt: Date.now()
             });
         } else {
-            return { error: '系统初始化中,请使用默认账号 admin/admin 登录' };
+            return { error: 'systemInit' };
         }
     }
 
     // 2. Verify User
     const user = await db.getUser(username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     // Check status
     if (user.status !== 'active') {
-        return { error: '账户已被停用' };
+        return { error: 'accountDisabled' };
     }
 
     // Check password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
-        return { error: '密码错误' };
+        return { error: 'wrongPassword' };
     }
 
     // 2FA Verification
@@ -76,7 +76,7 @@ export async function login(prevState: any, formData: FormData) {
         }
 
         if (!isValid2FA) {
-            return { error: '两步验证码错误' };
+            return { error: 'twoFactorInvalid' };
         }
     }
 

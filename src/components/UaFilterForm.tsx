@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ToastProvider';
 import { UaFilterConfig, UaRule } from '@/lib/database/interface';
 
@@ -10,6 +11,8 @@ interface UaFilterFormProps {
 }
 
 export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
+    const t = useTranslations('common.uaFilter');
+    const tPresets = useTranslations('common.uaPresets');
     const { success, error } = useToast();
 
     // Internal state to manage form fields
@@ -68,16 +71,18 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
         const preset = presets[presetKey];
         // Check if already exists
         if (rules.some(r => r.pattern === preset.pattern && r.matchType === preset.matchType)) {
-            error('该规则已存在');
+            error(t('ruleExists'));
             return;
         }
-        setRules([...rules, { ...preset }]);
-        success(`已添加预设规则: ${preset.description}`);
+        // Translate the description key
+        const translatedPreset = { ...preset, description: tPresets(presetKey) };
+        setRules([...rules, translatedPreset]);
+        success(t('presetAdded', { name: tPresets(presetKey) }));
     };
 
     const testUaFilter = async () => {
         if (!testUa.trim()) {
-            error('请输入 User-Agent 进行测试');
+            error(t('enterUA'));
             return;
         }
 
@@ -87,7 +92,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
             const result = checkUaFilter(testUa, filterConfig);
             setTestResult(result);
         } catch (e) {
-            error('测试失败');
+            error(t('testFailed'));
         }
     };
 
@@ -96,8 +101,8 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
             {/* Enable Toggle */}
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <label className="text-sm font-medium text-gray-700">启用 UA 过滤</label>
-                    <p className="text-xs text-gray-500 mt-1">关闭后将不进行任何 UA 检查（Middleware 层的微信/QQ 拦截仍然生效）</p>
+                    <label className="text-sm font-medium text-gray-700">{t('enableLabel')}</label>
+                    <p className="text-xs text-gray-500 mt-1">{t('enableDesc')}</p>
                 </div>
                 <button
                     type="button"
@@ -112,24 +117,24 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                 <>
                     {/* Mode Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">过滤模式</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('modeLabel')}</label>
                         <select
                             value={mode}
                             onChange={(e) => setMode(e.target.value as 'blacklist' | 'whitelist')}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white text-gray-900"
                         >
-                            <option value="blacklist">🚫 黑名单（拦截匹配的 UA）</option>
-                            <option value="whitelist">✅ 白名单（仅允许匹配的 UA）</option>
+                            <option value="blacklist">{t('blacklistMode')}</option>
+                            <option value="whitelist">{t('whitelistMode')}</option>
                         </select>
                         <p className="text-xs text-gray-500 mt-1">
-                            {mode === 'blacklist' ? '匹配到规则的 UA 将被拒绝访问' : '只有匹配到规则的 UA 才能访问'}
+                            {mode === 'blacklist' ? t('blacklistDesc') : t('whitelistDesc')}
                         </p>
                     </div>
 
                     {/* Preset Quick Add */}
                     {presets && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">快速添加预设规则</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('quickAddPresets')}</label>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 <button type="button" onClick={() => addPreset('clash')} className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                                     ✅ Clash
@@ -162,19 +167,19 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                     {/* Rules List */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">自定义规则 ({rules.length})</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('customRules', { count: rules.length })}</label>
                             <button
                                 type="button"
                                 onClick={addRule}
                                 className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                             >
-                                + 添加规则
+                                {t('addRule')}
                             </button>
                         </div>
 
                         {rules.length === 0 ? (
                             <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                                暂无规则，点击上方按钮添加
+                                {t('noRules')}
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -185,7 +190,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                                 type="text"
                                                 value={rule.pattern}
                                                 onChange={(e) => updateRule(index, 'pattern', e.target.value)}
-                                                placeholder="匹配模式 (例如: clash, Chrome/)"
+                                                placeholder={t('patternPlaceholder')}
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
                                             />
                                             <div className="flex flex-col sm:flex-row gap-2">
@@ -194,17 +199,17 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                                     onChange={(e) => updateRule(index, 'matchType', e.target.value as any)}
                                                     className="block w-full sm:w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-white text-gray-900"
                                                 >
-                                                    <option value="contains">包含</option>
-                                                    <option value="startsWith">开头匹配</option>
-                                                    <option value="endsWith">结尾匹配</option>
-                                                    <option value="exact">完全匹配</option>
-                                                    <option value="regex">正则表达式</option>
+                                                    <option value="contains">{t('contains')}</option>
+                                                    <option value="startsWith">{t('startsWith')}</option>
+                                                    <option value="endsWith">{t('endsWith')}</option>
+                                                    <option value="exact">{t('exact')}</option>
+                                                    <option value="regex">{t('regex')}</option>
                                                 </select>
                                                 <input
                                                     type="text"
                                                     value={rule.description || ''}
                                                     onChange={(e) => updateRule(index, 'description', e.target.value)}
-                                                    placeholder="描述 (可选)"
+                                                    placeholder={t('descriptionPlaceholder')}
                                                     className="block flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
                                                 />
                                             </div>
@@ -214,7 +219,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                             onClick={() => removeRule(index)}
                                             className="w-full sm:w-auto px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm border border-red-100 mt-2 sm:mt-0"
                                         >
-                                            删除
+                                            {t('delete')}
                                         </button>
                                     </div>
                                 ))}
@@ -224,7 +229,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
 
                     {/* UA Testing Tool */}
                     <div className="border-t pt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">🧪 测试 User-Agent</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('testUA')}</label>
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -233,7 +238,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                     setTestUa(e.target.value);
                                     setTestResult(null);
                                 }}
-                                placeholder="输入 UA 字符串进行测试 (例如: clash-verge/1.0.0)"
+                                placeholder={t('testUaPlaceholder')}
                                 className="block flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
                             />
                             <button
@@ -241,12 +246,12 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                 onClick={testUaFilter}
                                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium"
                             >
-                                测试
+                                {t('test')}
                             </button>
                         </div>
                         {testResult !== null && (
                             <div className={`mt-2 p-3 rounded-lg ${testResult ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                {testResult ? '✅ 允许访问' : '❌ 拒绝访问'}
+                                {testResult ? t('allowed') : t('blocked')}
                             </div>
                         )}
                     </div>

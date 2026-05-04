@@ -17,7 +17,7 @@ export async function deleteCustomRule(id: string) {
     const rules = await getAllRuleSetsAdmin();
     const rule = rules.find(r => r.id === id);
     if (!rule || !rule.userId) {
-        throw new Error('配置不存在');
+        throw new Error('configNotFound');
     }
     await db.deleteCustomRule(id, rule.userId);
     revalidatePath('/admin/rules/custom');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
 import StaticSourceEditor from '../sources/StaticSourceEditor';
@@ -14,6 +15,7 @@ export default function AdminProxiesClient({
     totalCount: number,
     sourceTypes?: Record<string, string>
 }) {
+    const t = useTranslations('admin.proxies');
     const { success } = useToast();
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
     const [selectedProxyIndex, setSelectedProxyIndex] = useState<number>(0);
@@ -39,7 +41,7 @@ export default function AdminProxiesClient({
     const copyToClipboard = (text: string, label: string) => {
         if (!text) return;
         navigator.clipboard.writeText(text);
-        success(`已复制 ${label}`);
+        success(t('copied', { label }));
     };
 
     const handleProxySelect = (idx: number) => {
@@ -51,14 +53,14 @@ export default function AdminProxiesClient({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    🌍 节点列表
+                    🌍 {t('title')}
                     <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{totalCount}</span>
                 </h2>
             </div>
 
             {sources.length === 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                    暂无节点数据
+                    {t('noProxies')}
                 </div>
             )}
 
@@ -77,14 +79,14 @@ export default function AdminProxiesClient({
                                     📡 {source}
                                     {sourceTypes[source] === 'static' && (
                                         <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                                            静态
+                                            {t('staticBadge')}
                                         </span>
                                     )}
                                 </h3>
                             </div>
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">节点数量</span>
+                                    <span className="text-gray-600">{t('nodeCount')}</span>
                                     <span className="font-semibold text-blue-600">{proxies.length}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-1">
@@ -105,14 +107,14 @@ export default function AdminProxiesClient({
                                     }}
                                     className={`bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
                                 >
-                                    查看详情
+                                    {t('viewDetail')}
                                 </button>
                                 {sourceTypes[source] === 'static' && (
                                     <button
                                         onClick={() => setEditingSource(source)}
                                         className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
                                     >
-                                        ⚙️ 管理
+                                        ⚙️ {t('manage')}
                                     </button>
                                 )}
                             </div>
@@ -148,7 +150,7 @@ export default function AdminProxiesClient({
                                     : 'text-gray-500'
                                     }`}
                             >
-                                节点列表 ({filteredProxies.length})
+                                {t('proxyList')} ({filteredProxies.length})
                             </button>
                             <button
                                 onClick={() => setMobileView('detail')}
@@ -158,7 +160,7 @@ export default function AdminProxiesClient({
                                     }`}
                                 disabled={!selectedProxy}
                             >
-                                节点详情
+                                {t('proxyDetail')}
                             </button>
                         </div>
 
@@ -169,7 +171,7 @@ export default function AdminProxiesClient({
                                 <div className="px-3 py-3 border-b border-gray-200 bg-white shrink-0">
                                     <input
                                         type="text"
-                                        placeholder="搜索节点..."
+                                        placeholder={t('searchPlaceholder')}
                                         value={searchTerm}
                                         onChange={(e) => {
                                             setSearchTerm(e.target.value);
@@ -198,7 +200,7 @@ export default function AdminProxiesClient({
                                     ))}
                                     {filteredProxies.length === 0 && (
                                         <div className="text-center py-8 text-gray-400 text-sm">
-                                            无匹配节点
+                                            {t('noMatch')}
                                         </div>
                                     )}
                                 </div>
@@ -216,7 +218,7 @@ export default function AdminProxiesClient({
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                             </svg>
-                                            返回列表
+                                            {t('backToList')}
                                         </button>
 
                                         {/* Header */}
@@ -249,19 +251,19 @@ export default function AdminProxiesClient({
                                         {/* Connection Info */}
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                             <div className="space-y-4">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">基础连接</h4>
+                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('basicConnection')}</h4>
                                                 <div className="space-y-3">
                                                     <div className="group">
-                                                        <label className="text-xs text-gray-500 block mb-1">服务器地址</label>
+                                                        <label className="text-xs text-gray-500 block mb-1">{t('serverAddress')}</label>
                                                         <div className="flex items-center gap-2">
                                                             <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.server}</code>
-                                                            <button onClick={() => copyToClipboard(selectedProxy.server || '', '服务器地址')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
-                                                                复制
+                                                            <button onClick={() => copyToClipboard(selectedProxy.server || '', t('serverAddress'))} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
+                                                                Copy
                                                             </button>
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">端口</label>
+                                                        <label className="text-xs text-gray-500 block mb-1">{t('port')}</label>
                                                         <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 inline-block">{selectedProxy.port}</code>
                                                     </div>
                                                     {selectedProxy.uuid && (
@@ -270,25 +272,25 @@ export default function AdminProxiesClient({
                                                             <div className="flex items-center gap-2">
                                                                 <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.uuid}</code>
                                                                 <button onClick={() => copyToClipboard(selectedProxy.uuid || '', 'UUID')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
-                                                                    复制
+                                                                    Copy
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     )}
                                                     {selectedProxy.password && (
                                                         <div className="group">
-                                                            <label className="text-xs text-gray-500 block mb-1">密码</label>
+                                                            <label className="text-xs text-gray-500 block mb-1">Password</label>
                                                             <div className="flex items-center gap-2">
                                                                 <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.password}</code>
-                                                                <button onClick={() => copyToClipboard(selectedProxy.password || '', '密码')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
-                                                                    复制
+                                                                <button onClick={() => copyToClipboard(selectedProxy.password || '', 'Password')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
+                                                                    Copy
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     )}
                                                     {selectedProxy.cipher && (
                                                         <div>
-                                                            <label className="text-xs text-gray-500 block mb-1">加密方式</label>
+                                                            <label className="text-xs text-gray-500 block mb-1">{t('cipher')}</label>
                                                             <span className="text-sm text-gray-800 font-medium">{selectedProxy.cipher}</span>
                                                         </div>
                                                     )}
@@ -297,11 +299,11 @@ export default function AdminProxiesClient({
 
                                             {/* Transport & Security */}
                                             <div className="space-y-4">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">传输与安全</h4>
+                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('transportSecurity')}</h4>
                                                 <div className="space-y-3">
                                                     {selectedProxy.network && (
                                                         <div>
-                                                            <label className="text-xs text-gray-500 block mb-1">传输协议</label>
+                                                            <label className="text-xs text-gray-500 block mb-1">{t('transportProtocol')}</label>
                                                             <span className="text-sm font-medium text-gray-800">{selectedProxy.network}</span>
                                                         </div>
                                                     )}
@@ -309,7 +311,7 @@ export default function AdminProxiesClient({
                                                     {/* WS Settings */}
                                                     {selectedProxy['ws-opts'] && (
                                                         <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                                            <div className="font-semibold text-xs text-blue-700 mb-2">Websocket 配置</div>
+                                                            <div className="font-semibold text-xs text-blue-700 mb-2">{t('wsConfig')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy['ws-opts'].path && (
                                                                     <div>
@@ -330,7 +332,7 @@ export default function AdminProxiesClient({
                                                     {/* gRPC Settings */}
                                                     {selectedProxy['grpc-opts'] && (
                                                         <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                                                            <div className="font-semibold text-xs text-purple-700 mb-2">gRPC 配置</div>
+                                                            <div className="font-semibold text-xs text-purple-700 mb-2">{t('grpcConfig')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy['grpc-opts']['grpc-service-name'] && (
                                                                     <div>
@@ -345,7 +347,7 @@ export default function AdminProxiesClient({
                                                     {/* TLS Settings */}
                                                     {(selectedProxy.tls || selectedProxy.servername || selectedProxy['skip-cert-verify'] !== undefined) && (
                                                         <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                                                            <div className="font-semibold text-xs text-green-700 mb-2">TLS 安全</div>
+                                                            <div className="font-semibold text-xs text-green-700 mb-2">{t('tlsSecurity')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy.servername && (
                                                                     <div>
@@ -355,7 +357,7 @@ export default function AdminProxiesClient({
                                                                 )}
                                                                 {selectedProxy['skip-cert-verify'] !== undefined && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">跳过证书验证</span>
+                                                                        <span className="text-gray-600 text-xs block">{t('skipCertVerify')}</span>
                                                                         <span className={`font-mono ${selectedProxy['skip-cert-verify'] ? 'text-red-600' : 'text-green-600'}`}>
                                                                             {selectedProxy['skip-cert-verify'] ? 'True' : 'False'}
                                                                         </span>
@@ -377,12 +379,12 @@ export default function AdminProxiesClient({
                                         {/* Raw JSON */}
                                         <div className="space-y-3 border-t pt-4">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">原始配置</h4>
+                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('rawConfig')}</h4>
                                                 <button
-                                                    onClick={() => copyToClipboard(JSON.stringify(selectedProxy, null, 2), 'JSON 配置')}
+                                                    onClick={() => copyToClipboard(JSON.stringify(selectedProxy, null, 2), 'JSON')}
                                                     className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 rounded transition-colors"
                                                 >
-                                                    复制 JSON
+                                                    {t('copyJson')}
                                                 </button>
                                             </div>
                                             <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
@@ -396,7 +398,7 @@ export default function AdminProxiesClient({
                                     <div className="h-full flex items-center justify-center text-gray-400">
                                         <div className="text-center">
                                             <div className="text-4xl mb-2">👈</div>
-                                            <p>请在左侧选择一个节点查看详情</p>
+                                            <p>{t('selectNodeHint')}</p>
                                         </div>
                                     </div>
                                 )}

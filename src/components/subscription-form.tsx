@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ConfigSet } from '@/lib/config-actions';
 import yaml from 'js-yaml';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -44,10 +45,13 @@ export default function SubscriptionForm({
     onSubmit,
     onCancel,
     isAdmin = false,
-    submitLabel = '保存'
+    submitLabel
 }: SubscriptionFormProps) {
+    const t = useTranslations('common.subscriptionForm');
     const { error } = useToast();
     const [loading, setLoading] = useState(false);
+
+    const displaySubmitLabel = submitLabel || t('save');
 
     // Form State
     // User dashboard uses 'name' for remark field mapping. Admin uses 'remark'.
@@ -278,7 +282,7 @@ export default function SubscriptionForm({
     const handleSubmit = async () => {
         // Validation: require at least one source
         if (selectedSources.length === 0) {
-            error('请至少选择一个上游源');
+            error(t('selectAtLeastOneSource'));
             return;
         }
 
@@ -317,19 +321,19 @@ export default function SubscriptionForm({
     return (
         <div className="space-y-5">
             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">备注名称</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('remarkLabel')}</label>
                 <input
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="例如：iPhone, 家里软路由"
+                    placeholder={t('remarkPlaceholder')}
                 />
             </div>
 
             {/* Upstream Source Selection */}
             {availableSources.length > 0 && (
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">选择上游源</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('selectSource')}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
                         {availableSources.map(source => {
                             const isSelected = selectedSources.includes(source.name);
@@ -360,13 +364,13 @@ export default function SubscriptionForm({
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className={`font-medium text-sm truncate ${isDisabled ? 'text-gray-500' : 'text-gray-900'}`}>{source.name}</span>
                                             {isDisabled && (
-                                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 text-gray-500 font-medium">已禁用</span>
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 text-gray-500 font-medium">{t('disabled')}</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={`flex h-2 w-2 rounded-full ${source.status === 'success' ? 'bg-green-500' : source.status === 'failure' ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
                                             <span className="text-xs text-gray-500">
-                                                {source.status === 'success' ? '正常' : source.status === 'failure' ? '失败' : '等待'}
+                                                {source.status === 'success' ? t('normal') : source.status === 'failure' ? t('failure') : t('waiting')}
                                             </span>
                                             {source.lastUpdated && source.lastUpdated > 0 && (
                                                 <span className="text-[10px] text-gray-400">
@@ -398,7 +402,7 @@ export default function SubscriptionForm({
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        请选择至少一个上游节点源
+                        {t('selectSourceHint')}
                     </p>
                 </div>
             )}
@@ -413,7 +417,7 @@ export default function SubscriptionForm({
                             onChange={e => setEnabled(e.target.checked)}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-sm font-medium text-gray-700">启用订阅</span>
+                        <span className="text-sm font-medium text-gray-700">{t('enableSubscription')}</span>
                     </label>
                 </div>
             )}
@@ -426,8 +430,8 @@ export default function SubscriptionForm({
                     className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
                 >
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-700">⚙️ 高级配置</span>
-                        <span className="text-xs text-gray-500">(策略组、规则、自定义规则)</span>
+                        <span className="text-sm font-semibold text-gray-700">{t('advancedConfig')}</span>
+                        <span className="text-xs text-gray-500">{t('advancedConfigDesc')}</span>
                     </div>
                     <svg
                         className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''
@@ -444,26 +448,26 @@ export default function SubscriptionForm({
                     <div className="mt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">策略组配置</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('groupConfig')}</label>
                                 <select
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
                                     value={groupId}
                                     onChange={e => handleGroupChange(e.target.value)}
                                 >
-                                    <option value="default">默认 (跟随上游)</option>
+                                    <option value="default">{t('defaultFollowUpstream')}</option>
                                     {configSets.groups.map(g => (
                                         <option key={g.id} value={g.id}>{g.name}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">分流规则配置</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('ruleConfig')}</label>
                                 <select
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
                                     value={ruleId}
                                     onChange={e => setRuleId(e.target.value)}
                                 >
-                                    <option value="default">默认 (跟随上游)</option>
+                                    <option value="default">{t('defaultFollowUpstream')}</option>
                                     {configSets.rules.map(r => (
                                         <option key={r.id} value={r.id}>{r.name}</option>
                                     ))}
@@ -473,25 +477,25 @@ export default function SubscriptionForm({
 
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-semibold text-gray-700">追加自定义规则</label>
+                                <label className="block text-sm font-semibold text-gray-700">{t('appendCustomRules')}</label>
                                 <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setRuleMode('simple');
-                                            // Sync text to GUI is handled by useEffect when mode changes, 
+                                            // Sync text to GUI is handled by useEffect when mode changes,
                                             // but we want to make sure customRules state is current source of truth
                                         }}
                                         className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
                                     >
-                                        简易模式
+                                        {t('simpleMode')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setRuleMode('advanced')}
                                         className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'}`}
                                     >
-                                        高级模式
+                                        {t('advancedMode')}
                                     </button>
                                 </div>
                             </div>
@@ -514,7 +518,7 @@ export default function SubscriptionForm({
                                         {/* Domain/Value Input - Full width on mobile */}
                                         <input
                                             className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none focus:border-blue-500"
-                                            placeholder={newRuleType === 'MATCH' ? '无需填写' : 'google.com'}
+                                            placeholder={newRuleType === 'MATCH' ? 'N/A' : 'google.com'}
                                             value={newRuleValue}
                                             onChange={e => setNewRuleValue(e.target.value)}
                                             disabled={newRuleType === 'MATCH'}
@@ -527,7 +531,7 @@ export default function SubscriptionForm({
                                                 value={newRuleType}
                                                 onChange={e => setNewRuleType(e.target.value)}
                                             >
-                                                {RuleTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                                {RuleTypes.map(rt => <option key={rt} value={rt}>{rt}</option>)}
                                             </select>
 
                                             <select
@@ -568,7 +572,7 @@ export default function SubscriptionForm({
                                         ))}
                                         {guiRules.length === 0 && (
                                             <div className="text-center text-gray-400 text-xs py-8 italic">
-                                                添加几条自定义规则...
+                                                {t('addCustomRulesPlaceholder')}
                                             </div>
                                         )}
                                     </div>
@@ -585,12 +589,12 @@ export default function SubscriptionForm({
                     onClick={onCancel}
                     className="flex-1 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 border border-gray-200"
                 >
-                    取消
+                    {t('cancel')}
                 </button>
                 <SubmitButton
                     onClick={handleSubmit}
                     isLoading={loading}
-                    text={submitLabel}
+                    text={displaySubmitLabel}
                     className="flex-1 px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20"
                 />
             </div>
@@ -606,16 +610,16 @@ export default function SubscriptionForm({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
-                        <span>检测到上游源依赖</span>
+                        <span>{t('dependencyDetected')}</span>
                     </div>
                 }
                 maxWidth="max-w-md"
             >
-                <p className="text-sm text-gray-500 mb-4">该策略组引用了您未选择的上游源</p>
+                <p className="text-sm text-gray-500 mb-4">{t('dependencyDesc')}</p>
 
                 <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
                     <div>
-                        <span className="text-xs text-gray-500 font-medium">策略组依赖的上游源:</span>
+                        <span className="text-xs text-gray-500 font-medium">{t('missingSourcesLabel')}</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {missingSources.map(source => (
                                 <span key={source} className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-lg border border-amber-200">
@@ -625,21 +629,21 @@ export default function SubscriptionForm({
                         </div>
                     </div>
                     <div>
-                        <span className="text-xs text-gray-500 font-medium">您已选择的上游源:</span>
+                        <span className="text-xs text-gray-500 font-medium">{t('selectedSourcesLabel')}</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {selectedSources.length > 0 ? selectedSources.map(source => (
                                 <span key={source} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg border border-blue-200">
                                     {source}
                                 </span>
                             )) : (
-                                <span className="text-xs text-gray-400">无</span>
+                                <span className="text-xs text-gray-400">{t('none')}</span>
                             )}
                         </div>
                     </div>
                 </div>
 
                 <p className="text-sm text-gray-600 mb-4">
-                    是否将缺失的上游源一并勾选？如果选择 <strong className="text-gray-900">否</strong>，未选择上游源中涉及的节点将显示为 <code className="px-1 py-0.5 bg-red-100 text-red-600 rounded text-xs">REJECT</code> 或不包含该源的节点。
+                    {t('dependencyQuestion')}
                 </p>
 
                 <div className="flex gap-3">
@@ -647,13 +651,13 @@ export default function SubscriptionForm({
                         onClick={declineAddMissingSources}
                         className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
-                        否，继续使用
+                        {t('noContinue')}
                     </button>
                     <button
                         onClick={confirmAddMissingSources}
                         className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        是，一并勾选
+                        {t('yesSelectAll')}
                     </button>
                 </div>
             </Modal>

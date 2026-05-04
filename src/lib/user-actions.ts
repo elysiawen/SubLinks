@@ -19,7 +19,7 @@ export async function getCurrentSession() {
 
 export async function setup2FA() {
     const session = await getCurrentSession();
-    if (!session) return { error: '未登录' };
+    if (!session) return { error: 'notLoggedIn' };
 
     const secret = generateSecret();
     const otpauth = generateURI({
@@ -33,7 +33,7 @@ export async function setup2FA() {
         return { secret, qrCode };
     } catch (err) {
         console.error('QR Code generation failed:', err);
-        return { error: '生成二维码失败' };
+        return { error: 'qrGenerateFailed' };
     }
 }
 
@@ -44,9 +44,9 @@ export async function enable2FA(secret: string, token: string) {
     // Verify the token with the provided secret (not saved yet)
     try {
         const result = await verify({ token, secret });
-        if (!result?.valid) return { error: '验证码错误' };
+        if (!result?.valid) return { error: 'twoFactorInvalid' };
     } catch (err) {
-        return { error: '验证失败' };
+        return { error: 'twoFactorInvalid' };
     }
 
     // Update user
@@ -71,24 +71,24 @@ export async function getCurrentUser() {
 export async function changePassword(oldPassword: string, newPassword: string) {
     const session = await getCurrentSession();
     if (!session) {
-        return { error: '未登录' };
+        return { error: 'notLoggedIn' };
     }
 
     // Get user
     const user = await db.getUser(session.username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     // Verify old password
     const isValid = await verifyPassword(oldPassword, user.password);
     if (!isValid) {
-        return { error: '原密码错误' };
+        return { error: 'wrongOldPassword' };
     }
 
     // Validate new password
     if (!newPassword || newPassword.length < 4) {
-        return { error: '新密码至少需要4个字符' };
+        return { error: 'newPasswordTooShort' };
     }
 
     // Hash and update password
@@ -120,7 +120,7 @@ export async function deleteOwnAccount(password: string) {
     }
 
     if (session.role === 'admin') {
-        return { error: '管理员账号无法通过此方式删除，请联系技术支持' };
+        return { error: 'adminCannotDelete' };
         // Protecting admin account from accidental self-deletion
     }
 
@@ -133,7 +133,7 @@ export async function deleteOwnAccount(password: string) {
     // Verify password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
-        return { error: '密码错误，验证失败' };
+        return { error: 'passwordVerifyFailed' };
     }
 
     // Delete user
@@ -158,7 +158,7 @@ export async function updateNickname(nickname: string) {
 
     // Validate nickname
     if (nickname && nickname.length > 50) {
-        return { error: '昵称不能超过50个字符' };
+        return { error: 'nicknameTooLong' };
     }
 
     // Get user
@@ -205,17 +205,17 @@ export async function uploadAvatar(formData: FormData) {
 
     const file = formData.get('avatar') as File;
     if (!file) {
-        return { error: '未上传文件' };
+        return { error: 'noFileUploaded' };
     }
 
     // Check file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-        return { error: '文件大小不能超过 10MB' };
+        return { error: 'fileTooLarge' };
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-        return { error: '只支持图片文件' };
+        return { error: 'imageOnly' };
     }
 
     try {
@@ -227,7 +227,7 @@ export async function uploadAvatar(formData: FormData) {
         const { ImageProcessor } = await import('@/lib/image-processor');
         const isValid = await ImageProcessor.validateImage(buffer);
         if (!isValid) {
-            return { error: '无效的图片文件' };
+            return { error: 'invalidImage' };
         }
 
         // Process image (resize to 500x500, convert to WebP)
@@ -288,24 +288,24 @@ export async function uploadAvatar(formData: FormData) {
         return { success: true, avatarUrl };
     } catch (error) {
         console.error('Avatar upload error:', error);
-        return { error: '上传失败，请稍后重试' };
+        return { error: 'uploadFailed' };
     }
 }
 
 export async function deleteAvatar() {
     const session = await getCurrentSession();
     if (!session) {
-        return { error: '未登录' };
+        return { error: 'notLoggedIn' };
     }
 
     // Get user
     const user = await db.getUser(session.username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     if (!user.avatar) {
-        return { error: '未设置头像' };
+        return { error: 'noAvatar' };
     }
 
     try {
@@ -428,7 +428,7 @@ export async function disable2FA(password: string) {
     // Verify password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
-        return { error: '密码错误' };
+        return { error: 'wrongPassword' };
     }
 
     // Disable 2FA
@@ -451,7 +451,7 @@ export async function revokeSession(sessionId: string, type: 'web' | 'client') {
     const currentSessionId = cookieStore.get('auth_session')?.value;
 
     if (type === 'web' && sessionId === currentSessionId) {
-        return { success: false, message: '无法下线当前正在使用的会话' };
+        return { success: false, message: 'cannotOfflineCurrent' };
     }
 
     let success = false;
@@ -464,6 +464,6 @@ export async function revokeSession(sessionId: string, type: 'web' | 'client') {
     return { 
         success: true, // We still return success as true to indicate the request finished
         revoked: success, // But add a 'revoked' field for actual deletion status
-        message: success ? '强制下线命令已发出，设备将立即退出' : '会话不存在或已过期'
+        message: success ? 'forceOfflineIssued' : 'sessionNotFound'
     };
 }

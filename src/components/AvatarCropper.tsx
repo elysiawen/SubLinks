@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
@@ -12,6 +13,7 @@ interface AvatarCropperProps {
 }
 
 export default function AvatarCropper({ image, onCropComplete, onCancel }: AvatarCropperProps) {
+    const t = useTranslations('common.avatarCropper');
     const imgRef = useRef<HTMLImageElement>(null);
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -46,7 +48,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
 
     const handleConfirm = async () => {
         if (!completedCrop || !imgRef.current) {
-            alert('请先选择裁剪区域');
+            alert(t('selectCropArea'));
             return;
         }
 
@@ -116,13 +118,13 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                 if (blob) {
                     onCropComplete(blob);
                 } else {
-                    alert('裁剪失败，请重试');
+                    alert(t('cropFailed'));
                 }
                 setLoading(false);
             }, 'image/webp', 0.9);
         } catch (error) {
             console.error('Crop error:', error);
-            alert('裁剪失败，请重试');
+            alert(t('cropFailed'));
             setLoading(false);
         }
     };
@@ -134,8 +136,8 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
             <div className="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl animate-zoom-in">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-900">裁剪头像</h2>
-                    <p className="text-sm text-gray-500 mt-1">拖动和调整裁剪框来选择区域</p>
+                    <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
                 </div>
 
                 {/* Cropper */}
@@ -166,7 +168,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-gray-700">
-                                旋转角度
+                                {t('rotation')}
                             </label>
                             <span className="text-sm text-gray-500">{rotation}°</span>
                         </div>
@@ -178,19 +180,19 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                 </svg>
-                                左转 90°
+                                {t('rotateLeft')}
                             </button>
                             <button
                                 onClick={() => setRotation(0)}
                                 className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                             >
-                                重置
+                                {t('reset')}
                             </button>
                             <button
                                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
                                 className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
                             >
-                                右转 90°
+                                {t('rotateRight')}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
                                 </svg>
@@ -216,7 +218,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                             disabled={loading}
                             className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            取消
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={handleConfirm}
@@ -229,10 +231,10 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    处理中...
+                                    {t('processing')}
                                 </>
                             ) : (
-                                '确认上传'
+                                t('confirmUpload')
                             )}
                         </button>
                     </div>

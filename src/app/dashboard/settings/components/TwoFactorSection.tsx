@@ -6,6 +6,7 @@ import { useToast } from '@/components/ToastProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 import Modal from '@/components/Modal';
 import SecurityVerificationModal from './SecurityVerificationModal';
+import { useTranslations } from 'next-intl';
 
 interface TwoFactorSectionProps {
     initialTotpEnabled: boolean;
@@ -13,6 +14,7 @@ interface TwoFactorSectionProps {
 
 export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectionProps) {
     const { success, error } = useToast();
+    const t = useTranslations('dashboard');
 
     // 2FA State
     const [twoFAEnabled, setTwoFAEnabled] = useState(initialTotpEnabled);
@@ -43,7 +45,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
 
     const handleEnable2FA = async () => {
         if (!token) {
-            error('请输入验证码');
+            error(t('settings.twoFactor.enterCode'));
             return;
         }
         if (!secret) return;
@@ -55,7 +57,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
         if (result.error) {
             error(result.error);
         } else {
-            success('两步验证已启用');
+            success(t('settings.twoFactor.enabledSuccess'));
             setTwoFAEnabled(true);
             setShow2FAModal(false);
             setToken('');
@@ -71,7 +73,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
         if (result.error) {
             error(result.error);
         } else {
-            success('两步验证已关闭');
+            success(t('settings.twoFactor.disabledSuccess'));
             setTwoFAEnabled(false);
             setShowDisableVerify(false);
         }
@@ -81,23 +83,23 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100">
                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    🛡️ 两步验证 (2FA)
+                    {t('settings.twoFactor.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">使用 Google Authenticator 或其他应用生成验证码</p>
+                <p className="text-sm text-gray-500 mt-1">{t('settings.twoFactor.description')}</p>
             </div>
             <div className="p-6 space-y-4 max-w-lg">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="font-medium text-gray-900">
-                            当前状态:
+                            {t('settings.twoFactor.statusLabel')}
                             <span className={`ml-2 px-2 py-1 rounded text-xs ${twoFAEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                {twoFAEnabled ? '已启用' : '未启用'}
+                                {twoFAEnabled ? t('settings.twoFactor.enabled') : t('settings.twoFactor.disabled')}
                             </span>
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                             {twoFAEnabled
-                                ? '您的账户已受到两步验证保护'
-                                : '建议启用两步验证以提高账户安全性'}
+                                ? t('settings.twoFactor.enabledDesc')
+                                : t('settings.twoFactor.disabledDesc')}
                         </p>
                     </div>
                     <button
@@ -108,7 +110,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                             : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
-                        {twoFALoading ? '处理中...' : (twoFAEnabled ? '关闭 2FA' : '启用 2FA')}
+                        {twoFALoading ? t('settings.twoFactor.processing') : (twoFAEnabled ? t('settings.twoFactor.disable') : t('settings.twoFactor.enable'))}
                     </button>
                 </div>
             </div>
@@ -117,12 +119,12 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
             <Modal
                 isOpen={show2FAModal}
                 onClose={() => setShow2FAModal(false)}
-                title="启用两步验证"
+                title={t('settings.twoFactor.setupTitle')}
             >
                 <div className="space-y-6">
                     <div className="text-center">
                         <p className="text-sm text-gray-600 mb-4">
-                            请使用 Google Authenticator 或其他应用扫描下方二维码
+                            {t('settings.twoFactor.scanQR')}
                         </p>
                         {qrCode && (
                             <div className="flex justify-center mb-4">
@@ -130,12 +132,12 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                             </div>
                         )}
                         {secret && (
-                            <p className="text-xs text-gray-400 font-mono select-all">密钥: {secret}</p>
+                            <p className="text-xs text-gray-400 font-mono select-all">{t('settings.twoFactor.secret')} {secret}</p>
                         )}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">输入 6 位验证码</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.twoFactor.verificationCode')}</label>
                         <input
                             type="text"
                             value={token}
@@ -148,7 +150,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
 
                     <div className="flex gap-2 pt-2">
                         <SubmitButton
-                            text="启用验证"
+                            text={t('settings.twoFactor.verify')}
                             onClick={handleEnable2FA}
                             isLoading={twoFALoading}
                             className="w-full"
@@ -162,10 +164,10 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
             <SecurityVerificationModal
                 isOpen={showDisableVerify}
                 onClose={() => setShowDisableVerify(false)}
-                title="关闭两步验证"
-                description="为了保障您的账户安全，在关闭两步验证前我们需要验证您的登录密码。"
+                title={t('settings.twoFactor.disableTitle')}
+                description={t('settings.twoFactor.disableDesc')}
                 onConfirm={handleDisable2FAConfirm}
-                confirmText="确认关闭"
+                confirmText={t('settings.twoFactor.disableConfirm')}
                 isLoading={disableLoading}
             />
         </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface DashboardStats {
     users: {
@@ -29,9 +30,11 @@ interface DashboardStats {
 
 export default function DashboardClient({ stats }: { stats: DashboardStats }) {
     const router = useRouter();
+    const t = useTranslations('admin.dashboard');
+    const locale = useLocale();
 
     const formatTimestamp = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString('zh-CN', {
+        return new Date(timestamp).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
@@ -44,8 +47,8 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-800">📊 系统概览</h1>
-                <p className="text-gray-500 mt-1">管理后台数据统计与快捷操作</p>
+                <h1 className="text-3xl font-bold text-gray-800">{t('systemOverview')}</h1>
+                <p className="text-gray-500 mt-1">{t('description')}</p>
             </div>
 
             {/* Statistics Cards */}
@@ -54,12 +57,12 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">👥</span>
-                            <span className="text-xs text-gray-400">用户</span>
+                            <span className="text-xs text-gray-400">{t('users')}</span>
                         </div>
                         <div className="text-3xl font-bold text-gray-800 mb-1">{stats.users.total}</div>
                         <div className="flex gap-3 text-xs">
-                            <span className="text-green-600">✓ {stats.users.active} 活跃</span>
-                            <span className="text-gray-400">✗ {stats.users.inactive} 停用</span>
+                            <span className="text-green-600">{t('active', { count: stats.users.active })}</span>
+                            <span className="text-gray-400">{t('inactive', { count: stats.users.inactive })}</span>
                         </div>
                     </div>
                 </Link>
@@ -68,10 +71,10 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📝</span>
-                            <span className="text-xs text-gray-400">订阅</span>
+                            <span className="text-xs text-gray-400">{t('subscriptions')}</span>
                         </div>
                         <div className="text-3xl font-bold text-gray-800 mb-1">{stats.subscriptions.total}</div>
-                        <div className="text-xs text-green-600">✓ {stats.subscriptions.active} 活跃</div>
+                        <div className="text-xs text-green-600">{t('subActive', { count: stats.subscriptions.active })}</div>
                     </div>
                 </Link>
 
@@ -79,12 +82,12 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📡</span>
-                            <span className="text-xs text-gray-400">上游源</span>
+                            <span className="text-xs text-gray-400">{t('upstreamSources')}</span>
                         </div>
                         <div className="text-3xl font-bold text-gray-800 mb-1">{stats.upstreamSources.total}</div>
                         <div className="flex gap-3 text-xs">
-                            <span className="text-green-600">✓ {stats.upstreamSources.active} 启用</span>
-                            <span className="text-gray-400">✗ {stats.upstreamSources.total - stats.upstreamSources.active} 禁用</span>
+                            <span className="text-green-600">{t('enabled', { count: stats.upstreamSources.active })}</span>
+                            <span className="text-gray-400">{t('disabled', { count: stats.upstreamSources.total - stats.upstreamSources.active })}</span>
                         </div>
                         {stats.upstreamSources.defaultSource && (
                             <div className="text-xs text-yellow-600 mt-1">⭐ {stats.upstreamSources.defaultSource}</div>
@@ -96,10 +99,10 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer h-full">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-2xl">📈</span>
-                            <span className="text-xs text-gray-400">访问量</span>
+                            <span className="text-xs text-gray-400">{t('accessVolume')}</span>
                         </div>
                         <div className="text-3xl font-bold text-gray-800 mb-1">{stats.recentAccess.count24h}</div>
-                        <div className="text-xs text-gray-500">最近 24 小时</div>
+                        <div className="text-xs text-gray-500">{t('recent24h')}</div>
                     </div>
                 </Link>
             </div>
@@ -107,32 +110,32 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    ⚡ 快捷操作
+                    {t('quickActions')}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <button
                         onClick={() => router.push('/admin/users')}
                         className="bg-blue-50 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
                     >
-                        👤 添加用户
+                        {t('addUser')}
                     </button>
                     <button
                         onClick={() => router.push('/admin/sources')}
                         className="bg-green-50 text-green-600 px-4 py-3 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
                     >
-                        📡 添加上游源
+                        {t('addSource')}
                     </button>
                     <button
                         onClick={() => router.push('/admin/logs')}
                         className="bg-purple-50 text-purple-600 px-4 py-3 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
                     >
-                        📋 查看日志
+                        {t('viewLogs')}
                     </button>
                     <button
                         onClick={() => router.push('/admin/settings')}
                         className="bg-gray-50 text-gray-600 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
                     >
-                        ⚙️ 系统设置
+                        {t('systemSettings')}
                     </button>
                 </div>
             </div>
@@ -143,14 +146,14 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            🔧 最新系统日志
+                            {t('latestSystemLogs')}
                         </h2>
                         <Link href="/admin/logs?tab=system" className="text-sm text-blue-600 hover:underline">
-                            查看全部 →
+                            {t('viewAll')}
                         </Link>
                     </div>
                     {stats.latestLogs.system.length === 0 ? (
-                        <p className="text-gray-400 text-sm text-center py-4">暂无系统日志</p>
+                        <p className="text-gray-400 text-sm text-center py-4">{t('noSystemLogs')}</p>
                     ) : (
                         <div className="space-y-2">
                             {stats.latestLogs.system.map((log, idx) => (
@@ -175,37 +178,37 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            🌐 最新访问日志
+                            {t('latestAccessLogs')}
                         </h2>
                         <Link href="/admin/logs?tab=access" className="text-sm text-blue-600 hover:underline">
-                            查看全部 →
+                            {t('viewAll')}
                         </Link>
                     </div>
                     {stats.latestLogs.access.length === 0 ? (
-                        <p className="text-gray-400 text-sm text-center py-4">暂无访问日志</p>
+                        <p className="text-gray-400 text-sm text-center py-4">{t('noAccessLogs')}</p>
                     ) : (
                         <div className="space-y-3">
                             {stats.latestLogs.access.map((log: any, idx) => {
                                 // Simple User-Agent parser
                                 const ua = log.ua || log.userAgent || '';
-                                let clientName = '未知客户端';
+                                let clientName = t('unknownClient');
                                 if (ua.includes('Clash')) clientName = 'Clash';
                                 else if (ua.includes('Shadowrocket')) clientName = 'Shadowrocket';
                                 else if (ua.includes('Quantumult')) clientName = 'Quantumult';
                                 else if (ua.includes('Surge')) clientName = 'Surge';
                                 else if (ua.includes('Stash')) clientName = 'Stash';
-                                else if (ua.includes('Mozilla') || ua.includes('Chrome') || ua.includes('Safari')) clientName = '浏览器';
+                                else if (ua.includes('Mozilla') || ua.includes('Chrome') || ua.includes('Safari')) clientName = t('browser');
                                 else if (ua.length > 0) clientName = ua.substring(0, 15) + '...';
 
                                 // Construct path if missing (for API logs)
-                                const displayPath = log.path || (log.token ? `/api/s/${log.token.substring(0, 8)}...` : 'API 请求');
+                                const displayPath = log.path || (log.token ? `/api/s/${log.token.substring(0, 8)}...` : t('apiRequest'));
 
                                 return (
                                     <div key={idx} className="flex items-start justify-between border-b border-gray-50 pb-2 last:border-0 last:pb-0">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="font-medium text-gray-900 text-sm truncate">
-                                                    {log.username || '匿名用户'}
+                                                    {log.username || t('anonymousUser')}
                                                 </span>
                                                 <span className="text-xs text-gray-400">•</span>
                                                 <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">

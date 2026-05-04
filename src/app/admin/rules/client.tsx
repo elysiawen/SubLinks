@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { Search } from 'lucide-react';
 import StaticSourceEditor from '../sources/StaticSourceEditor';
@@ -16,6 +17,7 @@ export default function AdminRulesClient({
     customSets: any[],
     sourceTypes?: Record<string, string>
 }) {
+    const t = useTranslations('admin.rules');
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingSource, setEditingSource] = useState<string | null>(null);
@@ -40,20 +42,20 @@ export default function AdminRulesClient({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    ⚡ 分流规则列表
+                    ⚡ {t('title')}
                     <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{totalCount}</span>
                 </h2>
                 <a
                     href="/admin/rules/custom"
                     className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                 >
-                    📝 管理自定义规则集
+                    📝 {t('manageCustom')}
                 </a>
             </div>
 
             {customSets.length > 0 && (
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-sm border border-purple-100 p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">📚 自定义规则集</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">📚 {t('customRuleSets')}</h3>
                     <div className="flex flex-wrap gap-2">
                         {customSets.map(set => (
                             <span key={set.id} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white text-purple-700 border border-purple-200">
@@ -66,7 +68,7 @@ export default function AdminRulesClient({
 
             {sources.length === 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                    暂无规则数据
+                    {t('noRules')}
                 </div>
             )}
 
@@ -81,14 +83,14 @@ export default function AdminRulesClient({
                                     📡 {source}
                                     {sourceTypes[source] === 'static' && (
                                         <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                                            静态
+                                            {t('staticBadge')}
                                         </span>
                                     )}
                                 </h3>
                             </div>
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">规则数量</span>
+                                    <span className="text-gray-600">{t('ruleCount')}</span>
                                     <span className="font-semibold text-orange-600">{rules.length}</span>
                                 </div>
                             </div>
@@ -97,14 +99,14 @@ export default function AdminRulesClient({
                                     onClick={() => setSelectedSource(source)}
                                     className={`bg-orange-50 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
                                 >
-                                    查看详情
+                                    {t('viewDetail')}
                                 </button>
                                 {sourceTypes[source] === 'static' && (
                                     <button
                                         onClick={() => setEditingSource(source)}
                                         className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
                                     >
-                                        ⚙️ 管理
+                                        ⚙️ {t('manage')}
                                     </button>
                                 )}
                             </div>
@@ -122,7 +124,7 @@ export default function AdminRulesClient({
                         <div className="flex items-center gap-2">
                             <span>📡 {selectedSource}</span>
                             <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-                                {filteredRules.length} / {selectedRules.length} 条规则
+                                {t('detailCount', { filtered: filteredRules.length, total: selectedRules.length })}
                             </span>
                         </div>
                     ) : ''
@@ -140,7 +142,7 @@ export default function AdminRulesClient({
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="搜索规则..."
+                                placeholder={t('searchPlaceholder')}
                                 className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
                             />
                             {searchQuery && (
@@ -166,7 +168,7 @@ export default function AdminRulesClient({
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-gray-400">
-                                    {searchQuery ? '没有找到匹配的规则' : '暂无规则'}
+                                    {searchQuery ? t('noMatch') : t('noRulesModal')}
                                 </div>
                             )}
                         </div>

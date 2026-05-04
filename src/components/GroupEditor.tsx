@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, memo } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 
 interface ProxyItem {
@@ -18,6 +19,8 @@ interface GroupEditorProps {
 }
 
 const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, className }: GroupEditorProps) {
+    const t = useTranslations('common.groupEditor');
+
     // Group Builder State
     const [groupMode, setGroupMode] = useState<'simple' | 'advanced'>('simple');
     const [isSwitching, setIsSwitching] = useState(false);
@@ -191,7 +194,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
         <div className={className}>
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
-                    策略组内容
+                    {t('contentLabel')}
                 </label>
                 <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
                     <button
@@ -199,14 +202,14 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                         disabled={isSwitching}
                         className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
-                        简易模式
+                        {t('simpleMode')}
                     </button>
                     <button
                         onClick={() => handleSwitchMode('advanced')}
                         disabled={isSwitching}
                         className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
-                        高级模式
+                        {t('advancedMode')}
                     </button>
                 </div>
             </div>
@@ -214,7 +217,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
             {isSwitching ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
                     <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-                    <span className="text-xs italic">切换编辑器模式中...</span>
+                    <span className="text-xs italic">{t('switching')}</span>
                 </div>
             ) : groupMode === 'advanced' ? (
                 <div>
@@ -223,10 +226,10 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                         onChange={(e) => onChange(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                         rows={15}
-                        placeholder="- name: 🚀 节点选择&#10;  type: select&#10;  proxies:&#10;    - DIRECT&#10;    - 🇭🇰 香港节点"
+                        placeholder={t('yamlPlaceholder')}
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        YAML 格式的策略组配置
+                        {t('yamlFormat')}
                     </p>
                 </div>
             ) : (
@@ -239,7 +242,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addGuiGroup()}
-                                placeholder="策略组名称"
+                                placeholder={t('groupNamePlaceholder')}
                                 className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-1"
                             />
                             <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-2">
@@ -274,7 +277,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             type="text"
                             value={groupSearch}
                             onChange={(e) => setGroupSearch(e.target.value)}
-                            placeholder="搜索策略组名称、类型..."
+                            placeholder={t('searchGroupsPlaceholder')}
                             className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
@@ -282,7 +285,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                     {/* Groups List */}
                     {filteredGroups.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
-                            {groupSearch ? '没有找到匹配的策略组' : '暂无策略组，请添加'}
+                            {groupSearch ? t('noGroupsMatch') : t('noGroups')}
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -299,7 +302,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             onClick={() => removeGuiGroup(group.id)}
                                             className="text-red-500 hover:text-red-700 text-sm"
                                         >
-                                            删除组
+                                            {t('deleteGroup')}
                                         </button>
                                     </div>
 
@@ -313,13 +316,13 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
 
                                                     if (proxy.startsWith('SOURCE:')) {
                                                         badgeClass = 'bg-purple-100 text-purple-700 border border-purple-200';
-                                                        displayText = `📚 全量: ${proxy.substring(7)}`;
+                                                        displayText = `📚 ${t('fullSource')}: ${proxy.substring(7)}`;
                                                     } else if (proxy.startsWith('KEYWORD:')) {
                                                         badgeClass = 'bg-amber-100 text-amber-700 border border-amber-200';
-                                                        displayText = `🔍 包含: ${proxy.substring(8)}`;
+                                                        displayText = `🔍 ${t('contains')}: ${proxy.substring(8)}`;
                                                     } else if (proxy.startsWith('REGEX:')) {
                                                         badgeClass = 'bg-pink-100 text-pink-700 border border-pink-200';
-                                                        displayText = `🔡 正则: ${proxy.substring(6)}`;
+                                                        displayText = `🔡 ${t('regexLabel')}: ${proxy.substring(6)}`;
                                                     }
 
                                                     return (
@@ -343,7 +346,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             onClick={() => openProxySelector(group.id)}
                                             className="w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm transition-colors flex items-center justify-center gap-1"
                                         >
-                                            <span>+ 添加节点</span>
+                                            <span>{t('addNode')}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -351,7 +354,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                         </div>
                     )}
                     <p className="text-xs text-gray-400">
-                        共 {guiGroups.length} 个策略组
+                        {t('groupCount', { count: guiGroups.length })}
                     </p>
                 </div>
             )}
@@ -360,7 +363,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
             <Modal
                 isOpen={showProxySelector}
                 onClose={() => setShowProxySelector(false)}
-                title="选择节点"
+                title={t('selectNodes')}
                 maxWidth="max-w-2xl"
                 zIndex={60}
             >
@@ -377,7 +380,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 type="text"
                                 value={proxySearch}
                                 onChange={(e) => setProxySearch(e.target.value)}
-                                placeholder="搜索节点..."
+                                placeholder={t('searchNodes')}
                                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm"
                             />
                         </div>
@@ -389,9 +392,9 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                     <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                                     </svg>
-                                    动态过滤
+                                    {t('dynamicFilter')}
                                 </h4>
-                                <span className="text-[10px] text-gray-400">自动包含未来新增的匹配节点</span>
+                                <span className="text-[10px] text-gray-400">{t('dynamicFilterHint')}</span>
                             </div>
 
                             <div className="p-3 space-y-3">
@@ -402,8 +405,8 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             value={dynamicFilterType}
                                             onChange={(e) => setDynamicFilterType(e.target.value)}
                                         >
-                                            <option value="KEYWORD">关键字</option>
-                                            <option value="REGEX">正则</option>
+                                            <option value="KEYWORD">{t('keyword')}</option>
+                                            <option value="REGEX">{t('regex')}</option>
                                         </select>
                                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -417,7 +420,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             type="text"
                                             value={dynamicFilterValue}
                                             onChange={(e) => setDynamicFilterValue(e.target.value)}
-                                            placeholder={dynamicFilterType === 'KEYWORD' ? "输入包含的关键字..." : "输入匹配的正则表达式..."}
+                                            placeholder={dynamicFilterType === 'KEYWORD' ? t('keywordPlaceholder') : t('regexPlaceholder')}
                                             className="block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                             onKeyPress={(e) => {
                                                 if (e.key === 'Enter' && dynamicFilterValue.trim()) {
@@ -447,7 +450,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                     >
-                                        添加
+                                        {t('add')}
                                     </button>
                                 </div>
 
@@ -470,7 +473,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                         </svg>
-                                                        无效的正则表达式
+                                                        {t('invalidRegex')}
                                                     </div>
                                                 );
                                             }
@@ -481,7 +484,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                         </svg>
-                                                        未找到匹配的节点
+                                                        {t('noMatchNodes')}
                                                     </div>
                                                 );
                                             }
@@ -493,7 +496,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                             </svg>
-                                                            找到 {matchedProxies.length} 个匹配节点
+                                                            {t('matchedNodes', { count: matchedProxies.length })}
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
@@ -503,7 +506,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                             </div>
                                                         ))}
                                                         {matchedProxies.length > 50 && (
-                                                            <span className="px-2 py-1 text-[10px] text-gray-400 flex items-center">...等共 {matchedProxies.length} 个</span>
+                                                            <span className="px-2 py-1 text-[10px] text-gray-400 flex items-center">{t('moreNodes', { count: matchedProxies.length })}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -520,7 +523,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                         <div>
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                内置策略
+                                {t('builtinPolicies')}
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                                 {['DIRECT', 'REJECT', '🚀 节点选择'].map(p => {
@@ -544,7 +547,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                         >
                                             <span>{p}</span>
                                             {isAdded ? (
-                                                <span className="text-xs">已添加</span>
+                                                <span className="text-xs">{t('added')}</span>
                                             ) : isSelected && (
                                                 <span className="text-blue-600">✓</span>
                                             )}
@@ -598,12 +601,12 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     ? 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed'
                                                     : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 hover:shadow-sm'
                                                 }`}
-                                            title="动态包含该源所有节点，自动更新"
+                                            title={t('sourceAllHint')}
                                         >
                                             <span className={selectedProxies.includes(`SOURCE:${source}`) ? 'text-purple-600' : 'text-purple-400'}>
                                                 {selectedProxies.includes(`SOURCE:${source}`) ? '✓' : '⚡'}
                                             </span>
-                                            {selectedProxies.includes(`SOURCE:${source}`) ? '已选全量' : '动态全选'}
+                                            {selectedProxies.includes(`SOURCE:${source}`) ? t('selectedAll') : t('dynamicSelectAll')}
                                         </button>
                                         <div className="h-4 w-px bg-gray-200"></div>
                                         <button
@@ -623,7 +626,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             }}
                                             className="text-[10px] text-gray-500 hover:text-blue-600 font-medium transition-colors"
                                         >
-                                            全选/取消
+                                            {t('selectAllDeselect')}
                                         </button>
                                     </div>
                                 </div>
@@ -651,7 +654,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                 >
                                                     <span className="truncate pr-2">{p.name}</span>
                                                     {isAdded ? (
-                                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded">已加入</span>
+                                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded">{t('joined')}</span>
                                                     ) : isSelected && (
                                                         <span className="text-blue-600 flex-shrink-0">
                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -673,7 +676,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             onClick={() => setShowProxySelector(false)}
                             className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                         >
-                            取消
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={addSelectedProxies}
@@ -683,7 +686,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                                 }`}
                         >
-                            确认添加 {selectedProxies.length > 0 && `(${selectedProxies.length})`}
+                            {t('confirmAdd')} {selectedProxies.length > 0 && `(${selectedProxies.length})`}
                         </button>
                     </div>
                 </div>

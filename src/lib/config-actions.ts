@@ -20,14 +20,14 @@ async function getCurrentUserSession() {
 
 export async function getGroupSets(): Promise<ConfigSet[]> {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     const sets = await db.getCustomGroups(session.userId);
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveGroupSet(id: string | null, name: string, content: string) {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     await db.saveCustomGroup(id, session.userId, name, content, false);
     revalidatePath('/dashboard/custom/groups');
     return { success: true };
@@ -35,7 +35,7 @@ export async function saveGroupSet(id: string | null, name: string, content: str
 
 export async function deleteGroupSet(id: string) {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     await db.deleteCustomGroup(id, session.userId);
     revalidatePath('/dashboard/custom/groups');
 }
@@ -44,14 +44,14 @@ export async function deleteGroupSet(id: string) {
 
 export async function getRuleSets(): Promise<ConfigSet[]> {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     const sets = await db.getCustomRules(session.userId);
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveRuleSet(id: string | null, name: string, content: string) {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     await db.saveCustomRule(id, session.userId, name, content, false);
     revalidatePath('/dashboard/custom/rules');
     return { success: true };
@@ -59,7 +59,7 @@ export async function saveRuleSet(id: string | null, name: string, content: stri
 
 export async function deleteRuleSet(id: string) {
     const session = await getCurrentUserSession();
-    if (!session) throw new Error('未授权');
+    if (!session) throw new Error('unauthorized');
     await db.deleteCustomRule(id, session.userId);
     revalidatePath('/dashboard/custom/rules');
 }
@@ -68,14 +68,14 @@ export async function deleteRuleSet(id: string) {
 
 export async function getAllGroupSetsAdmin(): Promise<ConfigSet[]> {
     const session = await getCurrentUserSession();
-    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    if (!session || session.role !== 'admin') throw new Error('requireAdmin');
     const sets = await db.getAllCustomGroups();
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveGroupSetAdmin(id: string | null, name: string, content: string, isGlobal: boolean) {
     const session = await getCurrentUserSession();
-    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    if (!session || session.role !== 'admin') throw new Error('requireAdmin');
     await db.saveCustomGroup(id, session.userId, name, content, isGlobal);
     revalidatePath('/admin/groups');
     revalidatePath('/dashboard/custom/groups');
@@ -84,14 +84,14 @@ export async function saveGroupSetAdmin(id: string | null, name: string, content
 
 export async function getAllRuleSetsAdmin(): Promise<ConfigSet[]> {
     const session = await getCurrentUserSession();
-    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    if (!session || session.role !== 'admin') throw new Error('requireAdmin');
     const sets = await db.getAllCustomRules();
     return sets.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function saveRuleSetAdmin(id: string | null, name: string, content: string, isGlobal: boolean) {
     const session = await getCurrentUserSession();
-    if (!session || session.role !== 'admin') throw new Error('需要管理员权限');
+    if (!session || session.role !== 'admin') throw new Error('requireAdmin');
     await db.saveCustomRule(id, session.userId, name, content, isGlobal);
     revalidatePath('/admin/rules');
     revalidatePath('/dashboard/custom/rules');

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { getAPILogs, getWebLogs, getSystemLogs } from './actions';
 import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { zhCN, enUS } from 'date-fns/locale';
 import { Search } from 'lucide-react';
 
 interface LogBase {
@@ -13,6 +14,9 @@ interface LogBase {
 }
 
 export default function LogsClient() {
+    const t = useTranslations('admin.logs');
+    const locale = useLocale();
+    const dateFnsLocale = locale === 'zh' ? zhCN : enUS;
     const [activeTab, setActiveTab] = useState<'api' | 'web' | 'system'>('api');
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -195,9 +199,9 @@ export default function LogsClient() {
 
     const formatTime = (ts: number) => {
         try {
-            return formatDistanceToNow(ts, { addSuffix: true, locale: zhCN });
+            return formatDistanceToNow(ts, { addSuffix: true, locale: dateFnsLocale });
         } catch (e) {
-            return '未知时间';
+            return t('unknownTime');
         }
     };
 
@@ -247,7 +251,7 @@ export default function LogsClient() {
 
                     result.push({
                         ...head,
-                        message: `Subscription Precache (已合并 ${buffer.length} 条记录，成功 ${successCount} 个，失败 ${failCount} 个)`,
+                        message: `Subscription Precache (${t('mergedRecords', { count: buffer.length, success: successCount, fail: failCount })})`,
                         isMerged: true,
                         mergedLogs: fullLogs, // Store full logs
                     });
@@ -296,9 +300,9 @@ export default function LogsClient() {
                     const fullLogs = [...buffer];
 
                     // Determine label
-                    let label = `连续操作 (${buffer.length} 次)`;
+                    let label = t('mergedOperations', { count: buffer.length });
                     if (tab === 'api') {
-                        label = `连续请求 (${buffer.length} 次)`;
+                        label = t('mergedRequests', { count: buffer.length });
                     }
 
                     result.push({
@@ -373,7 +377,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        API访问
+                        {t('apiAccess')}
                     </button>
                     <button
                         onClick={() => setActiveTab('web')}
@@ -382,7 +386,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        WEB访问
+                        {t('webAccess')}
                     </button>
                     <button
                         onClick={() => setActiveTab('system')}
@@ -391,7 +395,7 @@ export default function LogsClient() {
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
-                        系统
+                        {t('system')}
                     </button>
                 </div>
 
@@ -407,7 +411,7 @@ export default function LogsClient() {
                                     }`}
                             />
                         </button>
-                        <span className="text-sm text-gray-400 cursor-pointer" onClick={() => setIsMergeMode(!isMergeMode)}>合并显示</span>
+                        <span className="text-sm text-gray-400 cursor-pointer" onClick={() => setIsMergeMode(!isMergeMode)}>{t('mergeDisplay')}</span>
                     </div>
                     <div className="relative flex-1 sm:w-64">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -417,7 +421,7 @@ export default function LogsClient() {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="搜索日志..."
+                            placeholder={t('searchPlaceholder')}
                             className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2 shadow-sm"
                         />
                     </div>
@@ -428,9 +432,9 @@ export default function LogsClient() {
                             onChange={(e) => setLimit(Number(e.target.value))}
                             className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block p-2 shadow-sm"
                         >
-                            <option value={10}>10条/页</option>
-                            <option value={20}>20条/页</option>
-                            <option value={50}>50条/页</option>
+                            <option value={10}>{t('perPage', { count: 10 })}</option>
+                            <option value={20}>{t('perPage', { count: 20 })}</option>
+                            <option value={50}>{t('perPage', { count: 50 })}</option>
                         </select>
                     </div>
                 </div>
@@ -442,11 +446,11 @@ export default function LogsClient() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-black/40 border-b border-gray-800 text-gray-400 text-sm">
-                                <th className="px-6 py-4 font-medium tracking-wide">时间</th>
-                                {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">用户/Token</th>}
-                                {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">IP / 来源</th>}
-                                <th className="px-6 py-4 font-medium tracking-wide">详情</th>
-                                <th className="px-6 py-4 font-medium tracking-wide">状态</th>
+                                <th className="px-6 py-4 font-medium tracking-wide">{t('tableTime')}</th>
+                                {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">{t('tableUserToken')}</th>}
+                                {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">{t('tableIpSource')}</th>}
+                                <th className="px-6 py-4 font-medium tracking-wide">{t('tableDetail')}</th>
+                                <th className="px-6 py-4 font-medium tracking-wide">{t('tableStatus')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800/50">
@@ -489,7 +493,7 @@ export default function LogsClient() {
                                                         </div>
                                                     ) : (
                                                         <div>
-                                                            <div className="text-gray-300">{log.apiType || 'API请求'}</div>
+                                                            <div className="text-gray-300">{log.apiType || t('apiRequest')}</div>
                                                             {log.requestMethod && (
                                                                 <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
                                                             )}
@@ -578,7 +582,7 @@ export default function LogsClient() {
                                                         <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-sm text-gray-400">
-                                                        <div className="text-gray-300">{childLog.apiType || 'API请求'}</div>
+                                                        <div className="text-gray-300">{childLog.apiType || t('apiRequest')}</div>
                                                         {childLog.requestMethod && (
                                                             <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
                                                         )}
@@ -638,7 +642,7 @@ export default function LogsClient() {
                                 {activeTab === 'api' && (
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">Token:</span>
+                                            <span className="text-xs text-gray-500">{t('tokenLabel')}</span>
                                             <span
                                                 className="font-mono text-xs text-blue-400 break-all cursor-pointer"
                                                 title={log.token}
@@ -653,17 +657,17 @@ export default function LogsClient() {
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">用户:</span>
+                                            <span className="text-xs text-gray-500">{t('userLabel')}</span>
                                             <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">IP:</span>
+                                            <span className="text-xs text-gray-500">{t('ipLabel')}</span>
                                             <span className="text-sm text-gray-300">{log.ip}</span>
                                         </div>
 
                                         {/* API Log Details / Merged View */}
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">详情:</span>
+                                            <span className="text-xs text-gray-500">{t('detailLabel')}</span>
                                             <div className="flex-1 text-sm text-gray-400">
                                                 {log.isMerged ? (
                                                     <div className="flex items-center gap-2 text-blue-400 font-mono cursor-pointer" onClick={() => toggleExpand(log.id)}>
@@ -672,7 +676,7 @@ export default function LogsClient() {
                                                     </div>
                                                 ) : (
                                                     <div>
-                                                        <div className="text-gray-300">{log.apiType || 'API请求'}</div>
+                                                        <div className="text-gray-300">{log.apiType || t('apiRequest')}</div>
                                                         {log.requestMethod && (
                                                             <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
                                                         )}
@@ -690,7 +694,7 @@ export default function LogsClient() {
                                                             <span>{new Date(childLog.timestamp).toLocaleTimeString('zh-CN')}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
-                                                        <div className="text-gray-300">{childLog.apiType || 'API请求'}</div>
+                                                        <div className="text-gray-300">{childLog.apiType || t('apiRequest')}</div>
                                                         {childLog.requestMethod && (
                                                             <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
                                                         )}
@@ -712,15 +716,15 @@ export default function LogsClient() {
                                 {activeTab === 'web' && (
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">用户:</span>
+                                            <span className="text-xs text-gray-500">{t('userLabel')}</span>
                                             <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">IP:</span>
+                                            <span className="text-xs text-gray-500">{t('ipLabel')}</span>
                                             <span className="text-sm text-gray-300">{log.ip}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">路径:</span>
+                                            <span className="text-xs text-gray-500">{t('pathLabel')}</span>
                                             <div className="flex-1">
                                                 {log.isMerged ? (
                                                     <div>
@@ -837,7 +841,7 @@ export default function LogsClient() {
                         <div className="text-center py-16">
                             <div className="text-gray-600 mb-2 text-4xl">📭</div>
                             <div className="text-gray-500">
-                                {debouncedSearch ? '没有找到匹配的日志' : '暂无日志记录'}
+                                {debouncedSearch ? t('noMatch') : t('noLogs')}
                             </div>
                         </div>
                     )
@@ -851,18 +855,18 @@ export default function LogsClient() {
                                 disabled={loading}
                                 className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600"
                             >
-                                {loading ? '加载中...' : '加载更多'}
+                                {loading ? t('loading') : t('loadMore')}
                             </button>
                         </div>
                     )
                 ) : (
                     <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-800 bg-black/20 text-sm">
                         <div className="text-gray-400 whitespace-nowrap">
-                            共 {totalLogs} 条记录
+                            {t('totalRecords', { total: totalLogs })}
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
                             <div className="flex items-center space-x-2 order-last sm:order-first sm:border-r sm:border-gray-700 sm:pr-4 sm:mr-2">
-                                <span className="text-gray-300 whitespace-nowrap">跳转至</span>
+                                <span className="text-gray-300 whitespace-nowrap">{t('jumpTo')}</span>
                                 <input
                                     type="number"
                                     min={1}
@@ -880,7 +884,7 @@ export default function LogsClient() {
                                         }
                                     }}
                                 />
-                                <span className="text-gray-300 whitespace-nowrap">页</span>
+                                <span className="text-gray-300 whitespace-nowrap">{t('page')}</span>
                             </div>
 
                             <button
@@ -888,17 +892,17 @@ export default function LogsClient() {
                                 disabled={page <= 1 || loading}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600 whitespace-nowrap"
                             >
-                                上一页
+                                {t('prevPage')}
                             </button>
                             <span className="text-gray-300 whitespace-nowrap">
-                                第 {page} / {Math.ceil(totalLogs / limit)} 页
+                                {t('pageInfo', { current: page, total: Math.ceil(totalLogs / limit) })}
                             </span>
                             <button
                                 onClick={() => handlePageChange(page + 1)}
                                 disabled={!hasMore || loading}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium border border-gray-700 hover:border-gray-600 whitespace-nowrap"
                             >
-                                下一页
+                                {t('nextPage')}
                             </button>
                         </div>
                     </div>

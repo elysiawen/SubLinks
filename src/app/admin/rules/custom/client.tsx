@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { saveCustomRule, deleteCustomRule } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
@@ -32,6 +33,7 @@ export default function CustomRulesClient({
     customRules: ConfigSet[],
     proxyGroups?: ProxyGroup[]
 }) {
+    const t = useTranslations('admin.customRules');
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [rules, setRules] = useState<ConfigSet[]>(initialRules);
@@ -62,7 +64,7 @@ export default function CustomRulesClient({
 
     const handleSave = async () => {
         if (!formName.trim() || !formContent.trim()) {
-            error('请填写完整的名称和内容');
+            error(t('nameRequired'));
             return;
         }
 
@@ -70,19 +72,19 @@ export default function CustomRulesClient({
         await saveCustomRule(editingId, formName.trim(), formContent.trim(), formIsGlobal);
         setLoading(false);
         setIsEditing(false);
-        success(editingId ? '规则集更新成功' : '规则集创建成功');
+        success(editingId ? t('ruleUpdated') : t('ruleCreated'));
         window.location.reload();
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!await confirm(`确定要删除自定义规则集 "${name}" 吗？`, { confirmColor: 'red' })) {
+        if (!await confirm(t('confirmDelete', { name }), { confirmColor: 'red' })) {
             return;
         }
 
         setLoading(true);
         await deleteCustomRule(id);
         setLoading(false);
-        success('规则集已删除');
+        success(t('ruleDeleted'));
         window.location.reload();
     };
 
@@ -92,21 +94,21 @@ export default function CustomRulesClient({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">📝 自定义规则集管理</h2>
-                    <p className="text-sm text-gray-500 mt-1">创建和管理自定义分流规则配置</p>
+                    <h2 className="text-2xl font-bold text-gray-800">📝 {t('title')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-2">
                     <a
                         href="/admin/rules"
                         className="text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                     >
-                        ← 返回列表
+                        ← {t('backToList')}
                     </a>
                     <button
                         onClick={openCreate}
                         className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
-                        + 新建规则集
+                        + {t('createNew')}
                     </button>
                 </div>
             </div>
@@ -114,19 +116,19 @@ export default function CustomRulesClient({
             <Modal
                 isOpen={isEditing}
                 onClose={() => setIsEditing(false)}
-                title={editingId ? '编辑规则集' : '新建规则集'}
+                title={editingId ? t('editRule') : t('createRule')}
                 maxWidth="max-w-4xl"
             >
                 {isEditing && (
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">名称</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('name')}</label>
                             <input
                                 type="text"
                                 value={formName}
                                 onChange={(e) => setFormName(e.target.value)}
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                placeholder="例如：自定义广告拦截规则"
+                                placeholder={t('namePlaceholder')}
                             />
                         </div>
 
@@ -148,11 +150,11 @@ export default function CustomRulesClient({
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
-                                            🌐 设为全局配置
+                                            🌐 {t('globalConfig')}
                                         </span>
                                     </div>
                                     <p className="text-xs text-gray-500 mt-0.5">
-                                        全局配置对所有用户可见和可用，但只有创建者可以编辑和删除
+                                        {t('globalConfigDesc')}
                                     </p>
                                 </div>
                             </label>
@@ -162,14 +164,14 @@ export default function CustomRulesClient({
                             <SubmitButton
                                 onClick={handleSave}
                                 isLoading={loading}
-                                text="保存"
+                                text={t('save')}
                                 className="flex-1"
                             />
                             <button
                                 onClick={() => setIsEditing(false)}
                                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
-                                取消
+                                {t('cancel')}
                             </button>
                         </div>
                     </div>
@@ -182,13 +184,13 @@ export default function CustomRulesClient({
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                             📝
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">暂无自定义规则集</h3>
-                        <p className="text-gray-500 mb-6">点击上方按钮创建第一个分流规则配置</p>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('noRules')}</h3>
+                        <p className="text-gray-500 mb-6">{t('noRulesHint')}</p>
                         <button
                             onClick={openCreate}
                             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
                         >
-                            新建规则集
+                            {t('createFirst')}
                         </button>
                     </div>
                 ) : (
@@ -203,14 +205,14 @@ export default function CustomRulesClient({
                                             </h3>
                                             {rule.isGlobal && (
                                                 <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded border border-purple-200 shrink-0">
-                                                    全局
+                                                    {t('global')}
                                                 </span>
                                             )}
                                         </div>
                                         <div className="flex flex-col gap-1">
                                             <div className="text-xs text-gray-500 flex items-center gap-1.5">
                                                 <span className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center text-[10px] text-gray-500 border border-gray-200">👤</span>
-                                                <span className="truncate max-w-[120px] font-medium text-gray-600" title={rule.username || '未知用户'}>{rule.username || '未知用户'}</span>
+                                                <span className="truncate max-w-[120px] font-medium text-gray-600" title={rule.username || t('unknownUser')}>{rule.username || t('unknownUser')}</span>
                                             </div>
                                             <div className="text-xs text-gray-400 flex items-center gap-1.5">
                                                 <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,7 +241,7 @@ export default function CustomRulesClient({
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        编辑
+                                        {t('edit')}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(rule.id, rule.name)}
@@ -249,7 +251,7 @@ export default function CustomRulesClient({
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                        删除
+                                        {t('delete')}
                                     </button>
                                 </div>
                             </div>

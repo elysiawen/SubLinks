@@ -1,0 +1,71 @@
+{
+    "auth": {
+        "emptyCredentials": "请输入用户名和密码",
+        "systemInit": "系统初始化中,请使用默认账号 admin/admin 登录",
+        "userNotFound": "用户不存在",
+        "accountDisabled": "账户已被停用",
+        "wrongPassword": "密码错误",
+        "twoFactorInvalid": "两步验证码错误",
+        "twoFactorRequired": "2fa_required"
+    },
+    "user": {
+        "notLoggedIn": "未登录",
+        "wrongOldPassword": "原密码错误",
+        "newPasswordTooShort": "新密码至少需要4个字符",
+        "passwordVerifyFailed": "密码错误，验证失败",
+        "nicknameTooLong": "昵称不能超过50个字符",
+        "adminCannotDelete": "管理员账号无法通过此方式删除",
+        "noFileUploaded": "未上传文件",
+        "fileTooLarge": "文件大小不能超过 10MB",
+        "imageOnly": "只支持图片文件",
+        "invalidImage": "无效的图片文件",
+        "uploadFailed": "上传失败，请稍后重试",
+        "noAvatar": "未设置头像",
+        "userNoAvatar": "该用户未设置头像",
+        "qrGenerateFailed": "生成二维码失败",
+        "configNotFound": "配置不存在"
+    },
+    "admin": {
+        "requireAdmin": "需要管理员权限",
+        "cannotLogoutCurrentSession": "无法注销当前正在使用的管理会话",
+        "sessionForceOffline": "会话已强制下线",
+        "sessionInvalid": "该会话已失效或不存在",
+        "cannotOfflineCurrent": "无法下线当前正在使用的会话",
+        "forceOfflineIssued": "强制下线命令已发出",
+        "sessionNotFound": "会话不存在或已过期",
+        "userCreatedSubLimitExceeded": "用户已创建，但无法创建订阅：已达订阅上限",
+        "newUsernameExists": "新用户名已存在",
+        "selectUser": "请选择用户",
+        "rebuiltSubscriptionCache": "已重建订阅缓存",
+        "unnamedSubscription": "未命名订阅",
+        "getPasskeysFailed": "获取通行密钥失败",
+        "deletePasskeyFailed": "删除通行密钥失败",
+        "defaultSubscription": "默认订阅"
+    },
+    "subscription": {
+        "limitExceeded": "超过最大订阅数量限制",
+        "selectAtLeastOne": "至少选择一个上游源",
+        "createFailed": "无法创建订阅: 所选源已被禁用或不存在",
+        "updateFailed": "无法更新订阅: 所选源已被禁用或不存在",
+        "enableFailed": "无法启用: 该订阅没有可用的上游源"
+    },
+    "source": {
+        "needAtLeastOneNode": "至少需要一个节点",
+        "nameExists": "上游源名称已存在",
+        "notStaticType": "源不存在或不是静态类型",
+        "keepAtLeastOneGroup": "至少保留一个策略组",
+        "r2NeedAccountId": "R2 需要 Account ID",
+        "endpointRequired": "请填写 Endpoint 或选择预设",
+        "s3ConfigRequired": "请填写所有必需的 S3 配置",
+        "s3Connected": "连接成功",
+        "connectionFailed": "连接失败",
+        "bucketNotFound": "存储桶不存在",
+        "invalidAccessKeyId": "Access Key ID 无效",
+        "invalidSecretKey": "Secret Access Key 无效",
+        "authFailed": "认证失败"
+    },
+    "config": {
+        "unauthorized": "未授权",
+        "invalidJson": "附加配置不是有效的 JSON"
+    }
+}

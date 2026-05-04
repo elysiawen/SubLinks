@@ -5,6 +5,7 @@ import TwoFactorSection from './components/TwoFactorSection';
 import PasswordSection from './components/PasswordSection';
 import DangerZoneSection from './components/DangerZoneSection';
 import PasskeySection from './components/PasskeySection';
+import { useTranslations } from 'next-intl';
 
 interface SettingsClientProps {
     username: string;
@@ -21,11 +22,12 @@ export default function SettingsClient({
     avatar,
     totpEnabled
 }: SettingsClientProps) {
+    const t = useTranslations('dashboard');
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-10">
             <div>
-                <h1 className="text-2xl font-bold text-gray-800">账户设置</h1>
-                <p className="text-sm text-gray-500 mt-1">管理您的个人资料和安全设置</p>
+                <h1 className="text-2xl font-bold text-gray-800">{t('settings.heading')}</h1>
+                <p className="text-sm text-gray-500 mt-1">{t('settings.description')}</p>
             </div>
 
             {/* Profile Section */}

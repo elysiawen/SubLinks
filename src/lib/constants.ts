@@ -27,18 +27,24 @@ export const PROTOCOL_COLORS: Record<string, string> = {
 /** UUID-based protocols */
 export const UUID_PROTOCOLS = ['vmess', 'vless', 'tuic'];
 
-/** Get password field label based on protocol */
+/**
+ * Get password field label translation key based on protocol.
+ * Returns a translation key like 'constants.password' for use with useTranslations.
+ */
 export function getPasswordLabel(protocol: string): string {
     if (protocol === 'wireguard') return 'Private Key';
     if (UUID_PROTOCOLS.includes(protocol)) return 'UUID';
-    return '密码';
+    return 'constants.password';
 }
 
-/** Get password field placeholder based on protocol */
+/**
+ * Get password field placeholder translation key based on protocol.
+ * Returns a translation key like 'constants.password' for use with useTranslations.
+ */
 export function getPasswordPlaceholder(protocol: string): string {
     if (UUID_PROTOCOLS.includes(protocol)) return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
     if (protocol === 'wireguard') return 'PrivateKey (Base64)';
-    return '密码';
+    return 'constants.password';
 }
 
 /** Build a node config object from manual form values */
@@ -70,7 +76,7 @@ export function buildNodeConfig(
             const extra = JSON.parse(extraJson);
             Object.assign(config, extra);
         } catch {
-            return { config, error: '附加配置不是有效的 JSON' };
+            return { config, error: 'constants.invalidJson' };
         }
     }
 

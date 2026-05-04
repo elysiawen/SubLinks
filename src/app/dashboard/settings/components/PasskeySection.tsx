@@ -9,6 +9,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { SubmitButton } from '@/components/SubmitButton';
+import { useTranslations } from 'next-intl';
 
 export default function PasskeySection() {
     const [passkeys, setPasskeys] = useState<PasskeyProfile[]>([]);
@@ -17,6 +18,7 @@ export default function PasskeySection() {
     const router = useRouter();
     const { success, error: toastError, info } = useToast();
     const { confirm } = useConfirm();
+    const t = useTranslations('dashboard');
 
     // Add Name Modal State
     const [showNameModal, setShowNameModal] = useState(false);
@@ -32,7 +34,7 @@ export default function PasskeySection() {
             setPasskeys(keys);
         } catch (err) {
             console.error('Failed to load passkeys', err);
-            toastError('无法加载通行密钥列表');
+            toastError(t('settings.passkey.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -41,7 +43,7 @@ export default function PasskeySection() {
     const startAddFlow = () => {
         // Find the next available number
         const nextIndex = passkeys.length + 1;
-        setPasskeyName(`密钥 #${nextIndex}`);
+        setPasskeyName(`${t('settings.passkey.defaultName')}${nextIndex}`);
         setShowNameModal(true);
     };
 
@@ -68,7 +70,7 @@ export default function PasskeySection() {
 
             // Reload list
             await loadPasskeys();
-            success('通行密钥添加成功');
+            success(t('settings.passkey.addSuccess'));
             router.refresh(); // Refresh server components if any
         } catch (err: any) {
             // Check for user cancellation or timeout
@@ -78,11 +80,11 @@ export default function PasskeySection() {
 
             if (isNotAllowed) {
                 // User cancelled or timed out - valid flow, show info
-                info('用户取消了操作');
+                info(t('settings.passkey.userCancelled'));
             } else {
                 // Actual error - log and show error toast
                 console.error(err);
-                toastError(err.message || '添加通行密钥失败');
+                toastError(err.message || t('settings.passkey.addFailed'));
             }
         } finally {
             setLoading(false);
@@ -90,7 +92,7 @@ export default function PasskeySection() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!await confirm('确定要删除这个通行密钥吗？此操作无法撤销。', { title: '删除通行密钥', confirmColor: 'red', confirmText: '删除' })) return;
+        if (!await confirm(t('settings.passkey.deleteConfirm'), { title: t('settings.passkey.deleteConfirmTitle'), confirmColor: 'red', confirmText: t('settings.passkey.delete') })) return;
 
         try {
             const res = await deletePasskey(id);
@@ -99,10 +101,10 @@ export default function PasskeySection() {
                 return;
             }
             await loadPasskeys();
-            success('删除成功');
+            success(t('settings.passkey.deleteSuccess'));
         } catch (err) {
             console.error(err);
-            toastError('删除失败');
+            toastError(t('settings.passkey.deleteFailed'));
         }
     };
 
@@ -110,23 +112,23 @@ export default function PasskeySection() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100">
                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    🔑 通行密钥 (Passkeys)
+                    {t('settings.passkey.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">使用指纹、面容 ID 或安全密钥登录</p>
+                <p className="text-sm text-gray-500 mt-1">{t('settings.passkey.description')}</p>
             </div>
 
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-gray-800">已保存的密钥</h3>
+                    <h3 className="text-lg font-bold text-gray-800">{t('settings.passkey.savedKeys')}</h3>
                     <button
                         onClick={startAddFlow}
                         disabled={loading}
                         className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? '处理中...' : (
+                        {loading ? t('settings.passkey.processing') : (
                             <>
                                 <span>➕</span>
-                                添加通行密钥
+                                {t('settings.passkey.add')}
                             </>
                         )}
                     </button>
@@ -139,11 +141,11 @@ export default function PasskeySection() {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span className="text-sm">加载中...</span>
+                            <span className="text-sm">{t('settings.passkey.loading')}</span>
                         </div>
                     ) : passkeys.length === 0 ? (
                         <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-                            还没有添加通行密钥
+                            {t('settings.passkey.empty')}
                         </div>
                     ) : (
                         passkeys.map(key => (
@@ -154,7 +156,7 @@ export default function PasskeySection() {
                                     </div>
                                     <div>
                                         <div className="font-semibold text-gray-800 flex items-center gap-2">
-                                            {key.name || '未命名密钥'}
+                                            {key.name || t('settings.passkey.unnamed')}
                                             <span className="text-xs font-normal px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1" title={`AAGUID: ${key.aaguid || 'N/A'}`}>
                                                 <img
                                                     src={key.providerIcon || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIxMSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4='}
@@ -165,16 +167,16 @@ export default function PasskeySection() {
                                             </span>
                                         </div>
                                         <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                                            <span>创建于 {new Date(key.createdAt).toLocaleDateString()}</span>
+                                            <span>{t('settings.passkey.createdAt')} {new Date(key.createdAt).toLocaleDateString()}</span>
                                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                            <span>上次使用 {new Date(key.lastUsed).toLocaleDateString()}</span>
+                                            <span>{t('settings.passkey.lastUsed')} {new Date(key.lastUsed).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(key.id)}
                                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="删除"
+                                    title={t('settings.passkey.deleteTitle')}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M3 6h18"></path>
@@ -191,11 +193,11 @@ export default function PasskeySection() {
             <Modal
                 isOpen={showNameModal}
                 onClose={() => setShowNameModal(false)}
-                title="添加通行密钥"
+                title={t('settings.passkey.addTitle')}
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">密钥名称</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.passkey.keyName')}</label>
                         <input
                             type="text"
                             autoFocus
@@ -207,16 +209,16 @@ export default function PasskeySection() {
                                 }
                             }}
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            placeholder="例如：Windows Hello, Identify key..."
+                            placeholder="e.g. Windows Hello, Security Key..."
                         />
-                        <p className="text-xs text-gray-500 mt-1">给这个密钥起个名字，方便日后管理</p>
+                        <p className="text-xs text-gray-500 mt-1">{t('settings.passkey.keyNameHelp')}</p>
                     </div>
 
                     <div className="flex gap-2 pt-2">
                         <SubmitButton
                             onClick={handleAddPasskey}
                             disabled={!passkeyName.trim()}
-                            text="继续"
+                            text={t('settings.passkey.continue')}
                             className="w-full"
                         />
                     </div>

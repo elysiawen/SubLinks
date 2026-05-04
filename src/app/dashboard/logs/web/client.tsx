@@ -2,6 +2,7 @@
 
 import type { WebAccessLog } from '@/lib/database/interface';
 import Pagination from '@/components/Pagination';
+import { useTranslations } from 'next-intl';
 
 interface WebLogsClientProps {
     logs: WebAccessLog[];
@@ -16,6 +17,8 @@ export default function WebLogsClient({
     currentPage,
     itemsPerPage
 }: WebLogsClientProps) {
+    const t = useTranslations('dashboard');
+
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString('zh-CN', {
             year: 'numeric',
@@ -31,8 +34,8 @@ export default function WebLogsClient({
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">访问日志</h1>
-                    <p className="text-sm text-gray-500 mt-1">查看您的网站访问历史记录</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{t('logs.web.heading')}</h1>
+                    <p className="text-sm text-gray-500 mt-1">{t('logs.web.description')}</p>
                 </div>
             </div>
 
@@ -40,7 +43,7 @@ export default function WebLogsClient({
                 {/* Mobile View (Cards) */}
                 <div className="md:hidden divide-y divide-gray-100">
                     {logs.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">暂无访问记录</div>
+                        <div className="p-6 text-center text-gray-500">{t('logs.web.empty')}</div>
                     ) : (
                         logs.map((log) => (
                             <div key={log.id} className="p-4 space-y-2">
@@ -74,18 +77,18 @@ export default function WebLogsClient({
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4">时间</th>
-                                <th className="px-6 py-4">访问路径</th>
-                                <th className="px-6 py-4">IP地址</th>
-                                <th className="px-6 py-4">请求客户端</th>
-                                <th className="px-6 py-4">状态码</th>
+                                <th className="px-6 py-4">{t('logs.web.time')}</th>
+                                <th className="px-6 py-4">{t('logs.web.path')}</th>
+                                <th className="px-6 py-4">{t('logs.web.ip')}</th>
+                                <th className="px-6 py-4">{t('logs.web.client')}</th>
+                                <th className="px-6 py-4">{t('logs.web.status')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {logs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                        暂无访问记录
+                                        {t('logs.web.empty')}
                                     </td>
                                 </tr>
                             ) : (

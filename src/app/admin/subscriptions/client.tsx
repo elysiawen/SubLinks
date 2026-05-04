@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, createAdminSubscription } from './actions';
 import { ConfigSet } from '@/lib/config-actions';
 import { useToast } from '@/components/ToastProvider';
@@ -47,6 +48,7 @@ export default function AdminSubsClient({
     availableSources: { name: string; url?: string; enabled?: boolean }[],
     users: { username: string; nickname?: string }[]
 }) {
+    const t = useTranslations('admin.subscriptions');
     const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
@@ -65,7 +67,7 @@ export default function AdminSubsClient({
     // Stream Rebuild Logic
     const handleStreamRebuild = async (batchSize: number = 0) => {
         const toastId = addToast(
-            '正在重建所有订阅缓存...',
+            t('rebuildingAll'),
             'info',
             Infinity // Persistent toast
         );
@@ -113,7 +115,7 @@ export default function AdminSubsClient({
 
         } catch (e) {
             console.error('Rebuild error:', e);
-            updateToast(toastId, `重建失败: ${e}`, 'error');
+            updateToast(toastId, t('rebuildFailed', { error: String(e) }), 'error');
             // Keep error toast for a while
             setTimeout(() => removeToast(toastId), 5000);
         } finally {
@@ -124,7 +126,7 @@ export default function AdminSubsClient({
     // Stream Single Rebuild Logic
     const handleSingleRebuild = async (token: string, username: string, remark: string) => {
         const toastId = addToast(
-            `正在重建 ${username} 的订阅...`,
+            t('rebuildingSingle', { username }),
             'info',
             Infinity
         );
@@ -166,7 +168,7 @@ export default function AdminSubsClient({
 
         } catch (e) {
             console.error('Rebuild error:', e);
-            updateToast(toastId, `重建失败: ${e}`, 'error');
+            updateToast(toastId, t('rebuildFailed', { error: String(e) }), 'error');
             setTimeout(() => removeToast(toastId), 5000);
         }
     };
@@ -180,9 +182,9 @@ export default function AdminSubsClient({
     };
 
     const handleDelete = async (token: string) => {
-        if (await confirm('确定要删除此订阅吗？删除后用户将无法恢复！', { confirmColor: 'red', confirmText: '彻底删除' })) {
+        if (await confirm(t('confirmDelete'), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
             await deleteAdminSubscription(token);
-            success('订阅已删除');
+            success(t('subDeleted'));
             refresh();
         }
     };
@@ -191,7 +193,7 @@ export default function AdminSubsClient({
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">
-                    所有订阅管理
+                    {t('title')}
                     <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
                 </h1>
                 <div className="flex flex-wrap gap-2">
@@ -203,7 +205,7 @@ export default function AdminSubsClient({
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20"
                     >
                         <span>➕</span>
-                        新增订阅
+                        {t('addSubscription')}
                     </button>
                     <button
                         onClick={() => setShowRebuildModal(true)}
@@ -211,22 +213,22 @@ export default function AdminSubsClient({
                         className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span>🔄</span>
-                        重建所有缓存
+                        {t('rebuildAllCache')}
                     </button>
                 </div>
             </div>
 
             {subs.length === 0 ? (
                 <div className="space-y-4">
-                    <Search placeholder="搜索订阅..." />
+                    <Search placeholder={t('searchPlaceholder')} />
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
-                        暂无任何订阅数据
+                        {t('noSubscriptions')}
                     </div>
                 </div>
             ) : (
                 <>
                     <div className="mb-4">
-                        <Search placeholder="搜索订阅..." />
+                        <Search placeholder={t('searchPlaceholder')} />
                     </div>
                     {/* Desktop View: Table */}
                     <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -234,13 +236,13 @@ export default function AdminSubsClient({
                             <table className="w-full text-left text-sm text-gray-600">
                                 <thead className="bg-gray-50 text-gray-900 font-medium">
                                     <tr>
-                                        <th className="px-6 py-4 whitespace-nowrap">备注 / Token</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">用户</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">缓存</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">上游源</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">配置</th>
-                                        <th className="px-6 py-4 whitespace-nowrap">创建时间</th>
-                                        <th className="px-6 py-4 whitespace-nowrap text-right">操作</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableRemark')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableUser')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableCache')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableSources')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableConfig')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap">{t('tableCreatedAt')}</th>
+                                        <th className="px-6 py-4 whitespace-nowrap text-right">{t('tableActions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -249,7 +251,7 @@ export default function AdminSubsClient({
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-col max-w-[180px]">
                                                     <div className="flex items-center gap-2">
-                                                        <div className={`w-2 h-2 rounded-full shrink-0 ${sub.enabled ? 'bg-green-500' : 'bg-red-500'}`} title={sub.enabled ? '启用' : '禁用'} />
+                                                        <div className={`w-2 h-2 rounded-full shrink-0 ${sub.enabled ? 'bg-green-500' : 'bg-red-500'}`} title={sub.enabled ? t('enabled') : t('disabled')} />
                                                         <span className="truncate text-sm font-medium text-gray-700" title={sub.remark}>{sub.remark}</span>
                                                     </div>
                                                     <span className="truncate text-xs text-gray-400 font-mono" title={sub.token}>{sub.token}</span>
@@ -260,17 +262,17 @@ export default function AdminSubsClient({
                                                 {sub.cacheTime ? (
                                                     sub.cacheTime > Date.now() ? (
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded w-fit border border-blue-100">有效</span>
-                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>过期: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
+                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded w-fit border border-blue-100">{t('cacheValid')}</span>
+                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded w-fit border border-green-100">已缓存</span>
-                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>更新: {new Date(sub.cacheTime).toLocaleString()}</span>
+                                                            <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded w-fit border border-green-100">{t('cacheCached')}</span>
+                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()}</span>
                                                         </div>
                                                     )
                                                 ) : (
-                                                    <span className="text-xs text-gray-300 italic">未缓存</span>
+                                                    <span className="text-xs text-gray-300 italic">{t('cacheNotCached')}</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-xs">
@@ -295,7 +297,7 @@ export default function AdminSubsClient({
                                                             );
                                                         })
                                                     ) : (
-                                                        <span className="text-gray-400 italic">全部 (All)</span>
+                                                        <span className="text-gray-400 italic">{t('allSources')}</span>
                                                     )}
                                                 </div>
                                             </td>
@@ -303,7 +305,7 @@ export default function AdminSubsClient({
                                                 <div className="space-y-1">
                                                     {sub.groupId && sub.groupId !== 'default' && <div className="text-purple-600 bg-purple-50 px-1 py-0.5 rounded w-fit">Group: Custom</div>}
                                                     {sub.ruleId && sub.ruleId !== 'default' && <div className="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded w-fit">Rules: Custom</div>}
-                                                    {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && <span className="text-gray-400">默认</span>}
+                                                    {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && <span className="text-gray-400">{t('configDefault')}</span>}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-gray-400 text-xs whitespace-nowrap">
@@ -312,26 +314,26 @@ export default function AdminSubsClient({
                                             <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                                 <button
                                                     onClick={async () => {
-                                                        if (await confirm('确定要重建此订阅的缓存吗？')) {
+                                                        if (await confirm(t('confirmRebuild'))) {
                                                             await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                         }
                                                     }}
                                                     className="text-green-600 hover:text-blue-800 font-medium"
-                                                    title="重建缓存 (清除并立即生成)"
+                                                    title={t('confirmRebuild')}
                                                 >
-                                                    重建
+                                                    {t('rebuild')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(sub)}
                                                     className="text-blue-600 hover:text-blue-800 font-medium"
                                                 >
-                                                    编辑
+                                                    {t('edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(sub.token)}
                                                     className="text-red-400 hover:text-red-600 font-medium"
                                                 >
-                                                    删除
+                                                    {t('delete')}
                                                 </button>
                                             </td>
                                         </tr>
@@ -355,7 +357,7 @@ export default function AdminSubsClient({
                                         <div className="text-sm text-gray-500 mt-0.5">{sub.remark}</div>
                                     </div>
                                     <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                                        {sub.enabled ? '启用' : '禁用'}
+                                        {sub.enabled ? t('enabled') : t('disabled')}
                                     </span>
                                 </div>
 
@@ -363,20 +365,20 @@ export default function AdminSubsClient({
                                     Token: {sub.token}
                                 </div>
                                 <div className="flex items-center gap-2 text-xs">
-                                    <span className="font-semibold text-gray-500">缓存:</span>
+                                    <span className="font-semibold text-gray-500">{t('mobileCache')}</span>
                                     {sub.cacheTime ? (
                                         sub.cacheTime > Date.now() ? (
-                                            <span className="text-blue-600">有效 (过期: {new Date(sub.cacheTime).toLocaleTimeString()})</span>
+                                            <span className="text-blue-600">{t('cacheValid')} ({t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()})</span>
                                         ) : (
-                                            <span className="text-green-600">已缓存 (更新: {new Date(sub.cacheTime).toLocaleString()})</span>
+                                            <span className="text-green-600">{t('cacheCached')} ({t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()})</span>
                                         )
                                     ) : (
-                                        <span className="text-gray-400">未缓存</span>
+                                        <span className="text-gray-400">{t('cacheNotCached')}</span>
                                     )}
                                 </div>
 
                                 <div className="text-xs flex items-center gap-2">
-                                    <div className="font-semibold text-gray-500 shrink-0">使用源:</div>
+                                    <div className="font-semibold text-gray-500 shrink-0">{t('mobileSources')}</div>
                                     <div className="flex flex-wrap gap-1">
                                         {(sub.selectedSources && sub.selectedSources.length > 0) ? (
                                             sub.selectedSources.map(sourceName => {
@@ -398,7 +400,7 @@ export default function AdminSubsClient({
                                                 );
                                             })
                                         ) : (
-                                            <span className="text-gray-400 italic">全部 (All)</span>
+                                            <span className="text-gray-400 italic">{t('allSources')}</span>
                                         )}
                                     </div>
                                 </div>
@@ -406,17 +408,17 @@ export default function AdminSubsClient({
                                 <div className="flex flex-wrap gap-2 text-xs">
                                     {sub.groupId && sub.groupId !== 'default' && (
                                         <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100 font-medium">
-                                            策略: Custom
+                                            {t('configGroup')}
                                         </div>
                                     )}
                                     {sub.ruleId && sub.ruleId !== 'default' && (
                                         <div className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 font-medium">
-                                            规则: Custom
+                                            {t('configRule')}
                                         </div>
                                     )}
                                     {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && (
                                         <div className="text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                                            默认配置
+                                            {t('configDefault')}
                                         </div>
                                     )}
                                 </div>
@@ -426,25 +428,25 @@ export default function AdminSubsClient({
                                     <div className="flex gap-4 text-sm font-medium">
                                         <button
                                             onClick={async () => {
-                                                if (await confirm('确定要重建此订阅的缓存吗？')) {
+                                                if (await confirm(t('confirmRebuild'))) {
                                                     await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                 }
                                             }}
                                             className="text-green-600 hover:text-green-800 font-medium"
                                         >
-                                            重建
+                                            {t('rebuild')}
                                         </button>
                                         <button
                                             onClick={() => handleEdit(sub)}
                                             className="text-blue-600 hover:text-blue-800"
                                         >
-                                            编辑
+                                            {t('edit')}
                                         </button>
                                         <button
                                             onClick={() => handleDelete(sub.token)}
                                             className="text-red-400 hover:text-red-600"
                                         >
-                                            删除
+                                            {t('delete')}
                                         </button>
                                     </div>
                                 </div>
@@ -459,19 +461,19 @@ export default function AdminSubsClient({
             <Modal
                 isOpen={isCreating}
                 onClose={() => setIsCreating(false)}
-                title="为用户新增订阅"
+                title={t('createTitle')}
                 maxWidth="max-w-lg"
             >
                 <div className="space-y-4">
                     {/* User Selector */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">选择用户</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('selectUser')}</label>
                         <select
                             className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
                             value={selectedUser}
                             onChange={e => setSelectedUser(e.target.value)}
                         >
-                            <option value="">请选择用户...</option>
+                            <option value="">{t('selectUserPlaceholder')}</option>
                             {users.map(u => (
                                 <option key={u.username} value={u.username}>
                                     {u.nickname ? `${u.nickname} (${u.username})` : u.username}
@@ -503,17 +505,17 @@ export default function AdminSubsClient({
                                 }
 
                                 setIsCreating(false);
-                                success(`已为用户 ${selectedUser} 创建订阅`);
+                                success(t('subCreated', { username: selectedUser }));
                                 refresh();
                             }}
                             onCancel={() => setIsCreating(false)}
-                            submitLabel="创建订阅"
+                            submitLabel={t('createLabel')}
                         />
                     )}
 
                     {!selectedUser && (
                         <div className="text-center py-8 text-gray-400">
-                            请先选择一个用户
+                            {t('selectUserHint')}
                         </div>
                     )}
                 </div>
@@ -523,7 +525,7 @@ export default function AdminSubsClient({
             <Modal
                 isOpen={!!editingSub}
                 onClose={() => setEditingSub(null)}
-                title={`编辑订阅 - ${editingSub?.username}`}
+                title={t('editTitle', { username: editingSub?.username || '' })}
             >
                 {editingSub && (
                     <SubscriptionForm
@@ -551,11 +553,11 @@ export default function AdminSubsClient({
                             });
                             setLoading(false);
                             setEditingSub(null);
-                            success('订阅更新成功');
+                            success(t('subUpdated'));
                             refresh();
                         }}
                         onCancel={() => setEditingSub(null)}
-                        submitLabel="保存更改"
+                        submitLabel={t('saveLabel')}
                     />
                 )}
             </Modal>
@@ -564,11 +566,11 @@ export default function AdminSubsClient({
             <Modal
                 isOpen={showRebuildModal}
                 onClose={() => setShowRebuildModal(false)}
-                title="重建订阅缓存配置"
+                title={t('rebuildTitle')}
             >
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600">
-                        选择重建方式。全并发速度最快，但可能对服务器造成较大压力。批量处理更稳定，适合订阅数量较多的情况。
+                        {t('rebuildDesc')}
                     </p>
 
                     <div className="space-y-3">
@@ -580,8 +582,8 @@ export default function AdminSubsClient({
                                 className="w-4 h-4 text-blue-600"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">全并发处理</div>
-                                <div className="text-xs text-gray-500">同时处理所有订阅，速度最快（推荐订阅数 &lt; 100）</div>
+                                <div className="font-medium text-gray-900">{t('fullConcurrency')}</div>
+                                <div className="text-xs text-gray-500">{t('fullConcurrencyDesc')}</div>
                             </div>
                         </label>
 
@@ -593,8 +595,8 @@ export default function AdminSubsClient({
                                 className="w-4 h-4 text-blue-600"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">批量处理（每批 10 个）</div>
-                                <div className="text-xs text-gray-500">适中的速度和服务器压力</div>
+                                <div className="font-medium text-gray-900">{t('batch10')}</div>
+                                <div className="text-xs text-gray-500">{t('batch10Desc')}</div>
                             </div>
                         </label>
 
@@ -606,8 +608,8 @@ export default function AdminSubsClient({
                                 className="w-4 h-4 text-blue-600"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">批量处理（每批 5 个）</div>
-                                <div className="text-xs text-gray-500">较慢但更稳定，适合订阅数量很多的情况</div>
+                                <div className="font-medium text-gray-900">{t('batch5')}</div>
+                                <div className="text-xs text-gray-500">{t('batch5Desc')}</div>
                             </div>
                         </label>
 
@@ -619,8 +621,8 @@ export default function AdminSubsClient({
                                 className="w-4 h-4 text-blue-600"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">逐个处理</div>
-                                <div className="text-xs text-gray-500">最慢但最稳定，适合调试或服务器资源有限的情况</div>
+                                <div className="font-medium text-gray-900">{t('batch1')}</div>
+                                <div className="text-xs text-gray-500">{t('batch1Desc')}</div>
                             </div>
                         </label>
 
@@ -632,7 +634,7 @@ export default function AdminSubsClient({
                                 className="w-4 h-4 text-blue-600"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">自定义批次大小</div>
+                                <div className="font-medium text-gray-900">{t('customBatch')}</div>
                                 {(rebuildBatchSize > 1 && rebuildBatchSize !== 5 && rebuildBatchSize !== 10) && (
                                     <input
                                         type="number"
@@ -645,17 +647,17 @@ export default function AdminSubsClient({
                                         }}
                                         onClick={(e) => e.stopPropagation()}
                                         className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        placeholder="输入批次大小（1-1000）"
+                                        placeholder={t('customBatchPlaceholder')}
                                     />
                                 )}
-                                <div className="text-xs text-gray-500 mt-1">自定义每批处理的订阅数量</div>
+                                <div className="text-xs text-gray-500 mt-1">{t('customBatchDesc')}</div>
                             </div>
                         </label>
                     </div>
 
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                         <p className="text-xs text-yellow-800">
-                            ⚠️ 此操作将清除所有现有缓存并重新生成。当前共有 <strong>{total}</strong> 个订阅需要处理。
+                            ⚠️ {t('rebuildWarning', { total })}
                         </p>
                     </div>
 
@@ -667,13 +669,13 @@ export default function AdminSubsClient({
                             }}
                             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
-                            开始重建
+                            {t('startRebuild')}
                         </button>
                         <button
                             onClick={() => setShowRebuildModal(false)}
                             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                         >
-                            取消
+                            {t('cancel')}
                         </button>
                     </div>
                 </div>

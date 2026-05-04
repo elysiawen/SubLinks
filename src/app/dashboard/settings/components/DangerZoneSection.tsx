@@ -6,6 +6,7 @@ import { deleteOwnAccount } from '@/lib/user-actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import SecurityVerificationModal from './SecurityVerificationModal';
+import { useTranslations } from 'next-intl';
 
 interface DangerZoneSectionProps {
     role: string;
@@ -15,6 +16,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
     const router = useRouter();
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+    const t = useTranslations('dashboard');
 
     // Delete Account State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -53,8 +55,8 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
         setIsDeleteModalOpen(false);
 
         // Step 2: Double Confirmation
-        if (await confirm('警告：此操作不可逆！您的所有订阅、配置和日志数据将被永久删除。确定要继续吗？', {
-            confirmText: '确认注销',
+        if (await confirm(t('settings.dangerZone.deleteConfirm'), {
+            confirmText: t('settings.dangerZone.deleteConfirmButton'),
             confirmColor: 'red'
         })) {
             setDeleteLoading(true);
@@ -65,7 +67,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
                 error(result.error);
                 // Failed. User has to start over? keeping it simple.
             } else {
-                success('账户已注销');
+                success(t('settings.dangerZone.deleted'));
                 router.push('/login');
             }
         }
@@ -75,17 +77,17 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
         <div className="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
             <div className="p-6 border-b border-red-50 bg-red-50/30">
                 <h2 className="text-lg font-bold text-red-700 flex items-center gap-2">
-                    ⚠️ 危险区域
+                    {t('settings.dangerZone.heading')}
                 </h2>
-                <p className="text-sm text-red-600/80 mt-1">此区域的操作不可逆，请谨慎操作</p>
+                <p className="text-sm text-red-600/80 mt-1">{t('settings.dangerZone.description')}</p>
             </div>
             <div className="p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="font-medium text-gray-900">注销账户</h3>
+                        <h3 className="font-medium text-gray-900">{t('settings.dangerZone.deleteAccount')}</h3>
                         <p className="text-sm text-gray-500 mt-1">
-                            永久删除您的账户及其所有关联数据（订阅、配置、日志等）。
-                            {role === 'admin' && <span className="block mt-1 text-red-500 font-medium">管理员账户无法直接注销。</span>}
+                            {t('settings.dangerZone.deleteAccountDesc')}
+                            {role === 'admin' && <span className="block mt-1 text-red-500 font-medium">{t('settings.dangerZone.adminCannotDelete')}</span>}
                         </p>
                     </div>
                     <button
@@ -96,7 +98,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
                             : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
                             }`}
                     >
-                        注销账户
+                        {t('settings.dangerZone.deleteAccount')}
                     </button>
                 </div>
             </div>
@@ -105,10 +107,10 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
             <SecurityVerificationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="身份验证"
-                description="为了保障您的账户安全，在注销账户前我们需要验证您的登录密码。"
+                title={t('settings.dangerZone.verifyTitle')}
+                description={t('settings.dangerZone.verifyDesc')}
                 onConfirm={handleDeleteAccountConfirm}
-                confirmText="确认注销"
+                confirmText={t('settings.dangerZone.deleteConfirmButton')}
                 isLoading={deleteLoading}
             />
         </div>

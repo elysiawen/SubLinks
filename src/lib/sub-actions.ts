@@ -28,7 +28,7 @@ export async function createSubscription(remark: string, customRules: string, gr
     if (maxSubs > 0) {
         const userSubs = await db.getUserSubscriptions(session.username);
         if (userSubs.length >= maxSubs) {
-            return { error: `超过最大订阅数量限制 (${maxSubs}条)` };
+            return { error: 'limitExceeded' };
         }
     }
 
@@ -48,7 +48,7 @@ export async function createSubscription(remark: string, customRules: string, gr
     subData.selectedSources = subData.selectedSources?.filter(s => s.trim() !== '') || [];
 
     if (!subData.selectedSources || subData.selectedSources.length === 0) {
-        return { error: '至少选择一个上游源' };
+        return { error: 'selectAtLeastOne' };
     }
 
     // Validate that selected sources are enabled
@@ -59,7 +59,7 @@ export async function createSubscription(remark: string, customRules: string, gr
 
     const invalidSources = subData.selectedSources.filter(s => !enabledSourceNames.has(s));
     if (invalidSources.length > 0) {
-        return { error: `无法创建订阅: 所选源 (${invalidSources.join(', ')}) 已被禁用或不存在` };
+        return { error: 'createFailed' };
     }
 
     await db.createSubscription(token, session.username, subData);
@@ -102,7 +102,7 @@ export async function updateSubscription(token: string, remark: string, customRu
     // Filter and Validate selectedSources
     const filteredSources = selectedSources.filter(s => s.trim() !== '');
     if (filteredSources.length === 0) {
-        return { error: '至少选择一个上游源' };
+        return { error: 'selectAtLeastOne' };
     }
     subData.selectedSources = filteredSources;
 
@@ -116,7 +116,7 @@ export async function updateSubscription(token: string, remark: string, customRu
     // Ideally we should prevent saving, but user might be editing an already disabled sub? 
     // Actually user dashboard is for ACTIVE management. If they pick a disabled source, we should tell them.
     if (invalidSources.length > 0) {
-        return { error: `无法更新订阅: 所选源 (${invalidSources.join(', ')}) 已被禁用或不存在` };
+        return { error: 'updateFailed' };
     }
 
     // Reset auto-disabled flag if user manually updates subscription
@@ -168,7 +168,7 @@ export async function toggleSubscriptionEnabled(token: string, enabled: boolean)
         }
 
         if (!isValid) {
-            return { error: '无法启用: 该订阅没有可用的上游源 (所有选中的源均已被禁用或删除)' };
+            return { error: 'enableFailed' };
         }
     }
 

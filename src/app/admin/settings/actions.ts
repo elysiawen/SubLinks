@@ -77,19 +77,19 @@ export async function testS3Connection(formData: FormData) {
         if (!endpoint) {
             // Validation
             if (preset === 'cloudflare-r2' && !accountId) {
-                return { success: false, error: 'R2 需要 Account ID' };
+                return { success: false, error: 'r2NeedAccountId' };
             }
 
             const { buildS3Endpoint } = await import('@/lib/storage');
             endpoint = buildS3Endpoint(preset, accountId, region);
 
             if (!endpoint) {
-                return { success: false, error: '请填写 Endpoint 或选择预设' };
+                return { success: false, error: 'endpointRequired' };
             }
         }
 
         if (!accessKeyId || !secretAccessKey || !bucketName) {
-            return { success: false, error: '请填写所有必需的 S3 配置' };
+            return { success: false, error: 's3ConfigRequired' };
         }
 
         // Import S3 client
@@ -134,8 +134,8 @@ export async function testS3Connection(formData: FormData) {
             return {
                 success: true,
                 message: listError
-                    ? `连接成功！但在列出文件时遇到错误 (${listError})，这通常是因为权限限制。上传功能可用。`
-                    : '连接成功！已验证读写权限。'
+                    ? `s3ConnectedWithListError:${listError}`
+                    : 's3Connected'
             };
         } catch (error: any) {
             console.error('S3 PutObject failed:', error);
@@ -144,15 +144,15 @@ export async function testS3Connection(formData: FormData) {
     } catch (error: any) {
         console.error('S3 connection test failed:', error);
 
-        let errorMessage = '连接失败';
+        let errorMessage = 'connectionFailed';
         if (error.name === 'NoSuchBucket') {
-            errorMessage = '存储桶不存在';
+            errorMessage = 'bucketNotFound';
         } else if (error.name === 'InvalidAccessKeyId') {
-            errorMessage = 'Access Key ID 无效';
+            errorMessage = 'invalidAccessKeyId';
         } else if (error.name === 'SignatureDoesNotMatch') {
-            errorMessage = 'Secret Access Key 无效';
+            errorMessage = 'invalidSecretKey';
         } else if (error.Code === 'Unauthorized' || error.$metadata?.httpStatusCode === 401) {
-            errorMessage = '认证失败 (Unauthorized)。请检查凭据和权限。';
+            errorMessage = 'authFailed';
         } else if (error.message) {
             errorMessage = error.message;
         }

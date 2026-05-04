@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { zhCN, enUS } from 'date-fns/locale';
+import { useTranslations, useLocale } from 'next-intl';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import {
@@ -48,7 +49,7 @@ export interface UnifiedSessionManagerProps {
 export function parseUA(ua: string, type: 'web' | 'client') {
     if (!ua || ua === 'unknown') {
         return {
-            name: type === 'web' ? '未知浏览器' : '未知客户端',
+            nameKey: type === 'web' ? 'session.unknownBrowser' : 'session.unknownClient',
             isMobile: false
         };
     }
@@ -67,7 +68,7 @@ export function parseUA(ua: string, type: 'web' | 'client') {
     else if (ua.includes('Chrome/')) client = 'Chrome';
     else if (ua.includes('Firefox/')) client = 'Firefox';
     else if (ua.includes('Safari/') && !ua.includes('Chrome/')) client = 'Safari';
-    else if (ua.includes('MicroMessenger/')) client = '微信';
+    else if (ua.includes('MicroMessenger/')) client = 'session.wechat';
     else if (ua.includes('Clash')) client = 'Clash';
     else if (ua.includes('Shadowrocket')) client = 'Shadowrocket';
     else if (ua.includes('Quantumult')) client = 'Quantumult';
@@ -77,9 +78,12 @@ export function parseUA(ua: string, type: 'web' | 'client') {
     else if (ua.includes('v2rayN')) client = 'v2rayN';
     else if (ua.includes('v2rayNG')) client = 'v2rayNG';
 
-    const name = os && client ? `${os} / ${client}` : (client || os || (type === 'web' ? '网页端' : '客户端'));
+    const fallbackKey = type === 'web' ? 'session.webFallback' : 'session.clientFallback';
+    const nameKey = os && client ? `${os} / ${client.startsWith('session.') ? '' : client}` : (client || os || fallbackKey);
+    // If client is a translation key (like 'session.wechat'), return it separately
+    const translationKey = client.startsWith('session.') ? client : undefined;
 
-    return { name, isMobile };
+    return { nameKey, nameStatic: os && client && !client.startsWith('session.') ? `${os} / ${client}` : undefined, translationKey, isMobile };
 }
 
 export default function SessionManager({
@@ -88,6 +92,9 @@ export default function SessionManager({
     onRevoke,
     currentSessionId
 }: UnifiedSessionManagerProps) {
+    const t = useTranslations('common');
+    const locale = useLocale();
+    const dateFnsLocale = locale === 'zh' ? zhCN : enUS;
     const [sessions, setSessions] = useState<UnifiedSessionItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -95,6 +102,21 @@ export default function SessionManager({
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+
+    // Helper to resolve parsed UA name
+    const resolveUAName = (info: ReturnType<typeof parseUA>): string => {
+        if (info.nameStatic) return info.nameStatic;
+        if (info.translationKey) {
+            // Handle "os / session.wechat" case
+            const parts = info.nameKey.split(' / ');
+            if (parts.length === 2) {
+                const translatedClient = t(info.translationKey);
+                return `${parts[0]} / ${translatedClient}`;
+            }
+            return t(info.translationKey);
+        }
+        return t(info.nameKey);
+    };
 
     const loadData = async (search?: string) => {
         setLoading(true);
@@ -107,7 +129,7 @@ export default function SessionManager({
             }
         } catch (err) {
             console.error('Failed to load sessions', err);
-            error('获取会话列表失败');
+            error(t('session.fetchFailed'));
         } finally {
             setLoading(false);
         }
@@ -134,11 +156,11 @@ export default function SessionManager({
 
     const handleRevokeAction = async (id: string, type: 'web' | 'client', isCurrent?: boolean) => {
         const warning = isAdmin
-            ? '管理员确认：确定要强制注销该用户的该次会话吗？'
-            : '安全警示：确定要强制注销该设备的登录状态吗？此操作将立即中断该设备的所有活跃会话。';
+            ? t('session.revokeConfirmAdmin')
+            : t('session.revokeConfirmUser');
 
         if (!(await confirm(warning, {
-            confirmText: '确认注销',
+            confirmText: t('session.confirmRevoke'),
             confirmColor: 'red'
         }))) return;
 
@@ -149,18 +171,18 @@ export default function SessionManager({
                 // If it was revoked (deleted from DB), remove from UI
                 if (result.revoked) {
                     setSessions(prev => prev.filter(s => s.id !== id));
-                    success(result.message || (isAdmin ? '会话已强制下线' : '强制下线命令已发出，设备将立即退出。'));
+                    success(result.message || (isAdmin ? t('session.sessionForceOffline') : t('session.forceOfflineSuccess')));
                 } else {
                     // If backend returned success but nothing was revoked (e.g. already gone)
                     // We still refresh the list to stay in sync
                     loadData(isAdmin ? searchTerm : undefined);
-                    error(result.message || '该会话已不存在');
+                    error(result.message || t('session.sessionNotFound'));
                 }
             } else {
-                error(result.error || '注销失败');
+                error(result.error || t('session.revokeFailed'));
             }
         } catch (err) {
-            error('操作失败，请检查网络');
+            error(t('session.networkError'));
         } finally {
             setDeletingId(null);
         }
@@ -174,9 +196,9 @@ export default function SessionManager({
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-1">
                         <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500">
                             <Filter className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-widest">筛选会话</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">{t('session.filterSessions')}</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-zinc-800 rounded-2xl border border-gray-200/50 dark:border-zinc-700/30 shadow-sm">
                             <button
                                 onClick={() => toggleFilterType('web')}
@@ -187,14 +209,14 @@ export default function SessionManager({
                                 }`}
                             >
                                 <Monitor className="w-3.5 h-3.5" />
-                                <span>网页端</span>
+                                <span>{t('session.web')}</span>
                                 {filterTypes.includes('web') && (
                                     <span className="flex w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                 )}
                             </button>
-                            
+
                             <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700" />
-                            
+
                             <button
                                 onClick={() => toggleFilterType('client')}
                                 className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
@@ -204,7 +226,7 @@ export default function SessionManager({
                                 }`}
                             >
                                 <Box className="w-3.5 h-3.5" />
-                                <span>客户端 API</span>
+                                <span>{t('session.clientAPI')}</span>
                                 {filterTypes.includes('client') && (
                                     <span className="flex w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                 )}
@@ -218,7 +240,7 @@ export default function SessionManager({
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder={isAdmin ? "搜索用户名、IP 或 设备名..." : "搜索 IP 或 设备名..."}
+                        placeholder={isAdmin ? t('session.searchAdmin') : t('session.searchUser')}
                         className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700/50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium text-sm shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -229,13 +251,13 @@ export default function SessionManager({
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <RefreshCcw className="w-10 h-10 text-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                    <p className="text-sm text-gray-400 font-medium animate-pulse">正在获取安全会话数据...</p>
+                    <p className="text-sm text-gray-400 font-medium animate-pulse">{t('session.loading')}</p>
                 </div>
             ) : filteredSessions.length === 0 ? (
                 <div className="text-center py-20 bg-gray-50/30 dark:bg-zinc-900/10 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
                     <ShieldCheck className="w-16 h-16 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">无匹配会话</h3>
-                    <p className="text-sm text-gray-500 mt-2">目前没有任何符合过滤条件的登录记录。</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('session.noSessions')}</h3>
+                    <p className="text-sm text-gray-500 mt-2">{t('session.noSessionsDesc')}</p>
                 </div>
             ) : (
                 <div className="grid gap-4">
@@ -276,19 +298,19 @@ export default function SessionManager({
                                                 </div>
                                             )}
                                             <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight break-all sm:break-normal whitespace-normal sm:whitespace-nowrap leading-snug">
-                                                {session.deviceInfo && session.deviceInfo !== session.ua ? session.deviceInfo : info.name}
+                                                {session.deviceInfo && session.deviceInfo !== session.ua ? session.deviceInfo : resolveUAName(info)}
                                             </h4>
                                             {isCurrent && (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold bg-green-500 text-white dark:bg-green-500/20 dark:text-green-400 rounded-full whitespace-nowrap">
                                                     <ShieldCheck className="w-3 h-3" />
-                                                    当前设备
+                                                    {t('session.currentDevice')}
                                                 </span>
                                             )}
                                             <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap ${session.type === 'web'
                                                 ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20'
                                                 : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20'
                                                 }`}>
-                                                {session.type === 'web' ? (isAdmin ? 'Web' : '网页端') : (isAdmin ? 'API' : '客户端 API')}
+                                                {session.type === 'web' ? (isAdmin ? t('session.webTag') : t('session.web')) : (isAdmin ? t('session.apiTag') : t('session.clientAPI'))}
                                             </span>
                                             {session.loginMethod && (
                                                 <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap ${session.loginMethod === 'passkey'
@@ -297,7 +319,7 @@ export default function SessionManager({
                                                         ? 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-500/10 dark:text-orange-300 dark:border-orange-500/20'
                                                         : 'bg-gray-50 text-gray-600 border-gray-100 dark:bg-gray-500/10 dark:text-gray-300 dark:border-gray-500/20'
                                                     }`}>
-                                                    {session.loginMethod === 'passkey' ? 'Passkey' : session.loginMethod === 'qr' ? '扫码' : '密码'}
+                                                    {t(`session.${session.loginMethod}`)}
                                                 </span>
                                             )}
                                         </div>
@@ -323,13 +345,13 @@ export default function SessionManager({
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div 
+                                                <div
                                                     className="flex items-center gap-1.5 group/time cursor-pointer outline-none active:scale-95 transition-transform"
                                                     tabIndex={0}
                                                 >
                                                     <Clock className="w-4 h-4 text-orange-500/60" />
-                                                    <span className="block group-hover/time:hidden group-focus/time:hidden">{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: zhCN })}活跃</span>
-                                                    <span className="hidden group-hover/time:block group-focus/time:block">{format(session.lastActive, 'yyyy-MM-dd HH:mm:ss')} 活跃</span>
+                                                    <span className="block group-hover/time:hidden group-focus/time:hidden">{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: dateFnsLocale })}{t('session.active')}</span>
+                                                    <span className="hidden group-hover/time:block group-focus/time:block">{format(session.lastActive, 'yyyy-MM-dd HH:mm:ss')} {t('session.active')}</span>
                                                 </div>
                                             </div>
 
@@ -340,7 +362,7 @@ export default function SessionManager({
                                                     <span className="truncate max-w-[200px] sm:max-w-md md:max-w-lg">{session.ua}</span>
                                                 </div>
                                                 <div className="absolute bottom-full left-0 mb-2 invisible group-hover/ua:visible bg-zinc-900 text-zinc-100 text-[10px] p-3 rounded-xl w-72 break-all shadow-2xl z-30 border border-zinc-700 whitespace-normal leading-relaxed">
-                                                    <div className="font-bold text-gray-400 mb-1 border-b border-zinc-700 pb-1">完整 User Agent</div>
+                                                    <div className="font-bold text-gray-400 mb-1 border-b border-zinc-700 pb-1">{t('session.fullUA')}</div>
                                                     {session.ua}
                                                 </div>
                                             </div>
@@ -361,12 +383,12 @@ export default function SessionManager({
                                             ) : (
                                                 <XCircle className="w-4 h-4" />
                                             )}
-                                            <span>{isAdmin ? '强制登出' : '强制下线'}</span>
+                                            <span>{isAdmin ? t('session.forceLogout') : t('session.forceOffline')}</span>
                                         </button>
                                     ) : (
                                         <div className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-zinc-600 font-medium px-4 whitespace-nowrap">
                                             <ShieldCheck className="w-3.5 h-3.5" />
-                                            受保护的当前会话
+                                            {t('session.protectedSession')}
                                         </div>
                                     )}
                                 </div>
@@ -381,9 +403,9 @@ export default function SessionManager({
                 <div className="flex items-start gap-3 p-4 bg-blue-50/30 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-900/20 rounded-2xl mt-6">
                     <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                     <div className="space-y-1">
-                        <p className="text-sm font-bold text-blue-900 dark:text-blue-300">安全防护提示</p>
+                        <p className="text-sm font-bold text-blue-900 dark:text-blue-300">{t('session.securityTip')}</p>
                         <p className="text-[11px] text-blue-700/70 dark:text-blue-400/70 leading-relaxed">
-                            系统会实时监控登录状态。如果您在列表中发现非本人操作的设备或异常 IP 位置，请先点击“强制下线”，并立即更您的登录密码。
+                            {t('session.securityTipDesc')}
                         </p>
                     </div>
                 </div>

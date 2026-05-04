@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ServerStatus {
     environment: string;
@@ -50,6 +51,7 @@ interface ServerStatus {
 }
 
 export default function ServerStatusClient() {
+    const t = useTranslations('admin.status');
     const [status, setStatus] = useState<ServerStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -81,10 +83,10 @@ export default function ServerStatusClient() {
         const secs = Math.floor(seconds % 60);
 
         const parts = [];
-        if (days > 0) parts.push(`${days}天`);
-        if (hours > 0) parts.push(`${hours}小时`);
-        if (minutes > 0) parts.push(`${minutes}分钟`);
-        if (secs > 0 || parts.length === 0) parts.push(`${secs}秒`);
+        if (days > 0) parts.push(`${days}${t('days')}`);
+        if (hours > 0) parts.push(`${hours}${t('hours')}`);
+        if (minutes > 0) parts.push(`${minutes}${t('minutes')}`);
+        if (secs > 0 || parts.length === 0) parts.push(`${secs}${t('seconds')}`);
 
         return parts.join(' ');
     };
@@ -116,7 +118,7 @@ export default function ServerStatusClient() {
         return (
             <div className="p-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-                    ❌ 加载失败: {error}
+                    ❌ {t('loadFailed')}: {error}
                 </div>
             </div>
         );
@@ -129,12 +131,12 @@ export default function ServerStatusClient() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">服务器状态</h1>
-                    <p className="text-sm text-gray-500 mt-1">主机名: {status.hostname}</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
+                    <p className="text-sm text-gray-500 mt-1">{t('hostname', { hostname: status.hostname })}</p>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>实时监控</span>
+                    <span>{t('realtimeMonitor')}</span>
                 </div>
             </div>
 
@@ -146,11 +148,11 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🌐</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">运行环境</h3>
+                        <h3 className="font-semibold text-gray-800">{t('environment')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">环境</span>
+                            <span className="text-gray-600">{t('envLabel')}</span>
                             <span className="font-medium text-gray-900">{status.environment}</span>
                         </div>
                         <div className="flex justify-between">
@@ -158,11 +160,11 @@ export default function ServerStatusClient() {
                             <span className="font-medium text-gray-900">{status.nodeVersion}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">平台</span>
+                            <span className="text-gray-600">{t('platform')}</span>
                             <span className="font-medium text-gray-900">{status.platform}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">架构</span>
+                            <span className="text-gray-600">{t('architecture')}</span>
                             <span className="font-medium text-gray-900">{status.arch}</span>
                         </div>
                     </div>
@@ -174,27 +176,27 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">💾</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">数据库</h3>
+                        <h3 className="font-semibold text-gray-800">{t('database')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">类型</span>
+                            <span className="text-gray-600">{t('dbType')}</span>
                             <span className="font-medium text-gray-900">{status.database}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">连接延迟</span>
+                            <span className="text-gray-600">{t('dbLatency')}</span>
                             <span className={`font-medium ${status.dbLatency === null ? 'text-red-600' :
                                 status.dbLatency < 50 ? 'text-green-600' :
                                     status.dbLatency < 100 ? 'text-yellow-600' :
                                         'text-red-600'
                                 }`}>
-                                {status.dbLatency === null ? '连接失败' : `${status.dbLatency}ms`}
+                                {status.dbLatency === null ? t('dbConnectFailed') : `${status.dbLatency}ms`}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">状态</span>
+                            <span className="text-gray-600">{t('dbStatus')}</span>
                             <span className={`font-medium ${status.dbLatency !== null ? 'text-green-600' : 'text-red-600'}`}>
-                                {status.dbLatency !== null ? '✓ 正常' : '✗ 异常'}
+                                {status.dbLatency !== null ? `✓ ${t('dbConnected')}` : `✗ ${t('dbDisconnected')}`}
                             </span>
                         </div>
                     </div>
@@ -206,19 +208,19 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">⚡</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">CPU 信息</h3>
+                        <h3 className="font-semibold text-gray-800">{t('cpuInfo')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">核心数</span>
+                            <span className="text-gray-600">{t('cpuCores')}</span>
                             <span className="font-medium text-gray-900">{status.cpu.cores}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">频率</span>
+                            <span className="text-gray-600">{t('cpuFrequency')}</span>
                             <span className="font-medium text-gray-900">{status.cpu.speed} MHz</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">负载(1min)</span>
+                            <span className="text-gray-600">{t('cpuLoad')}</span>
                             <span className="font-medium text-gray-900">{status.cpu.loadAverage['1min'].toFixed(2)}</span>
                         </div>
                         <div className="text-xs text-gray-500 truncate" title={status.cpu.model}>
@@ -233,14 +235,14 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">⏱️</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">进程运行时间</h3>
+                        <h3 className="font-semibold text-gray-800">{t('processUptime')}</h3>
                     </div>
                     <div className="space-y-2">
                         <div className="text-xl font-bold text-gray-900">
                             {formatUptime(status.uptime)}
                         </div>
                         <div className="text-gray-600 text-xs">
-                            自进程启动以来
+                            {t('processUptimeDesc')}
                         </div>
                     </div>
                 </div>
@@ -251,14 +253,14 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🖥️</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">系统运行时间</h3>
+                        <h3 className="font-semibold text-gray-800">{t('systemUptime')}</h3>
                     </div>
                     <div className="space-y-2">
                         <div className="text-xl font-bold text-gray-900">
                             {formatUptime(status.systemUptime)}
                         </div>
                         <div className="text-gray-600 text-xs">
-                            自系统启动以来
+                            {t('systemUptimeDesc')}
                         </div>
                     </div>
                 </div>
@@ -269,11 +271,11 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🔲</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">进程内存</h3>
+                        <h3 className="font-semibold text-gray-800">{t('processMemory')}</h3>
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">已使用</span>
+                            <span className="text-gray-600">{t('memoryUsed')}</span>
                             <span className="font-medium text-gray-900">{formatBytes(status.memory.process.used)}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -297,13 +299,13 @@ export default function ServerStatusClient() {
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">📊</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">系统资源</h3>
+                        <h3 className="font-semibold text-gray-800">{t('systemResources')}</h3>
                     </div>
                     <div className="space-y-6">
                         {/* CPU Usage */}
                         <div>
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-600">CPU 使用率</span>
+                                <span className="text-sm text-gray-600">{t('cpuUsage')}</span>
                                 <span className="text-sm font-medium text-gray-900">{status.cpu.usage.toFixed(1)}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-3">
@@ -319,7 +321,7 @@ export default function ServerStatusClient() {
                         {/* Memory Usage */}
                         <div>
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-600">内存使用率</span>
+                                <span className="text-sm text-gray-600">{t('memoryUsage')}</span>
                                 <span className="text-sm font-medium text-gray-900">{status.memory.system.percentage.toFixed(1)}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-3">
@@ -335,15 +337,15 @@ export default function ServerStatusClient() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <div>
-                            <div className="text-xs text-gray-600">内存已用</div>
+                            <div className="text-xs text-gray-600">{t('memoryUsedLabel')}</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.used)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">内存空闲</div>
+                            <div className="text-xs text-gray-600">{t('memoryFree')}</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.free)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">内存总计</div>
+                            <div className="text-xs text-gray-600">{t('memoryTotal')}</div>
                             <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.total)}</div>
                         </div>
                     </div>
@@ -356,7 +358,7 @@ export default function ServerStatusClient() {
                             <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
                                 <span className="text-xl">🌐</span>
                             </div>
-                            <h3 className="font-semibold text-gray-800">网络接口</h3>
+                            <h3 className="font-semibold text-gray-800">{t('networkInterfaces')}</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {status.network.map((iface, idx) => (
@@ -382,7 +384,7 @@ export default function ServerStatusClient() {
 
             {/* Footer Note */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-                <p>💡 <strong>提示：</strong> 数据每 5 秒自动刷新一次 · 最后更新: {new Date(status.timestamp).toLocaleTimeString('zh-CN')}</p>
+                <p>💡 <strong>{t('footerTip', { time: new Date(status.timestamp).toLocaleTimeString('zh-CN') })}</strong></p>
             </div>
         </div>
     );

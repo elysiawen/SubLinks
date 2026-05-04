@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, memo } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 
 interface ProxyGroup {
@@ -17,6 +18,8 @@ interface RuleEditorProps {
 }
 
 const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [], className }: RuleEditorProps) {
+    const t = useTranslations('common.ruleEditor');
+
     // Mode toggle
     const [ruleMode, setRuleMode] = useState<'simple' | 'advanced'>('simple');
     const [isSwitching, setIsSwitching] = useState(false);
@@ -89,13 +92,13 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
 
         // Add all proxy groups
         proxyGroups.filter(p => p.name.toLowerCase().includes(policySearch.toLowerCase())).forEach(p => {
-            const source = p.source === 'custom' ? '自定义组' : p.source;
+            const source = p.source === 'custom' ? t('customGroups') : p.source;
             if (!grouped[source]) grouped[source] = [];
             grouped[source].push(p);
         });
 
         return grouped;
-    }, [proxyGroups, policySearch]);
+    }, [proxyGroups, policySearch, t]);
 
     const addGuiRule = () => {
         if (!newRuleValue.trim()) return;
@@ -142,7 +145,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
         <div className={className}>
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
-                    规则内容
+                    {t('contentLabel')}
                 </label>
                 <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
                     <button
@@ -150,14 +153,14 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                         disabled={isSwitching}
                         className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
-                        简易模式
+                        {t('simpleMode')}
                     </button>
                     <button
                         onClick={() => handleSwitchMode('advanced')}
                         disabled={isSwitching}
                         className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
-                        高级模式
+                        {t('advancedMode')}
                     </button>
                 </div>
             </div>
@@ -165,7 +168,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
             {isSwitching ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
                     <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-                    <span className="text-xs italic">切换编辑器模式中...</span>
+                    <span className="text-xs italic">{t('switching')}</span>
                 </div>
             ) : ruleMode === 'advanced' ? (
                 <div>
@@ -174,10 +177,10 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                         onChange={(e) => onChange(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                         rows={15}
-                        placeholder="- DOMAIN-SUFFIX,google.com,🚀 节点选择&#10;- DOMAIN-KEYWORD,youtube,🎬 YouTube&#10;- IP-CIDR,192.168.0.0/16,DIRECT&#10;- GEOIP,CN,DIRECT&#10;- MATCH,🚀 节点选择"
+                        placeholder={t('yamlPlaceholder')}
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        YAML 格式，每行一条规则，格式: - TYPE,VALUE,POLICY
+                        {t('yamlFormat')}
                     </p>
                 </div>
             ) : (
@@ -190,7 +193,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 value={newRuleValue}
                                 onChange={(e) => setNewRuleValue(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addGuiRule()}
-                                placeholder="规则值"
+                                placeholder={t('ruleValue')}
                                 className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-2"
                             />
 
@@ -214,7 +217,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                         type="text"
                                         value={newRulePolicy}
                                         onChange={(e) => setNewRulePolicy(e.target.value)}
-                                        placeholder="策略"
+                                        placeholder={t('policy')}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                     {proxyGroups.length > 0 && (
@@ -254,7 +257,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 setRuleSearch(e.target.value);
                                 setVisibleCount(100);
                             }}
-                            placeholder="搜索规则内容、策略名称..."
+                            placeholder={t('searchRulesPlaceholder')}
                             className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
@@ -263,11 +266,11 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                     {isParsing ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg">
                             <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-                            <span className="text-xs italic">解析规则中...</span>
+                            <span className="text-xs italic">{t('parsingRules')}</span>
                         </div>
                     ) : filteredRules.length === 0 ? (
                         <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
-                            {ruleSearch ? '没有找到匹配的规则' : '暂无规则，请添加'}
+                            {ruleSearch ? t('noRulesMatch') : t('noRules')}
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -293,14 +296,17 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                             </div>
                             <div className="flex items-center justify-between">
                                 <p className="text-xs text-gray-400">
-                                    展示 {visibleRules.length} / 共 {filteredRules.length} 条{ruleSearch && '结果'} (总 {guiRules.length}条)
+                                    {ruleSearch
+                                        ? t('rulesCountSearch', { visible: visibleRules.length, filtered: filteredRules.length, total: guiRules.length })
+                                        : t('rulesCount', { visible: visibleRules.length, filtered: filteredRules.length, total: guiRules.length })
+                                    }
                                 </p>
                                 {visibleCount < filteredRules.length && (
                                     <button
                                         onClick={() => setVisibleCount(prev => prev + 200)}
                                         className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition"
                                     >
-                                        加载更多 (+200)
+                                        {t('loadMore')}
                                     </button>
                                 )}
                             </div>
@@ -313,7 +319,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
             <Modal
                 isOpen={showPolicySelector}
                 onClose={() => setShowPolicySelector(false)}
-                title="选择策略"
+                title={t('selectPolicy')}
                 maxWidth="max-w-2xl"
                 zIndex={60}
             >
@@ -323,7 +329,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                             type="text"
                             value={policySearch}
                             onChange={(e) => setPolicySearch(e.target.value)}
-                            placeholder="搜索策略..."
+                            placeholder={t('searchPolicy')}
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
@@ -331,7 +337,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                     <div className="overflow-y-auto flex-1 py-4 space-y-6">
                         {/* Built-in Policies */}
                         <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">内置策略</h4>
+                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('builtinPolicies')}</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {['DIRECT', 'REJECT', 'REJECT-TINYGIF', 'NO-RESOLVE'].map(p => (
                                     <button
@@ -393,7 +399,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                             onClick={() => setShowPolicySelector(false)}
                             className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                         >
-                            关闭
+                            {t('close')}
                         </button>
                     </div>
                 </div>

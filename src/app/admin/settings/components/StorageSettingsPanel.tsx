@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useToast } from '@/components/ToastProvider';
 import { S3_PRESETS, buildS3Endpoint } from '@/lib/storage/utils';
 
 export default function StorageSettingsPanel({ config }: { config: any }) {
+    const t = useTranslations('admin.settingsPanels.storage');
     const router = useRouter();
     const { success, error } = useToast();
     const [isSaving, setIsSaving] = useState(false);
@@ -18,7 +20,7 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="mr-2">💾</span> 存储设置
+                <span className="mr-2">💾</span> {t('heading')}
             </h3>
             <form data-storage-form onSubmit={async (e) => {
                 e.preventDefault();
@@ -38,16 +40,16 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                 try {
                     const { updateGlobalConfig } = await import('../actions');
                     await updateGlobalConfig(formData);
-                    success('存储设置已保存');
+                    success(t('saved'));
                     router.refresh();
                 } catch (err) {
-                    error('保存失败');
+                    error(t('saveFailed'));
                 } finally {
                     setIsSaving(false);
                 }
             }} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">存储提供商</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('providerLabel')}</label>
                     <select
                         name="storageProvider"
                         value={storageProvider}
@@ -57,17 +59,17 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             setStorageProvider(value);
                         }}
                     >
-                        <option value="local">本地存储</option>
-                        <option value="s3">S3 兼容存储</option>
+                        <option value="local">{t('providerLocal')}</option>
+                        <option value="s3">{t('providerS3')}</option>
                     </select>
                     <p className="mt-2 text-sm text-gray-500">
-                        选择头像文件的存储位置。本地存储保存在服务器，S3 兼容存储支持 R2、Tigris、AWS S3 等。
+                        {t('providerHelp')}
                     </p>
                 </div>
 
                 {/* Local Storage Settings */}
                 <div id="local-fields" style={{ display: (storageProvider === 'local' ? 'block' : 'none') }}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">本地存储路径</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('localPathLabel')}</label>
                     <input
                         type="text"
                         name="localStoragePath"
@@ -76,17 +78,17 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
                     <p className="mt-1 text-sm text-gray-500">
-                        相对于 public 目录的路径，默认为 /uploads/avatars
+                        {t('localPathHelp')}
                     </p>
                 </div>
 
                 {/* S3 Compatible Storage Settings */}
                 <div id="s3-fields" style={{ display: (storageProvider === 's3' ? 'block' : 'none') }} className="space-y-4 border-t pt-4">
-                    <h4 className="font-medium text-gray-800">S3 兼容存储配置</h4>
+                    <h4 className="font-medium text-gray-800">{t('s3Config')}</h4>
 
                     {/* S3 Preset Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">服务预设</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('presetLabel')}</label>
                         <select
                             name="s3Preset"
                             defaultValue={s3Preset}
@@ -128,10 +130,10 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             <option value="tigris">Tigris Data</option>
                             <option value="aws-s3">AWS S3</option>
                             <option value="minio">MinIO</option>
-                            <option value="custom">自定义 S3</option>
+                            <option value="custom">{t('presetCustom')}</option>
                         </select>
                         <p className="mt-1 text-sm text-gray-500">
-                            选择预设可自动填充 Endpoint 和默认配置
+                            {t('presetHelp')}
                         </p>
                     </div>
 
@@ -154,7 +156,7 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             }}
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                            Cloudflare R2 的 Account ID（用于构建 Endpoint）
+                            {t('accountIdHelp')}
                         </p>
                     </div>
 
@@ -172,8 +174,8 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                         />
                         <p className="mt-1 text-sm text-gray-500">
                             {s3Preset === 'custom' || s3Preset === 'minio'
-                                ? '请输入完整的 S3 Endpoint URL'
-                                : '根据预设自动填充'}
+                                ? t('endpointHelpCustom')
+                                : t('endpointHelpAuto')}
                         </p>
                     </div>
 
@@ -194,7 +196,7 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             }}
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                            S3 区域，R2/Tigris 使用 auto，AWS S3 使用 us-east-1 等
+                            {t('regionHelp')}
                         </p>
                     </div>
 
@@ -245,13 +247,13 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                            Bucket 的公开访问域名
+                            {t('publicDomainHelp')}
                         </p>
                     </div>
 
                     {/* Folder Path */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">文件夹路径</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('folderPathLabel')}</label>
                         <input
                             type="text"
                             name="s3FolderPath"
@@ -260,7 +262,7 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                            Bucket 中的文件夹路径，默认为 avatars
+                            {t('folderPathHelp')}
                         </p>
                     </div>
                 </div>
@@ -283,9 +285,9 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                                     const result = await testS3Connection(formData);
 
                                     if (result.success) {
-                                        success(result.message || '连接成功');
+                                        success(result.message || t('connectSuccess'));
                                     } else {
-                                        error(result.error || '连接失败');
+                                        error(result.error || t('connectFailed'));
                                     }
                                 }
                             } finally {
@@ -302,13 +304,13 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                连接中...
+                                {t('testing')}
                             </>
                         ) : (
-                            '测试连接'
+                            t('testConnection')
                         )}
                     </button>
-                    <SubmitButton text="保存设置" isLoading={isSaving} />
+                    <SubmitButton text={t('save')} isLoading={isSaving} />
                 </div>
             </form>
         </div>

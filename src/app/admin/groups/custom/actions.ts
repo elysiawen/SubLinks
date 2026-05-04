@@ -17,7 +17,7 @@ export async function deleteCustomGroup(id: string) {
     const groups = await getAllGroupSetsAdmin();
     const group = groups.find(g => g.id === id);
     if (!group || !group.userId) {
-        throw new Error('配置不存在');
+        throw new Error('configNotFound');
     }
     await db.deleteCustomGroup(id, group.userId);
     revalidatePath('/admin/groups/custom');

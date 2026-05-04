@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ToastProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 
@@ -15,12 +16,13 @@ import AppearanceSettingsPanel from './components/AppearanceSettingsPanel';
 import StorageSettingsPanel from './components/StorageSettingsPanel';
 
 export default function AdminSettingsClient({ config }: { config: any }) {
+    const t = useTranslations('admin.settings');
     const { success } = useToast();
     const [isCleaning, setIsCleaning] = useState(false);
 
     return (
         <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">全局设置</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('title')}</h2>
 
             {/* Log Retention Settings */}
             <LogCleanupPanel initialDays={config.logRetentionDays || 30} />
@@ -46,10 +48,10 @@ export default function AdminSettingsClient({ config }: { config: any }) {
             {/* Session Cleanup */}
             < div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" >
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <span className="mr-2">🔐</span> Session 管理
+                    <span className="mr-2">🔐</span> {t('sessionManagement')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                    系统会每小时自动清理过期的 session。您也可以手动触发清理。
+                    {t('sessionDesc')}
                 </p>
                 <SubmitButton
                     onClick={async () => {
@@ -58,24 +60,24 @@ export default function AdminSettingsClient({ config }: { config: any }) {
                             const { cleanupSessions } = await import('./actions');
                             const result = await cleanupSessions();
                             if (result.count > 0) {
-                                success(`已清理 ${result.count} 个过期 session`);
+                                success(t('sessionsCleaned', { count: result.count }));
                             } else {
-                                success('没有过期的 session');
+                                success(t('noExpiredSessions'));
                             }
                         } finally {
                             setIsCleaning(false);
                         }
                     }}
                     isLoading={isCleaning}
-                    text="立即清理过期 Session"
+                    text={t('cleanupSession')}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm"
                 />
             </div >
 
             {/* Other settings placeholder */}
             < div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 opacity-60" >
-                <h3 className="text-lg font-bold text-gray-800 mb-4">其他设置</h3>
-                <p className="text-gray-500">上游源和缓存设置请前往 <a href="/admin/sources" className="text-blue-600 hover:underline">上游源管理</a> 页面配置。</p>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">{t('otherSettings')}</h3>
+                <p className="text-gray-500">{t.rich('otherSettingsDesc', { link: (chunks) => <a href="/admin/sources" className="text-blue-600 hover:underline">{chunks}</a> })}</p>
             </div >
         </div >
     );

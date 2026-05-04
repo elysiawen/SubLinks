@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function TutorialClient() {
+    const t = useTranslations('dashboard');
     const [activeSection, setActiveSection] = useState('downloads');
 
     const sections = [
-        { id: 'downloads', title: '💾 客户端下载' },
-        { id: 'getting-started', title: '🚀 快速开始' },
-        { id: 'subscription', title: '📝 创建订阅' },
-        { id: 'clients', title: '📱 客户端配置' },
-        { id: 'advanced', title: '⚙️ 高级功能' },
-        { id: 'faq', title: '❓ 常见问题' },
+        { id: 'downloads', title: t('tutorial.downloads') },
+        { id: 'getting-started', title: t('tutorial.gettingStarted') },
+        { id: 'subscription', title: t('tutorial.subscription') },
+        { id: 'clients', title: t('tutorial.clients') },
+        { id: 'advanced', title: t('tutorial.advanced') },
+        { id: 'faq', title: t('tutorial.faq') },
     ];
 
     return (
@@ -22,9 +24,9 @@ export default function TutorialClient() {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg mb-4">
                         <span className="text-3xl">📚</span>
                     </div>
-                    <h1 className="text-4xl font-bold text-gray-900 mb-3">SubLinks 使用教程</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-3">{t('tutorial.title')}</h1>
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        从零开始，快速掌握 SubLinks 订阅管理系统的所有功能
+                        {t('tutorial.description')}
                     </p>
                 </div>
 

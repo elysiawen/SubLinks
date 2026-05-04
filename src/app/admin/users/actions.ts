@@ -61,7 +61,7 @@ export async function createUser(formData: FormData) {
 
     if (currentSubs.length >= userLimit) {
         // User created but can't create subscription due to limit
-        return { error: `用户已创建，但无法创建订阅：已达订阅上限 (${userLimit})` };
+        return { error: 'userCreatedSubLimitExceeded' };
     }
 
     // Get default or first upstream source
@@ -83,7 +83,7 @@ export async function createUser(formData: FormData) {
     const token = generateToken();
     const subData: SubData = {
         username,
-        remark: '默认订阅',
+        remark: 'defaultSubscription',
         customRules: rules || '',
         groupId: 'default',
         ruleId: 'default',
@@ -123,7 +123,7 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
     // If username changed, check if new username exists
     if (oldUsername !== newUsername) {
         if (await db.userExists(newUsername)) {
-            return { error: '新用户名已存在' };
+            return { error: 'newUsernameExists' };
         }
 
         // Update password if provided
@@ -228,12 +228,12 @@ export async function adminUploadAvatar(formData: FormData) {
 
     // Check file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-        return { error: '文件大小不能超过 10MB' };
+        return { error: 'fileTooLarge' };
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-        return { error: '只支持图片文件' };
+        return { error: 'imageOnly' };
     }
 
     try {
@@ -245,7 +245,7 @@ export async function adminUploadAvatar(formData: FormData) {
         const { ImageProcessor } = await import('@/lib/image-processor');
         const isValid = await ImageProcessor.validateImage(buffer);
         if (!isValid) {
-            return { error: '无效的图片文件' };
+            return { error: 'invalidImage' };
         }
 
         // Process image (resize to 500x500, convert to WebP)
@@ -254,7 +254,7 @@ export async function adminUploadAvatar(formData: FormData) {
         // Get user
         const user = await db.getUser(username);
         if (!user) {
-            return { error: '用户不存在' };
+            return { error: 'userNotFound' };
         }
 
         // Delete old avatar if exists
@@ -287,7 +287,7 @@ export async function adminUploadAvatar(formData: FormData) {
         return { success: true, avatarUrl };
     } catch (error) {
         console.error('Admin avatar upload error:', error);
-        return { error: '上传失败，请稍后重试' };
+        return { error: 'uploadFailed' };
     }
 }
 
@@ -295,11 +295,11 @@ export async function adminDeleteAvatar(username: string) {
     // Get user
     const user = await db.getUser(username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     if (!user.avatar) {
-        return { error: '该用户未设置头像' };
+        return { error: 'userNoAvatar' };
     }
 
     try {
@@ -324,7 +324,7 @@ export async function adminDeleteAvatar(username: string) {
 export async function resetUser2FA(username: string) {
     const user = await db.getUser(username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     await db.setUser(username, {
@@ -343,7 +343,7 @@ export async function adminGetUserPasskeys(userId: string) {
         return { success: true, passkeys };
     } catch (error) {
         console.error('Failed to fetch user passkeys:', error);
-        return { error: '获取通行密钥失败' };
+        return { error: 'getPasskeysFailed' };
     }
 }
 
@@ -354,6 +354,6 @@ export async function adminDeletePasskey(passkeyId: string, userId: string) {
         return { success: true };
     } catch (error) {
         console.error('Failed to delete passkey:', error);
-        return { error: '删除通行密钥失败' };
+        return { error: 'deletePasskeyFailed' };
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
@@ -23,6 +24,7 @@ export default function AdminUsersClient({
     itemsPerPage: number,
     globalMaxSubs: number
 }) {
+    const t = useTranslations('admin.users');
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const [loading, setLoading] = useState(false);
@@ -46,7 +48,7 @@ export default function AdminUsersClient({
         if (res?.error) {
             error(res.error);
         } else {
-            success('用户创建成功');
+            success(t('userCreated'));
             // No need to reset form - modal will close
         }
     };
@@ -59,7 +61,7 @@ export default function AdminUsersClient({
                 if (res.success) {
                     setUserPasskeys(res.passkeys || []);
                 } else {
-                    error(res.error || '获取通行密钥失败');
+                    error(res.error || t('getPasskeysFailed'));
                 }
                 setLoadingPasskeys(false);
             });
@@ -70,14 +72,14 @@ export default function AdminUsersClient({
 
     const handleDeletePasskey = async (passkeyId: string) => {
         if (!editingUser) return;
-        if (await confirm('确定要删除此通行密钥吗？')) {
+        if (await confirm(t('confirmDeletePasskey'))) {
             const res = await adminDeletePasskey(passkeyId, editingUser.id);
             if (res.success) {
                 // Remove from local state
                 setUserPasskeys(prev => prev.filter(pk => pk.id !== passkeyId));
-                success('通行密钥已删除');
+                success(t('passkeyDeleted'));
             } else {
-                error(res.error || '删除失败');
+                error(res.error || t('deleteFailed'));
             }
         }
     };
@@ -88,12 +90,12 @@ export default function AdminUsersClient({
         if (!file) return;
 
         if (file.size > 10 * 1024 * 1024) {
-            error('文件大小不能超过 10MB');
+            error(t('fileTooLarge'));
             return;
         }
 
         if (!file.type.startsWith('image/')) {
-            error('只支持图片文件');
+            error(t('imageOnly'));
             return;
         }
 
@@ -125,10 +127,10 @@ export default function AdminUsersClient({
                 error(result.error);
             } else {
                 setEditingUser({ ...editingUser, avatar: result.avatarUrl });
-                success('头像上传成功');
+                success(t('avatarUploaded'));
             }
         } catch (err) {
-            error('上传失败，请稍后重试');
+            error(t('uploadFailed'));
         } finally {
             setAvatarUploading(false);
             setAvatarPreview(null);
@@ -138,7 +140,7 @@ export default function AdminUsersClient({
     // Handle Avatar Delete
     const handleAdminAvatarDelete = async () => {
         if (!editingUser) return;
-        if (await confirm('确定要删除该用户的头像吗？')) {
+        if (await confirm(t('confirmDeleteAvatar'))) {
             setAvatarUploading(true);
             try {
                 const result = await adminDeleteAvatar(editingUser.username);
@@ -146,10 +148,10 @@ export default function AdminUsersClient({
                     error(result.error);
                 } else {
                     setEditingUser({ ...editingUser, avatar: undefined });
-                    success('头像已删除');
+                    success(t('avatarDeleted'));
                 }
             } catch (err) {
-                error('删除失败，请稍后重试');
+                error(t('deleteAvatarFailed'));
             } finally {
                 setAvatarUploading(false);
             }
@@ -179,7 +181,7 @@ export default function AdminUsersClient({
             error(res.error);
         } else {
             setEditingUser(null);
-            success('用户信息已更新');
+            success(t('userUpdated'));
         }
     };
 
@@ -189,7 +191,7 @@ export default function AdminUsersClient({
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    👥 用户管理
+                    👥 {t('title')}
                     <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
                 </h2>
                 <button
@@ -199,7 +201,7 @@ export default function AdminUsersClient({
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    添加新用户
+                    {t('addUser')}
                 </button>
             </div>
 
@@ -207,7 +209,7 @@ export default function AdminUsersClient({
             <Modal
                 isOpen={isAddingUser}
                 onClose={() => setIsAddingUser(false)}
-                title="添加新用户"
+                title={t('addUser')}
             >
                 <form
                     action={async (formData) => {
@@ -217,46 +219,46 @@ export default function AdminUsersClient({
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('username')}</label>
                         <input
                             name="username"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            placeholder="输入用户名"
+                            placeholder={t('usernamePlaceholder')}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('nickname')}</label>
                         <input
                             name="nickname"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            placeholder="设置显示昵称"
+                            placeholder={t('nicknamePlaceholder')}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">密码</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('password')}</label>
                         <input
                             name="password"
                             type="password"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                            placeholder="设置登录密码"
+                            placeholder={t('passwordPlaceholder')}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">角色</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('role')}</label>
                         <select
                             name="role"
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                         >
-                            <option value="user">普通用户</option>
-                            <option value="admin">管理员</option>
+                            <option value="user">{t('roleUser')}</option>
+                            <option value="admin">{t('roleAdmin')}</option>
                         </select>
                     </div>
 
                     <div className="flex gap-2 pt-2">
                         <SubmitButton
-                            text="确认创建"
+                            text={t('confirmCreate')}
                             className="flex-1"
                         />
                         <button
@@ -264,7 +266,7 @@ export default function AdminUsersClient({
                             onClick={() => setIsAddingUser(false)}
                             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                         >
-                            取消
+                            {t('cancel')}
                         </button>
                     </div>
                 </form>
@@ -273,7 +275,7 @@ export default function AdminUsersClient({
             {/* User List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-3 sm:p-4 border-b border-gray-100">
-                    <Search placeholder="搜索用户名..." />
+                    <Search placeholder={t('searchPlaceholder')} />
                 </div>
 
 
@@ -282,11 +284,11 @@ export default function AdminUsersClient({
                     <table className="min-w-full divide-y divide-gray-100">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">用户</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">安全状态</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">订阅限制</th>
-                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">操作</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">{t('tableUser')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableSecurity')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableStatus')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableSubLimit')}</th>
+                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">{t('tableActions')}</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
@@ -296,7 +298,7 @@ export default function AdminUsersClient({
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold overflow-hidden flex-shrink-0">
                                                 {user.avatar ? (
-                                                    <img src={user.avatar} alt="头像" className="w-full h-full object-cover" />
+                                                    <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <span>{user.username.slice(0, 2).toUpperCase()}</span>
                                                 )}
@@ -305,13 +307,13 @@ export default function AdminUsersClient({
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-gray-900 font-medium">{user.username}</span>
                                                     <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-medium rounded border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-                                                        {user.role === 'admin' ? '管理员' : '用户'}
+                                                        {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
                                                     </span>
                                                 </div>
                                                 {user.nickname ? (
                                                     <span className="text-xs text-gray-500">{user.nickname}</span>
                                                 ) : (
-                                                    <span className="text-xs text-gray-400 italic">未设置昵称</span>
+                                                    <span className="text-xs text-gray-400 italic">{t('noNickname')}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -319,12 +321,12 @@ export default function AdminUsersClient({
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex flex-col gap-1 items-start">
                                             {user.totpEnabled && (
-                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title="2FA 已启用">
+                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title={t('totpEnabled')}>
                                                     2FA
                                                 </span>
                                             )}
                                             {user.passkeyCount > 0 && (
-                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter" title={`${user.passkeyCount} 个通行密钥`}>
+                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter" title={t('passkeyCount', { count: user.passkeyCount })}>
                                                     KEY
                                                 </span>
                                             )}
@@ -335,13 +337,13 @@ export default function AdminUsersClient({
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                                            {user.status === 'active' ? '正常' : '已停用'}
+                                            {user.status === 'active' ? t('statusActive') : t('statusDisabled')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {user.maxSubscriptions === null
-                                            ? `跟随全局 (${globalMaxSubs})`
-                                            : `自定义 (${user.maxSubscriptions})`}
+                                            ? t('followGlobal', { count: globalMaxSubs })
+                                            : t('customLimit', { count: user.maxSubscriptions })}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
@@ -358,31 +360,32 @@ export default function AdminUsersClient({
                                             })}
                                             className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                                         >
-                                            编辑
+                                            {t('edit')}
                                         </button>
 
                                         <button
                                             onClick={async () => {
                                                 const newStatus = user.status === 'active' ? 'suspended' : 'active';
-                                                if (await confirm(`确定要${newStatus === 'active' ? '启用' : '停用'}用户 ${user.username} 吗?`)) {
+                                                const action = newStatus === 'active' ? t('enable') : t('disable');
+                                                if (await confirm(t('confirmToggle', { action, username: user.username }))) {
                                                     await updateUserStatus(user.username, newStatus);
-                                                    success(`用户 ${user.username} 已${newStatus === 'active' ? '启用' : '停用'}`);
+                                                    success(t('userToggled', { action, username: user.username }));
                                                 }
                                             }}
                                             className={`${user.status === 'active' ? 'text-orange-500 hover:text-orange-700' : 'text-green-600 hover:text-green-800'} font-medium transition-colors`}
                                         >
-                                            {user.status === 'active' ? '停用' : '启用'}
+                                            {user.status === 'active' ? t('disable') : t('enable')}
                                         </button>
                                         <button
                                             onClick={async () => {
-                                                if (await confirm(`确定要删除用户 ${user.username} 吗? 此操作不可恢复。`, { confirmColor: 'red', confirmText: '彻底删除' })) {
+                                                if (await confirm(t('confirmDelete', { username: user.username }), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
                                                     await deleteUser(user.username);
-                                                    success(`用户 ${user.username} 已删除`);
+                                                    success(t('userDeleted', { username: user.username }));
                                                 }
                                             }}
                                             className="text-red-500 hover:text-red-700 font-medium transition-colors"
                                         >
-                                            删除
+                                            {t('delete')}
                                         </button>
                                     </td>
                                 </tr>
@@ -400,7 +403,7 @@ export default function AdminUsersClient({
                                     <div className="flex-1 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold overflow-hidden flex-shrink-0">
                                             {user.avatar ? (
-                                                <img src={user.avatar} alt="头像" className="w-full h-full object-cover" />
+                                                <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                             ) : (
                                                 <span>{user.username.slice(0, 2).toUpperCase()}</span>
                                             )}
@@ -414,7 +417,7 @@ export default function AdminUsersClient({
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
-                                                    {user.role === 'admin' ? '管理员' : '用户'}
+                                                    {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
                                                 </span>
                                                 <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
                                                     {user.totpEnabled && (
@@ -428,17 +431,17 @@ export default function AdminUsersClient({
                                                         </span>
                                                     )}
                                                     {!user.totpEnabled && user.passkeyCount === 0 && (
-                                                        <span className="text-xs text-gray-400">无安全设置</span>
+                                                        <span className="text-xs text-gray-400">{t('noSecurity')}</span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className={`px-2.5 py-0.5 inline-flex font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                                                    {user.status === 'active' ? '正常' : '已停用'}
+                                                    {user.status === 'active' ? t('statusActive') : t('statusDisabled')}
                                                 </span>
                                                 <span className="text-gray-400">|</span>
                                                 <span className="text-gray-600">
-                                                    订阅: <span className="font-medium text-gray-900">{user.maxSubscriptions === null ? `${globalMaxSubs} (全局)` : user.maxSubscriptions}</span>
+                                                    {t('subCount', { count: user.maxSubscriptions === null ? `${globalMaxSubs}${t('globalSuffix')}` : user.maxSubscriptions })}
                                                 </span>
                                             </div>
                                         </div>
@@ -459,31 +462,32 @@ export default function AdminUsersClient({
                                         })}
                                         className="flex-1 min-w-[80px] text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-blue-50 text-center"
                                     >
-                                        编辑
+                                        {t('edit')}
                                     </button>
 
                                     <button
                                         onClick={async () => {
                                             const newStatus = user.status === 'active' ? 'suspended' : 'active';
-                                            if (await confirm(`确定要${newStatus === 'active' ? '启用' : '停用'}用户 ${user.username} 吗?`)) {
+                                            const action = newStatus === 'active' ? t('enable') : t('disable');
+                                            if (await confirm(t('confirmToggle', { action, username: user.username }))) {
                                                 await updateUserStatus(user.username, newStatus);
-                                                success(`用户 ${user.username} 已${newStatus === 'active' ? '启用' : '停用'}`);
+                                                success(t('userToggled', { action, username: user.username }));
                                             }
                                         }}
                                         className={`flex-1 min-w-[80px] font-medium transition-colors text-sm py-2 px-3 border rounded-lg text-center ${user.status === 'active' ? 'text-orange-500 hover:text-orange-700 border-orange-200 hover:bg-orange-50' : 'text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50'}`}
                                     >
-                                        {user.status === 'active' ? '停用' : '启用'}
+                                        {user.status === 'active' ? t('disable') : t('enable')}
                                     </button>
                                     <button
                                         onClick={async () => {
-                                            if (await confirm(`确定要删除用户 ${user.username} 吗? 此操作不可恢复。`, { confirmColor: 'red', confirmText: '彻底删除' })) {
+                                            if (await confirm(t('confirmDelete', { username: user.username }), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
                                                 await deleteUser(user.username);
-                                                success(`用户 ${user.username} 已删除`);
+                                                success(t('userDeleted', { username: user.username }));
                                             }
                                         }}
                                         className="flex-1 min-w-[80px] text-red-500 hover:text-red-700 font-medium transition-colors text-sm py-2 px-3 border border-red-200 rounded-lg hover:bg-red-50 text-center"
                                     >
-                                        删除
+                                        {t('delete')}
                                     </button>
                                 </div>
                             </div>
@@ -496,7 +500,7 @@ export default function AdminUsersClient({
             <Modal
                 isOpen={!!editingUser}
                 onClose={() => setEditingUser(null)}
-                title="编辑用户"
+                title={t('editUser')}
             >
                 {editingUser && (
                     <div className="space-y-4">
@@ -504,7 +508,7 @@ export default function AdminUsersClient({
                         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                             <div className="relative w-16 h-16 rounded-full overflow-hidden bg-white border border-gray-200 shadow-sm shrink-0">
                                 {editingUser.avatar ? (
-                                    <img src={editingUser.avatar} alt="头像" className="w-full h-full object-cover" />
+                                    <img src={editingUser.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-xl font-bold bg-gray-100">
                                         {editingUser.username.slice(0, 2).toUpperCase()}
@@ -520,7 +524,7 @@ export default function AdminUsersClient({
                                 <h3 className="text-sm font-semibold text-gray-900 mb-1">{editingUser.username}</h3>
                                 <div className="flex items-center gap-3">
                                     <label className={`inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                        {editingUser.avatar ? '更换头像' : '上传头像'}
+                                        {editingUser.avatar ? t('changeAvatar') : t('uploadAvatar')}
                                         <input
                                             type="file"
                                             className="hidden"
@@ -536,7 +540,7 @@ export default function AdminUsersClient({
                                             disabled={avatarUploading}
                                             className="text-xs font-medium text-red-600 hover:text-red-800 transition-colors"
                                         >
-                                            删除
+                                            {t('delete')}
                                         </button>
                                     )}
                                 </div>
@@ -545,30 +549,30 @@ export default function AdminUsersClient({
 
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">昵称（可选）</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('nickname')}</label>
                             <input
                                 type="text"
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.nickname}
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, nickname: e.target.value })}
-                                placeholder="设置显示昵称"
+                                placeholder={t('nicknamePlaceholder')}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">新密码</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('newPassword')}</label>
                             <input
                                 type="password"
                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.newPassword}
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, newPassword: e.target.value })}
-                                placeholder="留空则不修改密码"
+                                placeholder={t('newPasswordPlaceholder')}
                             />
                         </div>
 
                         <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">通行密钥 (Passkeys)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('passkeys')}</label>
                             {loadingPasskeys ? (
-                                <div className="text-center py-4 text-gray-500 text-sm">加载中...</div>
+                                <div className="text-center py-4 text-gray-500 text-sm">{t('loading')}</div>
                             ) : userPasskeys.length > 0 ? (
                                 <div className="space-y-2">
                                     {userPasskeys.map((passkey: any) => (
@@ -578,18 +582,18 @@ export default function AdminUsersClient({
                                                     <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                                     </svg>
-                                                    {passkey.name || '未命名密钥'}
+                                                    {passkey.name || t('unnamedKey')}
                                                 </div>
                                                 <div className="text-xs text-gray-500 mt-0.5">
-                                                    创建于: {new Date(passkey.createdAt).toLocaleDateString()}
-                                                    {passkey.lastUsed ? ` · 上次使用: ${new Date(passkey.lastUsed).toLocaleDateString()}` : ''}
+                                                    {t('createdAt', { date: new Date(passkey.createdAt).toLocaleDateString() })}
+                                                    {passkey.lastUsed ? t('lastUsed', { date: new Date(passkey.lastUsed).toLocaleDateString() }) : ''}
                                                 </div>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeletePasskey(passkey.id)}
                                                 className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
-                                                title="删除密钥"
+                                                title={t('deleteKey')}
                                             >
                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -600,36 +604,36 @@ export default function AdminUsersClient({
                                 </div>
                             ) : (
                                 <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
-                                    <span className="text-sm text-gray-500">暂无通行密钥</span>
+                                    <span className="text-sm text-gray-500">{t('noPasskeys')}</span>
                                 </div>
                             )}
                         </div>
                         <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">安全选项</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('securityOptions')}</label>
                             {editingUser.totpEnabled ? (
                                 <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-lg">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
                                         <div>
-                                            <div className="text-sm font-medium text-orange-800">两步验证 (2FA) 已开启</div>
-                                            <div className="text-xs text-orange-600">重置后该用户将只需密码即可登录</div>
+                                            <div className="text-sm font-medium text-orange-800">{t('totpEnabledTitle')}</div>
+                                            <div className="text-xs text-orange-600">{t('totpResetHint')}</div>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            if (await confirm(`确定要重置用户 ${editingUser.username} 的两步验证 (2FA) 吗？`, { confirmColor: 'red', confirmText: '确认重置' })) {
+                                            if (await confirm(t('confirmReset2FA', { username: editingUser.username }), { confirmColor: 'red', confirmText: t('confirmReset') })) {
                                                 const res = await resetUser2FA(editingUser.username);
                                                 if (res.error) error(res.error);
                                                 else {
-                                                    success('2FA 已重置');
+                                                    success(t('twoFAReset'));
                                                     setEditingUser({ ...editingUser, totpEnabled: false });
                                                 }
                                             }
                                         }}
                                         className="px-3 py-1.5 bg-white border border-orange-200 text-orange-600 rounded-md text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm"
                                     >
-                                        重置 2FA
+                                        {t('reset2FA')}
                                     </button>
                                 </div>
                             ) : (
@@ -637,13 +641,13 @@ export default function AdminUsersClient({
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
-                                    该用户未开启两步验证
+                                    {t('totpDisabled')}
                                 </div>
                             )}
                         </div>
 
                         <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">订阅限制</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('subLimit')}</label>
                             <div className="space-y-3">
                                 <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                     <input
@@ -653,8 +657,8 @@ export default function AdminUsersClient({
                                         className="w-4 h-4 text-blue-600"
                                     />
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900">使用全局限制</div>
-                                        <div className="text-xs text-gray-500">当前全局限制: {globalMaxSubs} 个订阅</div>
+                                        <div className="font-medium text-gray-900">{t('useGlobalLimit')}</div>
+                                        <div className="text-xs text-gray-500">{t('globalLimitDesc', { count: globalMaxSubs })}</div>
                                     </div>
                                 </label>
                                 <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
@@ -665,7 +669,7 @@ export default function AdminUsersClient({
                                         className="w-4 h-4 text-blue-600"
                                     />
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900">自定义限制</div>
+                                        <div className="font-medium text-gray-900">{t('customSubLimit')}</div>
                                         {!editingUser.useGlobalLimit && (
                                             <input
                                                 type="number"
@@ -673,7 +677,7 @@ export default function AdminUsersClient({
                                                 value={editingUser.customLimit}
                                                 onChange={e => editingUser && setEditingUser({ ...editingUser, customLimit: parseInt(e.target.value) || 0 })}
                                                 className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                                placeholder="输入订阅数量"
+                                                placeholder={t('customSubPlaceholder')}
                                                 onClick={e => e.stopPropagation()}
                                             />
                                         )}
@@ -686,14 +690,14 @@ export default function AdminUsersClient({
                             <SubmitButton
                                 onClick={handleUpdateUser}
                                 isLoading={loading}
-                                text="确认保存"
+                                text={t('save')}
                                 className="flex-1"
                             />
                             <button
                                 onClick={() => setEditingUser(null)}
                                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                             >
-                                取消
+                                {t('cancel')}
                             </button>
                         </div>
                     </div>

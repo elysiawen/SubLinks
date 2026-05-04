@@ -1,0 +1,71 @@
+{
+    "auth": {
+        "emptyCredentials": "Please enter username and password",
+        "systemInit": "System initializing, please use default account admin/admin to login",
+        "userNotFound": "User not found",
+        "accountDisabled": "Account has been disabled",
+        "wrongPassword": "Incorrect password",
+        "twoFactorInvalid": "Invalid verification code",
+        "twoFactorRequired": "2fa_required"
+    },
+    "user": {
+        "notLoggedIn": "Not logged in",
+        "wrongOldPassword": "Incorrect current password",
+        "newPasswordTooShort": "New password must be at least 4 characters",
+        "passwordVerifyFailed": "Incorrect password, verification failed",
+        "nicknameTooLong": "Nickname cannot exceed 50 characters",
+        "adminCannotDelete": "Admin account cannot be deleted this way",
+        "noFileUploaded": "No file uploaded",
+        "fileTooLarge": "File size cannot exceed 10MB",
+        "imageOnly": "Only image files are supported",
+        "invalidImage": "Invalid image file",
+        "uploadFailed": "Upload failed, please try again later",
+        "noAvatar": "No avatar set",
+        "userNoAvatar": "This user has not set an avatar",
+        "qrGenerateFailed": "Failed to generate QR code",
+        "configNotFound": "Configuration not found"
+    },
+    "admin": {
+        "requireAdmin": "Admin privileges required",
+        "cannotLogoutCurrentSession": "Cannot log out the currently active admin session",
+        "sessionForceOffline": "Session has been force offline",
+        "sessionInvalid": "Session has expired or does not exist",
+        "cannotOfflineCurrent": "Cannot offline the currently active session",
+        "forceOfflineIssued": "Force offline command issued",
+        "sessionNotFound": "Session not found or expired",
+        "userCreatedSubLimitExceeded": "User created, but cannot create subscription: limit reached",
+        "newUsernameExists": "New username already exists",
+        "selectUser": "Please select a user",
+        "rebuiltSubscriptionCache": "Subscription cache rebuilt",
+        "unnamedSubscription": "Unnamed subscription",
+        "getPasskeysFailed": "Failed to get passkeys",
+        "deletePasskeyFailed": "Failed to delete passkey",
+        "defaultSubscription": "Default subscription"
+    },
+    "subscription": {
+        "limitExceeded": "Maximum subscription limit exceeded",
+        "selectAtLeastOne": "Select at least one upstream source",
+        "createFailed": "Cannot create subscription: selected sources are disabled or unavailable",
+        "updateFailed": "Cannot update subscription: selected sources are disabled or unavailable",
+        "enableFailed": "Cannot enable: this subscription has no available upstream sources"
+    },
+    "source": {
+        "needAtLeastOneNode": "At least one node is required",
+        "nameExists": "Upstream source name already exists",
+        "notStaticType": "Source does not exist or is not a static type",
+        "keepAtLeastOneGroup": "Keep at least one proxy group",
+        "r2NeedAccountId": "R2 requires Account ID",
+        "endpointRequired": "Please fill in Endpoint or select a preset",
+        "s3ConfigRequired": "Please fill in all required S3 configuration",
+        "s3Connected": "Connection successful",
+        "connectionFailed": "Connection failed",
+        "bucketNotFound": "Bucket not found",
+        "invalidAccessKeyId": "Invalid Access Key ID",
+        "invalidSecretKey": "Invalid Secret Access Key",
+        "authFailed": "Authentication failed"
+    },
+    "config": {
+        "unauthorized": "Unauthorized",
+        "invalidJson": "Additional config is not valid JSON"
+    }
+}

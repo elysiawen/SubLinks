@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ConfirmOptions {
     title?: string;
@@ -25,6 +26,7 @@ export function useConfirm() {
 }
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+    const t = useTranslations('common.confirm');
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [config, setConfig] = useState<{ message: string, options: ConfirmOptions }>({ message: '', options: {} });
@@ -67,9 +69,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     };
 
     const { message, options } = config;
-    const title = options.title || '确认操作';
-    const confirmText = options.confirmText || '确定';
-    const cancelText = options.cancelText || '取消';
+    const title = options.title || t('title');
+    const confirmText = options.confirmText || t('confirm');
+    const cancelText = options.cancelText || t('cancel');
     const isDestructive = options.confirmColor === 'red' || (!options.confirmColor && message.includes('删除'));
 
     return (
@@ -106,7 +108,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                 )}
-                                {isLoading ? '处理中...' : confirmText}
+                                {isLoading ? t('processing') : confirmText}
                             </button>
                         </div>
                     </div>
