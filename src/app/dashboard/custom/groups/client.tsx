@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveGroupSet, deleteGroupSet, type ConfigSet } from '@/lib/config-actions';
@@ -22,6 +22,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
     const router = useRouter();
     const t = useTranslations('dashboard');
     const [groups, setGroups] = useState(initialGroups);
+    useEffect(() => { setGroups(initialGroups); }, [initialGroups]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<ConfigSet | null>(null);
     const [groupName, setGroupName] = useState('');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { saveCustomRule, deleteCustomRule } from './actions';
 import { useToast } from '@/components/ToastProvider';
@@ -39,6 +39,7 @@ export default function CustomRulesClient({
     const { confirm } = useConfirm();
     const router = useRouter();
     const [rules, setRules] = useState<ConfigSet[]>(initialRules);
+    useEffect(() => { setRules(initialRules); }, [initialRules]);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formName, setFormName] = useState('');

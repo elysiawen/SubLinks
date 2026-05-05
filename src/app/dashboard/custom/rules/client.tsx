@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveRuleSet, deleteRuleSet, type ConfigSet } from '@/lib/config-actions';
@@ -27,6 +27,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
     const router = useRouter();
     const t = useTranslations('dashboard');
     const [rules, setRules] = useState(initialRules);
+    useEffect(() => { setRules(initialRules); }, [initialRules]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRule, setEditingRule] = useState<ConfigSet | null>(null);
     const [ruleName, setRuleName] = useState('');

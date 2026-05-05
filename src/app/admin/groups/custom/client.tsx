@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { saveCustomGroup, deleteCustomGroup } from './actions';
 import { useToast } from '@/components/ToastProvider';
@@ -40,6 +40,7 @@ export default function CustomGroupsClient({
     const { confirm } = useConfirm();
     const router = useRouter();
     const [groups, setGroups] = useState<ConfigSet[]>(initialGroups);
+    useEffect(() => { setGroups(initialGroups); }, [initialGroups]);
     const [proxies] = useState<ProxyItem[]>(initialProxies);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
