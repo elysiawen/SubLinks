@@ -24,37 +24,8 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
 
     // Handle Delete Account
     const handleDeleteAccountConfirm = async (password: string) => {
-        // Step 1: Password verified (logic moved inside handle functionality after modal confirms)
-        // Wait, the modal calls this logic ON CONFIRM.
-
-        // We first need to close the password modal? 
-        // Or we do the process:
-        // 1. User clicks "Delete Account" -> Opens Password Modal
-        // 2. User enters password, clicks "Confirm" -> Modal calls `onConfirm` with password.
-        // 3. This function executes.
-
-        // We need to implement the "Double Confirmation" flow here.
-        // But `SecurityVerificationModal` is just a password prompt.
-        // `client.tsx` logic: 1. Verify Password -> 2. Confirm Dialog -> 3. Execute Delete.
-
-        // So:
-        // 1. User enters password in modal.
-        // 2. `onConfirm` is called with password.
-        // 3. We close modal? 
-        // 4. We show `confirm()` dialog.
-        // 5. If confirmed, we call `deleteOwnAccount`.
-
-        setIsDeleteModalOpen(false); // Close modal first? Or keep it open until success?
-        // If we close it, how do we pass `password` to the next step? We have it in arg.
-
-        // So logic:
-        // 1. Close Modal.
-        // 2. Show Confirm.
-        // 3. Call API.
-
         setIsDeleteModalOpen(false);
 
-        // Step 2: Double Confirmation
         if (await confirm(t('settings.dangerZone.deleteConfirm'), {
             confirmText: t('settings.dangerZone.deleteConfirmButton'),
             confirmColor: 'red'
@@ -65,7 +36,6 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
             if (result?.error) {
                 setDeleteLoading(false);
                 error(result.error);
-                // Failed. User has to start over? keeping it simple.
             } else {
                 success(t('settings.dangerZone.deleted'));
                 router.push('/login');

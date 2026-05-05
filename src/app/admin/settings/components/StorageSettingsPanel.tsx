@@ -28,18 +28,21 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                 const form = e.currentTarget;
                 const formData = new FormData(form);
 
-                // Append other config fields
-
-                formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
-                formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-                formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
-                formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
-                formData.append('announcement', config.announcement || '');
-                formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
-
                 try {
-                    const { updateGlobalConfig } = await import('../actions');
-                    await updateGlobalConfig(formData);
+                    const { updateStorageConfig: updateStorage } = await import('../actions');
+                    await updateStorage({
+                        storageProvider: (formData.get('storageProvider') as 'local' | 's3') || 'local',
+                        localStoragePath: formData.get('localStoragePath') as string || undefined,
+                        s3Preset: formData.get('s3Preset') as string || undefined,
+                        s3Endpoint: formData.get('s3Endpoint') as string || undefined,
+                        s3Region: formData.get('s3Region') as string || undefined,
+                        s3AccessKeyId: formData.get('s3AccessKeyId') as string || undefined,
+                        s3SecretAccessKey: formData.get('s3SecretAccessKey') as string || undefined,
+                        s3BucketName: formData.get('s3BucketName') as string || undefined,
+                        s3PublicDomain: formData.get('s3PublicDomain') as string || undefined,
+                        s3FolderPath: formData.get('s3FolderPath') as string || undefined,
+                        s3AccountId: formData.get('s3AccountId') as string || undefined,
+                    });
                     success(t('saved'));
                     router.refresh();
                 } catch (err) {

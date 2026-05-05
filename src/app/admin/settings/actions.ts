@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admin-guard';
+import { UaFilterConfig } from '@/lib/database/interface';
 
 // Global Config
 export async function getGlobalConfig() {
@@ -10,57 +11,87 @@ export async function getGlobalConfig() {
     return await db.getGlobalConfig();
 }
 
-export async function updateGlobalConfig(formData: FormData) {
+export async function updateUaFilter(uaFilter: UaFilterConfig) {
     await requireAdmin();
-    // Get existing config to preserve other settings
     const existingConfig = await db.getGlobalConfig();
-
-    const logRetentionDays = parseInt(formData.get('logRetentionDays') as string);
-
-    // Parse maxUserSubscriptions, preserve existing value if not provided
-    const maxUserSubscriptionsStr = formData.get('maxUserSubscriptions') as string;
-    const maxUserSubscriptions = maxUserSubscriptionsStr
-        ? parseInt(maxUserSubscriptionsStr) || 10
-        : existingConfig.maxUserSubscriptions;
-
-    // Parse UA filter config
-    const uaFilterStr = formData.get('uaFilter') as string;
-    const uaFilter = uaFilterStr ? JSON.parse(uaFilterStr) : existingConfig.uaFilter;
-
     await db.setGlobalConfig({
-        maxUserSubscriptions,
-        logRetentionDays,
-        uaFilter,  // Add UA filter config
-        refreshApiKey: existingConfig.refreshApiKey,
-        upstreamLastUpdated: existingConfig.upstreamLastUpdated,
-        upstreamUserAgent: formData.get('upstreamUserAgent') !== null ? (formData.get('upstreamUserAgent') as string) : undefined,
-        customBackgroundUrl: formData.get('customBackgroundUrl') !== null ? (formData.get('customBackgroundUrl') as string) : undefined,
-        announcement: formData.get('announcement') !== null ? (formData.get('announcement') as string) : undefined,
-        // Unified S3 storage configuration
-        storageProvider: (formData.get('storageProvider') as 'local' | 's3') || existingConfig.storageProvider || 'local',
-        localStoragePath: (formData.get('localStoragePath') as string)?.trim() || existingConfig.localStoragePath,
-        s3Preset: (formData.get('s3Preset') as any)?.trim() || existingConfig.s3Preset,
-        s3Endpoint: (formData.get('s3Endpoint') as string)?.trim() || existingConfig.s3Endpoint,
-        s3Region: (formData.get('s3Region') as string)?.trim() || existingConfig.s3Region,
-        s3AccessKeyId: (formData.get('s3AccessKeyId') as string)?.trim() || existingConfig.s3AccessKeyId,
-        s3SecretAccessKey: (formData.get('s3SecretAccessKey') as string)?.trim() || existingConfig.s3SecretAccessKey,
-        s3BucketName: (formData.get('s3BucketName') as string)?.trim() || existingConfig.s3BucketName,
-        s3PublicDomain: (formData.get('s3PublicDomain') as string)?.trim() || existingConfig.s3PublicDomain,
-        s3FolderPath: (formData.get('s3FolderPath') as string)?.trim() || existingConfig.s3FolderPath,
-        s3AccountId: (formData.get('s3AccountId') as string)?.trim() || existingConfig.s3AccountId,
+        ...existingConfig,
+        uaFilter,
     });
+    revalidatePath('/admin/settings');
+}
 
-    // Revalidate home page cache if background URL changed
-    const oldBg = existingConfig.customBackgroundUrl;
-    const newBg = (formData.get('customBackgroundUrl') as string) || undefined;
-    if (oldBg !== newBg) {
-        revalidatePath('/');
-    }
+export async function updateUserLimits(maxUserSubscriptions: number) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        maxUserSubscriptions,
+    });
+    revalidatePath('/admin/settings');
+}
 
-    // Always revalidate home page for announcement
+export async function updateNetworkSettings(upstreamUserAgent: string) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        upstreamUserAgent,
+    });
+    revalidatePath('/admin/settings');
+}
+
+export async function updateAppearance(customBackgroundUrl: string) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        customBackgroundUrl,
+    });
     revalidatePath('/');
+    revalidatePath('/admin/settings');
+}
 
-    revalidatePath('/admin');
+export async function updateAnnouncement(announcement: string) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        announcement,
+    });
+    revalidatePath('/');
+    revalidatePath('/admin/settings');
+}
+
+export async function updateStorageConfig(storage: {
+    storageProvider: 'local' | 's3';
+    localStoragePath?: string;
+    s3Preset?: string;
+    s3Endpoint?: string;
+    s3Region?: string;
+    s3AccessKeyId?: string;
+    s3SecretAccessKey?: string;
+    s3BucketName?: string;
+    s3PublicDomain?: string;
+    s3FolderPath?: string;
+    s3AccountId?: string;
+}) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        storageProvider: storage.storageProvider || existingConfig.storageProvider || 'local',
+        localStoragePath: storage.localStoragePath?.trim() || existingConfig.localStoragePath,
+        s3Preset: (storage.s3Preset?.trim() as any) || existingConfig.s3Preset,
+        s3Endpoint: storage.s3Endpoint?.trim() || existingConfig.s3Endpoint,
+        s3Region: storage.s3Region?.trim() || existingConfig.s3Region,
+        s3AccessKeyId: storage.s3AccessKeyId?.trim() || existingConfig.s3AccessKeyId,
+        s3SecretAccessKey: storage.s3SecretAccessKey?.trim() || existingConfig.s3SecretAccessKey,
+        s3BucketName: storage.s3BucketName?.trim() || existingConfig.s3BucketName,
+        s3PublicDomain: storage.s3PublicDomain?.trim() || existingConfig.s3PublicDomain,
+        s3FolderPath: storage.s3FolderPath?.trim() || existingConfig.s3FolderPath,
+        s3AccountId: storage.s3AccountId?.trim() || existingConfig.s3AccountId,
+    });
     revalidatePath('/admin/settings');
 }
 

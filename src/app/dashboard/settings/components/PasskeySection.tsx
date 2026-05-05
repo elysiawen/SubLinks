@@ -14,7 +14,6 @@ import { useTranslations } from 'next-intl';
 export default function PasskeySection() {
     const [passkeys, setPasskeys] = useState<PasskeyProfile[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const router = useRouter();
     const { success, error: toastError, info } = useToast();
     const { confirm } = useConfirm();

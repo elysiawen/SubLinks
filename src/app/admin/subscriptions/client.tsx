@@ -91,6 +91,7 @@ export default function AdminSubsClient({
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let hasError = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -99,7 +100,6 @@ export default function AdminSubsClient({
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
 
-                // Process all complete lines
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
@@ -107,16 +107,17 @@ export default function AdminSubsClient({
                     try {
                         const data = JSON.parse(line);
                         updateToast(toastId, data.message, data.type);
+                        if (data.type === 'error') hasError = true;
                     } catch (e) {
                         console.error('JSON parse error:', e);
                     }
                 }
             }
 
-            // Allow user to see final message for a moment before removal
             setTimeout(() => removeToast(toastId), 2000);
-            // Update cache times for all subs
-            setSubs(prev => prev.map(s => ({ ...s, cacheTime: Date.now() })));
+            if (!hasError) {
+                setSubs(prev => prev.map(s => ({ ...s, cacheTime: Date.now() })));
+            }
 
         } catch (e) {
             console.error('Rebuild error:', e);
@@ -147,6 +148,7 @@ export default function AdminSubsClient({
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let hasError = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -162,6 +164,7 @@ export default function AdminSubsClient({
                     try {
                         const data = JSON.parse(line);
                         updateToast(toastId, data.message, data.type);
+                        if (data.type === 'error') hasError = true;
                     } catch (e) {
                         console.error('JSON parse error:', e);
                     }
@@ -169,8 +172,9 @@ export default function AdminSubsClient({
             }
 
             setTimeout(() => removeToast(toastId), 2000);
-            // Update cache time for this sub
-            setSubs(prev => prev.map(s => s.token === token ? { ...s, cacheTime: Date.now() } : s));
+            if (!hasError) {
+                setSubs(prev => prev.map(s => s.token === token ? { ...s, cacheTime: Date.now() } : s));
+            }
 
         } catch (e) {
             console.error('Rebuild error:', e);

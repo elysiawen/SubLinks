@@ -25,7 +25,7 @@ const createColorCommand = (name: string, color: string, label: string) => ({
     },
 });
 
-export default function AnnouncementPanel({ initialValue, config }: { initialValue: string; config: any }) {
+export default function AnnouncementPanel({ initialValue }: { initialValue: string }) {
     const { success } = useToast();
     const t = useTranslations('admin.settingsPanels.announcement');
     const [announcement, setAnnouncement] = useState(initialValue);
@@ -51,16 +51,9 @@ export default function AnnouncementPanel({ initialValue, config }: { initialVal
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="mr-2">📢</span> {t('heading')}
             </h3>
-            <form action={async (formData) => {
-
-                formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
-                formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-                formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
-                formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
-                formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
-
-                const { updateGlobalConfig } = await import('../actions');
-                await updateGlobalConfig(formData);
+            <form action={async () => {
+                const { updateAnnouncement: updateAnnouncementAction } = await import('../actions');
+                await updateAnnouncementAction(announcement || '');
                 success(t('saved'));
             }} className="space-y-4">
 

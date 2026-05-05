@@ -15,14 +15,9 @@ export default function AppearanceSettingsPanel({ config }: { config: any }) {
                 <span className="mr-2">🎨</span> {t('heading')}
             </h3>
             <form action={async (formData) => {
-
-                formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
-                formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-                formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
-                formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
-
-                const { updateGlobalConfig } = await import('../actions');
-                await updateGlobalConfig(formData);
+                const bgUrl = (formData.get('customBackgroundUrl') as string) || '';
+                const { updateAppearance } = await import('../actions');
+                await updateAppearance(bgUrl);
                 success(t('saved'));
             }} className="space-y-4">
                 <div>

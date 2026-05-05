@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ToastProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -28,7 +27,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
             <LogCleanupPanel initialDays={config.logRetentionDays || 30} />
 
             {/* UA Filter Configuration */}
-            <UaFilterPanel initialConfig={config.uaFilter} config={config} />
+            <UaFilterPanel initialConfig={config.uaFilter} />
 
             {/* User Limits */}
             <UserLimitsPanel config={config} />
@@ -43,7 +42,7 @@ export default function AdminSettingsClient({ config }: { config: any }) {
             <StorageSettingsPanel config={config} />
 
             {/* Announcement Banner Settings */}
-            <AnnouncementPanel initialValue={config.announcement || ''} config={config} />
+            <AnnouncementPanel initialValue={config.announcement || ''} />
 
             {/* Session Cleanup */}
             < div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" >

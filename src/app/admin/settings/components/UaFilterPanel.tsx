@@ -7,7 +7,7 @@ import { SubmitButton } from '@/components/SubmitButton';
 import UaFilterForm from '@/components/UaFilterForm';
 import { UaFilterConfig } from '@/lib/database/interface';
 
-export default function UaFilterPanel({ initialConfig, config }: { initialConfig?: any; config: any }) {
+export default function UaFilterPanel({ initialConfig }: { initialConfig?: any }) {
     const t = useTranslations('admin.settingsPanels.uaFilter');
     const { success, error } = useToast();
     const [currentConfig, setCurrentConfig] = useState<UaFilterConfig>(initialConfig || {
@@ -20,20 +20,8 @@ export default function UaFilterPanel({ initialConfig, config }: { initialConfig
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const formData = new FormData();
-
-            // Preserve other config fields
-            formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-            formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '10');
-            formData.append('upstreamUserAgent', config.upstreamUserAgent || '');
-            formData.append('customBackgroundUrl', config.customBackgroundUrl || '');
-            formData.append('announcement', config.announcement || '');
-
-            // Add UA filter config
-            formData.append('uaFilter', JSON.stringify(currentConfig));
-
-            const { updateGlobalConfig } = await import('../actions');
-            await updateGlobalConfig(formData);
+            const { updateUaFilter } = await import('../actions');
+            await updateUaFilter(currentConfig);
             success(t('saved'));
         } catch (e) {
             error(t('saveFailed'));

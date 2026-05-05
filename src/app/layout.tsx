@@ -5,7 +5,7 @@ import AccessLogger from '@/components/AccessLogger';
 import ProgressBar from '@/components/ProgressBar';
 import { Providers } from '@/components/Providers';
 import { Suspense } from 'react';
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations, getTimeZone } from 'next-intl/server';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,13 +32,14 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const timeZone = await getTimeZone();
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers locale={locale} messages={messages}>
+        <Providers locale={locale} messages={messages} timeZone={timeZone}>
           <AccessLogger />
           <Suspense fallback={null}>
             <ProgressBar />

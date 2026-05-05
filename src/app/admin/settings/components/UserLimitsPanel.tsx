@@ -15,16 +15,9 @@ export default function UserLimitsPanel({ config }: { config: any }) {
                 <span className="mr-2">👤</span> {t('heading')}
             </h3>
             <form action={async (formData) => {
-
-                formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
-                formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-
-                // Handle max subs
-                const maxSubs = formData.get('maxUserSubscriptions') as string;
-                formData.set('maxUserSubscriptions', maxSubs);
-
-                const { updateGlobalConfig } = await import('../actions');
-                await updateGlobalConfig(formData);
+                const maxSubs = parseInt(formData.get('maxUserSubscriptions') as string) || 0;
+                const { updateUserLimits } = await import('../actions');
+                await updateUserLimits(maxSubs);
                 success(t('saved'));
             }} className="space-y-4">
                 <div>

@@ -8,7 +8,28 @@ import { redirect } from 'next/navigation';
 import { generateSecret, generateURI, verify } from 'otplib';
 import QRCode from 'qrcode';
 
-// ... (imports)
+async function refreshSession(updates: { nickname?: string; avatar?: string }) {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (!sessionId) return;
+    const existingSession = await db.getSession(sessionId);
+    if (!existingSession) return;
+    const user = await db.getUser(existingSession.username);
+    if (!user) return;
+    await db.createSession(sessionId, {
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+        tokenVersion: user.tokenVersion || 0,
+        nickname: updates.nickname ?? user.nickname,
+        avatar: updates.avatar ?? user.avatar,
+        loginMethod: existingSession?.loginMethod,
+        ip: existingSession?.ip,
+        ua: existingSession?.ua,
+        deviceInfo: existingSession?.deviceInfo,
+        lastActive: existingSession?.lastActive,
+    }, 7 * 24 * 60 * 60);
+}
 
 export async function getCurrentSession() {
     const cookieStore = await cookies();
@@ -39,7 +60,7 @@ export async function setup2FA() {
 
 export async function enable2FA(secret: string, token: string) {
     const session = await getCurrentSession();
-    if (!session) return { error: '未登录' };
+    if (!session) return { error: 'notLoggedIn' };
 
     // Verify the token with the provided secret (not saved yet)
     try {
@@ -51,7 +72,7 @@ export async function enable2FA(secret: string, token: string) {
 
     // Update user
     const user = await db.getUser(session.username);
-    if (!user) return { error: '用户不存在' };
+    if (!user) return { error: 'userNotFound' };
 
     await db.setUser(session.username, {
         ...user,
@@ -116,18 +137,17 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 export async function deleteOwnAccount(password: string) {
     const session = await getCurrentSession();
     if (!session) {
-        return { error: '未登录' };
+        return { error: 'notLoggedIn' };
     }
 
     if (session.role === 'admin') {
         return { error: 'adminCannotDelete' };
-        // Protecting admin account from accidental self-deletion
     }
 
     // Get user
     const user = await db.getUser(session.username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     // Verify password
@@ -153,7 +173,7 @@ export async function deleteOwnAccount(password: string) {
 export async function updateNickname(nickname: string) {
     const session = await getCurrentSession();
     if (!session) {
-        return { error: '未登录' };
+        return { error: 'notLoggedIn' };
     }
 
     // Validate nickname
@@ -164,7 +184,7 @@ export async function updateNickname(nickname: string) {
     // Get user
     const user = await db.getUser(session.username);
     if (!user) {
-        return { error: '用户不存在' };
+        return { error: 'userNotFound' };
     }
 
     // Update nickname in database
@@ -173,26 +193,7 @@ export async function updateNickname(nickname: string) {
         nickname: nickname || undefined
     });
 
-    // Update current session with new nickname
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-    if (sessionId) {
-        const existingSession = await db.getSession(sessionId);
-        await db.createSession(sessionId, {
-            userId: user.id,
-            username: user.username,
-            role: user.role,
-            tokenVersion: user.tokenVersion || 0,
-            nickname: nickname || undefined,
-            avatar: user.avatar,
-            loginMethod: existingSession?.loginMethod,
-            // Preserve other fields if needed, but createSession args override some
-            ip: existingSession?.ip,
-            ua: existingSession?.ua,
-            deviceInfo: existingSession?.deviceInfo,
-            lastActive: existingSession?.lastActive
-        }, 7 * 24 * 60 * 60); // 7 days
-    }
+    await refreshSession({ nickname: nickname || undefined });
 
     return { success: true };
 }
@@ -200,7 +201,7 @@ export async function updateNickname(nickname: string) {
 export async function uploadAvatar(formData: FormData) {
     const session = await getCurrentSession();
     if (!session) {
-        return { error: '未登录' };
+        return { error: 'notLoggedIn' };
     }
 
     const file = formData.get('avatar') as File;
@@ -236,7 +237,7 @@ export async function uploadAvatar(formData: FormData) {
         // Get user
         const user = await db.getUser(session.username);
         if (!user) {
-            return { error: '用户不存在' };
+            return { error: 'userNotFound' };
         }
 
         // Delete old avatar if exists
@@ -265,25 +266,7 @@ export async function uploadAvatar(formData: FormData) {
             avatar: avatarUrl,
         });
 
-        // Update session
-        const cookieStore = await cookies();
-        const sessionId = cookieStore.get('auth_session')?.value;
-        if (sessionId) {
-            const existingSession = await db.getSession(sessionId);
-            await db.createSession(sessionId, {
-                userId: user.id,
-                username: user.username,
-                role: user.role,
-                tokenVersion: user.tokenVersion || 0,
-                nickname: user.nickname,
-                avatar: avatarUrl,
-                loginMethod: existingSession?.loginMethod,
-                ip: existingSession?.ip,
-                ua: existingSession?.ua,
-                deviceInfo: existingSession?.deviceInfo,
-                lastActive: existingSession?.lastActive
-            }, 7 * 24 * 60 * 60);
-        }
+        await refreshSession({ avatar: avatarUrl });
 
         return { success: true, avatarUrl };
     } catch (error) {
@@ -323,28 +306,7 @@ export async function deleteAvatar() {
         avatar: undefined,
     });
 
-    // Update session
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-    if (sessionId) {
-        // Fetch existing session first to preserve metadata
-        const existingSession = await db.getSession(sessionId);
-        await db.createSession(sessionId, {
-            userId: user.id,
-            username: user.username,
-            role: user.role,
-            tokenVersion: user.tokenVersion || 0,
-            nickname: user.nickname,
-            avatar: undefined,
-            // Preserve metadata
-            ip: existingSession?.ip,
-            ua: existingSession?.ua,
-            deviceInfo: existingSession?.deviceInfo,
-            lastActive: existingSession?.lastActive,
-            loginMethod: existingSession?.loginMethod
-        }, 7 * 24 * 60 * 60);
-    }
-
+    await refreshSession({ avatar: undefined });
 
     return { success: true };
 }
@@ -420,10 +382,10 @@ export async function getUserSessionsList(search?: string) {
 
 export async function disable2FA(password: string) {
     const session = await getCurrentSession();
-    if (!session) return { error: '未登录' };
+    if (!session) return { error: 'notLoggedIn' };
 
     const user = await db.getUser(session.username);
-    if (!user) return { error: '用户不存在' };
+    if (!user) return { error: 'userNotFound' };
 
     // Verify password
     const isValid = await verifyPassword(password, user.password);

@@ -112,12 +112,13 @@ export async function GET(
     // 4. User Agent Check (New flexible filter system)
     const { checkUaFilter } = await import('@/lib/ua-filter');
     const ua = request.headers.get('user-agent') || '';
+    const isInternalRequest = request.headers.get('x-internal-system-precache') === 'true';
 
     // Determine effective UA filter config (Global only)
     const effectiveUaFilter = config.uaFilter;
 
-    // Apply new UA filter if configured
-    if (effectiveUaFilter) {
+    // Apply new UA filter if configured (skip for internal precache requests)
+    if (effectiveUaFilter && !isInternalRequest) {
         const allowed = checkUaFilter(ua, effectiveUaFilter);
         if (!allowed) {
             await logAccess(403);

@@ -15,17 +15,9 @@ export default function NetworkSettingsPanel({ config }: { config: any }) {
                 <span className="mr-2">🌐</span> {t('heading')}
             </h3>
             <form action={async (formData) => {
-
-                formData.append('upstreamSources', JSON.stringify(config.upstreamSources || []));
-                formData.append('logRetentionDays', config.logRetentionDays?.toString() || '30');
-                formData.append('maxUserSubscriptions', config.maxUserSubscriptions?.toString() || '0');
-
-                // Handle UA
-                const upstreamUserAgent = formData.get('upstreamUserAgent') as string;
-                formData.set('upstreamUserAgent', upstreamUserAgent);
-
-                const { updateGlobalConfig } = await import('../actions');
-                await updateGlobalConfig(formData);
+                const userAgent = (formData.get('upstreamUserAgent') as string) || '';
+                const { updateNetworkSettings } = await import('../actions');
+                await updateNetworkSettings(userAgent);
                 success(t('saved'));
             }} className="space-y-4">
                 <div>

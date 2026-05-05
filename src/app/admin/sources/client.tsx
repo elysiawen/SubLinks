@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { addUpstreamSource, deleteUpstreamSource, updateUpstreamSource, forceRefreshUpstream, refreshSingleSource, setDefaultUpstreamSource, toggleUpstreamSourceEnabled, addStaticUpstreamSource, appendNodesToStaticSource } from './actions';
@@ -45,9 +45,10 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     const locale = useLocale();
     const dateFnsLocale = locale === 'zh' ? zhCN : enUS;
     const router = useRouter();
-    const { success, error, info, addToast, updateToast, removeToast } = useToast();
+    const { success, error, info, addToast } = useToast();
     const { confirm } = useConfirm();
     const [sources, setSources] = useState<UpstreamSource[]>(initialSources);
+    useEffect(() => { setSources(initialSources); }, [initialSources]);
     const [isAdding, setIsAdding] = useState(false);
     const [editingSource, setEditingSource] = useState<UpstreamSource | null>(null);
     const [loadingSave, setLoadingSave] = useState(false);
@@ -61,10 +62,10 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
     // Stream Refresh Logic
     const handleStreamRefresh = async (sourceName?: string, shouldCache: boolean = false) => {
-        const toastId = addToast(
+        addToast(
             sourceName ? t('refreshingSource', { name: sourceName }) : t('refreshingAll'),
             'info',
-            Infinity // Persistent toast
+            5000
         );
         setLoadingAction(true);
 
@@ -88,14 +89,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
 
-                // Process all complete lines
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
                     if (!line.trim()) continue;
                     try {
                         const data = JSON.parse(line);
-                        updateToast(toastId, data.message, data.type);
+                        addToast(data.message, data.type, 8000);
                     } catch (e) {
                         console.error('JSON parse error:', e);
                     }
@@ -104,7 +104,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
             // If shouldCache, trigger subscription rebuild after refresh
             if (shouldCache) {
-                updateToast(toastId, t('cacheRebuilding'), 'info');
+                addToast(t('cacheRebuilding'), 'info', 5000);
                 try {
                     const rebuildRes = await fetch('/api/subscriptions/stream-rebuild?force=true', {
                         cache: 'no-store'
@@ -127,7 +127,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 if (!line.trim()) continue;
                                 try {
                                     const data = JSON.parse(line);
-                                    updateToast(toastId, data.message, data.type);
+                                    addToast(data.message, data.type, 8000);
                                 } catch (e) {
                                     console.error('JSON parse error:', e);
                                 }
@@ -136,19 +136,15 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                     }
                 } catch (cacheErr) {
                     console.error('Subscription cache rebuild error:', cacheErr);
-                    updateToast(toastId, t('cacheRebuildFailed', { error: String(cacheErr) }), 'error');
+                    addToast(t('cacheRebuildFailed', { error: String(cacheErr) }), 'error', 10000);
                 }
             }
 
-            // Allow user to see final message for a moment before removal
-            setTimeout(() => removeToast(toastId), 2000);
-            window.location.reload();
+            router.refresh();
 
         } catch (e) {
             console.error('Refresh error:', e);
-            updateToast(toastId, t('refreshFailed', { error: String(e) }), 'error');
-            // Keep error toast for a while
-            setTimeout(() => removeToast(toastId), 5000);
+            addToast(t('refreshFailed', { error: String(e) }), 'error', 10000);
         } finally {
             setLoadingAction(false);
         }
@@ -255,7 +251,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 resetForm();
                 setIsAdding(false);
                 success(t('successCreated'));
-                window.location.reload();
+                router.refresh();
             } catch (e) {
                 setLoadingStaticSave(false);
                 error(t('addFailed', { error: String(e) }));
@@ -293,7 +289,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             resetForm();
             setIsAdding(false);
             success(t('successAdded'));
-            window.location.reload();
+            router.refresh();
         }
     };
 
@@ -356,7 +352,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             setEditingSource(null);
             setIsAdding(false);
             success(t('successUpdated'));
-            window.location.reload();
+            router.refresh();
         }
     };
 
@@ -369,7 +365,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         await deleteUpstreamSource(sourceName);
         setLoadingAction(false);
         success(t('successDeleted'));
-        window.location.reload();
+        router.refresh();
     };
 
     const handleForceRefresh = () => {
@@ -388,7 +384,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
             if (result.success) {
                 success(t('successSetDefault', { name: sourceName }));
-                window.location.reload();
+                router.refresh();
             } else {
                 error(t('errorSetDefault'));
             }
@@ -548,7 +544,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 existingNames={sources.map(s => s.name)}
                                 onSuccess={() => {
                                     setIsAdding(false);
-                                    window.location.reload();
+                                    router.refresh();
                                 }}
                                 onCancel={() => setIsAdding(false)}
                             />
