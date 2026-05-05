@@ -35,7 +35,7 @@ export function middleware(request: NextRequest) {
     // Applies to all routes in matcher
     if (BLOCKED_UAS.some(blocked => ua.includes(blocked))) {
         return new NextResponse(
-            '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;margin:0;"><h1>请点击右上角，选择在浏览器中打开</h1></body></html>',
+            '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;margin:0;text-align:center;"><h1>Please open in your browser<br/><small style="color:#888;">请点击右上角，在浏览器中打开</small></h1></body></html>',
             { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
     }

@@ -156,6 +156,9 @@
         }
     },
     "sessions": {
+        "pageTitle": "Login Device Management",
+        "pageDesc": "Monitor active sessions in real-time and force logout abnormal sessions",
+        "securityCenter": "SubLinks Security Center · Industrial-grade Session Encryption",
         "currentDevice": "Current Device",
         "protectedSession": "Protected current session",
         "forceLogout": "Force Logout",

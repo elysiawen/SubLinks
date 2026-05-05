@@ -35,7 +35,8 @@ export default getRequestConfig(async () => {
             auth: (await import(`../messages/${locale}/auth.json`)).default,
             dashboard: (await import(`../messages/${locale}/dashboard.json`)).default,
             admin: (await import(`../messages/${locale}/admin.json`)).default,
-            errors: (await import(`../messages/${locale}/errors.json`)).default
+            errors: (await import(`../messages/${locale}/errors.json`)).default,
+            api: (await import(`../messages/${locale}/api.json`)).default
         }
     };
 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, extractBearerToken } from '@/lib/jwt-client';
 import { getFullAvatarUrl } from '@/lib/utils';
+import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
         if (!token) {
             return NextResponse.json(
-                { error: '未提供认证令牌' },
+                { error: await tApi('auth.noToken') },
                 { status: 401 }
             );
         }
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
         if (!payload) {
             return NextResponse.json(
-                { error: '无效或过期的令牌' },
+                { error: await tApi('auth.invalidToken') },
                 { status: 401 }
             );
         }
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('Get user info error:', error);
         return NextResponse.json(
-            { error: '服务器内部错误' },
+            { error: await tApi('auth.internalError') },
             { status: 500 }
         );
     }

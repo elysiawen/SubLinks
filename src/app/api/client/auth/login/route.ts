@@ -4,6 +4,7 @@ import { verifyPassword } from '@/lib/auth';
 import { createAccessToken, createRefreshToken } from '@/lib/jwt-client';
 import { nanoid } from 'nanoid';
 import { getFullAvatarUrl } from '@/lib/utils';
+import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
         // Validate input
         if (!username || !password) {
             return NextResponse.json(
-                { error: '用户名和密码不能为空' },
+                { error: await tApi('auth.emptyCredentials') },
                 { status: 400 }
             );
         }
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
         const user = await db.getUser(username);
         if (!user) {
             return NextResponse.json(
-                { error: '用户名或密码错误' },
+                { error: await tApi('auth.userNotFound') },
                 { status: 401 }
             );
         }
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         const isValid = await verifyPassword(password, user.password);
         if (!isValid) {
             return NextResponse.json(
-                { error: '用户名或密码错误' },
+                { error: await tApi('auth.userNotFound') },
                 { status: 401 }
             );
         }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
         // Check if account is banned or disabled
         if (user.status !== 'active') {
             return NextResponse.json(
-                { error: '账户已被停用或封禁' },
+                { error: await tApi('auth.accountDisabled') },
                 { status: 403 }
             );
         }
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
                 // Phase 1: Signal client that 2FA code is required
                 return NextResponse.json({
                     requires2FA: true,
-                    message: '该账户已启用两步验证，请提供 TOTP 验证码'
+                    message: await tApi('auth.twoFactorRequired')
                 });
             }
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
             if (!isValid2FA) {
                 return NextResponse.json(
-                    { error: '两步验证码错误或已过期' },
+                    { error: await tApi('auth.twoFactorInvalid') },
                     { status: 401 }
                 );
             }
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json(
-            { error: '服务器内部错误' },
+            { error: await tApi('auth.internalError') },
             { status: 500 }
         );
     }

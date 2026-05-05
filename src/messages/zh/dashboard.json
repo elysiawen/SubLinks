@@ -156,6 +156,9 @@
         }
     },
     "sessions": {
+        "pageTitle": "登录设备管理",
+        "pageDesc": "实时监控并对异常的活跃会话执行强制下线操作",
+        "securityCenter": "SubLinks 安全中心 · 工业级会话加密保护",
         "currentDevice": "当前设备",
         "protectedSession": "受保护的当前会话",
         "forceLogout": "强制下线",

@@ -400,24 +400,24 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                     📡 {t('title')}
                     <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{sources.length}</span>
                 </h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <button
                         onClick={() => setShowApiModal(true)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
+                        className="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-xs sm:text-sm"
                     >
-                        🔗 {t('refreshApi')}
+                        🔗 <span className="hidden sm:inline">{t('refreshApi')}</span><span className="sm:hidden">API</span>
                     </button>
                     <button
                         onClick={handleForceRefresh}
                         disabled={loadingAction}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium text-sm"
+                        className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm"
                     >
-                        🔄 {t('forceRefresh')}
+                        🔄 <span className="hidden sm:inline">{t('forceRefresh')}</span>
                     </button>
                     <button
                         onClick={() => {
@@ -425,9 +425,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                             setEditingSource(null);
                             setIsAdding(!isAdding);
                         }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                        className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm"
                     >
-                        {isAdding ? t('cancelAdd') : t('addSource')}
+                        {isAdding ? t('cancelAdd') : `+ ${t('addSource')}`}
                     </button>
                 </div>
             </div>
@@ -608,19 +608,19 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             ) : (
                 <div className="space-y-4">
                     {sources.map((source, index) => (
-                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md transition-shadow overflow-hidden">
                             <div className="flex flex-col md:flex-row md:items-center gap-4">
                                 {/* Left: Source Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <h3 className="text-lg font-semibold text-gray-800">{source.name}</h3>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap min-w-0">
+                                        <h3 className="text-lg font-semibold text-gray-800 truncate">{source.name}</h3>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                                             {/* Enabled Toggle */}
                                             <button
                                                 onClick={() => handleToggleEnabled(source)}
                                                 disabled={loadingAction}
-                                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${source.enabled !== false
+                                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${source.enabled !== false
                                                     ? 'bg-green-50 text-green-600 hover:bg-green-100'
                                                     : 'bg-red-50 text-red-600 hover:bg-red-100'
                                                     }`}
@@ -630,17 +630,17 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             </button>
 
                                             {source.isDefault ? (
-                                                <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium">
+                                                <span className="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap">
                                                     ⭐ {t('default')}
                                                 </span>
                                             ) : (
                                                 <button
                                                     onClick={() => handleSetDefault(source.name)}
                                                     disabled={loadingAction}
-                                                    className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                                                    className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
                                                     title={t('setAsDefault')}
                                                 >
-                                                    ☆ {t('setAsDefault')}
+                                                    ☆ <span className="hidden sm:inline">{t('setAsDefault')}</span><span className="sm:hidden">⭐</span>
                                                 </button>
                                             )}
                                         </div>
@@ -689,13 +689,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                     style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 text-gray-500">
+                                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-gray-500">
                                                 <div>
                                                     ↑ {formatBytes(source.traffic.upload)}
                                                     <span className="mx-1">|</span>
                                                     ↓ {formatBytes(source.traffic.download)}
                                                 </div>
-                                                <div className="text-right text-gray-400">
+                                                <div className="text-gray-400 sm:text-right">
                                                     {source.traffic.expire ? t('expireDate', { date: new Date(source.traffic.expire * 1000).toLocaleDateString() }) : t('noExpire')}
                                                 </div>
                                             </div>
@@ -704,7 +704,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 </div>
 
                                 {/* Right: Action Buttons */}
-                                <div className="flex md:flex-col gap-2 md:w-32 shrink-0">
+                                <div className="flex flex-wrap md:flex-col gap-2 md:w-32 shrink-0">
                                     {source.type !== 'static' && (
                                         <button
                                             onClick={() => handleRefreshSingle(source.name)}
@@ -712,7 +712,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                             title={t('refreshTitle')}
                                         >
-                                            🔄 {t('refresh')}
+                                            🔄 <span className="hidden sm:inline">{t('refresh')}</span>
                                         </button>
                                     )}
                                     <button
@@ -720,14 +720,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         disabled={loadingAction}
                                         className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
-                                        ✏️ {source.type === 'static' ? t('manage') : t('edit')}
+                                        ✏️ <span className="hidden sm:inline">{source.type === 'static' ? t('manage') : t('edit')}</span>
                                     </button>
                                     <button
                                         onClick={() => handleDelete(source.name)}
                                         disabled={loadingAction}
                                         className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
-                                        🗑️ {t('delete')}
+                                        🗑️ <span className="hidden sm:inline">{t('delete')}</span>
                                     </button>
                                 </div>
                             </div>

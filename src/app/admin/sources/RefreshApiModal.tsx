@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
+import { useTranslations } from 'next-intl';
 import { nanoid } from 'nanoid';
 
 interface UpstreamSource {
@@ -23,6 +24,7 @@ export default function RefreshApiModal({
     sources: UpstreamSource[];
     onSave: (apiKey: string | null) => Promise<{ success: boolean }>;
 }) {
+    const t = useTranslations('admin.refreshApiModal');
     const { success, error } = useToast();
     const [apiKey, setApiKey] = useState(currentApiKey || '');
     const [loading, setLoading] = useState(false);
@@ -39,21 +41,21 @@ export default function RefreshApiModal({
         setLoading(false);
 
         if (result.success) {
-            success('API密钥已保存');
+            success(t('saved'));
             onClose();
         } else {
-            error('保存失败');
+            error(t('saveFailed'));
         }
     };
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} title="刷新API配置">
+            <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto">
                     {/* API Key Configuration */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            API密钥
+                            {t('apiKeyLabel')}
                         </label>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <input
@@ -61,17 +63,17 @@ export default function RefreshApiModal({
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
                                 className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-mono text-sm break-all"
-                                placeholder="输入API密钥或点击生成"
+                                placeholder={t('apiKeyPlaceholder')}
                             />
                             <button
                                 onClick={generateKey}
                                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium whitespace-nowrap"
                             >
-                                随机生成
+                                {t('generate')}
                             </button>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                            用于验证刷新请求的密钥，建议使用32位随机字符串
+                            {t('apiKeyHint')}
                         </p>
                     </div>
 
@@ -82,16 +84,15 @@ export default function RefreshApiModal({
                             disabled={loading}
                             className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium"
                         >
-                            {loading ? '保存中...' : '保存配置'}
+                            {loading ? t('saving') : t('saveConfig')}
                         </button>
                         <button
                             onClick={onClose}
                             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                         >
-                            关闭
+                            {t('close')}
                         </button>
                     </div>
-
 
                     {/* View Usage Button */}
                     {apiKey && (
@@ -101,7 +102,7 @@ export default function RefreshApiModal({
                                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                             >
                                 <span>📖</span>
-                                <span>查看使用方法</span>
+                                <span>{t('viewUsage')}</span>
                             </button>
                         </div>
                     )}
@@ -125,6 +126,7 @@ export default function RefreshApiModal({
 
 // Code Block Component
 function CodeBlock({ title, code }: { title: string; code: string }) {
+    const t = useTranslations('admin.refreshApiModal');
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -141,7 +143,7 @@ function CodeBlock({ title, code }: { title: string; code: string }) {
                     onClick={handleCopy}
                     className="text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-700"
                 >
-                    {copied ? '✓ 已复制' : '📋 复制'}
+                    {copied ? t('copied') : t('copy')}
                 </button>
             </div>
             <pre className="px-4 py-3 text-xs text-gray-100 overflow-x-auto">
@@ -165,6 +167,7 @@ function UsageModal({
     baseUrl: string;
     sources: any[];
 }) {
+    const t = useTranslations('admin.refreshApiModal');
     const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
     const [selectedSource, setSelectedSource] = useState<string>(sources[0]?.name || '');
     const [precache, setPrecache] = useState(true);
@@ -211,7 +214,7 @@ function UsageModal({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="📖 API使用方法" maxWidth="max-w-4xl">
+        <Modal isOpen={isOpen} onClose={onClose} title={t('usageTitle')} maxWidth="max-w-4xl">
             <div className="space-y-6">
                 {/* Mode Toggle */}
                 <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
@@ -222,7 +225,7 @@ function UsageModal({
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
-                        🎯 简易模式
+                        {t('simpleMode')}
                     </button>
                     <button
                         onClick={() => setMode('advanced')}
@@ -231,7 +234,7 @@ function UsageModal({
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
-                        🔧 完整文档
+                        {t('advancedMode')}
                     </button>
                 </div>
 
@@ -241,7 +244,7 @@ function UsageModal({
                         {/* Source Selection */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                选择上游源
+                                {t('selectSource')}
                             </label>
                             <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                                 <div className="flex items-center gap-2">
@@ -257,7 +260,7 @@ function UsageModal({
                                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500/20"
                                     />
                                     <label htmlFor="all-sources" className="text-sm text-gray-700 font-medium">
-                                        全部源
+                                        {t('allSources')}
                                     </label>
                                 </div>
                                 {sources.map((source) => (
@@ -294,14 +297,14 @@ function UsageModal({
                                 className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500/20"
                             />
                             <label htmlFor="precache" className="text-sm text-gray-700">
-                                自动预缓存订阅
+                                {t('precache')}
                             </label>
                         </div>
 
                         {/* Method Selection */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                请求方式
+                                {t('requestMethod')}
                             </label>
                             <div className="flex gap-2">
                                 <button
@@ -337,10 +340,10 @@ function UsageModal({
                         {/* Generated Link */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                生成的链接
+                                {t('generatedLink')}
                             </label>
                             <CodeBlock
-                                title={method === 'get' ? '直接访问链接' : 'cURL 命令'}
+                                title={method === 'get' ? t('directLink') : t('curlCommand')}
                                 code={generateUrl()}
                             />
                         </div>
@@ -352,11 +355,11 @@ function UsageModal({
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div className="space-y-2 text-sm">
                                 <div>
-                                    <span className="font-semibold text-gray-700">API密钥：</span>
+                                    <span className="font-semibold text-gray-700">{t('apiKeyLabel2')}</span>
                                     <code className="ml-2 bg-white px-2 py-1 rounded border text-xs break-all">{apiKey}</code>
                                 </div>
                                 <div>
-                                    <span className="font-semibold text-gray-700">基础URL：</span>
+                                    <span className="font-semibold text-gray-700">{t('baseUrlLabel')}</span>
                                     <span className="ml-2 text-gray-600">{baseUrl}</span>
                                 </div>
                             </div>
@@ -364,18 +367,18 @@ function UsageModal({
 
                         {/* Method 1: GET */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">方式1：GET 请求</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method1Get')}</h3>
                             <div className="space-y-3">
                                 <CodeBlock
-                                    title="刷新单个源"
-                                    code={`curl "${baseUrl}/api/sources/refresh?key=${apiKey}&sourceName=${sources[0]?.name || 'GitHub主源'}&precache=true"`}
+                                    title={t('refreshSingle')}
+                                    code={`curl "${baseUrl}/api/sources/refresh?key=${apiKey}&sourceName=${sources[0]?.name || 'main'}&precache=true"`}
                                 />
                                 <CodeBlock
-                                    title="刷新多个源"
-                                    code={`curl "${baseUrl}/api/sources/refresh?key=${apiKey}&sourceNames=${sources.slice(0, 2).map(s => s.name).join(',') || 'GitHub主源,Cloudflare备份'}"`}
+                                    title={t('refreshMultiple')}
+                                    code={`curl "${baseUrl}/api/sources/refresh?key=${apiKey}&sourceNames=${sources.slice(0, 2).map(s => s.name).join(',') || 'source1,source2'}"`}
                                 />
                                 <CodeBlock
-                                    title="刷新全部源"
+                                    title={t('refreshAll')}
                                     code={`curl "${baseUrl}/api/sources/refresh?key=${apiKey}&precache=true"`}
                                 />
                             </div>
@@ -383,57 +386,57 @@ function UsageModal({
 
                         {/* Method 2: POST */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">方式2：POST 请求</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method2Post')}</h3>
                             <CodeBlock
-                                title="刷新指定源"
+                                title={t('refreshSpecified')}
                                 code={`curl -X POST ${baseUrl}/api/sources/refresh \\
   -H "Content-Type: application/json" \\
-  -d '{"key":"${apiKey}","sourceName":"${sources[0]?.name || 'GitHub主源'}","precache":true}'`}
+  -d '{"key":"${apiKey}","sourceName":"${sources[0]?.name || 'main'}","precache":true}'`}
                             />
                         </div>
 
                         {/* Method 3: Bearer */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">方式3：Bearer Token</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method3Bearer')}</h3>
                             <CodeBlock
-                                title="使用Bearer认证"
-                                code={`curl "${baseUrl}/api/sources/refresh?sourceName=${sources[0]?.name || 'GitHub主源'}" \\
+                                title={t('useBearer')}
+                                code={`curl "${baseUrl}/api/sources/refresh?sourceName=${sources[0]?.name || 'main'}" \\
   -H "Authorization: Bearer ${apiKey}"`}
                             />
                         </div>
 
                         {/* Parameters Table */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">参数说明</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('paramDesc')}</h3>
                             <div className="overflow-x-auto">
                                 <table className="min-w-full text-sm border border-gray-200 rounded-lg">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-2 text-left font-semibold border-b">参数</th>
-                                            <th className="px-4 py-2 text-left font-semibold border-b">类型</th>
-                                            <th className="px-4 py-2 text-left font-semibold border-b">说明</th>
+                                            <th className="px-4 py-2 text-left font-semibold border-b">{t('paramName')}</th>
+                                            <th className="px-4 py-2 text-left font-semibold border-b">{t('paramType')}</th>
+                                            <th className="px-4 py-2 text-left font-semibold border-b">{t('paramDetail')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
                                         <tr>
                                             <td className="px-4 py-2 font-mono text-xs bg-gray-50">key</td>
                                             <td className="px-4 py-2">string</td>
-                                            <td className="px-4 py-2">API密钥（Bearer方式除外）</td>
+                                            <td className="px-4 py-2">{t('paramKey')}</td>
                                         </tr>
                                         <tr>
                                             <td className="px-4 py-2 font-mono text-xs bg-gray-50">sourceName</td>
                                             <td className="px-4 py-2">string</td>
-                                            <td className="px-4 py-2">单个上游源名称</td>
+                                            <td className="px-4 py-2">{t('paramSourceName')}</td>
                                         </tr>
                                         <tr>
                                             <td className="px-4 py-2 font-mono text-xs bg-gray-50">sourceNames</td>
                                             <td className="px-4 py-2">string[]</td>
-                                            <td className="px-4 py-2">多个上游源（逗号分隔或数组）</td>
+                                            <td className="px-4 py-2">{t('paramSourceNames')}</td>
                                         </tr>
                                         <tr>
                                             <td className="px-4 py-2 font-mono text-xs bg-gray-50">precache</td>
                                             <td className="px-4 py-2">boolean</td>
-                                            <td className="px-4 py-2">是否自动预缓存订阅</td>
+                                            <td className="px-4 py-2">{t('paramPrecache')}</td>
                                         </tr>
                                     </tbody>
                                 </table>

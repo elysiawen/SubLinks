@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken, extractBearerToken } from '@/lib/jwt-client';
+import { tApi } from '@/lib/api-i18n';
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,36 +12,36 @@ export async function POST(request: NextRequest) {
         const accessToken = extractBearerToken(authHeader);
 
         if (!accessToken) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: await tApi('auth.unauthorized') }, { status: 401 });
         }
 
         const payload = await verifyToken(accessToken);
         if (!payload || !payload.userId) {
-            return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+            return NextResponse.json({ error: await tApi('auth.invalidToken') }, { status: 401 });
         }
 
         const body = await request.json();
         const { token } = body;
 
         if (!token) {
-            return NextResponse.json({ error: 'QR Token is required' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.qrTokenRequired') }, { status: 400 });
         }
 
         const cacheKey = `qr:${token}`;
         const cacheData = await db.getCache(cacheKey);
 
         if (!cacheData) {
-            return NextResponse.json({ error: 'Invalid or expired QR token' }, { status: 404 });
+            return NextResponse.json({ error: await tApi('auth.invalidQrToken') }, { status: 404 });
         }
 
         const data = JSON.parse(cacheData);
 
         if (Date.now() > data.expiresAt) {
-            return NextResponse.json({ error: 'QR Token expired' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.qrTokenExpired') }, { status: 400 });
         }
 
         if (data.status === 'confirmed') {
-            return NextResponse.json({ error: 'Already confirmed' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.qrAlreadyConfirmed') }, { status: 400 });
         }
 
         // Update status to rejected
@@ -54,10 +55,10 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: 'Login rejected'
+            message: await tApi('auth.loginRejected')
         });
     } catch (error) {
         console.error('QR Reject Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: await tApi('auth.internalError') }, { status: 500 });
     }
 }

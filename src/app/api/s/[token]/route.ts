@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { tApi } from '@/lib/api-i18n';
 import { buildSubscriptionYaml } from '@/lib/subscription-builder';
 
 // Runtime must be nodejs for database clients
@@ -252,7 +253,7 @@ export async function GET(
 
         if (finalYaml === null) {
             console.warn(`⚠️ [API] Subscription build blocked: All selected sources disabled (Token: ${token})`);
-            return new NextResponse('所选订阅源均已被禁用或不可用 / All selected upstream sources are disabled', { status: 503 });
+            return new NextResponse(await tApi('subscription.allSourcesDisabled'), { status: 503 });
         }
 
         // Cache the built YAML with NO expiration (infinite).

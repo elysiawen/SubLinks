@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { tApi } from '@/lib/api-i18n';
 
 export async function POST(request: NextRequest) {
     try {
@@ -8,24 +9,24 @@ export async function POST(request: NextRequest) {
         const { token } = body;
 
         if (!token) {
-            return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.qrTokenRequired') }, { status: 400 });
         }
 
         const cacheKey = `qr:${token}`;
         const cacheData = await db.getCache(cacheKey);
 
         if (!cacheData) {
-            return NextResponse.json({ error: 'Invalid or expired token' }, { status: 404 });
+            return NextResponse.json({ error: await tApi('auth.invalidQrToken') }, { status: 404 });
         }
 
         const data = JSON.parse(cacheData);
 
         if (Date.now() > data.expiresAt) {
-            return NextResponse.json({ error: 'Token expired' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.qrTokenExpired') }, { status: 400 });
         }
 
         if (data.status !== 'pending' && data.status !== 'scanned') {
-            return NextResponse.json({ error: 'Invalid token status' }, { status: 400 });
+            return NextResponse.json({ error: await tApi('auth.invalidQrStatus') }, { status: 400 });
         }
 
         // Update status to scanned
@@ -50,6 +51,6 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error('QR Scan Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: await tApi('auth.internalError') }, { status: 500 });
     }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken, createAccessToken } from '@/lib/jwt-client';
 import { getFullAvatarUrl } from '@/lib/utils';
+import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
 
         if (!refreshToken) {
             return NextResponse.json(
-                { error: 'Refresh token is required' },
+                { error: await tApi('auth.refreshTokenRequired') },
                 { status: 400 }
             );
         }
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
         const payload = await verifyToken(refreshToken);
         if (!payload) {
             return NextResponse.json(
-                { error: 'Invalid or expired refresh token' },
+                { error: await tApi('auth.invalidRefreshToken') },
                 { status: 401 }
             );
         }
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         const storedToken = await db.getRefreshToken(refreshToken, ip, ua);
         if (!storedToken) {
             return NextResponse.json(
-                { error: 'Session revoked or expired' },
+                { error: await tApi('auth.sessionRevoked') },
                 { status: 401 }
             );
         }
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Token refresh error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: await tApi('auth.internalError') },
             { status: 500 }
         );
     }

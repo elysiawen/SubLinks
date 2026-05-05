@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken, extractBearerToken } from '@/lib/jwt-client';
+import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
         if (!token) {
             return NextResponse.json(
-                { error: 'Authorization token required' },
+                { error: await tApi('auth.noToken') },
                 { status: 401 }
             );
         }
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
         const payload = await verifyToken(token);
         if (!payload) {
             return NextResponse.json(
-                { error: 'Invalid or expired token' },
+                { error: await tApi('auth.invalidToken') },
                 { status: 401 }
             );
         }
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('Get subscriptions error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: await tApi('auth.internalError') },
             { status: 500 }
         );
     }

@@ -1,0 +1,28 @@
+{
+  "subscription": {
+    "allSourcesDisabled": "All selected upstream sources are disabled or unavailable"
+  },
+  "auth": {
+    "emptyCredentials": "Username and password are required",
+    "userNotFound": "Invalid username or password",
+    "accountDisabled": "Account has been disabled or suspended",
+    "twoFactorRequired": "This account has two-factor authentication enabled. Please provide a TOTP code.",
+    "twoFactorInvalid": "Invalid or expired two-factor authentication code",
+    "noToken": "Authentication token not provided",
+    "invalidToken": "Invalid or expired token",
+    "internalError": "Internal server error",
+    "unauthorized": "Unauthorized",
+    "refreshTokenRequired": "Refresh token is required",
+    "invalidRefreshToken": "Invalid or expired refresh token",
+    "sessionRevoked": "Session revoked or expired",
+    "logoutSuccess": "Successfully logged out",
+    "qrTokenRequired": "QR token is required",
+    "invalidQrToken": "Invalid or expired QR token",
+    "qrTokenExpired": "QR token expired",
+    "invalidQrStatus": "Invalid QR token status",
+    "deviceRevoked": "Device session has been revoked. Please re-login.",
+    "qrAlreadyConfirmed": "Already confirmed",
+    "loginConfirmed": "Login confirmed",
+    "loginRejected": "Login rejected"
+  }
+}

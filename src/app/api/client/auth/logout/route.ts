@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/jwt-client';
+import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
         if (!refreshToken) {
             return NextResponse.json(
-                { error: 'Refresh token is required' },
+                { error: await tApi('auth.refreshTokenRequired') },
                 { status: 400 }
             );
         }
@@ -27,12 +28,12 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: 'Successfully logged out'
+            message: await tApi('auth.logoutSuccess')
         });
     } catch (error) {
         console.error('Logout error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: await tApi('auth.internalError') },
             { status: 500 }
         );
     }
