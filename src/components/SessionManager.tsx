@@ -350,7 +350,7 @@ export default function SessionManager({
                                                     tabIndex={0}
                                                 >
                                                     <Clock className="w-4 h-4 text-orange-500/60" />
-                                                    <span className="block group-hover/time:hidden group-focus/time:hidden">{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: dateFnsLocale })}{t('session.active')}</span>
+                                                    <span className="block group-hover/time:hidden group-focus/time:hidden">{formatDistanceToNow(session.lastActive, { addSuffix: true, locale: dateFnsLocale })} {t('session.active')}</span>
                                                     <span className="hidden group-hover/time:block group-focus/time:block">{format(session.lastActive, 'yyyy-MM-dd HH:mm:ss')} {t('session.active')}</span>
                                                 </div>
                                             </div>

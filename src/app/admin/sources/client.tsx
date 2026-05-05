@@ -106,7 +106,10 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             if (shouldCache) {
                 addToast(t('cacheRebuilding'), 'info', 5000);
                 try {
-                    const rebuildRes = await fetch('/api/subscriptions/stream-rebuild?force=true', {
+                    const rebuildUrl = sourceName
+                        ? `/api/subscriptions/stream-rebuild?source=${encodeURIComponent(sourceName)}`
+                        : '/api/subscriptions/stream-rebuild?force=true';
+                    const rebuildRes = await fetch(rebuildUrl, {
                         cache: 'no-store'
                     });
 

@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
     const batchSizeParam = searchParams.get('batchSize');
     const batchSize = batchSizeParam ? parseInt(batchSizeParam) : 0; // 0 = full concurrency
     const singleToken = searchParams.get('token'); // If provided, rebuild only this subscription
+    const sourceName = searchParams.get('source'); // If provided, rebuild only subs using this source
 
     // Create a streaming response
     const encoder = new TextEncoder();
@@ -74,6 +75,64 @@ export async function GET(req: NextRequest) {
                     } catch (err) {
                         send(`✗ 重建失败: ${String(err)}`, 'error');
                     }
+
+                    controller.close();
+                    return;
+                }
+
+                // Handle source-specific rebuild
+                if (sourceName) {
+                    send(`正在获取受上游源 [${sourceName}] 影响的订阅...`, 'info');
+
+                    const affectedSubs = await db.getSubscriptionsBySource(sourceName);
+
+                    if (affectedSubs.length === 0) {
+                        send(`没有找到使用上游源 [${sourceName}] 的订阅`, 'info');
+                        controller.close();
+                        return;
+                    }
+
+                    send(`找到 ${affectedSubs.length} 个受影响的订阅`, 'info');
+
+                    // Clear caches for affected subs
+                    for (const sub of affectedSubs) {
+                        await db.clearSubscriptionCache(sub.token);
+                    }
+                    send('受影响的订阅缓存已清除', 'success');
+
+                    // Rebuild affected subs
+                    send(`开始重建 ${affectedSubs.length} 个订阅...`, 'info');
+
+                    const results = await Promise.allSettled(
+                        affectedSubs.map(async (sub, idx) => {
+                            const progress = `[${idx + 1}/${affectedSubs.length}]`;
+                            try {
+                                const response = await fetch(`${baseUrl}/api/s/${sub.token}`, {
+                                    method: 'HEAD',
+                                    headers: {
+                                        'User-Agent': 'SubLinks-Precache/1.0',
+                                        'x-internal-system-precache': 'true',
+                                        'x-force-refresh': 'true'
+                                    }
+                                });
+
+                                if (response.ok) {
+                                    send(`${progress} ✓ ${sub.username} - ${sub.remark}`, 'success');
+                                    return { success: true };
+                                } else {
+                                    send(`${progress} ✗ ${sub.username} - ${sub.remark} (HTTP ${response.status})`, 'error');
+                                    return { success: false };
+                                }
+                            } catch (err) {
+                                send(`${progress} ✗ ${sub.username} - ${sub.remark} (${String(err)})`, 'error');
+                                return { success: false };
+                            }
+                        })
+                    );
+
+                    const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+                    const failed = affectedSubs.length - successful;
+                    send(`重建完成：成功 ${successful}/${affectedSubs.length}，失败 ${failed}`, failed > 0 ? 'info' : 'success');
 
                     controller.close();
                     return;
