@@ -29,6 +29,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
+    const tErr = useTranslations('errors.subscription');
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
 
     // Data State
@@ -66,39 +67,44 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
 
-    const refresh = async () => {
-        window.location.reload();
+    const translateError = (key: string) => {
+        try {
+            const translated = tErr(key);
+            return translated !== key ? translated : key;
+        } catch {
+            return key;
+        }
     };
 
     const handleDelete = async (token: string) => {
         if (await confirm(t('subscriptions.deleteConfirm'), { confirmColor: 'red', confirmText: t('subscriptions.deleteConfirmButton') })) {
-            await deleteSubscription(token);
+            const result = await deleteSubscription(token);
+            if (result?.error) {
+                error(translateError(result.error));
+                return;
+            }
+            setSubs(prev => prev.filter(s => s.token !== token));
             success(t('subscriptions.deleted'));
-            refresh();
         }
     }
 
     const handleToggle = async (sub: Sub) => {
         const newStatus = !sub.enabled;
-        const action = newStatus ? 'enable' : 'disable';
 
         // Optimistic update
-        setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: newStatus } : s));
+        setSubs(prev => prev.map(s => s.token === sub.token ? { ...s, enabled: newStatus } : s));
 
         try {
             const result = await toggleSubscriptionEnabled(sub.token, newStatus);
             if (result.error) {
-                error(result.error);
-                // Revert on error
-                setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
+                error(translateError(result.error));
+                setSubs(prev => prev.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
             } else {
                 success(newStatus ? t('subscriptions.enabled') : t('subscriptions.disabled'));
-                refresh();
             }
-        } catch (err) {
+        } catch {
             error(t('subscriptions.actionFailed'));
-            // Revert on error
-            setSubs(subs.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
+            setSubs(prev => prev.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
         }
     }
 
@@ -269,13 +275,35 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                         }
 
                         if (result && result.error) {
-                            error(result.error);
+                            error(translateError(result.error));
                             return;
+                        }
+
+                        if (editingSub) {
+                            // Update local state
+                            setSubs(prev => prev.map(s => s.token === editingSub.token ? {
+                                ...s,
+                                name: data.name,
+                                customRules: data.customRules,
+                                groupId: data.groupId,
+                                ruleId: data.ruleId,
+                                selectedSources: data.selectedSources,
+                            } : s));
+                        } else if (result && 'token' in result) {
+                            // Add new subscription to local state
+                            setSubs(prev => [...prev, {
+                                token: result.token as string,
+                                name: data.name,
+                                customRules: data.customRules,
+                                groupId: data.groupId,
+                                ruleId: data.ruleId,
+                                selectedSources: data.selectedSources,
+                                enabled: true,
+                            }]);
                         }
 
                         success(editingSub ? t('subscriptions.updated') : t('subscriptions.created'));
                         closeModal();
-                        refresh();
                     }}
                     onCancel={closeModal}
                     submitLabel={editingSub ? t('subscriptions.save') : t('subscriptions.create')}

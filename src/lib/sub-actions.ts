@@ -65,7 +65,7 @@ export async function createSubscription(remark: string, customRules: string, gr
     await db.createSubscription(token, session.username, subData);
 
     revalidatePath('/dashboard');
-    return { success: true };
+    return { success: true, token };
 }
 
 export async function deleteSubscription(token: string) {
