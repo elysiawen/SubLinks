@@ -147,12 +147,12 @@ export default function SubscriptionForm({
                 try {
                     const doc = yaml.load(selectedSet.content) as any;
                     if (Array.isArray(doc)) {
-                        extraGroups = doc.map((g: any) => g.name);
+                        extraGroups = doc.map((g: any) => String(g.name)).filter(Boolean);
                     } else if (doc && typeof doc === 'object') {
                         if (doc['proxy-groups'] && Array.isArray(doc['proxy-groups'])) {
-                            extraGroups = doc['proxy-groups'].map((g: any) => g.name);
+                            extraGroups = doc['proxy-groups'].map((g: any) => String(g.name)).filter(Boolean);
                         } else if (doc.name) {
-                            extraGroups = [doc.name];
+                            extraGroups = [String(doc.name)];
                         }
                     }
                 } catch (e) {
