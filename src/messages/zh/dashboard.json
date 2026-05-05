@@ -35,6 +35,7 @@
         "sourceDeleted": "已删除",
         "customRulesLabel": "追加规则:",
         "empty": "暂无订阅",
+        "unnamed": "未命名订阅",
         "emptyAction": "点击新增一个",
         "editTitle": "编辑订阅",
         "createTitle": "新增订阅",

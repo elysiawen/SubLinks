@@ -266,7 +266,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                             );
                         } else {
                             result = await createSubscription(
-                                data.name,
+                                data.name || t('subscriptions.unnamed'),
                                 data.customRules,
                                 data.groupId,
                                 data.ruleId,
@@ -293,7 +293,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                             // Add new subscription to local state
                             setSubs(prev => [...prev, {
                                 token: result.token as string,
-                                name: data.name,
+                                name: data.name || t('subscriptions.unnamed'),
                                 customRules: data.customRules,
                                 groupId: data.groupId,
                                 ruleId: data.ruleId,

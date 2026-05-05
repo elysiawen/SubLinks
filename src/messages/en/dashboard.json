@@ -35,6 +35,7 @@
         "sourceDeleted": "deleted",
         "customRulesLabel": "Custom Rules:",
         "empty": "No subscriptions yet",
+        "unnamed": "Unnamed Subscription",
         "emptyAction": "Click to create one",
         "editTitle": "Edit Subscription",
         "createTitle": "New Subscription",

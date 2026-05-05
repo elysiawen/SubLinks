@@ -5,8 +5,19 @@ import { useTranslations } from 'next-intl';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { X } from 'lucide-react';
+
+const sanitizeSchema = {
+    ...defaultSchema,
+    attributes: {
+        ...defaultSchema.attributes,
+        '*': [
+            ...(defaultSchema.attributes?.['*'] || []),
+            'style',
+        ],
+    },
+};
 
 export default function AnnouncementBanner({ content, className = '' }: { content?: string; className?: string }) {
     const t = useTranslations('common.announcement');
@@ -20,7 +31,7 @@ export default function AnnouncementBanner({ content, className = '' }: { conten
                     <span className="font-semibold text-blue-900">{t('title')}</span>
                 </div>
                 <div className="prose prose-sm max-w-none prose-blue prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0 text-gray-700 w-full pr-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSanitize]}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}>
                         {content}
                     </ReactMarkdown>
                 </div>

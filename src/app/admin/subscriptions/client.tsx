@@ -496,7 +496,7 @@ export default function AdminSubsClient({
                             onSubmit={async (data) => {
                                 setLoading(true);
                                 const result = await createAdminSubscription(selectedUser, {
-                                    remark: data.name,
+                                    remark: data.name || t('unnamed'),
                                     customRules: data.customRules,
                                     groupId: data.groupId,
                                     ruleId: data.ruleId,
@@ -513,7 +513,7 @@ export default function AdminSubsClient({
                                     setSubs(prev => [{
                                         token: result.token,
                                         username: selectedUser,
-                                        remark: data.name,
+                                        remark: data.name || t('unnamed'),
                                         enabled: true,
                                         createdAt: Date.now(),
                                         customRules: data.customRules,

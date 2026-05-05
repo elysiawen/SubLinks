@@ -54,7 +54,7 @@ export async function createAdminSubscription(
 
     const newSub: SubData = {
         username: username.trim(),
-        remark: data.remark || 'unnamedSubscription',
+        remark: data.remark || '未命名订阅',
         enabled: true,
         createdAt: now,
         customRules: data.customRules || '',

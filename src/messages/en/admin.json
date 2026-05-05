@@ -179,6 +179,7 @@
         "rebuildAllCache": "Rebuild All Cache",
         "searchPlaceholder": "Search subscriptions...",
         "noSubscriptions": "No subscription data",
+        "unnamed": "Unnamed Subscription",
         "tableRemark": "Remark / Token",
         "tableUser": "User",
         "tableCache": "Cache",

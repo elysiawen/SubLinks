@@ -179,6 +179,7 @@
         "rebuildAllCache": "重建所有缓存",
         "searchPlaceholder": "搜索订阅...",
         "noSubscriptions": "暂无任何订阅数据",
+        "unnamed": "未命名订阅",
         "tableRemark": "备注 / Token",
         "tableUser": "用户",
         "tableCache": "缓存",
