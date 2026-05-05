@@ -1,5 +1,5 @@
 import { getUserSubscriptions } from '@/lib/sub-actions';
-import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources } from '@/lib/config-actions';
+import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources, getProxySourceMap } from '@/lib/config-actions';
 import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -28,6 +28,7 @@ export default async function SubscriptionsPage() {
     const rules = await getRuleSets();
     const proxyGroups = await getProxyGroups();
     const sources = await getUpstreamSources();
+    const proxySourceMap = await getProxySourceMap();
 
     // Filter and map default groups
     const defaultGroups = proxyGroups
@@ -53,6 +54,7 @@ export default async function SubscriptionsPage() {
             configSets={{ groups, rules }}
             defaultGroups={defaultGroups}
             availableSources={sources}
+            proxySourceMap={proxySourceMap}
         />
     );
 }

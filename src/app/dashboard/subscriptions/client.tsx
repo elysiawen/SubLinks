@@ -5,7 +5,7 @@ import { createSubscription, deleteSubscription, updateSubscription, toggleSubsc
 import { ConfigSet } from '@/lib/config-actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
-import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources } from '@/lib/config-actions';
+import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources, getProxySourceMap } from '@/lib/config-actions';
 import Modal from '@/components/Modal';
 import SubscriptionForm from '@/components/subscription-form';
 import { useTranslations } from 'next-intl';
@@ -25,7 +25,7 @@ interface ConfigSets {
     rules: ConfigSet[];
 }
 
-export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [] }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: { name: string; source: string }[], availableSources?: { name: string; url?: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[] }) {
+export default function SubscriptionsClient({ initialSubs, username, baseUrl, configSets: initialConfigSets, defaultGroups: initialDefaultGroups = [], availableSources: initialAvailableSources = [], proxySourceMap: initialProxySourceMap = {} }: { initialSubs: Sub[], username: string, baseUrl: string, configSets?: ConfigSets, defaultGroups?: { name: string; source: string }[], availableSources?: { name: string; url?: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[], proxySourceMap?: Record<string, string> }) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
@@ -36,6 +36,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     const [configSets, setConfigSets] = useState<{ groups: ConfigSet[], rules: ConfigSet[] }>(initialConfigSets || { groups: [], rules: [] });
     const [defaultGroups, setDefaultGroups] = useState<{ name: string; source: string }[]>(initialDefaultGroups || []);
     const [availableSources, setAvailableSources] = useState<{ name: string; url?: string; isDefault?: boolean; enabled?: boolean; status?: 'pending' | 'success' | 'failure'; lastUpdated?: number }[]>(initialAvailableSources || []);
+    const [proxySourceMap, setProxySourceMap] = useState<Record<string, string>>(initialProxySourceMap);
     const [dataLoaded, setDataLoaded] = useState(!!initialConfigSets);
 
     // Fetch additional data on mount if not provided
@@ -45,8 +46,9 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                 getGroupSets(),
                 getRuleSets(),
                 getProxyGroups(),
-                getUpstreamSources()
-            ]).then(([groups, rules, proxyGroups, sources]) => {
+                getUpstreamSources(),
+                getProxySourceMap()
+            ]).then(([groups, rules, proxyGroups, sources, psm]) => {
                 setConfigSets({ groups, rules });
 
                 // Filter and map default groups
@@ -56,6 +58,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                 setDefaultGroups(defaults);
 
                 setAvailableSources(sources);
+                setProxySourceMap(psm);
                 setDataLoaded(true);
             }).catch(e => {
                 console.error("Failed to load dashboard data", e);
@@ -253,6 +256,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                     configSets={configSets}
                     defaultGroups={defaultGroups}
                     availableSources={availableSources}
+                    proxySourceMap={proxySourceMap}
                     onSubmit={async (data) => {
                         let result;
                         if (editingSub) {

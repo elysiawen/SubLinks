@@ -1,6 +1,6 @@
 import AdminSubsClient from './client';
 import { getAdminSubscriptions } from './actions';
-import { getGroupSets, getRuleSets } from '@/lib/config-actions';
+import { getGroupSets, getRuleSets, getProxySourceMap } from '@/lib/config-actions';
 import { db } from '@/lib/db';
 import { getParsedConfig } from '@/lib/analysis';
 
@@ -23,6 +23,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
         .map(g => ({ name: g.name, source: g.source }));
 
     const availableSources = await db.getUpstreamSources();
+    const proxySourceMap = await getProxySourceMap();
 
     // Fetch all users for admin create subscription
     const { data: users } = await db.getAllUsers(1, 10000);
@@ -37,6 +38,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
                 configSets={{ groups: groupSets, rules: ruleSets }}
                 defaultGroups={defaultGroups}
                 availableSources={availableSources}
+                proxySourceMap={proxySourceMap}
                 users={users.map(u => ({ username: u.username, nickname: u.nickname }))}
             />
         </div>

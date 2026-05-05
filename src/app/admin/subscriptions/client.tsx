@@ -37,6 +37,7 @@ export default function AdminSubsClient({
     configSets,
     defaultGroups,
     availableSources,
+    proxySourceMap,
     users
 }: {
     initialSubs: Sub[],
@@ -46,6 +47,7 @@ export default function AdminSubsClient({
     configSets: ConfigSets,
     defaultGroups: { name: string; source: string }[],
     availableSources: { name: string; url?: string; enabled?: boolean }[],
+    proxySourceMap: Record<string, string>,
     users: { username: string; nickname?: string }[]
 }) {
     const t = useTranslations('admin.subscriptions');
@@ -492,6 +494,7 @@ export default function AdminSubsClient({
                             configSets={configSets}
                             defaultGroups={defaultGroups}
                             availableSources={availableSources}
+                            proxySourceMap={proxySourceMap}
                             isAdmin={false}
                             onSubmit={async (data) => {
                                 setLoading(true);
@@ -559,6 +562,7 @@ export default function AdminSubsClient({
                         configSets={configSets}
                         defaultGroups={defaultGroups}
                         availableSources={availableSources}
+                        proxySourceMap={proxySourceMap}
                         isAdmin={true}
                         onSubmit={async (data) => {
                             setLoading(true);

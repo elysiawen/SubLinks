@@ -146,3 +146,14 @@ export async function getProxyGroups() {
 export async function getUpstreamSources() {
     return await db.getUpstreamSources();
 }
+
+export async function getProxySourceMap(): Promise<Record<string, string>> {
+    const proxies = await db.getProxies();
+    const map: Record<string, string> = {};
+    for (const p of proxies) {
+        if (p.config?.name && p.source) {
+            map[p.config.name] = p.source;
+        }
+    }
+    return map;
+}

@@ -35,6 +35,7 @@ export interface SubscriptionFormProps {
     onCancel: () => void;
     isAdmin?: boolean;
     submitLabel?: string;
+    proxySourceMap?: Record<string, string>;
 }
 
 export default function SubscriptionForm({
@@ -45,7 +46,8 @@ export default function SubscriptionForm({
     onSubmit,
     onCancel,
     isAdmin = false,
-    submitLabel
+    submitLabel,
+    proxySourceMap = {}
 }: SubscriptionFormProps) {
     const t = useTranslations('common.subscriptionForm');
     const { error } = useToast();
@@ -100,16 +102,18 @@ export default function SubscriptionForm({
                         if (p.startsWith('SOURCE:')) {
                             sources.add(p.substring(7));
                         } else if (p.startsWith('KEYWORD:') || p.startsWith('REGEX:')) {
-                            // For dynamic filters, we can't know which sources are affected
-                            // without proxy data, so mark this group as having dynamic filters
                             hasDynamicFilter = true;
+                        } else {
+                            // Check if this node name belongs to a known source
+                            const source = proxySourceMap[p];
+                            if (source) {
+                                sources.add(source);
+                            }
                         }
-                        // Manual nodes can't be resolved without proxy data
                     });
                 }
             });
 
-            // If we have dynamic filters, add all enabled sources as potential dependencies
             if (hasDynamicFilter) {
                 availableSources
                     .filter(s => s.enabled !== false)
