@@ -5,9 +5,11 @@ import { generateToken } from '@/lib/utils';
 import { hashPassword } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { SubData } from '@/lib/database/interface';
+import { requireAdmin } from '@/lib/admin-guard';
 
 // User Management
 export async function getUsers(page: number = 1, limit: number = 10, search?: string) {
+    await requireAdmin();
     const result = await db.getAllUsers(page, limit, search);
 
     const usersWithPasskeys = await Promise.all(result.data.map(async (user) => {
@@ -25,6 +27,7 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
 }
 
 export async function createUser(formData: FormData) {
+    await requireAdmin();
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
     const nickname = formData.get('nickname') as string;
@@ -98,6 +101,7 @@ export async function createUser(formData: FormData) {
 }
 
 export async function updateUserStatus(username: string, status: string) {
+    await requireAdmin();
     const user = await db.getUser(username);
     if (user) {
         user.status = status;
@@ -107,6 +111,7 @@ export async function updateUserStatus(username: string, status: string) {
 }
 
 export async function updateUserMaxSubscriptions(username: string, maxSubscriptions: number | null) {
+    await requireAdmin();
     const user = await db.getUser(username);
     if (user) {
         user.maxSubscriptions = maxSubscriptions;
@@ -116,6 +121,7 @@ export async function updateUserMaxSubscriptions(username: string, maxSubscripti
 }
 
 export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string, nickname?: string) {
+    await requireAdmin();
     // Get existing user data
     const user = await db.getUser(oldUsername);
     if (!user) return { error: 'User not found' };
@@ -186,6 +192,7 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
 }
 
 export async function deleteUser(username: string) {
+    await requireAdmin();
     // Delete all subscriptions for this user first
     const userSubs = await db.getUserSubscriptions(username);
     for (const sub of userSubs) {
@@ -219,6 +226,7 @@ export async function deleteUser(username: string) {
 }
 
 export async function adminUploadAvatar(formData: FormData) {
+    await requireAdmin();
     const username = formData.get('username') as string;
     const file = formData.get('avatar') as File;
 
@@ -292,6 +300,7 @@ export async function adminUploadAvatar(formData: FormData) {
 }
 
 export async function adminDeleteAvatar(username: string) {
+    await requireAdmin();
     // Get user
     const user = await db.getUser(username);
     if (!user) {
@@ -322,6 +331,7 @@ export async function adminDeleteAvatar(username: string) {
 }
 
 export async function resetUser2FA(username: string) {
+    await requireAdmin();
     const user = await db.getUser(username);
     if (!user) {
         return { error: 'userNotFound' };
@@ -338,6 +348,7 @@ export async function resetUser2FA(username: string) {
 }
 
 export async function adminGetUserPasskeys(userId: string) {
+    await requireAdmin();
     try {
         const passkeys = await db.getUserPasskeys(userId);
         return { success: true, passkeys };
@@ -348,6 +359,7 @@ export async function adminGetUserPasskeys(userId: string) {
 }
 
 export async function adminDeletePasskey(passkeyId: string, userId: string) {
+    await requireAdmin();
     try {
         await db.deletePasskey(passkeyId, userId);
         revalidatePath('/admin/users');

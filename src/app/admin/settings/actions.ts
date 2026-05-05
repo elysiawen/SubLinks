@@ -2,13 +2,16 @@
 
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/admin-guard';
 
 // Global Config
 export async function getGlobalConfig() {
+    await requireAdmin();
     return await db.getGlobalConfig();
 }
 
 export async function updateGlobalConfig(formData: FormData) {
+    await requireAdmin();
     // Get existing config to preserve other settings
     const existingConfig = await db.getGlobalConfig();
 
@@ -62,6 +65,7 @@ export async function updateGlobalConfig(formData: FormData) {
 }
 
 export async function testS3Connection(formData: FormData) {
+    await requireAdmin();
     try {
         const preset = (formData.get('s3Preset') as string)?.trim();
         const accessKeyId = (formData.get('s3AccessKeyId') as string)?.trim();
@@ -165,16 +169,19 @@ export async function testS3Connection(formData: FormData) {
 }
 
 export async function clearCache() {
+    await requireAdmin();
     await db.deleteCache('cache:subscription');
     revalidatePath('/admin');
 }
 
 export async function cleanupSessions() {
+    await requireAdmin();
     const count = await db.cleanupExpiredSessions();
     return { count };
 }
 
 export async function clearLogs(days: number = 30, logTypes: string[] = ['api', 'web', 'system']) {
+    await requireAdmin();
     if (days < 0) return { error: 'Invalid retention days' };
 
     await db.cleanupLogs(days, logTypes);

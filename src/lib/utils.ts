@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { randomBytes } from "crypto";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -7,9 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 
 export function generateToken(length = 16) {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = randomBytes(length);
     let token = '';
     for (let i = 0; i < length; i++) {
-        token += chars[Math.floor(Math.random() * chars.length)];
+        token += chars[bytes[i] % chars.length];
     }
     return token;
 }

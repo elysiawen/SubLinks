@@ -1,8 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export async function getDashboardStats() {
+    await requireAdmin();
     // Get all users
     const { data: allUsers } = await db.getAllUsers(1, 10000);
     const activeUsers = allUsers.filter(u => u.status === 'active').length;

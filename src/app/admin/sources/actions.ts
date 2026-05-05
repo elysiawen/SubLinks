@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export async function addUpstreamSource(
     name: string,
@@ -10,6 +11,7 @@ export async function addUpstreamSource(
     enabled: boolean = true,
     skipRefresh: boolean = false
 ) {
+    await requireAdmin();
     // Create new upstream source in database
     await db.createUpstreamSource({
         name,
@@ -50,6 +52,7 @@ export async function addStaticUpstreamSource(
     content: string,
     enabled: boolean = true
 ) {
+    await requireAdmin();
     // 1. Create the upstream source entry in database
     await db.createUpstreamSource({
         name,
@@ -87,6 +90,7 @@ export async function appendNodesToStaticSource(
     sourceName: string,
     content: string
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source) {
         return { error: 'Source not found' };
@@ -173,6 +177,7 @@ async function clearSubscriptionCachesForSource(sourceName: string) {
 }
 
 export async function deleteUpstreamSource(sourceName: string) {
+    await requireAdmin();
 
     // 1. Find affected subscriptions BEFORE deleting (so we know who used this source)
     const affectedSubs = await db.getSubscriptionsBySource(sourceName);
@@ -221,6 +226,7 @@ export async function deleteUpstreamSource(sourceName: string) {
 }
 
 export async function updateSystemSettings(formData: FormData) {
+    await requireAdmin();
     const globalConfig = await db.getGlobalConfig();
 
     await db.setGlobalConfig({
@@ -241,6 +247,7 @@ export async function updateUpstreamSource(
     enabled: boolean = true,
     skipRefresh: boolean = false
 ) {
+    await requireAdmin();
     // Verify that type is not being changed
     const existingSource = await db.getUpstreamSource(oldName);
     if (!existingSource) {
@@ -306,6 +313,7 @@ export async function updateUpstreamSource(
 }
 
 export async function forceRefreshUpstream() {
+    await requireAdmin();
     console.log('🔄 Force refreshing all upstream sources...');
     const { refreshUpstreamCache } = await import('@/lib/analysis');
     const success = await refreshUpstreamCache();
@@ -319,6 +327,7 @@ export async function forceRefreshUpstream() {
 }
 
 export async function refreshSingleSource(sourceName: string) {
+    await requireAdmin();
     // Find the source from database
     const source = await db.getUpstreamSource(sourceName);
     if (!source) {
@@ -342,6 +351,7 @@ export async function refreshSingleSource(sourceName: string) {
 }
 
 export async function setDefaultUpstreamSource(sourceName: string) {
+    await requireAdmin();
     // Set default upstream source in database
     await db.setDefaultUpstreamSource(sourceName);
 
@@ -350,6 +360,7 @@ export async function setDefaultUpstreamSource(sourceName: string) {
 }
 
 export async function toggleUpstreamSourceEnabled(sourceName: string, enabled: boolean) {
+    await requireAdmin();
     await db.updateUpstreamSource(sourceName, { enabled });
 
     // If disabling, clear caches for AFFECTED subscriptions only AND check if they need to be disabled
@@ -433,6 +444,7 @@ export async function toggleUpstreamSourceEnabled(sourceName: string, enabled: b
 
 // Wrapper for updateRefreshApiKey from config-actions
 export async function updateRefreshApiKey(apiKey: string | null) {
+    await requireAdmin();
     const { updateRefreshApiKey: updateKey } = await import('@/lib/config-actions');
     return await updateKey(apiKey);
 }
@@ -444,6 +456,7 @@ export async function updateRefreshApiKey(apiKey: string | null) {
  * Returns parsed proxies, groups, and rules for wizard preview.
  */
 export async function previewParseContent(content: string) {
+    await requireAdmin();
     const { parseContentPreview } = await import('@/lib/upstream-parser');
     return parseContentPreview(content);
 }
@@ -452,6 +465,7 @@ export async function previewParseContent(content: string) {
  * Get all data (nodes, proxy groups, rules) for a static source.
  */
 export async function getStaticSourceData(sourceName: string) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -496,6 +510,7 @@ export async function createStaticSource(
     rules: string[],
     enabled: boolean = true
 ) {
+    await requireAdmin();
     if (nodes.length === 0) {
         return { error: 'needAtLeastOneNode' };
     }
@@ -591,6 +606,7 @@ export async function addNodesToStaticSource(
     sourceName: string,
     nodes: { name: string; type: string; server: string; port: number; config: any }[]
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -622,6 +638,7 @@ export async function addNodesToStaticSource(
  * Delete a single node from a static source.
  */
 export async function deleteStaticSourceNode(sourceName: string, nodeId: string) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -641,6 +658,7 @@ export async function deleteStaticSourceNode(sourceName: string, nodeId: string)
  * Delete multiple nodes from a static source.
  */
 export async function deleteStaticSourceNodes(sourceName: string, nodeIds: string[]) {
+    await requireAdmin();
     if (!nodeIds || nodeIds.length === 0) return { success: true };
 
     const source = await db.getUpstreamSource(sourceName);
@@ -669,6 +687,7 @@ export async function saveStaticSourceNodes(
     sourceName: string,
     nodes: { name: string; type: string; server: string; port: number; config: any }[]
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -705,6 +724,7 @@ export async function saveStaticSourceGroups(
     sourceName: string,
     groups: { id?: string; name: string; type: string; proxies: string[]; config?: any }[]
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -739,6 +759,7 @@ export async function saveStaticSourceGroups(
  * Delete a single proxy group. Protected: can't delete if it's the only group.
  */
 export async function deleteStaticSourceGroup(sourceName: string, groupId: string) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -766,6 +787,7 @@ export async function saveStaticSourceRules(
     sourceName: string,
     ruleTexts: string[]
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -799,6 +821,7 @@ export async function saveStaticSourceRules(
  * Delete a single rule from a static source.
  */
 export async function deleteStaticSourceRule(sourceName: string, ruleId: string) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
@@ -834,6 +857,7 @@ export async function importStaticSourceData(
         ruleMode: 'append' | 'overwrite';
     }
 ) {
+    await requireAdmin();
     const source = await db.getUpstreamSource(sourceName);
     if (!source || source.type !== 'static') {
         return { error: 'notStaticType' };
