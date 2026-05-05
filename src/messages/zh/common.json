@@ -223,6 +223,15 @@
         "password": "密码",
         "invalidJson": "附加配置不是有效的 JSON"
     },
+    "pagination": {
+        "showingRange": "显示 {from} 到 {to} 条，共 {total} 条",
+        "perPage": "{count} 条/页",
+        "prevPage": "上一页",
+        "nextPage": "下一页",
+        "pageInfo": "第 {current} / {total} 页",
+        "pagePlaceholder": "页码",
+        "go": "跳转"
+    },
     "uaPresets": {
         "clash": "Clash 系列客户端",
         "clashMeta": "Clash Meta",

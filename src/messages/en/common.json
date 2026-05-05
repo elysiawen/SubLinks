@@ -223,6 +223,15 @@
         "password": "Password",
         "invalidJson": "Extra config is not valid JSON"
     },
+    "pagination": {
+        "showingRange": "Showing {from} to {to} of {total} entries",
+        "perPage": "{count} / page",
+        "prevPage": "Previous",
+        "nextPage": "Next",
+        "pageInfo": "Page {current} / {total}",
+        "pagePlaceholder": "Page",
+        "go": "Go"
+    },
     "uaPresets": {
         "clash": "Clash Clients",
         "clashMeta": "Clash Meta",

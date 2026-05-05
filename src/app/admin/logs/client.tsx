@@ -17,6 +17,7 @@ export default function LogsClient() {
     const t = useTranslations('admin.logs');
     const locale = useLocale();
     const dateFnsLocale = locale === 'zh' ? zhCN : enUS;
+    const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US';
     const [activeTab, setActiveTab] = useState<'api' | 'web' | 'system'>('api');
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -458,7 +459,7 @@ export default function LogsClient() {
                                 <React.Fragment key={log.id}>
                                     <tr className={`hover:bg-white/[0.03] transition-colors ${log.isMerged ? 'bg-gray-900/30 cursor-pointer' : ''}`} onClick={log.isMerged ? () => toggleExpand(log.id) : undefined}>
                                         <td className="px-6 py-4 text-sm text-gray-300 whitespace-nowrap">
-                                            {new Date(log.timestamp).toLocaleString('zh-CN')}
+                                            {new Date(log.timestamp).toLocaleString(dateLocale)}
                                             <div className="text-xs text-gray-500 mt-0.5">{formatTime(log.timestamp)}</div>
                                         </td>
 
@@ -474,7 +475,7 @@ export default function LogsClient() {
                                                             ? log.token
                                                             : `${(log.token || '').substring(0, 8)}...`}
                                                         {log.subRemark && (
-                                                            <span className="text-gray-400 ml-1">（{log.subRemark}）</span>
+                                                            <span className="text-gray-400 ml-1">({log.subRemark})</span>
                                                         )}
                                                     </div>
                                                     <div>{formatUserDisplay(log.username, log.nickname)}</div>
@@ -557,7 +558,7 @@ export default function LogsClient() {
                                     {log.isMerged && expandedLogs.has(log.id) && log.mergedLogs && log.mergedLogs.map((childLog: any) => (
                                         <tr key={childLog.id} className="bg-gray-800/20 hover:bg-gray-800/30 transition-colors animate-in fade-in slide-in-from-top-2 duration-200">
                                             <td className="px-6 py-3 text-sm text-gray-400 whitespace-nowrap pl-10 border-l-2 border-emerald-500/30">
-                                                {new Date(childLog.timestamp).toLocaleTimeString('zh-CN')}
+                                                {new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}
                                             </td>
 
                                             {activeTab === 'api' && (
@@ -572,7 +573,7 @@ export default function LogsClient() {
                                                                 ? childLog.token
                                                                 : `${(childLog.token || '').substring(0, 8)}...`}
                                                             {childLog.subRemark && (
-                                                                <span className="text-gray-500 ml-1">（{childLog.subRemark}）</span>
+                                                                <span className="text-gray-500 ml-1">({childLog.subRemark})</span>
                                                             )}
                                                         </div>
                                                         <div>{formatUserDisplay(childLog.username, childLog.nickname)}</div>
@@ -630,7 +631,7 @@ export default function LogsClient() {
                                 {/* Time and Status */}
                                 <div className="flex items-start justify-between">
                                     <div className="text-xs text-gray-400">
-                                        {new Date(log.timestamp).toLocaleString('zh-CN')}
+                                        {new Date(log.timestamp).toLocaleString(dateLocale)}
                                         <div className="text-gray-500 mt-0.5">{formatTime(log.timestamp)}</div>
                                     </div>
                                     <span className={`text-xs font-medium ${getStatusColor(log.status)}`}>
@@ -652,7 +653,7 @@ export default function LogsClient() {
                                                     ? log.token
                                                     : `${(log.token || '').substring(0, 8)}...`}
                                                 {log.subRemark && (
-                                                    <span className="text-gray-400 ml-1">（{log.subRemark}）</span>
+                                                    <span className="text-gray-400 ml-1">({log.subRemark})</span>
                                                 )}
                                             </span>
                                         </div>
@@ -691,7 +692,7 @@ export default function LogsClient() {
                                                 {log.mergedLogs.map((childLog: any) => (
                                                     <div key={childLog.id} className="text-xs bg-gray-900/50 p-2 rounded">
                                                         <div className="flex justify-between text-gray-500 mb-1">
-                                                            <span>{new Date(childLog.timestamp).toLocaleTimeString('zh-CN')}</span>
+                                                            <span>{new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
                                                         <div className="text-gray-300">{childLog.apiType || t('apiRequest')}</div>
@@ -762,7 +763,7 @@ export default function LogsClient() {
                                                 {log.mergedLogs.map((childLog: any) => (
                                                     <div key={childLog.id} className="text-xs bg-gray-900/50 p-2 rounded">
                                                         <div className="flex justify-between text-gray-500 mb-1">
-                                                            <span>{new Date(childLog.timestamp).toLocaleTimeString('zh-CN')}</span>
+                                                            <span>{new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
                                                         <div className="font-mono text-gray-300 break-all">{childLog.path}</div>

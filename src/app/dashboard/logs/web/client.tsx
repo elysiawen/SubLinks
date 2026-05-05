@@ -2,7 +2,7 @@
 
 import type { WebAccessLog } from '@/lib/database/interface';
 import Pagination from '@/components/Pagination';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface WebLogsClientProps {
     logs: WebAccessLog[];
@@ -18,9 +18,10 @@ export default function WebLogsClient({
     itemsPerPage
 }: WebLogsClientProps) {
     const t = useTranslations('dashboard');
+    const locale = useLocale();
 
     const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString('zh-CN', {
+        return new Date(timestamp).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
