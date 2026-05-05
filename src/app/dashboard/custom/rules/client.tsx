@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveRuleSet, deleteRuleSet, type ConfigSet } from '@/lib/config-actions';
@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import RuleEditor from '@/components/RuleEditor';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/utils';
 
 interface ProxyGroup {
     name: string;
@@ -64,8 +65,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
             await saveRuleSet(editingRule?.id || null, ruleName, ruleContent);
             success(editingRule ? t('custom.rules.updated') : t('custom.rules.created'));
             setIsModalOpen(false);
-            // Refresh the page to get updated data
-            window.location.reload();
+            router.refresh();
         } catch (err) {
             error(t('custom.rules.saveFailed') + (err as Error).message);
         } finally {
@@ -88,18 +88,6 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
             error(t('custom.rules.deleteFailed') + (err as Error).message);
         }
     };
-
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">

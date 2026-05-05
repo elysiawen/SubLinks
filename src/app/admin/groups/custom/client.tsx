@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { saveCustomGroup, deleteCustomGroup } from './actions';
 import { useToast } from '@/components/ToastProvider';
@@ -8,7 +8,8 @@ import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { SubmitButton } from '@/components/SubmitButton';
 import GroupEditor from '@/components/GroupEditor';
-import yaml from 'js-yaml';
+import { useRouter } from 'next/navigation';
+import { getGroupDependencies } from '@/lib/group-dependencies';
 
 interface ConfigSet {
     id: string;
@@ -37,6 +38,7 @@ export default function CustomGroupsClient({
     const t = useTranslations('admin.customGroups');
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+    const router = useRouter();
     const [groups, setGroups] = useState<ConfigSet[]>(initialGroups);
     const [proxies] = useState<ProxyItem[]>(initialProxies);
     const [isEditing, setIsEditing] = useState(false);
@@ -45,54 +47,6 @@ export default function CustomGroupsClient({
     const [formContent, setFormContent] = useState('');
     const [formIsGlobal, setFormIsGlobal] = useState(false);
     const [loading, setLoading] = useState(false);
-
-    const getSourceDependencies = (content: string, availableProxies: Array<{ name: string; source: string }>) => {
-        try {
-            const parsed = yaml.load(content) as any;
-            const groups = Array.isArray(parsed) ? parsed : [parsed];
-
-            const sources = new Set<string>();
-
-            groups.forEach((g: any) => {
-                if (Array.isArray(g.proxies)) {
-                    g.proxies.forEach((p: string) => {
-                        if (typeof p !== 'string') return;
-
-                        if (p.startsWith('SOURCE:')) {
-                            sources.add(p.substring(7));
-                        } else if (p.startsWith('KEYWORD:')) {
-                            const keyword = p.substring(8).toLowerCase();
-                            availableProxies.forEach(proxy => {
-                                if (proxy.name.toLowerCase().includes(keyword)) {
-                                    sources.add(proxy.source);
-                                }
-                            });
-                        } else if (p.startsWith('REGEX:')) {
-                            try {
-                                const regex = new RegExp(p.substring(6));
-                                availableProxies.forEach(proxy => {
-                                    if (regex.test(proxy.name)) {
-                                        sources.add(proxy.source);
-                                    }
-                                });
-                            } catch (e) {
-                                // Ignore invalid regex
-                            }
-                        } else {
-                            // Exact match (manual node)
-                            const proxy = availableProxies.find(ap => ap.name === p);
-                            if (proxy) {
-                                sources.add(proxy.source);
-                            }
-                        }
-                    });
-                }
-            });
-            return Array.from(sources).filter(Boolean);
-        } catch (e) {
-            return [];
-        }
-    };
 
     const openCreate = () => {
         setEditingId(null);
@@ -123,7 +77,7 @@ export default function CustomGroupsClient({
         setLoading(false);
         setIsEditing(false);
         success(editingId ? t('groupUpdated') : t('groupCreated'));
-        window.location.reload();
+        router.refresh();
     };
 
     const handleDelete = async (id: string, name: string) => {
@@ -135,7 +89,7 @@ export default function CustomGroupsClient({
         await deleteCustomGroup(id);
         setLoading(false);
         success(t('groupDeleted'));
-        window.location.reload();
+        router.refresh();
     };
 
     return (
@@ -250,7 +204,7 @@ export default function CustomGroupsClient({
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {groups.map((group) => {
-                        const dependencies = getSourceDependencies(group.content, proxies);
+                        const dependencies = getGroupDependencies(group.content, { availableProxies: proxies });
                         return (
                             <div key={group.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col overflow-hidden">
                                 <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex items-start justify-between">

@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveGroupSet, deleteGroupSet, type ConfigSet } from '@/lib/config-actions';
 import Modal from '@/components/Modal';
 import GroupEditor from '@/components/GroupEditor';
 import { useRouter } from 'next/navigation';
-import yaml from 'js-yaml';
 import { useTranslations } from 'next-intl';
+import { getGroupDependencies } from '@/lib/group-dependencies';
+import { formatDate } from '@/lib/utils';
 
 interface GroupsClientProps {
     groups: ConfigSet[];
@@ -26,54 +27,6 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
     const [groupName, setGroupName] = useState('');
     const [groupContent, setGroupContent] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const getSourceDependencies = (content: string, availableProxies: Array<{ name: string; source: string }>) => {
-        try {
-            const parsed = yaml.load(content) as any;
-            const groups = Array.isArray(parsed) ? parsed : [parsed];
-
-            const sources = new Set<string>();
-
-            groups.forEach((g: any) => {
-                if (Array.isArray(g.proxies)) {
-                    g.proxies.forEach((p: string) => {
-                        if (typeof p !== 'string') return;
-
-                        if (p.startsWith('SOURCE:')) {
-                            sources.add(p.substring(7));
-                        } else if (p.startsWith('KEYWORD:')) {
-                            const keyword = p.substring(8).toLowerCase();
-                            availableProxies.forEach(proxy => {
-                                if (proxy.name.toLowerCase().includes(keyword)) {
-                                    sources.add(proxy.source);
-                                }
-                            });
-                        } else if (p.startsWith('REGEX:')) {
-                            try {
-                                const regex = new RegExp(p.substring(6));
-                                availableProxies.forEach(proxy => {
-                                    if (regex.test(proxy.name)) {
-                                        sources.add(proxy.source);
-                                    }
-                                });
-                            } catch (e) {
-                                // Ignore invalid regex
-                            }
-                        } else {
-                            // Exact match (manual node)
-                            const proxy = availableProxies.find(ap => ap.name === p);
-                            if (proxy) {
-                                sources.add(proxy.source);
-                            }
-                        }
-                    });
-                }
-            });
-            return Array.from(sources).filter(Boolean);
-        } catch (e) {
-            return [];
-        }
-    };
 
     const handleCreate = () => {
         setEditingGroup(null);
@@ -106,8 +59,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
             await saveGroupSet(editingGroup?.id || null, groupName, groupContent);
             success(editingGroup ? t('custom.groups.updated') : t('custom.groups.created'));
             setIsModalOpen(false);
-            // Refresh the page to get updated data
-            window.location.reload();
+            router.refresh();
         } catch (err) {
             error(t('custom.groups.saveFailed') + (err as Error).message);
         } finally {
@@ -129,18 +81,6 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
         } catch (err) {
             error(t('custom.groups.deleteFailed') + (err as Error).message);
         }
-    };
-
-
-
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     };
 
     return (
@@ -178,7 +118,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {groups.map((group) => {
-                        const dependencies = getSourceDependencies(group.content, proxies);
+                        const dependencies = getGroupDependencies(group.content, { availableProxies: proxies });
                         return (
                             <div
                                 key={group.id}

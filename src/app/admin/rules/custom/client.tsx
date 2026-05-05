@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { saveCustomRule, deleteCustomRule } from './actions';
 import { useToast } from '@/components/ToastProvider';
@@ -8,6 +8,7 @@ import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import RuleEditor from '@/components/RuleEditor';
 import { SubmitButton } from '@/components/SubmitButton';
+import { useRouter } from 'next/navigation';
 
 interface ConfigSet {
     id: string;
@@ -36,6 +37,7 @@ export default function CustomRulesClient({
     const t = useTranslations('admin.customRules');
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+    const router = useRouter();
     const [rules, setRules] = useState<ConfigSet[]>(initialRules);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function CustomRulesClient({
         setLoading(false);
         setIsEditing(false);
         success(editingId ? t('ruleUpdated') : t('ruleCreated'));
-        window.location.reload();
+        router.refresh();
     };
 
     const handleDelete = async (id: string, name: string) => {
@@ -85,7 +87,7 @@ export default function CustomRulesClient({
         await deleteCustomRule(id);
         setLoading(false);
         success(t('ruleDeleted'));
-        window.location.reload();
+        router.refresh();
     };
 
 

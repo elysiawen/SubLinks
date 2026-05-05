@@ -18,6 +18,16 @@ export function generateToken(length = 16) {
 
 export const BLOCKED_UAS = ['MicroMessenger', 'QQ/'];
 
+export function formatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 /**
  * Convert relative avatar path to full URL
  * @param avatar - Avatar path (can be relative or absolute URL)

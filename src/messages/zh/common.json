@@ -97,6 +97,7 @@
         "selectPolicy": "选择策略",
         "searchPolicy": "搜索策略...",
         "builtinPolicies": "内置策略",
+        "availablePolicies": "可用策略",
         "customGroups": "自定义组",
         "close": "关闭",
         "yamlFormat": "YAML 格式，每行一条规则，格式: - TYPE,VALUE,POLICY",

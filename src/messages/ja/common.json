@@ -97,6 +97,7 @@
         "selectPolicy": "ポリシーを選択",
         "searchPolicy": "ポリシーを検索...",
         "builtinPolicies": "ビルトイン",
+        "availablePolicies": "利用可能なポリシー",
         "customGroups": "カスタム",
         "close": "閉じる",
         "yamlFormat": "YAML形式、1行に1ルール: - TYPE,VALUE,POLICY",

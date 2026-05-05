@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, memo } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
+import { genId } from '@/lib/rule-utils';
 
 interface ProxyItem {
     id: string;
@@ -55,7 +56,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                     name: line.replace('- name:', '').trim(),
                     type: 'select',
                     proxies: [],
-                    id: Math.random().toString(36).substr(2, 9)
+                    id: genId()
                 };
             } else if (line.startsWith('type:') && currentGroup) {
                 currentGroup.type = line.replace('type:', '').trim();
@@ -107,7 +108,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
             name: newGroupName.trim(),
             type: newGroupType,
             proxies: [],
-            id: Math.random().toString(36).substr(2, 9)
+            id: genId()
         };
         updateGuiGroups([...guiGroups, newGroup]);
         setNewGroupName('');

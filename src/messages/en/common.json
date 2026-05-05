@@ -97,6 +97,7 @@
         "selectPolicy": "Select Policy",
         "searchPolicy": "Search policy...",
         "builtinPolicies": "Built-in",
+        "availablePolicies": "Available Policies",
         "customGroups": "Custom",
         "close": "Close",
         "yamlFormat": "YAML format, one rule per line: - TYPE,VALUE,POLICY",

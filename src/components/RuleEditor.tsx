@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, memo } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
+import { parseRules, stringifyRules, genId } from '@/lib/rule-utils';
 
 interface ProxyGroup {
     name: string;
@@ -14,10 +15,11 @@ interface RuleEditorProps {
     value: string; // The YAML content
     onChange: (value: string) => void;
     proxyGroups?: ProxyGroup[];
+    availablePolicies?: string[]; // When provided, use this flat list instead of proxyGroups-based selector
     className?: string;
 }
 
-const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [], className }: RuleEditorProps) {
+const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [], availablePolicies, className }: RuleEditorProps) {
     const t = useTranslations('common.ruleEditor');
 
     // Mode toggle
@@ -48,24 +50,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
         setCollapsedSources(newCollapsed);
     };
 
-    // Helper functions
-    const parseRules = (text: string) => {
-        return text.split('\n')
-            .map(line => line.trim())
-            .filter(line => line && !line.startsWith('#'))
-            .map(line => {
-                const parts = line.replace(/^-\s*/, '').split(',').map(p => p.trim());
-                if (parts.length >= 3) {
-                    return { type: parts[0], value: parts[1], policy: parts[2], id: Math.random().toString(36).substr(2, 9) };
-                }
-                return null;
-            })
-            .filter(r => r !== null) as { type: string, value: string, policy: string, id: string }[];
-    };
-
-    const stringifyRules = (rules: { type: string, value: string, policy: string }[]) => {
-        return rules.map(r => `- ${r.type},${r.value},${r.policy}`).join('\n');
-    };
+    // Helper functions (imported from @/lib/rule-utils)
 
     // Initialize GUI from text when component mounts or mode changes to simple
     useEffect(() => {
@@ -87,6 +72,13 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
         onChange(stringifyRules(newRules));
     };
 
+    // Validate newRulePolicy when availablePolicies changes
+    useEffect(() => {
+        if (availablePolicies && !availablePolicies.includes(newRulePolicy)) {
+            setNewRulePolicy('Proxy');
+        }
+    }, [availablePolicies, newRulePolicy]);
+
     const groupedPolicies = useMemo(() => {
         const grouped: Record<string, ProxyGroup[]> = {};
 
@@ -107,7 +99,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
             type: newRuleType,
             value: newRuleValue.trim(),
             policy: newRulePolicy,
-            id: Math.random().toString(36).substr(2, 9)
+            id: genId()
         };
         updateGuiRules([...guiRules, newRule]);
         setNewRuleValue('');
@@ -220,7 +212,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                         placeholder={t('policy')}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
-                                    {proxyGroups.length > 0 && (
+                                    {(proxyGroups.length > 0 || (availablePolicies && availablePolicies.length > 0)) && (
                                         <button
                                             onClick={() => {
                                                 setPolicySearch('');
@@ -354,44 +346,66 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                             </div>
                         </div>
 
-                        {/* Proxy Groups */}
-                        {Object.entries(groupedPolicies).map(([source, groups]) => {
-                            const isCollapsed = collapsedSources.has(source);
-                            return (
-                                <div key={source}>
-                                    <button
-                                        onClick={() => toggleSourceCollapse(source)}
-                                        className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 hover:bg-gray-50 p-1 rounded transition-colors"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className={`transform transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
-                                                ▼
-                                            </span>
-                                            {source}
-                                            <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{groups.length}</span>
-                                        </div>
-                                    </button>
-
-                                    {!isCollapsed && (
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-2 border-l-2 border-gray-100 ml-1">
-                                            {groups.map(g => (
-                                                <button
-                                                    key={`${g.source}-${g.name}`}
-                                                    onClick={() => {
-                                                        setNewRulePolicy(g.name);
-                                                        setShowPolicySelector(false);
-                                                    }}
-                                                    className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm truncate"
-                                                    title={g.name}
-                                                >
-                                                    {g.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                        {/* Proxy Groups or Available Policies */}
+                        {availablePolicies ? (
+                            <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('availablePolicies')}</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {availablePolicies
+                                        .filter(p => p.toLowerCase().includes(policySearch.toLowerCase()))
+                                        .map(p => (
+                                            <button
+                                                key={p}
+                                                onClick={() => {
+                                                    setNewRulePolicy(p);
+                                                    setShowPolicySelector(false);
+                                                }}
+                                                className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm font-medium"
+                                            >
+                                                {p}
+                                            </button>
+                                        ))}
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ) : (
+                            Object.entries(groupedPolicies).map(([source, groups]) => {
+                                const isCollapsed = collapsedSources.has(source);
+                                return (
+                                    <div key={source}>
+                                        <button
+                                            onClick={() => toggleSourceCollapse(source)}
+                                            className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 hover:bg-gray-50 p-1 rounded transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className={`transform transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
+                                                    ▼
+                                                </span>
+                                                {source}
+                                                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{groups.length}</span>
+                                            </div>
+                                        </button>
+
+                                        {!isCollapsed && (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-2 border-l-2 border-gray-100 ml-1">
+                                                {groups.map(g => (
+                                                    <button
+                                                        key={`${g.source}-${g.name}`}
+                                                        onClick={() => {
+                                                            setNewRulePolicy(g.name);
+                                                            setShowPolicySelector(false);
+                                                        }}
+                                                        className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm truncate"
+                                                        title={g.name}
+                                                    >
+                                                        {g.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
 
                     <div className="pt-4 border-t border-gray-200">
