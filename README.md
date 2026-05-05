@@ -186,12 +186,12 @@ SubLinks/
 | `POSTGRES_URL` | PostgreSQL 连接字符串（当 `DATABASE_TYPE` 为 `postgres` 时必需） | `postgres://user:pass@host:5432/db` |
 | `MYSQL_URL` | MySQL 连接字符串（当 `DATABASE_TYPE` 为 `mysql` 时必需） | `mysql://user:pass@host:3306/db` |
 | `NEXT_PUBLIC_URL` | 站点公网地址（Vercel Cron 必需） | `https://your-app.vercel.app` |
+| `JWT_SECRET` | JWT 密钥（客户端 API 认证，必填） | 无，需手动设置 |
 
 ### 可选变量
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `JWT_SECRET` | JWT 密钥（客户端 API 认证） | `your-secret-key-change-in-production` |
 | `NODE_ENV` | 运行环境 | `development` |
 
 > **注意**：日志保留天数、用户最大订阅数、刷新 API 密钥、S3 存储配置等都在 **系统设置** 页面的数据库中配置，不是环境变量。
