@@ -1,0 +1,71 @@
+{
+    "auth": {
+        "emptyCredentials": "ユーザー名とパスワードを入力してください",
+        "systemInit": "システムを初期化中です。デフォルトアカウント admin/admin でログインしてください",
+        "userNotFound": "ユーザーが見つかりません",
+        "accountDisabled": "アカウントが無効になっています",
+        "wrongPassword": "パスワードが正しくありません",
+        "twoFactorInvalid": "検証コードが正しくありません",
+        "twoFactorRequired": "2fa_required"
+    },
+    "user": {
+        "notLoggedIn": "ログインしていません",
+        "wrongOldPassword": "現在のパスワードが正しくありません",
+        "newPasswordTooShort": "新しいパスワードは4文字以上で入力してください",
+        "passwordVerifyFailed": "パスワードが正しくないため、検証に失敗しました",
+        "nicknameTooLong": "ニックネームは50文字以内で入力してください",
+        "adminCannotDelete": "管理者アカウントはこの方法では削除できません",
+        "noFileUploaded": "ファイルがアップロードされていません",
+        "fileTooLarge": "ファイルサイズは10MB以下にしてください",
+        "imageOnly": "画像ファイルのみ対応しています",
+        "invalidImage": "無効な画像ファイルです",
+        "uploadFailed": "アップロードに失敗しました。後でもう一度お試しください",
+        "noAvatar": "アバターが設定されていません",
+        "userNoAvatar": "このユーザーはアバターを設定していません",
+        "qrGenerateFailed": "QRコードの生成に失敗しました",
+        "configNotFound": "設定が見つかりません"
+    },
+    "admin": {
+        "requireAdmin": "管理者権限が必要です",
+        "cannotLogoutCurrentSession": "現在アクティブな管理者セッションはログアウトできません",
+        "sessionForceOffline": "セッションが強制オフラインになりました",
+        "sessionInvalid": "セッションが期限切れか、存在しません",
+        "cannotOfflineCurrent": "現在アクティブなセッションはオフラインにできません",
+        "forceOfflineIssued": "強制オフラインコマンドが実行されました",
+        "sessionNotFound": "セッションが見つからないか、期限切れです",
+        "userCreatedSubLimitExceeded": "ユーザーは作成されましたが、サブスクリプションの上限に達しているため作成できません",
+        "newUsernameExists": "新しいユーザー名は既に存在します",
+        "selectUser": "ユーザーを選択してください",
+        "rebuiltSubscriptionCache": "サブスクリプションキャッシュを再構築しました",
+        "unnamedSubscription": "名前のないサブスクリプション",
+        "getPasskeysFailed": "Passkeyの取得に失敗しました",
+        "deletePasskeyFailed": "Passkeyの削除に失敗しました",
+        "defaultSubscription": "デフォルトのサブスクリプション"
+    },
+    "subscription": {
+        "limitExceeded": "サブスクリプションの上限を超えました",
+        "selectAtLeastOne": "少なくとも1つの上流ソースを選択してください",
+        "createFailed": "サブスクリプションを作成できません：選択されたソースが無効または利用不可です",
+        "updateFailed": "サブスクリプションを更新できません：選択されたソースが無効または利用不可です",
+        "enableFailed": "有効にできません：このサブスクリプションには利用可能な上流ソースがありません"
+    },
+    "source": {
+        "needAtLeastOneNode": "少なくとも1つのノードが必要です",
+        "nameExists": "上流ソース名は既に存在します",
+        "notStaticType": "ソースが存在しないか、静的タイプではありません",
+        "keepAtLeastOneGroup": "少なくとも1つのプロキシグループを保持してください",
+        "r2NeedAccountId": "R2にはAccount IDが必要です",
+        "endpointRequired": "Endpointを入力するか、プリセットを選択してください",
+        "s3ConfigRequired": "必要なS3設定をすべて入力してください",
+        "s3Connected": "接続に成功しました",
+        "connectionFailed": "接続に失敗しました",
+        "bucketNotFound": "Bucketが見つかりません",
+        "invalidAccessKeyId": "Access Key IDが無効です",
+        "invalidSecretKey": "Secret Access Keyが無効です",
+        "authFailed": "認証に失敗しました"
+    },
+    "config": {
+        "unauthorized": "権限がありません",
+        "invalidJson": "追加設定が有効なJSONではありません"
+    }
+}

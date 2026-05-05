@@ -1,9 +1,7 @@
 import { headers } from 'next/headers';
+import { type Locale, localeCodes, DEFAULT_LOCALE, isLocale } from '@/i18n/locales';
 
-const locales = ['zh', 'en'] as const;
-type Locale = (typeof locales)[number];
-
-const messagesCache: Record<Locale, any> = {} as any;
+const messagesCache: Record<string, any> = {};
 
 async function loadMessages(locale: Locale) {
     if (!messagesCache[locale]) {
@@ -17,8 +15,8 @@ export async function getApiLocale(): Promise<Locale> {
     const acceptLanguage = headersList.get('accept-language');
     if (acceptLanguage) {
         const preferred = acceptLanguage.split(',')[0]?.split('-')[0];
-        if (preferred && locales.includes(preferred as Locale)) {
-            return preferred as Locale;
+        if (preferred && isLocale(preferred)) {
+            return preferred;
         }
     }
     return 'en';

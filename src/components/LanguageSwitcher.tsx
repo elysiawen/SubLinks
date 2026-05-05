@@ -2,11 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import { useState, useRef, useEffect } from 'react';
-
-const LOCALES = [
-    { code: 'zh', label: '中文', flag: '🇨🇳' },
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-] as const;
+import { LOCALES } from '@/i18n/locales';
 
 export function LanguageSwitcher({ className }: { className?: string }) {
     const locale = useLocale();

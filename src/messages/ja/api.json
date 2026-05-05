@@ -1,0 +1,28 @@
+{
+  "subscription": {
+    "allSourcesDisabled": "選択されたすべての上流ソースが無効または利用できません"
+  },
+  "auth": {
+    "emptyCredentials": "ユーザー名とパスワードは必須です",
+    "userNotFound": "ユーザー名またはパスワードが無効です",
+    "accountDisabled": "アカウントが無効または停止されています",
+    "twoFactorRequired": "このアカウントは二要素認証が有効になっています。TOTPコードを入力してください。",
+    "twoFactorInvalid": "二要素認証コードが無効または期限切れです",
+    "noToken": "認証Tokenが提供されていません",
+    "invalidToken": "Tokenが無効または期限切れです",
+    "internalError": "内部サーバーエラー",
+    "unauthorized": "認証されていません",
+    "refreshTokenRequired": "Refresh Tokenが必要です",
+    "invalidRefreshToken": "Refresh Tokenが無効または期限切れです",
+    "sessionRevoked": "セッションが取り消されたか期限切れです",
+    "logoutSuccess": "ログアウトしました",
+    "qrTokenRequired": "QR Tokenが必要です",
+    "invalidQrToken": "QR Tokenが無効または期限切れです",
+    "qrTokenExpired": "QR Tokenの有効期限が切れています",
+    "invalidQrStatus": "QR Tokenのステータスが無効です",
+    "deviceRevoked": "デバイスセッションが取り消されました。再度ログインしてください。",
+    "qrAlreadyConfirmed": "すでに確認済みです",
+    "loginConfirmed": "ログインが確認されました",
+    "loginRejected": "ログインが拒否されました"
+  }
+}
