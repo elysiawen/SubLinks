@@ -31,7 +31,7 @@ interface ConfigSets {
 
 export default function AdminSubsClient({
     initialSubs,
-    total,
+    total: initialTotal,
     currentPage,
     itemsPerPage,
     configSets,
@@ -52,6 +52,7 @@ export default function AdminSubsClient({
     const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
+    const [total, setTotal] = useState(initialTotal);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [selectedUser, setSelectedUser] = useState('');
@@ -62,7 +63,8 @@ export default function AdminSubsClient({
     // Update subs when initialSubs changes (e.g. page navigation)
     useEffect(() => {
         setSubs(initialSubs);
-    }, [initialSubs]);
+        setTotal(initialTotal);
+    }, [initialSubs, initialTotal]);
 
     // Stream Rebuild Logic
     const handleStreamRebuild = async (batchSize: number = 0) => {
@@ -111,7 +113,8 @@ export default function AdminSubsClient({
 
             // Allow user to see final message for a moment before removal
             setTimeout(() => removeToast(toastId), 2000);
-            window.location.reload();
+            // Update cache times for all subs
+            setSubs(prev => prev.map(s => ({ ...s, cacheTime: Date.now() })));
 
         } catch (e) {
             console.error('Rebuild error:', e);
@@ -164,7 +167,8 @@ export default function AdminSubsClient({
             }
 
             setTimeout(() => removeToast(toastId), 2000);
-            window.location.reload();
+            // Update cache time for this sub
+            setSubs(prev => prev.map(s => s.token === token ? { ...s, cacheTime: Date.now() } : s));
 
         } catch (e) {
             console.error('Rebuild error:', e);
@@ -173,19 +177,20 @@ export default function AdminSubsClient({
         }
     };
 
-    const refresh = () => {
-        window.location.reload();
-    };
-
     const handleEdit = (sub: Sub) => {
         setEditingSub(sub);
     };
 
     const handleDelete = async (token: string) => {
         if (await confirm(t('confirmDelete'), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
-            await deleteAdminSubscription(token);
+            const result = await deleteAdminSubscription(token);
+            if (result?.error) {
+                error(result.error);
+                return;
+            }
+            setSubs(prev => prev.filter(s => s.token !== token));
+            setTotal(prev => prev - 1);
             success(t('subDeleted'));
-            refresh();
         }
     };
 
@@ -504,9 +509,23 @@ export default function AdminSubsClient({
                                     return;
                                 }
 
+                                if (result.token) {
+                                    setSubs(prev => [{
+                                        token: result.token,
+                                        username: selectedUser,
+                                        remark: data.name,
+                                        enabled: true,
+                                        createdAt: Date.now(),
+                                        customRules: data.customRules,
+                                        groupId: data.groupId,
+                                        ruleId: data.ruleId,
+                                        selectedSources: data.selectedSources,
+                                    }, ...prev]);
+                                    setTotal(prev => prev + 1);
+                                }
+
                                 setIsCreating(false);
                                 success(t('subCreated', { username: selectedUser }));
-                                refresh();
                             }}
                             onCancel={() => setIsCreating(false)}
                             submitLabel={t('createLabel')}
@@ -543,7 +562,7 @@ export default function AdminSubsClient({
                         isAdmin={true}
                         onSubmit={async (data) => {
                             setLoading(true);
-                            await updateAdminSubscription(editingSub.token, {
+                            const result = await updateAdminSubscription(editingSub.token, {
                                 remark: data.name, // Mapped back to remark
                                 enabled: data.enabled,
                                 groupId: data.groupId,
@@ -552,9 +571,23 @@ export default function AdminSubsClient({
                                 selectedSources: data.selectedSources
                             });
                             setLoading(false);
+
+                            if (result?.error) {
+                                error(result.error);
+                                return;
+                            }
+
+                            setSubs(prev => prev.map(s => s.token === editingSub.token ? {
+                                ...s,
+                                remark: data.name,
+                                enabled: data.enabled,
+                                groupId: data.groupId,
+                                ruleId: data.ruleId,
+                                customRules: data.customRules,
+                                selectedSources: data.selectedSources,
+                            } : s));
                             setEditingSub(null);
                             success(t('subUpdated'));
-                            refresh();
                         }}
                         onCancel={() => setEditingSub(null)}
                         submitLabel={t('saveLabel')}
