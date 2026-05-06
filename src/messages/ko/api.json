@@ -1,0 +1,28 @@
+{
+    "subscription": {
+        "allSourcesDisabled": "선택한 모든 상위 소스가 비활성화되었거나 사용할 수 없습니다"
+    },
+    "auth": {
+        "emptyCredentials": "사용자명과 비밀번호가 필요합니다",
+        "userNotFound": "사용자명 또는 비밀번호가 올바르지 않습니다",
+        "accountDisabled": "계정이 비활성화되었거나 정지되었습니다",
+        "twoFactorRequired": "이 계정에는 2단계 인증이 활성화되어 있습니다. TOTP 코드를 입력하세요.",
+        "twoFactorInvalid": "2단계 인증 코드가 유효하지 않거나 만료되었습니다",
+        "noToken": "인증 토큰이 제공되지 않았습니다",
+        "invalidToken": "유효하지 않거나 만료된 토큰",
+        "internalError": "서버 내부 오류",
+        "unauthorized": "인증되지 않음",
+        "refreshTokenRequired": "Refresh Token이 필요합니다",
+        "invalidRefreshToken": "유효하지 않거나 만료된 Refresh Token",
+        "sessionRevoked": "세션이 취소되었거나 만료되었습니다",
+        "logoutSuccess": "로그아웃되었습니다",
+        "qrTokenRequired": "QR Token이 필요합니다",
+        "invalidQrToken": "유효하지 않거나 만료된 QR Token",
+        "qrTokenExpired": "QR Token이 만료되었습니다",
+        "invalidQrStatus": "유효하지 않은 QR Token 상태",
+        "deviceRevoked": "기기 세션이 취소되었습니다. 다시 로그인하세요.",
+        "qrAlreadyConfirmed": "이미 확인됨",
+        "loginConfirmed": "로그인 확인됨",
+        "loginRejected": "로그인 거부됨"
+    }
+}

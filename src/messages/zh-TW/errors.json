@@ -1,0 +1,71 @@
+{
+    "auth": {
+        "emptyCredentials": "請輸入使用者名稱和密碼",
+        "systemInit": "系統初始化中，請使用預設帳號 admin/admin 登入",
+        "userNotFound": "使用者不存在",
+        "accountDisabled": "帳號已被停用",
+        "wrongPassword": "密碼錯誤",
+        "twoFactorInvalid": "兩步驗證碼錯誤",
+        "twoFactorRequired": "2fa_required"
+    },
+    "user": {
+        "notLoggedIn": "未登入",
+        "wrongOldPassword": "原密碼錯誤",
+        "newPasswordTooShort": "新密碼至少需要4個字元",
+        "passwordVerifyFailed": "密碼錯誤，驗證失敗",
+        "nicknameTooLong": "暱稱不能超過50個字元",
+        "adminCannotDelete": "管理員帳號無法透過此方式刪除",
+        "noFileUploaded": "未上傳檔案",
+        "fileTooLarge": "檔案大小不能超過 10MB",
+        "imageOnly": "只支援圖片檔案",
+        "invalidImage": "無效的圖片檔案",
+        "uploadFailed": "上傳失敗，請稍後重試",
+        "noAvatar": "未設定頭像",
+        "userNoAvatar": "該使用者未設定頭像",
+        "qrGenerateFailed": "產生二維碼失敗",
+        "configNotFound": "設定不存在"
+    },
+    "admin": {
+        "requireAdmin": "需要管理員權限",
+        "cannotLogoutCurrentSession": "無法登出當前正在使用的管理會話",
+        "sessionForceOffline": "會話已強制下線",
+        "sessionInvalid": "該會話已失效或不存在",
+        "cannotOfflineCurrent": "無法下線當前正在使用的會話",
+        "forceOfflineIssued": "強制下線命令已發出",
+        "sessionNotFound": "會話不存在或已過期",
+        "userCreatedSubLimitExceeded": "使用者已建立，但無法建立訂閱：已達訂閱上限",
+        "newUsernameExists": "新使用者名稱已存在",
+        "selectUser": "請選擇使用者",
+        "rebuiltSubscriptionCache": "已重建訂閱快取",
+        "unnamedSubscription": "未命名訂閱",
+        "getPasskeysFailed": "取得通行金鑰失敗",
+        "deletePasskeyFailed": "刪除通行金鑰失敗",
+        "defaultSubscription": "預設訂閱"
+    },
+    "subscription": {
+        "limitExceeded": "超過最大訂閱數量限制",
+        "selectAtLeastOne": "至少選擇一個上游來源",
+        "createFailed": "無法建立訂閱：所選來源已被停用或不存在",
+        "updateFailed": "無法更新訂閱：所選來源已被停用或不存在",
+        "enableFailed": "無法啟用：該訂閱沒有可用的上游來源"
+    },
+    "source": {
+        "needAtLeastOneNode": "至少需要一個節點",
+        "nameExists": "上游來源名稱已存在",
+        "notStaticType": "來源不存在或不是靜態類型",
+        "keepAtLeastOneGroup": "至少保留一個策略組",
+        "r2NeedAccountId": "R2 需要 Account ID",
+        "endpointRequired": "請填寫 Endpoint 或選擇預設",
+        "s3ConfigRequired": "請填寫所有必需的 S3 設定",
+        "s3Connected": "連線成功",
+        "connectionFailed": "連線失敗",
+        "bucketNotFound": "儲存貯體不存在",
+        "invalidAccessKeyId": "Access Key ID 無效",
+        "invalidSecretKey": "Secret Access Key 無效",
+        "authFailed": "驗證失敗"
+    },
+    "config": {
+        "unauthorized": "未授權",
+        "invalidJson": "附加設定不是有效的 JSON"
+    }
+}

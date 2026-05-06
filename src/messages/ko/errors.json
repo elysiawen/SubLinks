@@ -1,0 +1,71 @@
+{
+    "auth": {
+        "emptyCredentials": "사용자명과 비밀번호를 입력하세요",
+        "systemInit": "시스템 초기화 중. 기본 계정 admin/admin으로 로그인하세요",
+        "userNotFound": "사용자를 찾을 수 없습니다",
+        "accountDisabled": "계정이 비활성화되었습니다",
+        "wrongPassword": "비밀번호가 틀렸습니다",
+        "twoFactorInvalid": "인증 코드가 올바르지 않습니다",
+        "twoFactorRequired": "2fa_required"
+    },
+    "user": {
+        "notLoggedIn": "로그인되지 않음",
+        "wrongOldPassword": "현재 비밀번호가 틀렸습니다",
+        "newPasswordTooShort": "새 비밀번호는 최소 4자 이상이어야 합니다",
+        "passwordVerifyFailed": "비밀번호가 틀렸습니다. 인증 실패",
+        "nicknameTooLong": "닉네임은 50자를 초과할 수 없습니다",
+        "adminCannotDelete": "관리자 계정은 이 방법으로 삭제할 수 없습니다",
+        "noFileUploaded": "파일이 업로드되지 않았습니다",
+        "fileTooLarge": "파일 크기는 10MB를 초과할 수 없습니다",
+        "imageOnly": "이미지 파일만 지원됩니다",
+        "invalidImage": "유효하지 않은 이미지 파일",
+        "uploadFailed": "업로드 실패. 나중에 다시 시도하세요",
+        "noAvatar": "아바타가 설정되지 않았습니다",
+        "userNoAvatar": "이 사용자는 아바타를 설정하지 않았습니다",
+        "qrGenerateFailed": "QR 코드 생성 실패",
+        "configNotFound": "설정을 찾을 수 없습니다"
+    },
+    "admin": {
+        "requireAdmin": "관리자 권한이 필요합니다",
+        "cannotLogoutCurrentSession": "현재 사용 중인 관리 세션을 로그아웃할 수 없습니다",
+        "sessionForceOffline": "세션이 강제 오프라인되었습니다",
+        "sessionInvalid": "세션이 만료되었거나 존재하지 않습니다",
+        "cannotOfflineCurrent": "현재 사용 중인 세션을 오프라인으로 전환할 수 없습니다",
+        "forceOfflineIssued": "강제 오프라인 명령이 전송되었습니다",
+        "sessionNotFound": "세션이 존재하지 않거나 만료되었습니다",
+        "userCreatedSubLimitExceeded": "사용자가 생성되었지만 구독을 생성할 수 없습니다: 한도 초과",
+        "newUsernameExists": "새 사용자명이 이미 존재합니다",
+        "selectUser": "사용자를 선택하세요",
+        "rebuiltSubscriptionCache": "구독 캐시가 재구축되었습니다",
+        "unnamedSubscription": "이름 없는 구독",
+        "getPasskeysFailed": "패스키를 가져오지 못했습니다",
+        "deletePasskeyFailed": "패스키 삭제 실패",
+        "defaultSubscription": "기본 구독"
+    },
+    "subscription": {
+        "limitExceeded": "최대 구독 수 한도를 초과했습니다",
+        "selectAtLeastOne": "최소 하나의 상위 소스를 선택하세요",
+        "createFailed": "구독 생성 불가: 선택한 소스가 비활성화되었거나 존재하지 않습니다",
+        "updateFailed": "구독 업데이트 불가: 선택한 소스가 비활성화되었거나 존재하지 않습니다",
+        "enableFailed": "활성화 불가: 이 구독에 사용 가능한 상위 소스가 없습니다"
+    },
+    "source": {
+        "needAtLeastOneNode": "최소 하나의 노드가 필요합니다",
+        "nameExists": "상위 소스 이름이 이미 존재합니다",
+        "notStaticType": "소스가 존재하지 않거나 정적 유형이 아닙니다",
+        "keepAtLeastOneGroup": "최소 하나의 프록시 그룹을 유지하세요",
+        "r2NeedAccountId": "R2에는 Account ID가 필요합니다",
+        "endpointRequired": "Endpoint를 입력하거나 프리셋을 선택하세요",
+        "s3ConfigRequired": "필수 S3 설정을 모두 입력하세요",
+        "s3Connected": "연결 성공",
+        "connectionFailed": "연결 실패",
+        "bucketNotFound": "버킷을 찾을 수 없습니다",
+        "invalidAccessKeyId": "유효하지 않은 Access Key ID",
+        "invalidSecretKey": "유효하지 않은 Secret Access Key",
+        "authFailed": "인증 실패"
+    },
+    "config": {
+        "unauthorized": "인증되지 않음",
+        "invalidJson": "추가 설정이 유효한 JSON이 아닙니다"
+    }
+}

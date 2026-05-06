@@ -1,0 +1,28 @@
+{
+    "subscription": {
+        "allSourcesDisabled": "所選訂閱來源均已被停用或不可用"
+    },
+    "auth": {
+        "emptyCredentials": "使用者名稱和密碼不能為空",
+        "userNotFound": "使用者名稱或密碼錯誤",
+        "accountDisabled": "帳號已被停用或封鎖",
+        "twoFactorRequired": "該帳號已啟用兩步驗證，請提供 TOTP 驗證碼",
+        "twoFactorInvalid": "兩步驗證碼錯誤或已過期",
+        "noToken": "未提供驗證權杖",
+        "invalidToken": "無效或過期的權杖",
+        "internalError": "伺服器內部錯誤",
+        "unauthorized": "未授權",
+        "refreshTokenRequired": "缺少 Refresh Token",
+        "invalidRefreshToken": "無效或過期的 Refresh Token",
+        "sessionRevoked": "會話已被撤銷或過期",
+        "logoutSuccess": "已成功登出",
+        "qrTokenRequired": "缺少 QR Token",
+        "invalidQrToken": "無效或過期的 QR Token",
+        "qrTokenExpired": "QR Token 已過期",
+        "invalidQrStatus": "無效的 QR Token 狀態",
+        "deviceRevoked": "裝置會話已被撤銷，請重新登入",
+        "qrAlreadyConfirmed": "已確認",
+        "loginConfirmed": "登入已確認",
+        "loginRejected": "登入已拒絕"
+    }
+}
