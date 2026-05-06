@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo, Fragment } from 'react';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import GroupEditor from '@/components/GroupEditor';
 import RuleEditor from '@/components/RuleEditor';
 import NodeInputPanel, { type ManualNodeConfig } from '@/components/NodeInputPanel';
@@ -51,6 +52,7 @@ interface StaticSourceWizardContentProps {
 export function StaticSourceWizardContent({ initialName = '', onNameChange, existingNames, onSuccess, onCancel }: StaticSourceWizardContentProps) {
     const { success, error } = useToast();
     const t = useTranslations('admin.staticSourceWizard');
+    const tError = useErrors();
 
     // Wizard step: 0=name, 1=nodes, 2=groups, 3=rules
     const [step, setStep] = useState(initialName ? 1 : 0);
@@ -243,7 +245,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 finalRulesArr
             );
             if ('error' in result) {
-                error(t('createFailed', { error: result.error! }));
+                error(t('createFailed', { error: tError(result.error!) }));
                 setSaving(false);
                 return;
             }

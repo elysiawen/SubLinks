@@ -10,6 +10,7 @@ import { useConfirm } from '@/components/ConfirmProvider';
 import Modal from '@/components/Modal';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 
 export default function PasskeySection() {
     const [passkeys, setPasskeys] = useState<PasskeyProfile[]>([]);
@@ -18,6 +19,7 @@ export default function PasskeySection() {
     const { success, error: toastError, info } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
+    const tError = useErrors();
 
     // Add Name Modal State
     const [showNameModal, setShowNameModal] = useState(false);
@@ -96,7 +98,7 @@ export default function PasskeySection() {
         try {
             const res = await deletePasskey(id);
             if (res.error) {
-                toastError(res.error);
+                toastError(tError(res.error));
                 return;
             }
             await loadPasskeys();

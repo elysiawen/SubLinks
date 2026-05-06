@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
 import { useTranslations, useLocale } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import {
@@ -101,6 +102,7 @@ export default function SessionManager({
     const [filterTypes, setFilterTypes] = useState<('web' | 'client')[]>(['web', 'client']);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const { success, error } = useToast();
+    const tError = useErrors();
     const { confirm } = useConfirm();
 
     // Helper to resolve parsed UA name
@@ -125,7 +127,7 @@ export default function SessionManager({
             if (result.sessions) {
                 setSessions(result.sessions);
             } else if (result.error) {
-                error(result.error);
+                error(tError(result.error));
             }
         } catch (err) {
             console.error('Failed to load sessions', err);
@@ -171,15 +173,15 @@ export default function SessionManager({
                 // If it was revoked (deleted from DB), remove from UI
                 if (result.revoked) {
                     setSessions(prev => prev.filter(s => s.id !== id));
-                    success(result.message || (isAdmin ? t('session.sessionForceOffline') : t('session.forceOfflineSuccess')));
+                    success(isAdmin ? t('session.sessionForceOffline') : t('session.forceOfflineSuccess'));
                 } else {
                     // If backend returned success but nothing was revoked (e.g. already gone)
                     // We still refresh the list to stay in sync
                     loadData(isAdmin ? searchTerm : undefined);
-                    error(result.message || t('session.sessionNotFound'));
+                    error(t('session.sessionNotFound'));
                 }
             } else {
-                error(result.error || t('session.revokeFailed'));
+                error(result.error ? tError(result.error) : t('session.revokeFailed'));
             }
         } catch (err) {
             error(t('session.networkError'));

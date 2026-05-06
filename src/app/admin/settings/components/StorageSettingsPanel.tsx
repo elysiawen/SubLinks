@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useToast } from '@/components/ToastProvider';
 import { S3_PRESETS, buildS3Endpoint } from '@/lib/storage/utils';
@@ -11,6 +12,7 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
     const t = useTranslations('admin.settingsPanels.storage');
     const router = useRouter();
     const { success, error } = useToast();
+    const tError = useErrors();
     const [isSaving, setIsSaving] = useState(false);
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [storageProvider, setStorageProvider] = useState<'local' | 's3'>(config.storageProvider || 'local');
@@ -288,9 +290,9 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                                     const result = await testS3Connection(formData);
 
                                     if (result.success) {
-                                        success(result.message || t('connectSuccess'));
+                                        success(result.message ? tError(result.message) : t('connectSuccess'));
                                     } else {
-                                        error(result.error || t('connectFailed'));
+                                        error(result.error ? tError(result.error) : t('connectFailed'));
                                     }
                                 }
                             } finally {

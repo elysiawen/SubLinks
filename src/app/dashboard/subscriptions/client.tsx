@@ -9,6 +9,7 @@ import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources, getProxy
 import Modal from '@/components/Modal';
 import SubscriptionForm from '@/components/subscription-form';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 
 interface Sub {
     token: string;
@@ -29,7 +30,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
-    const tErr = useTranslations('errors.subscription');
+    const tError = useErrors();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
 
     // Data State
@@ -70,20 +71,11 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
 
-    const translateError = (key: string) => {
-        try {
-            const translated = tErr(key);
-            return translated !== key ? translated : key;
-        } catch {
-            return key;
-        }
-    };
-
     const handleDelete = async (token: string) => {
         if (await confirm(t('subscriptions.deleteConfirm'), { confirmColor: 'red', confirmText: t('subscriptions.deleteConfirmButton') })) {
             const result = await deleteSubscription(token);
             if (result?.error) {
-                error(translateError(result.error));
+                error(tError(result.error));
                 return;
             }
             setSubs(prev => prev.filter(s => s.token !== token));
@@ -100,7 +92,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
         try {
             const result = await toggleSubscriptionEnabled(sub.token, newStatus);
             if (result.error) {
-                error(translateError(result.error));
+                error(tError(result.error));
                 setSubs(prev => prev.map(s => s.token === sub.token ? { ...s, enabled: !newStatus } : s));
             } else {
                 success(newStatus ? t('subscriptions.enabled') : t('subscriptions.disabled'));
@@ -279,7 +271,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                         }
 
                         if (result && result.error) {
-                            error(translateError(result.error));
+                            error(tError(result.error));
                             return;
                         }
 

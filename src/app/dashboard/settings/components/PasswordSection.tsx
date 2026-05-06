@@ -6,11 +6,13 @@ import { changePassword } from '@/lib/user-actions';
 import { useToast } from '@/components/ToastProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 
 export default function PasswordSection() {
     const router = useRouter();
     const { success, error } = useToast();
     const t = useTranslations('dashboard');
+    const tError = useErrors();
 
     // Password State
     const [oldPassword, setOldPassword] = useState('');
@@ -40,7 +42,7 @@ export default function PasswordSection() {
         setPasswordLoading(false);
 
         if (result.error) {
-            error(result.error);
+            error(tError(result.error));
         } else {
             success(t('settings.password.success'));
             setTimeout(() => {

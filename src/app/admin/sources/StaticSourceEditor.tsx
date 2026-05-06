@@ -5,6 +5,7 @@ import Modal from '@/components/Modal';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import GroupEditor from '@/components/GroupEditor';
 import RuleEditor from '@/components/RuleEditor';
 import NodeInputPanel, { type ManualNodeConfig } from '@/components/NodeInputPanel';
@@ -54,12 +55,15 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('admin.staticSourceEditor');
+    const tError = useErrors();
 
     // Use refs for callbacks used inside loadData to avoid re-creating it on every render
     const errorRef = useRef(error);
     const tRef = useRef(t);
+    const tErrorRef = useRef(tError);
     errorRef.current = error;
     tRef.current = t;
+    tErrorRef.current = tError;
 
     const [tab, setTab] = useState<'nodes' | 'groups' | 'rules'>(defaultTab);
     const [loading, setLoading] = useState(true);
@@ -111,7 +115,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         try {
             const result = await getStaticSourceData(sourceName);
             if ('error' in result) {
-                errorRef.current(result.error!);
+                errorRef.current(tErrorRef.current(result.error!));
                 return;
             }
             setNodes(result.proxies as NodeData[]);
@@ -197,7 +201,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                     importNodes: false, importGroups: importOptions.groups, importRules: importOptions.rules,
                     nodeMode: 'append', groupMode: importOptions.groupMode, ruleMode: importOptions.ruleMode
                 });
-                if ('error' in result) { error(result.error!); setIsImporting(false); return; }
+                if ('error' in result) { error(tError(result.error!)); setIsImporting(false); return; }
                 const groupsStr = importOptions.groups ? t('importGroups') : '';
                 const rulesStr = importOptions.rules ? t('importRules') : '';
                 const separator = importOptions.groups && importOptions.rules ? t('importGroupsAndRules').replace(groupsStr, '').replace(rulesStr, '') : '';
@@ -249,7 +253,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                 name: n.name, type: n.type, server: n.server, port: n.port, config: n.config,
             }));
             const result = await saveStaticSourceNodes(sourceName, nodesToSave);
-            if ('error' in result) error(result.error!);
+            if ('error' in result) error(tError(result.error!));
             else { success(t('nodesSaved')); setHasNodeChanges(false); loadData(); onUpdate(); }
         } catch (e) { error(t('saveFailed', { error: String(e) })); }
         setSavingNodes(false);
@@ -263,7 +267,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
             const parsedArray = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
             if (parsedArray.length === 0) { error(t('keepOneGroup')); setSavingGroups(false); return; }
             const result = await saveStaticSourceGroups(sourceName, parsedArray.map((g: any) => ({ name: g.name, type: g.type, proxies: g.proxies || [] })));
-            if ('error' in result) { error(result.error!); }
+            if ('error' in result) { error(tError(result.error!)); }
             else { success(t('groupsSaved')); setHasGroupChanges(false); loadData(); onUpdate(); }
         } catch (e) { error(t('saveYamlFailed', { error: String(e) })); }
         setSavingGroups(false);
@@ -274,7 +278,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         try {
             const lines = rulesText.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')).map(l => l.replace(/^-\s*/, '').trim());
             const result = await saveStaticSourceRules(sourceName, lines);
-            if ('error' in result) { error(result.error!); }
+            if ('error' in result) { error(tError(result.error!)); }
             else { success(t('rulesSaved')); setHasRuleChanges(false); loadData(); onUpdate(); }
         } catch (e) { error(t('saveFailed', { error: String(e) })); }
         setSavingRules(false);

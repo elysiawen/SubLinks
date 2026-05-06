@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
@@ -27,6 +28,7 @@ export default function AdminUsersClient({
     const t = useTranslations('admin.users');
     const { success, error } = useToast();
     const { confirm } = useConfirm();
+    const tError = useErrors();
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
@@ -46,7 +48,7 @@ export default function AdminUsersClient({
         const res = await createUser(formData);
         setLoading(false);
         if (res?.error) {
-            error(res.error);
+            error(tError(res.error));
         } else {
             success(t('userCreated'));
             // No need to reset form - modal will close
@@ -61,7 +63,7 @@ export default function AdminUsersClient({
                 if (res.success) {
                     setUserPasskeys(res.passkeys || []);
                 } else {
-                    error(res.error || t('getPasskeysFailed'));
+                    error(res.error ? tError(res.error) : t('getPasskeysFailed'));
                 }
                 setLoadingPasskeys(false);
             });
@@ -79,7 +81,7 @@ export default function AdminUsersClient({
                 setUserPasskeys(prev => prev.filter(pk => pk.id !== passkeyId));
                 success(t('passkeyDeleted'));
             } else {
-                error(res.error || t('deleteFailed'));
+                error(res.error ? tError(res.error) : t('deleteFailed'));
             }
         }
     };
@@ -124,7 +126,7 @@ export default function AdminUsersClient({
             const result = await adminUploadAvatar(formData);
 
             if (result.error) {
-                error(result.error);
+                error(tError(result.error));
             } else {
                 setEditingUser({ ...editingUser, avatar: result.avatarUrl });
                 success(t('avatarUploaded'));
@@ -145,7 +147,7 @@ export default function AdminUsersClient({
             try {
                 const result = await adminDeleteAvatar(editingUser.username);
                 if (result.error) {
-                    error(result.error);
+                    error(tError(result.error));
                 } else {
                     setEditingUser({ ...editingUser, avatar: undefined });
                     success(t('avatarDeleted'));
@@ -178,7 +180,7 @@ export default function AdminUsersClient({
         setLoading(false);
 
         if (res?.error) {
-            error(res.error);
+            error(tError(res.error));
         } else {
             setEditingUser(null);
             success(t('userUpdated'));
@@ -624,7 +626,7 @@ export default function AdminUsersClient({
                                         onClick={async () => {
                                             if (await confirm(t('confirmReset2FA', { username: editingUser.username }), { confirmColor: 'red', confirmText: t('confirmReset') })) {
                                                 const res = await resetUser2FA(editingUser.username);
-                                                if (res.error) error(res.error);
+                                                if (res.error) error(tError(res.error));
                                                 else {
                                                     success(t('twoFAReset'));
                                                     setEditingUser({ ...editingUser, totpEnabled: false });

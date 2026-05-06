@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 import { updateAdminSubscription, deleteAdminSubscription, refreshSubscriptionCache, createAdminSubscription } from './actions';
 import { ConfigSet } from '@/lib/config-actions';
 import { useToast } from '@/components/ToastProvider';
@@ -53,6 +54,7 @@ export default function AdminSubsClient({
     const t = useTranslations('admin.subscriptions');
     const { success, error, info, addToast, updateToast, removeToast } = useToast();
     const { confirm } = useConfirm();
+    const tError = useErrors();
     const [subs, setSubs] = useState<Sub[]>(initialSubs);
     const [total, setTotal] = useState(initialTotal);
     const [editingSub, setEditingSub] = useState<Sub | null>(null);
@@ -191,7 +193,7 @@ export default function AdminSubsClient({
         if (await confirm(t('confirmDelete'), { confirmColor: 'red', confirmText: t('confirmDeleteText') })) {
             const result = await deleteAdminSubscription(token);
             if (result?.error) {
-                error(result.error);
+                error(tError(result.error));
                 return;
             }
             setSubs(prev => prev.filter(s => s.token !== token));
@@ -512,7 +514,7 @@ export default function AdminSubsClient({
                                 setLoading(false);
 
                                 if (result.error) {
-                                    error(result.error);
+                                    error(tError(result.error));
                                     return;
                                 }
 
@@ -581,7 +583,7 @@ export default function AdminSubsClient({
                             setLoading(false);
 
                             if (result?.error) {
-                                error(result.error);
+                                error(tError(result.error));
                                 return;
                             }
 

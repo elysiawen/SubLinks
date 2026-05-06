@@ -7,6 +7,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import SecurityVerificationModal from './SecurityVerificationModal';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 
 interface DangerZoneSectionProps {
     role: string;
@@ -17,6 +18,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
+    const tError = useErrors();
 
     // Delete Account State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -35,7 +37,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
 
             if (result?.error) {
                 setDeleteLoading(false);
-                error(result.error);
+                error(tError(result.error));
             } else {
                 success(t('settings.dangerZone.deleted'));
                 router.push('/login');

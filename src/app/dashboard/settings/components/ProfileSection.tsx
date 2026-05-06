@@ -8,6 +8,7 @@ import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
 import AvatarCropper from '@/components/AvatarCropper';
 import { useTranslations } from 'next-intl';
+import { useErrors } from '@/lib/use-errors';
 
 interface ProfileSectionProps {
     username: string;
@@ -20,6 +21,7 @@ export default function ProfileSection({ username, initialNickname, initialAvata
     const { success, error } = useToast();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard');
+    const tError = useErrors();
 
     const [nickname, setNickname] = useState(initialNickname || '');
     const [nicknameLoading, setNicknameLoading] = useState(false);
@@ -85,7 +87,7 @@ export default function ProfileSection({ username, initialNickname, initialAvata
             const result = await uploadAvatar(formData);
 
             if (result.error) {
-                error(result.error);
+                error(tError(result.error));
             } else {
                 setAvatar(result.avatarUrl);
                 success(t('settings.profile.avatarUploaded'));
@@ -110,7 +112,7 @@ export default function ProfileSection({ username, initialNickname, initialAvata
                 const result = await deleteAvatar();
 
                 if (result.error) {
-                    error(result.error);
+                    error(tError(result.error));
                 } else {
                     setAvatar(undefined);
                     success(t('settings.profile.avatarDeleted'));
