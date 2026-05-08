@@ -2,33 +2,64 @@
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Clock } from 'lucide-react';
+
+const MODE_KEY = 'sublinks-theme-mode';
+
+function isDarkHour(): boolean {
+    const hour = new Date().getHours();
+    return hour >= 19 || hour < 7;
+}
 
 export function ThemeToggle() {
-    const { theme, setTheme } = useTheme();
+    const { setTheme } = useTheme();
+    const [mode, setMode] = useState<string>('auto');
     const [mounted, setMounted] = useState(false);
 
-    useEffect(() => setMounted(true), []);
+    useEffect(() => {
+        setMounted(true);
+        setMode(localStorage.getItem(MODE_KEY) ?? 'auto');
+    }, []);
 
     if (!mounted) {
         return <div className="w-9 h-9" />;
     }
 
-    const cycleTheme = () => {
-        if (theme === 'light') setTheme('dark');
-        else if (theme === 'dark') setTheme('system');
-        else setTheme('light');
+    const cycleMode = () => {
+        let next: string;
+        if (mode === 'light') {
+            next = 'dark';
+        } else if (mode === 'dark') {
+            next = 'auto';
+        } else {
+            next = 'light';
+        }
+
+        localStorage.setItem(MODE_KEY, next);
+        setMode(next);
+
+        if (next === 'auto') {
+            setTheme(isDarkHour() ? 'dark' : 'light');
+        } else {
+            setTheme(next);
+        }
     };
+
+    const icon = mode === 'light'
+        ? <Sun className="w-4 h-4" />
+        : mode === 'dark'
+            ? <Moon className="w-4 h-4" />
+            : <Clock className="w-4 h-4" />;
+
+    const label = mode === 'light' ? 'Light' : mode === 'dark' ? 'Dark' : 'Auto';
 
     return (
         <button
-            onClick={cycleTheme}
+            onClick={cycleMode}
             className="flex items-center justify-center w-9 h-9 text-text-tertiary hover:text-text-secondary hover:bg-muted rounded-lg transition-colors"
-            title={theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'}
+            title={label}
         >
-            {theme === 'light' && <Sun className="w-4 h-4" />}
-            {theme === 'dark' && <Moon className="w-4 h-4" />}
-            {theme === 'system' && <Monitor className="w-4 h-4" />}
+            {icon}
         </button>
     );
 }
