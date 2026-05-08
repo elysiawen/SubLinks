@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 import { SubmitButton } from '@/components/SubmitButton';
 import { useToast } from '@/components/ToastProvider';
 import { useTranslations } from 'next-intl';
@@ -28,6 +29,7 @@ const createColorCommand = (name: string, color: string, label: string) => ({
 export default function AnnouncementPanel({ initialValue }: { initialValue: string }) {
     const { success } = useToast();
     const t = useTranslations('admin.settingsPanels.announcement');
+    const { resolvedTheme } = useTheme();
     const [announcement, setAnnouncement] = useState(initialValue);
 
     const colorGroup = commands.group([
@@ -47,8 +49,8 @@ export default function AnnouncementPanel({ initialValue }: { initialValue: stri
     });
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" >
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6" >
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
                 <span className="mr-2">📢</span> {t('heading')}
             </h3>
             <form action={async () => {
@@ -60,8 +62,8 @@ export default function AnnouncementPanel({ initialValue }: { initialValue: stri
                 {/* Hidden input to ensure value is always submitted */}
                 <input type="hidden" name="announcement" value={announcement || ''} />
 
-                <div className="mb-4" data-color-mode="light">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('label')}</label>
+                <div className="mb-4" data-color-mode={resolvedTheme === 'dark' ? 'dark' : 'light'}>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('label')}</label>
                     <div className="border rounded-lg overflow-hidden">
                         <style>{`
                         .w-md-editor-toolbar {
@@ -107,7 +109,7 @@ export default function AnnouncementPanel({ initialValue }: { initialValue: stri
                             }}
                         />
                     </div>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-text-tertiary">
                         {t('help')}
                     </p>
                 </div>

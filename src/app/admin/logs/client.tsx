@@ -369,13 +369,13 @@ export default function LogsClient() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end border-b border-gray-200 pb-4 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end border-b border-border-strong pb-4 gap-4">
                 <div className="flex space-x-2">
                     <button
                         onClick={() => setActiveTab('api')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'api'
                             ? 'bg-gray-900 text-white shadow-lg'
-                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            : 'text-text-secondary hover:bg-gray-200 hover:text-text-primary'
                             }`}
                     >
                         {t('apiAccess')}
@@ -384,7 +384,7 @@ export default function LogsClient() {
                         onClick={() => setActiveTab('web')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'web'
                             ? 'bg-gray-900 text-white shadow-lg'
-                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            : 'text-text-secondary hover:bg-gray-200 hover:text-text-primary'
                             }`}
                     >
                         {t('webAccess')}
@@ -393,7 +393,7 @@ export default function LogsClient() {
                         onClick={() => setActiveTab('system')}
                         className={`px-4 py-2 rounded-lg transition-colors font-medium ${activeTab === 'system'
                             ? 'bg-gray-900 text-white shadow-lg'
-                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                            : 'text-text-secondary hover:bg-gray-200 hover:text-text-primary'
                             }`}
                     >
                         {t('system')}
@@ -412,26 +412,26 @@ export default function LogsClient() {
                                     }`}
                             />
                         </button>
-                        <span className="text-sm text-gray-400 cursor-pointer" onClick={() => setIsMergeMode(!isMergeMode)}>{t('mergeDisplay')}</span>
+                        <span className="text-sm text-text-quaternary cursor-pointer" onClick={() => setIsMergeMode(!isMergeMode)}>{t('mergeDisplay')}</span>
                     </div>
                     <div className="relative flex-1 sm:w-64">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-gray-400" />
+                            <Search className="h-4 w-4 text-text-quaternary" />
                         </div>
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('searchPlaceholder')}
-                            className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2 shadow-sm"
+                            className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2 shadow-sm"
                         />
                     </div>
 
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                    <div className="flex items-center space-x-2 text-sm text-text-secondary whitespace-nowrap">
                         <select
                             value={limit}
                             onChange={(e) => setLimit(Number(e.target.value))}
-                            className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block p-2 shadow-sm"
+                            className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block p-2 shadow-sm"
                         >
                             <option value={10}>{t('perPage', { count: 10 })}</option>
                             <option value={20}>{t('perPage', { count: 20 })}</option>
@@ -446,7 +446,7 @@ export default function LogsClient() {
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-black/40 border-b border-gray-800 text-gray-400 text-sm">
+                            <tr className="bg-black/40 border-b border-gray-800 text-text-quaternary text-sm">
                                 <th className="px-6 py-4 font-medium tracking-wide">{t('tableTime')}</th>
                                 {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">{t('tableUserToken')}</th>}
                                 {activeTab !== 'system' && <th className="px-6 py-4 font-medium tracking-wide">{t('tableIpSource')}</th>}
@@ -460,7 +460,7 @@ export default function LogsClient() {
                                     <tr className={`hover:bg-white/[0.03] transition-colors ${log.isMerged ? 'bg-gray-900/30 cursor-pointer' : ''}`} onClick={log.isMerged ? () => toggleExpand(log.id) : undefined}>
                                         <td className="px-6 py-4 text-sm text-gray-300 whitespace-nowrap">
                                             {new Date(log.timestamp).toLocaleString(dateLocale)}
-                                            <div className="text-xs text-gray-500 mt-0.5">{formatTime(log.timestamp)}</div>
+                                            <div className="text-xs text-text-tertiary mt-0.5">{formatTime(log.timestamp)}</div>
                                         </td>
 
                                         {activeTab === 'api' && (
@@ -475,28 +475,28 @@ export default function LogsClient() {
                                                             ? log.token
                                                             : `${(log.token || '').substring(0, 8)}...`}
                                                         {log.subRemark && (
-                                                            <span className="text-gray-400 ml-1">({log.subRemark})</span>
+                                                            <span className="text-text-quaternary ml-1">({log.subRemark})</span>
                                                         )}
                                                     </div>
                                                     <div>{formatUserDisplay(log.username, log.nickname)}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-400">
+                                                <td className="px-6 py-4 text-sm text-text-quaternary">
                                                     <div className="text-gray-300">{log.ip}</div>
                                                     {!log.isMerged && (
-                                                        <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={log.ua}>{log.ua}</div>
+                                                        <div className="text-xs text-text-secondary truncate max-w-[200px] mt-0.5" title={log.ua}>{log.ua}</div>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-400">
+                                                <td className="px-6 py-4 text-sm text-text-quaternary">
                                                     {log.isMerged ? (
                                                         <div className="flex items-center gap-2 text-blue-400 font-mono">
                                                             <span>{log.path}</span>{/* reusing path for label */}
-                                                            <span className="text-gray-500 text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
+                                                            <span className="text-text-tertiary text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                         </div>
                                                     ) : (
                                                         <div>
                                                             <div className="text-gray-300">{log.apiType || t('apiRequest')}</div>
                                                             {log.requestMethod && (
-                                                                <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
+                                                                <div className="text-xs text-text-secondary mt-0.5">{log.requestMethod}</div>
                                                             )}
                                                         </div>
                                                     )}
@@ -509,17 +509,17 @@ export default function LogsClient() {
                                                 <td className="px-6 py-4 text-sm text-gray-200">
                                                     {formatUserDisplay(log.username, log.nickname)}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-400">
+                                                <td className="px-6 py-4 text-sm text-text-quaternary">
                                                     <div className="text-gray-300">{log.ip}</div>
                                                     {!log.isMerged && (
-                                                        <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={log.ua}>{log.ua}</div>
+                                                        <div className="text-xs text-text-secondary truncate max-w-[200px] mt-0.5" title={log.ua}>{log.ua}</div>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-emerald-400 font-mono">
                                                     {log.isMerged ? (
                                                         <div className="flex items-center gap-2">
                                                             <span>{log.path}</span>
-                                                            <span className="text-gray-500 text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
+                                                            <span className="text-text-tertiary text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                         </div>
                                                     ) : (
                                                         log.path
@@ -535,13 +535,13 @@ export default function LogsClient() {
                                                     {log.isMerged ? (
                                                         <span className="cursor-pointer hover:text-white transition-colors gap-2 inline-flex items-center break-all">
                                                             {log.message}
-                                                            <span className="text-gray-500 text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
+                                                            <span className="text-text-tertiary text-xs select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                         </span>
                                                     ) : (
                                                         <span className="break-all">{log.message}</span>
                                                     )}
                                                     {log.details && !log.isMerged && (
-                                                        <pre className="mt-2 text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap max-w-lg scrollbar-thin scrollbar-thumb-gray-800">
+                                                        <pre className="mt-2 text-xs text-text-quaternary bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap max-w-lg scrollbar-thin scrollbar-thumb-gray-800">
                                                             {JSON.stringify(log.details, null, 2)}
                                                         </pre>
                                                     )}
@@ -557,7 +557,7 @@ export default function LogsClient() {
                                     {/* Expanded Rows */}
                                     {log.isMerged && expandedLogs.has(log.id) && log.mergedLogs && log.mergedLogs.map((childLog: any) => (
                                         <tr key={childLog.id} className="bg-gray-800/20 hover:bg-gray-800/30 transition-colors animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <td className="px-6 py-3 text-sm text-gray-400 whitespace-nowrap pl-10 border-l-2 border-emerald-500/30">
+                                            <td className="px-6 py-3 text-sm text-text-quaternary whitespace-nowrap pl-10 border-l-2 border-emerald-500/30">
                                                 {new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}
                                             </td>
 
@@ -573,19 +573,19 @@ export default function LogsClient() {
                                                                 ? childLog.token
                                                                 : `${(childLog.token || '').substring(0, 8)}...`}
                                                             {childLog.subRemark && (
-                                                                <span className="text-gray-500 ml-1">({childLog.subRemark})</span>
+                                                                <span className="text-text-tertiary ml-1">({childLog.subRemark})</span>
                                                             )}
                                                         </div>
                                                         <div>{formatUserDisplay(childLog.username, childLog.nickname)}</div>
                                                     </td>
-                                                    <td className="px-6 py-3 text-sm text-gray-400">
+                                                    <td className="px-6 py-3 text-sm text-text-quaternary">
                                                         <div className="text-gray-300">{childLog.ip}</div>
-                                                        <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
+                                                        <div className="text-xs text-text-secondary truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
                                                     </td>
-                                                    <td className="px-6 py-3 text-sm text-gray-400">
+                                                    <td className="px-6 py-3 text-sm text-text-quaternary">
                                                         <div className="text-gray-300">{childLog.apiType || t('apiRequest')}</div>
                                                         {childLog.requestMethod && (
-                                                            <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
+                                                            <div className="text-xs text-text-secondary mt-0.5">{childLog.requestMethod}</div>
                                                         )}
                                                     </td>
                                                 </>
@@ -593,21 +593,21 @@ export default function LogsClient() {
 
                                             {activeTab === 'web' && (
                                                 <>
-                                                    <td className="px-6 py-3 text-sm text-gray-400">
+                                                    <td className="px-6 py-3 text-sm text-text-quaternary">
                                                         {formatUserDisplay(childLog.username, childLog.nickname)}
                                                     </td>
-                                                    <td className="px-6 py-3 text-sm text-gray-500">
-                                                        <div className="text-gray-400">{childLog.ip}</div>
-                                                        <div className="text-xs text-gray-600 truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
+                                                    <td className="px-6 py-3 text-sm text-text-tertiary">
+                                                        <div className="text-text-quaternary">{childLog.ip}</div>
+                                                        <div className="text-xs text-text-secondary truncate max-w-[200px] mt-0.5" title={childLog.ua}>{childLog.ua}</div>
                                                     </td>
-                                                    <td className="px-6 py-3 text-sm text-gray-400 font-mono">
+                                                    <td className="px-6 py-3 text-sm text-text-quaternary font-mono">
                                                         {childLog.path}
                                                     </td>
                                                 </>
                                             )}
 
                                             {activeTab === 'system' && (
-                                                <td className="px-6 py-3 text-sm text-gray-400 break-all">
+                                                <td className="px-6 py-3 text-sm text-text-quaternary break-all">
                                                     {childLog.message}
                                                 </td>
                                             )}
@@ -630,9 +630,9 @@ export default function LogsClient() {
                             <div className="space-y-3 max-w-full overflow-hidden">
                                 {/* Time and Status */}
                                 <div className="flex items-start justify-between">
-                                    <div className="text-xs text-gray-400">
+                                    <div className="text-xs text-text-quaternary">
                                         {new Date(log.timestamp).toLocaleString(dateLocale)}
-                                        <div className="text-gray-500 mt-0.5">{formatTime(log.timestamp)}</div>
+                                        <div className="text-text-tertiary mt-0.5">{formatTime(log.timestamp)}</div>
                                     </div>
                                     <span className={`text-xs font-medium ${getStatusColor(log.status)}`}>
                                         {log.status}
@@ -643,7 +643,7 @@ export default function LogsClient() {
                                 {activeTab === 'api' && (
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('tokenLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('tokenLabel')}</span>
                                             <span
                                                 className="font-mono text-xs text-blue-400 break-all cursor-pointer"
                                                 title={log.token}
@@ -653,33 +653,33 @@ export default function LogsClient() {
                                                     ? log.token
                                                     : `${(log.token || '').substring(0, 8)}...`}
                                                 {log.subRemark && (
-                                                    <span className="text-gray-400 ml-1">({log.subRemark})</span>
+                                                    <span className="text-text-quaternary ml-1">({log.subRemark})</span>
                                                 )}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('userLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('userLabel')}</span>
                                             <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('ipLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('ipLabel')}</span>
                                             <span className="text-sm text-gray-300">{log.ip}</span>
                                         </div>
 
                                         {/* API Log Details / Merged View */}
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('detailLabel')}</span>
-                                            <div className="flex-1 text-sm text-gray-400">
+                                            <span className="text-xs text-text-tertiary">{t('detailLabel')}</span>
+                                            <div className="flex-1 text-sm text-text-quaternary">
                                                 {log.isMerged ? (
                                                     <div className="flex items-center gap-2 text-blue-400 font-mono cursor-pointer" onClick={() => toggleExpand(log.id)}>
                                                         <span>{log.path}</span>
-                                                        <span className="text-xs text-gray-500 select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
+                                                        <span className="text-xs text-text-tertiary select-none">{expandedLogs.has(log.id) ? '🔼' : '🔽'}</span>
                                                     </div>
                                                 ) : (
                                                     <div>
                                                         <div className="text-gray-300">{log.apiType || t('apiRequest')}</div>
                                                         {log.requestMethod && (
-                                                            <div className="text-xs text-gray-600 mt-0.5">{log.requestMethod}</div>
+                                                            <div className="text-xs text-text-secondary mt-0.5">{log.requestMethod}</div>
                                                         )}
                                                     </div>
                                                 )}
@@ -691,22 +691,22 @@ export default function LogsClient() {
                                             <div className="mt-3 pl-3 border-l-2 border-blue-500/30 space-y-3">
                                                 {log.mergedLogs.map((childLog: any) => (
                                                     <div key={childLog.id} className="text-xs bg-gray-900/50 p-2 rounded">
-                                                        <div className="flex justify-between text-gray-500 mb-1">
+                                                        <div className="flex justify-between text-text-tertiary mb-1">
                                                             <span>{new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
                                                         <div className="text-gray-300">{childLog.apiType || t('apiRequest')}</div>
                                                         {childLog.requestMethod && (
-                                                            <div className="text-xs text-gray-600 mt-0.5">{childLog.requestMethod}</div>
+                                                            <div className="text-xs text-text-secondary mt-0.5">{childLog.requestMethod}</div>
                                                         )}
-                                                        <div className="mt-1 text-gray-600 break-words w-full" title={childLog.ua}>{childLog.ua}</div>
+                                                        <div className="mt-1 text-text-secondary break-words w-full" title={childLog.ua}>{childLog.ua}</div>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
                                         {!log.isMerged && (
-                                            <div className="text-xs text-gray-600 break-words w-full" title={log.ua}>
+                                            <div className="text-xs text-text-secondary break-words w-full" title={log.ua}>
                                                 {log.ua}
                                             </div>
                                         )}
@@ -717,15 +717,15 @@ export default function LogsClient() {
                                 {activeTab === 'web' && (
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('userLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('userLabel')}</span>
                                             <span className="text-sm text-gray-200">{formatUserDisplay(log.username, log.nickname)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('ipLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('ipLabel')}</span>
                                             <span className="text-sm text-gray-300">{log.ip}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{t('pathLabel')}</span>
+                                            <span className="text-xs text-text-tertiary">{t('pathLabel')}</span>
                                             <div className="flex-1">
                                                 {log.isMerged ? (
                                                     <div>
@@ -734,17 +734,17 @@ export default function LogsClient() {
                                                             onClick={() => toggleExpand(log.id)}
                                                         >
                                                             <span>{log.path}</span>
-                                                            <span className="text-xs text-gray-500 select-none">
+                                                            <span className="text-xs text-text-tertiary select-none">
                                                                 {expandedLogs.has(log.id) ? '🔼' : '🔽'}
                                                             </span>
                                                         </div>
                                                         {expandedLogs.has(log.id) && log.details && (
-                                                            <div className="mt-2 text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 animate-in fade-in zoom-in-95 duration-200">
+                                                            <div className="mt-2 text-xs text-text-quaternary bg-black/50 p-3 rounded border border-gray-800 animate-in fade-in zoom-in-95 duration-200">
                                                                 <div className="space-y-2">
                                                                     {log.details.map((d: any, idx: number) => (
                                                                         <div key={idx} className="flex justify-between items-center border-b border-gray-800/50 last:border-0 pb-1 last:pb-0">
                                                                             <span className="font-mono text-emerald-500/80">{d.path}</span>
-                                                                            <span className="text-gray-600">{d.time}</span>
+                                                                            <span className="text-text-secondary">{d.time}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -762,19 +762,19 @@ export default function LogsClient() {
                                             <div className="mt-3 pl-3 border-l-2 border-emerald-500/30 space-y-3">
                                                 {log.mergedLogs.map((childLog: any) => (
                                                     <div key={childLog.id} className="text-xs bg-gray-900/50 p-2 rounded">
-                                                        <div className="flex justify-between text-gray-500 mb-1">
+                                                        <div className="flex justify-between text-text-tertiary mb-1">
                                                             <span>{new Date(childLog.timestamp).toLocaleTimeString(dateLocale)}</span>
                                                             <span className={getStatusColor(childLog.status)}>{childLog.status}</span>
                                                         </div>
                                                         <div className="font-mono text-gray-300 break-all">{childLog.path}</div>
-                                                        <div className="mt-1 text-gray-600 break-words w-full" title={childLog.ua}>{childLog.ua}</div>
+                                                        <div className="mt-1 text-text-secondary break-words w-full" title={childLog.ua}>{childLog.ua}</div>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
                                         {!log.isMerged && (
-                                            <div className="text-xs text-gray-600 break-words w-full" title={log.ua}>
+                                            <div className="text-xs text-text-secondary break-words w-full" title={log.ua}>
                                                 {log.ua}
                                             </div>
                                         )}
@@ -796,7 +796,7 @@ export default function LogsClient() {
                                             >
                                                 {log.message}
                                                 {log.isMerged && (
-                                                    <span className="ml-2 text-xs text-gray-500">
+                                                    <span className="ml-2 text-xs text-text-tertiary">
                                                         {expandedLogs.has(log.id) ? '🔼' : '🔽'}
                                                     </span>
                                                 )}
@@ -808,12 +808,12 @@ export default function LogsClient() {
                                                     {log.mergedLogs.map((childLog: any) => (
                                                         <div key={childLog.id} className="text-xs bg-gray-900/50 p-1.5 rounded border border-gray-800 w-full min-w-0">
                                                             <div className="flex justify-between mb-1 gap-2 min-w-0">
-                                                                <span className="text-gray-500 flex-shrink-0 text-[10px]">{new Date(childLog.timestamp).toLocaleTimeString()}</span>
+                                                                <span className="text-text-tertiary flex-shrink-0 text-[10px]">{new Date(childLog.timestamp).toLocaleTimeString()}</span>
                                                                 <span className={`${getStatusColor(childLog.status)} flex-shrink-0 text-[10px]`}>{childLog.status}</span>
                                                             </div>
                                                             <div className="text-gray-300 break-all text-[11px] min-w-0">{childLog.message}</div>
                                                             {childLog.details && (
-                                                                <div className="mt-1 text-gray-400 text-[10px] break-all min-w-0">
+                                                                <div className="mt-1 text-text-quaternary text-[10px] break-all min-w-0">
                                                                     {typeof childLog.details === 'string'
                                                                         ? childLog.details
                                                                         : JSON.stringify(childLog.details)}
@@ -825,7 +825,7 @@ export default function LogsClient() {
                                             )}
 
                                             {log.details && !log.isMerged && (
-                                                <pre className="text-xs text-gray-400 bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap animate-in fade-in zoom-in-95 duration-200 mt-2">
+                                                <pre className="text-xs text-text-quaternary bg-black/50 p-3 rounded border border-gray-800 overflow-x-auto break-all whitespace-pre-wrap animate-in fade-in zoom-in-95 duration-200 mt-2">
                                                     {JSON.stringify(log.details, null, 2)}
                                                 </pre>
                                             )}
@@ -840,8 +840,8 @@ export default function LogsClient() {
                 {
                     logs.length === 0 && !loading && (
                         <div className="text-center py-16">
-                            <div className="text-gray-600 mb-2 text-4xl">📭</div>
-                            <div className="text-gray-500">
+                            <div className="text-text-secondary mb-2 text-4xl">📭</div>
+                            <div className="text-text-tertiary">
                                 {debouncedSearch ? t('noMatch') : t('noLogs')}
                             </div>
                         </div>
@@ -862,7 +862,7 @@ export default function LogsClient() {
                     )
                 ) : (
                     <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-800 bg-black/20 text-sm">
-                        <div className="text-gray-400 whitespace-nowrap">
+                        <div className="text-text-quaternary whitespace-nowrap">
                             {t('totalRecords', { total: totalLogs })}
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">

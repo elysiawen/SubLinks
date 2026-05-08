@@ -54,7 +54,7 @@ export default function RefreshApiModal({
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto">
                     {/* API Key Configuration */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">
                             {t('apiKeyLabel')}
                         </label>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -62,7 +62,7 @@ export default function RefreshApiModal({
                                 type="text"
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
-                                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-mono text-sm break-all"
+                                className="flex-1 border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-mono text-sm break-all"
                                 placeholder={t('apiKeyPlaceholder')}
                             />
                             <button
@@ -72,7 +72,7 @@ export default function RefreshApiModal({
                                 {t('generate')}
                             </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-text-tertiary mt-1">
                             {t('apiKeyHint')}
                         </p>
                     </div>
@@ -88,7 +88,7 @@ export default function RefreshApiModal({
                         </button>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                         >
                             {t('close')}
                         </button>
@@ -217,12 +217,12 @@ function UsageModal({
         <Modal isOpen={isOpen} onClose={onClose} title={t('usageTitle')} maxWidth="max-w-4xl">
             <div className="space-y-6">
                 {/* Mode Toggle */}
-                <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                <div className="flex gap-2 p-1 bg-muted rounded-lg">
                     <button
                         onClick={() => setMode('simple')}
                         className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${mode === 'simple'
-                            ? 'bg-white text-blue-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-card text-accent-foreground shadow-sm'
+                            : 'text-text-secondary hover:text-text-primary'
                             }`}
                     >
                         {t('simpleMode')}
@@ -230,8 +230,8 @@ function UsageModal({
                     <button
                         onClick={() => setMode('advanced')}
                         className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${mode === 'advanced'
-                            ? 'bg-white text-blue-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-card text-accent-foreground shadow-sm'
+                            : 'text-text-secondary hover:text-text-primary'
                             }`}
                     >
                         {t('advancedMode')}
@@ -243,10 +243,10 @@ function UsageModal({
                     <div className="space-y-4">
                         {/* Source Selection */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">
                                 {t('selectSource')}
                             </label>
-                            <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                            <div className="border border-border-input rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
@@ -257,9 +257,9 @@ function UsageModal({
                                                 setSelectedSource('');
                                             }
                                         }}
-                                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500/20"
+                                        className="w-4 h-4 text-accent-foreground rounded focus:ring-2 focus:ring-blue-500/20"
                                     />
-                                    <label htmlFor="all-sources" className="text-sm text-gray-700 font-medium">
+                                    <label htmlFor="all-sources" className="text-sm text-text-secondary font-medium">
                                         {t('allSources')}
                                     </label>
                                 </div>
@@ -277,9 +277,9 @@ function UsageModal({
                                                     setSelectedSource(currentSources.filter(s => s !== source.name).join(','));
                                                 }
                                             }}
-                                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500/20"
+                                            className="w-4 h-4 text-accent-foreground rounded focus:ring-2 focus:ring-blue-500/20"
                                         />
-                                        <label htmlFor={`source-${source.name}`} className="text-sm text-gray-700">
+                                        <label htmlFor={`source-${source.name}`} className="text-sm text-text-secondary">
                                             {source.name}
                                         </label>
                                     </div>
@@ -294,16 +294,16 @@ function UsageModal({
                                 id="precache"
                                 checked={precache}
                                 onChange={(e) => setPrecache(e.target.checked)}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500/20"
+                                className="w-4 h-4 text-accent-foreground rounded focus:ring-2 focus:ring-blue-500/20"
                             />
-                            <label htmlFor="precache" className="text-sm text-gray-700">
+                            <label htmlFor="precache" className="text-sm text-text-secondary">
                                 {t('precache')}
                             </label>
                         </div>
 
                         {/* Method Selection */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">
                                 {t('requestMethod')}
                             </label>
                             <div className="flex gap-2">
@@ -311,7 +311,7 @@ function UsageModal({
                                     onClick={() => setMethod('get')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'get'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
                                         }`}
                                 >
                                     GET
@@ -320,7 +320,7 @@ function UsageModal({
                                     onClick={() => setMethod('post')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'post'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
                                         }`}
                                 >
                                     POST
@@ -329,7 +329,7 @@ function UsageModal({
                                     onClick={() => setMethod('bearer')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'bearer'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
                                         }`}
                                 >
                                     Bearer
@@ -339,7 +339,7 @@ function UsageModal({
 
                         {/* Generated Link */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">
                                 {t('generatedLink')}
                             </label>
                             <CodeBlock
@@ -352,22 +352,22 @@ function UsageModal({
                     /* Advanced Mode */
                     <div className="space-y-6">
                         {/* API Info */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="bg-accent border border-blue-200 rounded-lg p-4">
                             <div className="space-y-2 text-sm">
                                 <div>
-                                    <span className="font-semibold text-gray-700">{t('apiKeyLabel2')}</span>
-                                    <code className="ml-2 bg-white px-2 py-1 rounded border text-xs break-all">{apiKey}</code>
+                                    <span className="font-semibold text-text-secondary">{t('apiKeyLabel2')}</span>
+                                    <code className="ml-2 bg-card px-2 py-1 rounded border text-xs break-all">{apiKey}</code>
                                 </div>
                                 <div>
-                                    <span className="font-semibold text-gray-700">{t('baseUrlLabel')}</span>
-                                    <span className="ml-2 text-gray-600">{baseUrl}</span>
+                                    <span className="font-semibold text-text-secondary">{t('baseUrlLabel')}</span>
+                                    <span className="ml-2 text-text-secondary">{baseUrl}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Method 1: GET */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method1Get')}</h3>
+                            <h3 className="text-lg font-semibold text-text-primary mb-3">{t('method1Get')}</h3>
                             <div className="space-y-3">
                                 <CodeBlock
                                     title={t('refreshSingle')}
@@ -386,7 +386,7 @@ function UsageModal({
 
                         {/* Method 2: POST */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method2Post')}</h3>
+                            <h3 className="text-lg font-semibold text-text-primary mb-3">{t('method2Post')}</h3>
                             <CodeBlock
                                 title={t('refreshSpecified')}
                                 code={`curl -X POST ${baseUrl}/api/sources/refresh \\
@@ -397,7 +397,7 @@ function UsageModal({
 
                         {/* Method 3: Bearer */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('method3Bearer')}</h3>
+                            <h3 className="text-lg font-semibold text-text-primary mb-3">{t('method3Bearer')}</h3>
                             <CodeBlock
                                 title={t('useBearer')}
                                 code={`curl "${baseUrl}/api/sources/refresh?sourceName=${sources[0]?.name || 'main'}" \\
@@ -407,10 +407,10 @@ function UsageModal({
 
                         {/* Parameters Table */}
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('paramDesc')}</h3>
+                            <h3 className="text-lg font-semibold text-text-primary mb-3">{t('paramDesc')}</h3>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full text-sm border border-gray-200 rounded-lg">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full text-sm border border-border-strong rounded-lg">
+                                    <thead className="bg-muted">
                                         <tr>
                                             <th className="px-4 py-2 text-left font-semibold border-b">{t('paramName')}</th>
                                             <th className="px-4 py-2 text-left font-semibold border-b">{t('paramType')}</th>
@@ -419,22 +419,22 @@ function UsageModal({
                                     </thead>
                                     <tbody className="divide-y">
                                         <tr>
-                                            <td className="px-4 py-2 font-mono text-xs bg-gray-50">key</td>
+                                            <td className="px-4 py-2 font-mono text-xs bg-muted">key</td>
                                             <td className="px-4 py-2">string</td>
                                             <td className="px-4 py-2">{t('paramKey')}</td>
                                         </tr>
                                         <tr>
-                                            <td className="px-4 py-2 font-mono text-xs bg-gray-50">sourceName</td>
+                                            <td className="px-4 py-2 font-mono text-xs bg-muted">sourceName</td>
                                             <td className="px-4 py-2">string</td>
                                             <td className="px-4 py-2">{t('paramSourceName')}</td>
                                         </tr>
                                         <tr>
-                                            <td className="px-4 py-2 font-mono text-xs bg-gray-50">sourceNames</td>
+                                            <td className="px-4 py-2 font-mono text-xs bg-muted">sourceNames</td>
                                             <td className="px-4 py-2">string[]</td>
                                             <td className="px-4 py-2">{t('paramSourceNames')}</td>
                                         </tr>
                                         <tr>
-                                            <td className="px-4 py-2 font-mono text-xs bg-gray-50">precache</td>
+                                            <td className="px-4 py-2 font-mono text-xs bg-muted">precache</td>
                                             <td className="px-4 py-2">boolean</td>
                                             <td className="px-4 py-2">{t('paramPrecache')}</td>
                                         </tr>

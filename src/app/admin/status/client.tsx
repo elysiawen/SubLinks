@@ -103,10 +103,10 @@ export default function ServerStatusClient() {
         return (
             <div className="p-6">
                 <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+                    <div className="h-8 bg-muted rounded w-1/4 mb-6"></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3, 4, 5, 6].map(i => (
-                            <div key={i} className="h-48 bg-gray-200 rounded"></div>
+                            <div key={i} className="h-48 bg-muted rounded"></div>
                         ))}
                     </div>
                 </div>
@@ -131,10 +131,10 @@ export default function ServerStatusClient() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('hostname', { hostname: status.hostname })}</p>
+                    <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
+                    <p className="text-sm text-text-tertiary mt-1">{t('hostname', { hostname: status.hostname })}</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-2 text-sm text-text-tertiary">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span>{t('realtimeMonitor')}</span>
                 </div>
@@ -143,48 +143,48 @@ export default function ServerStatusClient() {
             {/* Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Environment */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🌐</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('environment')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('environment')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('envLabel')}</span>
-                            <span className="font-medium text-gray-900">{status.environment}</span>
+                            <span className="text-text-secondary">{t('envLabel')}</span>
+                            <span className="font-medium text-text-primary">{status.environment}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Node.js</span>
-                            <span className="font-medium text-gray-900">{status.nodeVersion}</span>
+                            <span className="text-text-secondary">Node.js</span>
+                            <span className="font-medium text-text-primary">{status.nodeVersion}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('platform')}</span>
-                            <span className="font-medium text-gray-900">{status.platform}</span>
+                            <span className="text-text-secondary">{t('platform')}</span>
+                            <span className="font-medium text-text-primary">{status.platform}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('architecture')}</span>
-                            <span className="font-medium text-gray-900">{status.arch}</span>
+                            <span className="text-text-secondary">{t('architecture')}</span>
+                            <span className="font-medium text-text-primary">{status.arch}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Database */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">💾</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('database')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('database')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('dbType')}</span>
-                            <span className="font-medium text-gray-900">{status.database}</span>
+                            <span className="text-text-secondary">{t('dbType')}</span>
+                            <span className="font-medium text-text-primary">{status.database}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('dbLatency')}</span>
+                            <span className="text-text-secondary">{t('dbLatency')}</span>
                             <span className={`font-medium ${status.dbLatency === null ? 'text-red-600' :
                                 status.dbLatency < 50 ? 'text-green-600' :
                                     status.dbLatency < 100 ? 'text-yellow-600' :
@@ -194,7 +194,7 @@ export default function ServerStatusClient() {
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('dbStatus')}</span>
+                            <span className="text-text-secondary">{t('dbStatus')}</span>
                             <span className={`font-medium ${status.dbLatency !== null ? 'text-green-600' : 'text-red-600'}`}>
                                 {status.dbLatency !== null ? `✓ ${t('dbConnected')}` : `✗ ${t('dbDisconnected')}`}
                             </span>
@@ -203,82 +203,82 @@ export default function ServerStatusClient() {
                 </div>
 
                 {/* CPU Info */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">⚡</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('cpuInfo')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('cpuInfo')}</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('cpuCores')}</span>
-                            <span className="font-medium text-gray-900">{status.cpu.cores}</span>
+                            <span className="text-text-secondary">{t('cpuCores')}</span>
+                            <span className="font-medium text-text-primary">{status.cpu.cores}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('cpuFrequency')}</span>
-                            <span className="font-medium text-gray-900">{status.cpu.speed} MHz</span>
+                            <span className="text-text-secondary">{t('cpuFrequency')}</span>
+                            <span className="font-medium text-text-primary">{status.cpu.speed} MHz</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">{t('cpuLoad')}</span>
-                            <span className="font-medium text-gray-900">{status.cpu.loadAverage['1min'].toFixed(2)}</span>
+                            <span className="text-text-secondary">{t('cpuLoad')}</span>
+                            <span className="font-medium text-text-primary">{status.cpu.loadAverage['1min'].toFixed(2)}</span>
                         </div>
-                        <div className="text-xs text-gray-500 truncate" title={status.cpu.model}>
+                        <div className="text-xs text-text-tertiary truncate" title={status.cpu.model}>
                             {status.cpu.model}
                         </div>
                     </div>
                 </div>
 
                 {/* Process Uptime */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">⏱️</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('processUptime')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('processUptime')}</h3>
                     </div>
                     <div className="space-y-2">
-                        <div className="text-xl font-bold text-gray-900">
+                        <div className="text-xl font-bold text-text-primary">
                             {formatUptime(status.uptime)}
                         </div>
-                        <div className="text-gray-600 text-xs">
+                        <div className="text-text-secondary text-xs">
                             {t('processUptimeDesc')}
                         </div>
                     </div>
                 </div>
 
                 {/* System Uptime */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🖥️</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('systemUptime')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('systemUptime')}</h3>
                     </div>
                     <div className="space-y-2">
-                        <div className="text-xl font-bold text-gray-900">
+                        <div className="text-xl font-bold text-text-primary">
                             {formatUptime(status.systemUptime)}
                         </div>
-                        <div className="text-gray-600 text-xs">
+                        <div className="text-text-secondary text-xs">
                             {t('systemUptimeDesc')}
                         </div>
                     </div>
                 </div>
 
                 {/* Process Memory */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">🔲</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('processMemory')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('processMemory')}</h3>
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">{t('memoryUsed')}</span>
-                            <span className="font-medium text-gray-900">{formatBytes(status.memory.process.used)}</span>
+                            <span className="text-text-secondary">{t('memoryUsed')}</span>
+                            <span className="font-medium text-text-primary">{formatBytes(status.memory.process.used)}</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                             <div
                                 className={`h-2 rounded-full transition-all ${status.memory.process.percentage < 70 ? 'bg-green-500' :
                                     status.memory.process.percentage < 85 ? 'bg-yellow-500' :
@@ -287,28 +287,28 @@ export default function ServerStatusClient() {
                                 style={{ width: `${Math.min(status.memory.process.percentage, 100)}%` }}
                             ></div>
                         </div>
-                        <div className="text-right text-sm font-medium text-gray-700">
+                        <div className="text-right text-sm font-medium text-text-secondary">
                             {status.memory.process.percentage.toFixed(1)}%
                         </div>
                     </div>
                 </div>
 
                 {/* System Resources - CPU & Memory */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-3">
+                <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6 lg:col-span-3">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                             <span className="text-xl">📊</span>
                         </div>
-                        <h3 className="font-semibold text-gray-800">{t('systemResources')}</h3>
+                        <h3 className="font-semibold text-text-primary">{t('systemResources')}</h3>
                     </div>
                     <div className="space-y-6">
                         {/* CPU Usage */}
                         <div>
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-600">{t('cpuUsage')}</span>
-                                <span className="text-sm font-medium text-gray-900">{status.cpu.usage.toFixed(1)}%</span>
+                                <span className="text-sm text-text-secondary">{t('cpuUsage')}</span>
+                                <span className="text-sm font-medium text-text-primary">{status.cpu.usage.toFixed(1)}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div className="w-full bg-muted rounded-full h-3">
                                 <div
                                     className={`h-3 rounded-full transition-all duration-300 ${status.cpu.usage > 80 ? 'bg-red-500' :
                                         status.cpu.usage > 60 ? 'bg-yellow-500' :
@@ -321,10 +321,10 @@ export default function ServerStatusClient() {
                         {/* Memory Usage */}
                         <div>
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-600">{t('memoryUsage')}</span>
-                                <span className="text-sm font-medium text-gray-900">{status.memory.system.percentage.toFixed(1)}%</span>
+                                <span className="text-sm text-text-secondary">{t('memoryUsage')}</span>
+                                <span className="text-sm font-medium text-text-primary">{status.memory.system.percentage.toFixed(1)}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div className="w-full bg-muted rounded-full h-3">
                                 <div
                                     className={`h-3 rounded-full transition-all duration-300 ${status.memory.system.percentage < 70 ? 'bg-purple-500' :
                                         status.memory.system.percentage < 85 ? 'bg-yellow-500' :
@@ -337,41 +337,41 @@ export default function ServerStatusClient() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <div>
-                            <div className="text-xs text-gray-600">{t('memoryUsedLabel')}</div>
-                            <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.used)}</div>
+                            <div className="text-xs text-text-secondary">{t('memoryUsedLabel')}</div>
+                            <div className="text-sm font-medium text-text-primary">{formatBytes(status.memory.system.used)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">{t('memoryFree')}</div>
-                            <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.free)}</div>
+                            <div className="text-xs text-text-secondary">{t('memoryFree')}</div>
+                            <div className="text-sm font-medium text-text-primary">{formatBytes(status.memory.system.free)}</div>
                         </div>
                         <div>
-                            <div className="text-xs text-gray-600">{t('memoryTotal')}</div>
-                            <div className="text-sm font-medium text-gray-900">{formatBytes(status.memory.system.total)}</div>
+                            <div className="text-xs text-text-secondary">{t('memoryTotal')}</div>
+                            <div className="text-sm font-medium text-text-primary">{formatBytes(status.memory.system.total)}</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Network */}
                 {status.network.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:col-span-2 lg:col-span-3">
+                    <div className="bg-card rounded-lg shadow-sm border border-border-strong p-6 md:col-span-2 lg:col-span-3">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
                                 <span className="text-xl">🌐</span>
                             </div>
-                            <h3 className="font-semibold text-gray-800">{t('networkInterfaces')}</h3>
+                            <h3 className="font-semibold text-text-primary">{t('networkInterfaces')}</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {status.network.map((iface, idx) => (
-                                <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                                    <div className="font-medium text-gray-900 mb-2">{iface.name}</div>
+                                <div key={idx} className="bg-muted rounded-lg p-4">
+                                    <div className="font-medium text-text-primary mb-2">{iface.name}</div>
                                     {iface.addresses.map((addr, addrIdx) => (
-                                        <div key={addrIdx} className="text-xs text-gray-600 space-y-1 mb-2">
+                                        <div key={addrIdx} className="text-xs text-text-secondary space-y-1 mb-2">
                                             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                                                <span className="text-gray-500">{addr.family}:</span>
-                                                <span className="font-mono break-all text-gray-900">{addr.address}</span>
+                                                <span className="text-text-tertiary">{addr.family}:</span>
+                                                <span className="font-mono break-all text-text-primary">{addr.address}</span>
                                             </div>
                                             {addr.mac && (
-                                                <div className="text-gray-500 break-all">MAC: {addr.mac}</div>
+                                                <div className="text-text-tertiary break-all">MAC: {addr.mac}</div>
                                             )}
                                         </div>
                                     ))}
@@ -383,7 +383,7 @@ export default function ServerStatusClient() {
             </div>
 
             {/* Footer Note */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+            <div className="bg-accent border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
                 <p>💡 <strong>{t('footerTip', { time: new Date(status.timestamp).toLocaleTimeString('zh-CN') })}</strong></p>
             </div>
         </div>

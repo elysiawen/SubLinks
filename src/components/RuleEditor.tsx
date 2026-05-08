@@ -136,21 +136,21 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
     return (
         <div className={className}>
             <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-text-secondary">
                     {t('contentLabel')}
                 </label>
-                <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
+                <div className="bg-muted p-0.5 rounded-lg flex text-xs">
                     <button
                         onClick={() => handleSwitchMode('simple')}
                         disabled={isSwitching}
-                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
+                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'simple' ? 'bg-card text-accent-foreground shadow-sm font-medium' : 'text-text-tertiary'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         {t('simpleMode')}
                     </button>
                     <button
                         onClick={() => handleSwitchMode('advanced')}
                         disabled={isSwitching}
-                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
+                        className={`px-3 py-1 rounded-md transition-all ${ruleMode === 'advanced' ? 'bg-card text-accent-foreground shadow-sm font-medium' : 'text-text-tertiary'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         {t('advancedMode')}
                     </button>
@@ -158,7 +158,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
             </div>
 
             {isSwitching ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg animate-in fade-in duration-200">
                     <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-xs italic">{t('switching')}</span>
                 </div>
@@ -167,18 +167,18 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                     <textarea
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        className="w-full px-4 py-3 border border-border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                         rows={15}
                         placeholder={t('yamlPlaceholder')}
                     />
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-text-quaternary mt-1">
                         {t('yamlFormat')}
                     </p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {/* Add Rule Form */}
-                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="border border-border-strong rounded-lg p-4 bg-muted">
                         <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="text"
@@ -186,14 +186,14 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 onChange={(e) => setNewRuleValue(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addGuiRule()}
                                 placeholder={t('ruleValue')}
-                                className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-2"
+                                className="w-full sm:flex-1 sm:min-w-0 border border-border-input rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-2"
                             />
 
                             <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-1 sm:contents">
                                 <select
                                     value={newRuleType}
                                     onChange={(e) => setNewRuleType(e.target.value)}
-                                    className="flex-1 sm:w-32 sm:flex-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:order-1"
+                                    className="flex-1 sm:w-32 sm:flex-none border border-border-input rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:order-1"
                                 >
                                     <option value="DOMAIN">DOMAIN</option>
                                     <option value="DOMAIN-SUFFIX">DOMAIN-SUFFIX</option>
@@ -210,7 +210,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                         value={newRulePolicy}
                                         onChange={(e) => setNewRulePolicy(e.target.value)}
                                         placeholder={t('policy')}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full border border-border-input rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                     {(proxyGroups.length > 0 || (availablePolicies && availablePolicies.length > 0)) && (
                                         <button
@@ -218,7 +218,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                                 setPolicySearch('');
                                                 setShowPolicySelector(true);
                                             }}
-                                            className="absolute right-1 top-1 bottom-1 px-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                            className="absolute right-1 top-1 bottom-1 px-2 text-text-quaternary hover:text-blue-600 transition-colors"
                                         >
                                             🔍
                                         </button>
@@ -238,7 +238,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                     {/* Search Bar */}
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-4 w-4 text-text-quaternary group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
@@ -250,31 +250,31 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 setVisibleCount(100);
                             }}
                             placeholder={t('searchRulesPlaceholder')}
-                            className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                            className="block w-full pl-9 pr-3 py-2 border border-border-strong rounded-lg bg-card placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
 
                     {/* Rules List */}
                     {isParsing ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg">
+                        <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg">
                             <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                             <span className="text-xs italic">{t('parsingRules')}</span>
                         </div>
                     ) : filteredRules.length === 0 ? (
-                        <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
+                        <div className="text-center text-text-quaternary text-sm py-8 border border-dashed border-border-input rounded-lg">
                             {ruleSearch ? t('noRulesMatch') : t('noRules')}
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                            <div className="border border-border-strong rounded-lg divide-y divide-border max-h-96 overflow-y-auto">
                                 {visibleRules.map((rule) => (
-                                    <div key={rule.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
+                                    <div key={rule.id} className="flex items-center justify-between p-3 hover:bg-muted">
                                         <div className="flex items-center gap-3 flex-1 font-mono text-sm">
                                             <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-semibold">
                                                 {rule.type}
                                             </span>
-                                            <span className="text-gray-700 break-all">{rule.value}</span>
-                                            <span className="text-gray-400">→</span>
+                                            <span className="text-text-secondary break-all">{rule.value}</span>
+                                            <span className="text-text-quaternary">→</span>
                                             <span className="text-green-600 font-medium">{rule.policy}</span>
                                         </div>
                                         <button
@@ -287,7 +287,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 ))}
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs text-text-quaternary">
                                     {ruleSearch
                                         ? t('rulesCountSearch', { visible: visibleRules.length, filtered: filteredRules.length, total: guiRules.length })
                                         : t('rulesCount', { visible: visibleRules.length, filtered: filteredRules.length, total: guiRules.length })
@@ -296,7 +296,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 {visibleCount < filteredRules.length && (
                                     <button
                                         onClick={() => setVisibleCount(prev => prev + 200)}
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition"
+                                        className="text-xs font-bold text-accent-foreground hover:text-blue-700 bg-accent px-3 py-1.5 rounded-lg transition"
                                     >
                                         {t('loadMore')}
                                     </button>
@@ -322,14 +322,14 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                             value={policySearch}
                             onChange={(e) => setPolicySearch(e.target.value)}
                             placeholder={t('searchPolicy')}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
                     <div className="overflow-y-auto flex-1 py-4 space-y-6">
                         {/* Built-in Policies */}
                         <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('builtinPolicies')}</h4>
+                            <h4 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">{t('builtinPolicies')}</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {['DIRECT', 'REJECT', 'REJECT-TINYGIF', 'NO-RESOLVE'].map(p => (
                                     <button
@@ -338,7 +338,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                             setNewRulePolicy(p);
                                             setShowPolicySelector(false);
                                         }}
-                                        className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm font-medium"
+                                        className="text-left px-3 py-2 rounded-lg border border-border-strong hover:border-blue-500 hover:bg-accent text-text-secondary transition-all text-sm font-medium"
                                     >
                                         {p}
                                     </button>
@@ -349,7 +349,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                         {/* Proxy Groups or Available Policies */}
                         {availablePolicies ? (
                             <div>
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('availablePolicies')}</h4>
+                                <h4 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">{t('availablePolicies')}</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     {availablePolicies
                                         .filter(p => p.toLowerCase().includes(policySearch.toLowerCase()))
@@ -360,7 +360,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                                     setNewRulePolicy(p);
                                                     setShowPolicySelector(false);
                                                 }}
-                                                className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm font-medium"
+                                                className="text-left px-3 py-2 rounded-lg border border-border-strong hover:border-blue-500 hover:bg-accent text-text-secondary transition-all text-sm font-medium"
                                             >
                                                 {p}
                                             </button>
@@ -374,19 +374,19 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                     <div key={source}>
                                         <button
                                             onClick={() => toggleSourceCollapse(source)}
-                                            className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 hover:bg-gray-50 p-1 rounded transition-colors"
+                                            className="w-full flex items-center justify-between text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2 hover:bg-muted p-1 rounded transition-colors"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className={`transform transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
                                                     ▼
                                                 </span>
                                                 {source}
-                                                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{groups.length}</span>
+                                                <span className="bg-muted text-text-secondary px-1.5 py-0.5 rounded text-[10px]">{groups.length}</span>
                                             </div>
                                         </button>
 
                                         {!isCollapsed && (
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-2 border-l-2 border-gray-100 ml-1">
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-2 border-l-2 border-border ml-1">
                                                 {groups.map(g => (
                                                     <button
                                                         key={`${g.source}-${g.name}`}
@@ -394,7 +394,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                                             setNewRulePolicy(g.name);
                                                             setShowPolicySelector(false);
                                                         }}
-                                                        className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700 transition-all text-sm truncate"
+                                                        className="text-left px-3 py-2 rounded-lg border border-border-strong hover:border-blue-500 hover:bg-accent text-text-secondary transition-all text-sm truncate"
                                                         title={g.name}
                                                     >
                                                         {g.name}
@@ -408,10 +408,10 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                         )}
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="pt-4 border-t border-border-strong">
                         <button
                             onClick={() => setShowPolicySelector(false)}
-                            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="w-full px-4 py-2 bg-muted text-text-secondary rounded-lg hover:bg-border-strong transition-colors"
                         >
                             {t('close')}
                         </button>

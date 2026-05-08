@@ -133,15 +133,15 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
 
     return createPortal(
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl animate-zoom-in">
+            <div className="bg-card rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl animate-zoom-in">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
-                    <p className="text-sm text-gray-500 mt-1">{t('description')}</p>
+                <div className="p-6 border-b border-border-strong">
+                    <h2 className="text-xl font-bold text-text-primary">{t('title')}</h2>
+                    <p className="text-sm text-text-tertiary mt-1">{t('description')}</p>
                 </div>
 
                 {/* Cropper */}
-                <div className="relative bg-gray-100 p-8 flex items-center justify-center max-h-[60vh] overflow-hidden">
+                <div className="relative bg-muted p-8 flex items-center justify-center max-h-[60vh] overflow-hidden">
                     <ReactCrop
                         crop={crop}
                         onChange={(c) => setCrop(c)}
@@ -164,18 +164,18 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                 </div>
 
                 {/* Rotation Controls */}
-                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <div className="px-6 py-4 bg-muted border-b border-border-strong">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-700">
+                            <label className="text-sm font-medium text-text-secondary">
                                 {t('rotation')}
                             </label>
-                            <span className="text-sm text-gray-500">{rotation}°</span>
+                            <span className="text-sm text-text-tertiary">{rotation}°</span>
                         </div>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setRotation((prev) => (prev - 90 + 360) % 360)}
-                                className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                className="flex-1 px-3 py-2 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -184,13 +184,13 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                             </button>
                             <button
                                 onClick={() => setRotation(0)}
-                                className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-3 py-2 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                             >
                                 {t('reset')}
                             </button>
                             <button
                                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                                className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                                className="flex-1 px-3 py-2 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 {t('rotateRight')}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,7 +205,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                             step={1}
                             value={rotation}
                             onChange={(e) => setRotation(Number(e.target.value))}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                            className="w-full h-2 bg-border-strong rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                     </div>
                 </div>
@@ -216,7 +216,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                         <button
                             onClick={onCancel}
                             disabled={loading}
-                            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-2.5 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {t('cancel')}
                         </button>

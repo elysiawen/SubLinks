@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { ToastProvider } from '@/components/ToastProvider';
 import { ConfirmProvider, useConfirm } from '@/components/ConfirmProvider';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTranslations } from 'next-intl';
 
 interface DashboardLayoutClientProps {
@@ -37,8 +38,8 @@ const SidebarItem = ({ href, label, icon, isActive, hasSubmenu, isOpen, onToggle
                     className={`
                         w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 group
                         ${isActive
-                            ? 'bg-blue-50 text-blue-600 font-medium shadow-sm ring-1 ring-blue-100'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-accent text-accent-foreground font-medium shadow-sm ring-1 ring-accent'
+                            : 'text-sidebar-foreground hover:bg-muted hover:text-text-primary'
                         }
                     `}
                 >
@@ -47,7 +48,7 @@ const SidebarItem = ({ href, label, icon, isActive, hasSubmenu, isOpen, onToggle
                         <span className="text-[15px]">{label}</span>
                     </div>
                     <svg
-                        className={`w-4 h-4 transition-all duration-200 text-gray-400 ${isOpen ? 'rotate-180 text-blue-500' : 'group-hover:text-gray-600'}`}
+                        className={`w-4 h-4 transition-all duration-200 text-text-quaternary ${isOpen ? 'rotate-180 text-accent-foreground' : 'group-hover:text-sidebar-foreground'}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -61,7 +62,7 @@ const SidebarItem = ({ href, label, icon, isActive, hasSubmenu, isOpen, onToggle
                         ${isOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}
                     `}
                 >
-                    <div className="pl-12 pr-2 space-y-1 py-1 relative before:absolute before:left-[29px] before:top-2 before:bottom-2 before:w-px before:bg-gray-200">
+                    <div className="pl-12 pr-2 space-y-1 py-1 relative before:absolute before:left-[29px] before:top-2 before:bottom-2 before:w-px before:bg-border-strong">
                         {children}
                     </div>
                 </div>
@@ -76,8 +77,8 @@ const SidebarItem = ({ href, label, icon, isActive, hasSubmenu, isOpen, onToggle
             className={`
                 flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group
                 ${isActive
-                    ? 'bg-blue-50 text-blue-600 font-medium shadow-sm ring-1 ring-blue-100'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-accent text-accent-foreground font-medium shadow-sm ring-1 ring-accent'
+                    : 'text-sidebar-foreground hover:bg-muted hover:text-text-primary'
                 }
             `}
         >
@@ -94,8 +95,8 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
         className={`
             block px-3 py-2 rounded-lg text-[13px] transition-all duration-200 relative
             ${isActive
-                ? 'text-blue-600 bg-blue-50/50 font-medium translate-x-1'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 hover:translate-x-1'
+                ? 'text-accent-foreground bg-accent/50 font-medium translate-x-1'
+                : 'text-text-tertiary hover:text-text-primary hover:bg-muted hover:translate-x-1'
             }
         `}
     >
@@ -130,14 +131,14 @@ export default function DashboardLayoutClient({ children, username, role, nickna
     return (
         <ToastProvider>
             <ConfirmProvider>
-                <div className="min-h-screen bg-gray-50">
+                <div className="min-h-screen bg-muted">
                     {/* Mobile Header */}
-                    <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 flex items-center sticky top-0 z-40 gap-3">
+                    <div className="lg:hidden bg-card/80 backdrop-blur-md border-b border-border-strong p-4 flex items-center sticky top-0 z-40 gap-3">
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 rounded-xl hover:bg-gray-100 transition-colors active:scale-95 duration-200 -ml-2"
+                            className="p-2 rounded-xl hover:bg-muted transition-colors active:scale-95 duration-200 -ml-2"
                         >
-                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
@@ -147,7 +148,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                 alt="Logo"
                                 className="w-8 h-8 rounded-lg shadow-sm"
                             />
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
+                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary">
                                 SubLinks
                             </h1>
                         </div>
@@ -165,7 +166,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                         {/* Sidebar */}
                         <aside
                             className={`
-                        fixed lg:sticky top-0 left-0 h-screen w-[280px] bg-white border-r border-gray-100 
+                        fixed lg:sticky top-0 left-0 h-screen w-[280px] bg-sidebar border-r border-sidebar-border
                         transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-50 lg:z-0
                         shadow-[4px_0_24px_-4px_rgba(0,0,0,0.02)]
                         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -181,16 +182,16 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                             className="w-10 h-10 rounded-xl shadow-lg transform transition-transform hover:scale-105 duration-300"
                                         />
                                         <div>
-                                            <h1 className="text-xl font-bold text-gray-900 tracking-tight">SubLinks</h1>
-                                            <p className="text-[10px] uppercase font-bold text-blue-500 tracking-widest mt-0.5">Dashboard</p>
+                                            <h1 className="text-xl font-bold text-text-primary tracking-tight">SubLinks</h1>
+                                            <p className="text-[10px] uppercase font-bold text-accent-foreground tracking-widest mt-0.5">Dashboard</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* User Profile Card */}
                                 <div className="px-4 mb-4">
-                                    <div className="p-3 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm group hover:shadow-md transition-all duration-300">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold border-2 border-white ring-1 ring-gray-100 overflow-hidden">
+                                    <div className="p-3 bg-gradient-to-br from-muted to-card rounded-xl border border-border flex items-center gap-3 shadow-sm group hover:shadow-md transition-all duration-300">
+                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-text-tertiary text-sm font-semibold border-2 border-card ring-1 ring-border overflow-hidden">
                                             {avatar ? (
                                                 <img src={avatar} alt="头像" className="w-full h-full object-cover" />
                                             ) : (
@@ -198,8 +199,8 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{nickname || username}</p>
-                                            <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                                            <p className="text-sm font-semibold text-text-primary truncate">{nickname || username}</p>
+                                            <p className="text-xs text-text-tertiary truncate flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
                                                 {tCommon('connected')}
                                             </p>
@@ -210,7 +211,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                 {/* Navigation */}
                                 <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-6">
                                     <div className="px-3 pb-2 pt-1">
-                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('mainFeatures')}</p>
+                                        <p className="text-[11px] font-bold text-text-quaternary uppercase tracking-wider">{t('mainFeatures')}</p>
                                     </div>
 
                                     <SidebarItem
@@ -236,7 +237,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                     />
 
                                     <div className="px-3 pb-2 pt-4">
-                                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('advancedConfig')}</p>
+                                        <p className="text-[11px] font-bold text-text-quaternary uppercase tracking-wider">{t('advancedConfig')}</p>
                                     </div>
 
                                     <SidebarItem
@@ -283,7 +284,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                         />
                                     </SidebarItem>
 
-                                    <div className="my-4 h-px bg-gray-100 mx-2" />
+                                    <div className="my-4 h-px bg-border mx-2" />
 
                                     <SidebarItem
                                         icon="⚙️"
@@ -302,14 +303,15 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                 </nav>
 
                                 {/* Footer / Logout */}
-                                <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-2">
-                                    <div className="flex justify-center mb-1">
+                                <div className="p-4 border-t border-sidebar-border bg-muted/50 space-y-2">
+                                    <div className="flex justify-center gap-2 mb-1">
+                                        <ThemeToggle />
                                         <LanguageSwitcher />
                                     </div>
                                     {role === 'admin' && (
                                         <Link
                                             href="/admin"
-                                            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-blue-600 bg-blue-50 border border-blue-100/60 rounded-xl hover:bg-blue-100 hover:border-blue-200 hover:shadow-sm transition-all duration-200 group"
+                                            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-accent-foreground bg-accent border border-accent/60 rounded-xl hover:bg-accent hover:border-accent hover:shadow-sm transition-all duration-200 group"
                                         >
                                             <span className="group-hover:scale-110 transition-transform duration-200">🛡️</span>
                                             <span>{t('adminPanel')}</span>
@@ -326,7 +328,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                                 }
                                             });
                                         }}
-                                        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-red-600 bg-white border border-gray-200/60 rounded-xl hover:bg-red-50 hover:border-red-100 hover:text-red-700 hover:shadow-sm transition-all duration-200 group"
+                                        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-destructive bg-card border border-border-strong/60 rounded-xl hover:bg-error hover:border-error hover:text-destructive-foreground hover:shadow-sm transition-all duration-200 group"
                                     >
                                         <span className="group-hover:-translate-x-0.5 transition-transform duration-200">🚪</span>
                                         <span>{t('logout')}</span>

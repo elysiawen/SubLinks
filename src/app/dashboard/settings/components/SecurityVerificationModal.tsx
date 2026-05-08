@@ -51,13 +51,13 @@ export default function SecurityVerificationModal({
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.securityModal.passwordLabel')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.securityModal.passwordLabel')}</label>
                     <input
                         type="password"
                         autoFocus
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                         placeholder={t('settings.securityModal.passwordPlaceholder')}
                     />
                 </div>
@@ -72,7 +72,7 @@ export default function SecurityVerificationModal({
                     />
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                        className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                     >
                         {t('settings.securityModal.cancel')}
                     </button>

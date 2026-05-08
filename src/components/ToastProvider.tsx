@@ -79,9 +79,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         className={`
                             pointer-events-auto min-w-[200px] max-w-sm px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 transform transition-all duration-300
                             ${toast.isExiting ? 'translate-x-full opacity-0' : 'animate-slide-in-right'}
-                            ${toast.type === 'success' ? 'bg-white border-green-100 text-green-800' : ''}
-                            ${toast.type === 'error' ? 'bg-white border-red-100 text-red-800' : ''}
-                            ${toast.type === 'info' ? 'bg-white border-blue-100 text-blue-800' : ''}
+                            ${toast.type === 'success' ? 'bg-card border-success text-success-foreground' : ''}
+                            ${toast.type === 'error' ? 'bg-card border-error text-error-foreground' : ''}
+                            ${toast.type === 'info' ? 'bg-card border-info text-info-foreground' : ''}
                         `}
                     >
                         <span className="text-xl">

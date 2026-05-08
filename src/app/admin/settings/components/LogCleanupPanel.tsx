@@ -59,20 +59,20 @@ export default function LogCleanupPanel({ initialDays }: { initialDays: number }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
                 <span className="mr-2">🗑️</span> {t('heading')}
             </h3>
 
             <div className="space-y-6">
                 {/* Retention Days Selection */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('retentionLabel')}</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('retentionLabel')}</label>
                     <div className="flex items-center gap-4">
                         <select
                             value={mode}
                             onChange={(e) => setMode(e.target.value)}
-                            className="block w-48 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white text-gray-900"
+                            className="block w-48 rounded-lg border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-card text-text-primary"
                         >
                             <option value="30">{t('preset30')}</option>
                             <option value="180">{t('preset180')}</option>
@@ -88,10 +88,10 @@ export default function LogCleanupPanel({ initialDays }: { initialDays: number }
                                     value={customDays}
                                     onChange={(e) => setCustomDays(parseInt(e.target.value) || 0)}
                                     min="0"
-                                    className="block w-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    className="block w-24 rounded-lg border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                                     placeholder={t('daysPlaceholder')}
                                 />
-                                <span className="text-gray-500 text-sm">{t('daysSuffix')}</span>
+                                <span className="text-text-tertiary text-sm">{t('daysSuffix')}</span>
                             </div>
                         )}
                     </div>
@@ -99,36 +99,36 @@ export default function LogCleanupPanel({ initialDays }: { initialDays: number }
 
                 {/* Log Types Selection */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('scopeLabel')}</label>
-                    <div className="flex items-center flex-wrap gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('scopeLabel')}</label>
+                    <div className="flex items-center flex-wrap gap-4 bg-muted p-4 rounded-lg border border-border-strong">
+                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded transition">
                             <input
                                 type="checkbox"
                                 checked={logTypes.api}
                                 onChange={(e) => setLogTypes(prev => ({ ...prev, api: e.target.checked }))}
-                                className="rounded text-blue-600 focus:ring-blue-500 border-gray-300 h-4 w-4"
+                                className="rounded text-accent-foreground focus:ring-blue-500 border-border-input h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-700">{t('apiLogs')}</span>
+                            <span className="text-sm font-medium text-text-secondary">{t('apiLogs')}</span>
                         </label>
 
-                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition">
+                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded transition">
                             <input
                                 type="checkbox"
                                 checked={logTypes.web}
                                 onChange={(e) => setLogTypes(prev => ({ ...prev, web: e.target.checked }))}
-                                className="rounded text-blue-600 focus:ring-blue-500 border-gray-300 h-4 w-4"
+                                className="rounded text-accent-foreground focus:ring-blue-500 border-border-input h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-700">{t('webLogs')}</span>
+                            <span className="text-sm font-medium text-text-secondary">{t('webLogs')}</span>
                         </label>
 
-                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition">
+                        <label className="inline-flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded transition">
                             <input
                                 type="checkbox"
                                 checked={logTypes.system}
                                 onChange={(e) => setLogTypes(prev => ({ ...prev, system: e.target.checked }))}
-                                className="rounded text-blue-600 focus:ring-blue-500 border-gray-300 h-4 w-4"
+                                className="rounded text-accent-foreground focus:ring-blue-500 border-border-input h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-700">{t('systemLogs')}</span>
+                            <span className="text-sm font-medium text-text-secondary">{t('systemLogs')}</span>
                         </label>
 
                         <div className="flex-1"></div>
@@ -157,7 +157,7 @@ export default function LogCleanupPanel({ initialDays }: { initialDays: number }
                     </div>
                 </div>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-tertiary">
                     💡 {t('helpText', { days: getDays() })}
                 </p>
             </div>

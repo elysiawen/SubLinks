@@ -52,41 +52,41 @@ export default function PasswordSection() {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-6 border-b border-border">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     {t('settings.password.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">{t('settings.password.description')}</p>
+                <p className="text-sm text-text-tertiary mt-1">{t('settings.password.description')}</p>
             </div>
             <div className="p-6 space-y-4 max-w-lg">
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.password.current')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.password.current')}</label>
                     <input
                         type="password"
                         value={oldPassword}
                         onChange={(e) => setOldPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         placeholder={t('settings.password.currentPlaceholder')}
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.password.new')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.password.new')}</label>
                     <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         placeholder={t('settings.password.newPlaceholder')}
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.password.confirm')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.password.confirm')}</label>
                     <input
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         placeholder={t('settings.password.confirmPlaceholder')}
                     />
                 </div>

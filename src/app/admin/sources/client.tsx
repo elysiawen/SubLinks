@@ -400,9 +400,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                     📡 {t('title')}
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{sources.length}</span>
+                    <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{sources.length}</span>
                 </h2>
                 <div className="flex gap-2 flex-wrap">
                     <button
@@ -447,9 +447,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {/* Segmented Switcher for Adding */}
                         {isAdding && !editingSource && (
                             <div className="flex justify-center mb-6">
-                                <div className="relative flex p-1 bg-gray-100 rounded-xl w-full max-w-sm">
+                                <div className="relative flex p-1 bg-muted rounded-xl w-full max-w-sm">
                                     <div
-                                        className={`absolute h-full top-0 w-1/2 bg-white rounded-lg shadow-sm transition-all duration-300 ease-out`}
+                                        className={`absolute h-full top-0 w-1/2 bg-card rounded-lg shadow-sm transition-all duration-300 ease-out`}
                                         style={{
                                             left: formType === 'url' ? '4px' : '50%',
                                             width: 'calc(50% - 4px)',
@@ -460,14 +460,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     <button
                                         type="button"
                                         onClick={() => setFormType('url')}
-                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'url' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'url' ? 'text-accent-foreground' : 'text-text-tertiary hover:text-text-secondary'}`}
                                     >
                                         🔗 {t('urlSubscription')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setFormType('static')}
-                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`relative flex-1 py-1.5 text-sm font-semibold transition-colors duration-200 ${formType === 'static' ? 'text-accent-foreground' : 'text-text-tertiary hover:text-text-secondary'}`}
                                     >
                                         📋 {t('staticContent')}
                                     </button>
@@ -478,12 +478,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {/* Common Name field - Only for URL type since Static has its own name step or accepts it */}
                         {(editingSource || (isAdding && formType === 'url')) && (
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('sourceName')}</label>
+                                <label className="block text-sm font-semibold text-text-secondary mb-2">{t('sourceName')}</label>
                                 <input
                                     type="text"
                                     value={formName}
                                     onChange={(e) => setFormName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                     placeholder={t('sourceNamePlaceholder')}
                                     autoFocus
                                 />
@@ -492,7 +492,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
 
                         {/* Editing a static source: show type badge */}
                         {editingSource && editingSource.type === 'static' && (
-                            <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 p-3 rounded-lg">
                                 <span>📋</span>
                                 <span>{t('staticTypeHint')}</span>
                             </div>
@@ -501,36 +501,36 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {/* URL-type fields */}
                         <div className={formType === 'url' ? 'block space-y-4' : 'hidden'}>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('subscriptionUrl')}</label>
+                                <label className="block text-sm font-semibold text-text-secondary mb-2">{t('subscriptionUrl')}</label>
                                 <input
                                     type="url"
                                     value={formUrl}
                                     onChange={(e) => setFormUrl(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                     placeholder="https://..."
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('cacheDuration')}</label>
+                                <label className="block text-sm font-semibold text-text-secondary mb-2">{t('cacheDuration')}</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="number"
                                         value={formCacheDuration}
                                         onChange={(e) => setFormCacheDuration(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="flex-1 border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                         min="0.1"
                                         step="0.1"
                                     />
                                     <select
                                         value={formDurationUnit}
                                         onChange={(e) => setFormDurationUnit(e.target.value as 'hours' | 'minutes')}
-                                        className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                        className="border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-card"
                                     >
                                         <option value="hours">{t('hours')}</option>
                                         <option value="minutes">{t('minutes')}</option>
                                     </select>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-text-tertiary mt-1">
                                     {t('cacheHint')}
                                     {formCacheDuration !== '0' && (
                                         <span>{t('currentDuration', { value: formCacheDuration, unit: formDurationUnit === 'minutes' ? t('minutes') : t('hours') })}</span>
@@ -556,13 +556,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         {/* Static-type editing: show append textarea */}
                         {formType === 'static' && editingSource && (
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold text-text-secondary mb-2">
                                     {t('appendNodes')}
                                 </label>
                                 <textarea
                                     value={formStaticContent}
                                     onChange={(e) => setFormStaticContent(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-sm"
+                                    className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-sm"
                                     rows={5}
                                     placeholder={t('appendPlaceholder')}
                                 />
@@ -590,7 +590,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         setEditingSource(null);
                                         setIsAdding(false);
                                     }}
-                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                    className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                                 >
                                     {t('cancelAdd')}
                                 </button>
@@ -601,18 +601,18 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
             </Modal>
 
             {sources.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-text-quaternary">
                     {t('noSources')}
                 </div>
             ) : (
                 <div className="space-y-4">
                     {sources.map((source, index) => (
-                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md transition-shadow overflow-hidden">
+                        <div key={index} className="bg-card rounded-xl shadow-sm border border-border-strong p-4 sm:p-6 hover:shadow-md transition-shadow overflow-hidden">
                             <div className="flex flex-col md:flex-row md:items-center gap-4">
                                 {/* Left: Source Info */}
                                 <div className="flex-1 min-w-0 overflow-hidden">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap min-w-0">
-                                        <h3 className="text-lg font-semibold text-gray-800 truncate">{source.name}</h3>
+                                        <h3 className="text-lg font-semibold text-text-primary truncate">{source.name}</h3>
 
                                         <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                                             {/* Enabled Toggle */}
@@ -620,8 +620,8 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                 onClick={() => handleToggleEnabled(source)}
                                                 disabled={loadingAction}
                                                 className={`px-2 py-0.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${source.enabled !== false
-                                                    ? 'bg-green-50 text-green-600 hover:bg-green-100'
-                                                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                    ? 'bg-green-50 dark:bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/25'
+                                                    : 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/25'
                                                     }`}
                                                 title={source.enabled !== false ? t('clickToDisable') : t('clickToEnable')}
                                             >
@@ -636,7 +636,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                                 <button
                                                     onClick={() => handleSetDefault(source.name)}
                                                     disabled={loadingAction}
-                                                    className="bg-gray-50 text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+                                                    className="bg-muted text-text-tertiary hover:bg-yellow-50 hover:text-yellow-600 px-2 py-0.5 rounded text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
                                                     title={t('setAsDefault')}
                                                 >
                                                     ☆ <span className="hidden sm:inline">{t('setAsDefault')}</span><span className="sm:hidden">⭐</span>
@@ -645,13 +645,13 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         </div>
                                     </div>
                                     {source.type === 'static' ? (
-                                        <p className="text-xs text-gray-400 mb-2">📋 {t('staticSource')}</p>
+                                        <p className="text-xs text-text-quaternary mb-2">📋 {t('staticSource')}</p>
                                     ) : (
-                                        <p className="text-xs text-gray-400 break-all mb-2">{source.url}</p>
+                                        <p className="text-xs text-text-quaternary break-all mb-2">{source.url}</p>
                                     )}
                                     <div className="flex flex-wrap gap-2 text-xs">
                                         {source.type !== 'static' && (
-                                            <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 text-purple-600 px-2 py-1 rounded" : "bg-blue-50 text-blue-600 px-2 py-1 rounded"}>
+                                            <span className={(source.cacheDuration === 0 || Number(source.cacheDuration) === 0) ? "bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 px-2 py-1 rounded" : "bg-accent text-accent-foreground px-2 py-1 rounded"}>
                                                 {(source.cacheDuration === 0 || Number(source.cacheDuration) === 0)
                                                     ? `♾️ ${t('neverExpire')}`
                                                     : `🕒 ${(source.cacheDuration ?? 24) < 1
@@ -662,39 +662,39 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         )}
 
                                         {source.lastUpdated && (
-                                            <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                                            <span className={`px-2 py-1 rounded flex items-center gap-1 ${source.status === 'failure' ? 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-muted text-text-secondary'}`}>
                                                 {source.status === 'failure' ? '❌' : '✅'}
                                                 {formatDistanceToNow(source.lastUpdated, { addSuffix: true, locale: dateFnsLocale })}
                                             </span>
                                         )}
                                         {source.status === 'failure' && source.error && (
-                                            <span className="bg-red-50 text-red-600 px-2 py-1 rounded" title={source.error}>
+                                            <span className="bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-1 rounded" title={source.error}>
                                                 ⚠️ {source.error}
                                             </span>
                                         )}
                                     </div>
 
                                     {source.traffic && (
-                                        <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs border border-gray-100">
+                                        <div className="mt-3 bg-muted rounded-lg p-3 text-xs border border-border">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-gray-500 font-medium">{t('trafficUsage')}</span>
-                                                <span className="text-blue-600 font-bold">
+                                                <span className="text-text-tertiary font-medium">{t('trafficUsage')}</span>
+                                                <span className="text-accent-foreground font-bold">
                                                     {formatBytes(source.traffic.upload + source.traffic.download)} / {formatBytes(source.traffic.total)}
                                                 </span>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
+                                            <div className="w-full bg-border-strong rounded-full h-1.5 mb-2 overflow-hidden">
                                                 <div
                                                     className="bg-blue-500 h-1.5 rounded-full"
                                                     style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-gray-500">
+                                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-text-tertiary">
                                                 <div>
                                                     ↑ {formatBytes(source.traffic.upload)}
                                                     <span className="mx-1">|</span>
                                                     ↓ {formatBytes(source.traffic.download)}
                                                 </div>
-                                                <div className="text-gray-400 sm:text-right">
+                                                <div className="text-text-quaternary sm:text-right">
                                                     {source.traffic.expire ? t('expireDate', { date: new Date(source.traffic.expire * 1000).toLocaleDateString() }) : t('noExpire')}
                                                 </div>
                                             </div>
@@ -708,7 +708,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                         <button
                                             onClick={() => handleRefreshSingle(source.name)}
                                             disabled={loadingAction}
-                                            className="flex-1 md:w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                            className="flex-1 md:w-full bg-green-50 dark:bg-green-500/15 text-green-600 dark:text-green-400 px-3 py-2 rounded-lg hover:bg-green-100 dark:hover:bg-green-500/25 disabled:opacity-50 transition-colors font-medium text-sm"
                                             title={t('refreshTitle')}
                                         >
                                             🔄 <span className="hidden sm:inline">{t('refresh')}</span>
@@ -717,14 +717,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                     <button
                                         onClick={() => source.type === 'static' ? setEditingStaticSource(source.name) : openEditModal(source)}
                                         disabled={loadingAction}
-                                        className="flex-1 md:w-full bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                        className="flex-1 md:w-full bg-accent text-accent-foreground px-3 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
                                         ✏️ <span className="hidden sm:inline">{source.type === 'static' ? t('manage') : t('edit')}</span>
                                     </button>
                                     <button
                                         onClick={() => handleDelete(source.name)}
                                         disabled={loadingAction}
-                                        className="flex-1 md:w-full bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-medium text-sm"
+                                        className="flex-1 md:w-full bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/25 disabled:opacity-50 transition-colors font-medium text-sm"
                                     >
                                         🗑️ <span className="hidden sm:inline">{t('delete')}</span>
                                     </button>
@@ -753,14 +753,14 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                 title={refreshTarget ? t('refreshSource', { name: refreshTarget }) : t('refreshAll')}
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-text-secondary">
                         {refreshTarget
                             ? t('refreshConfirm', { name: refreshTarget })
                             : t('refreshAllConfirm')
                         }
                     </p>
 
-                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                         <div className="relative">
                             <input
                                 type="checkbox"
@@ -768,12 +768,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 onChange={(e) => setRefreshAndCache(e.target.checked)}
                                 className="sr-only peer"
                             />
-                            <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 transition-colors"></div>
-                            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                            <div className="w-10 h-5 bg-border-strong rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+                            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-card rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
                         </div>
                         <div className="flex-1">
-                            <div className="font-medium text-gray-900 text-sm">{t('cacheSubscriptions')}</div>
-                            <div className="text-xs text-gray-500">{t('cacheSubscriptionsDesc')}</div>
+                            <div className="font-medium text-text-primary text-sm">{t('cacheSubscriptions')}</div>
+                            <div className="text-xs text-text-tertiary">{t('cacheSubscriptionsDesc')}</div>
                         </div>
                     </label>
 
@@ -795,7 +795,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         </button>
                         <button
                             onClick={() => setShowRefreshModal(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                         >
                             {t('cancelAdd')}
                         </button>

@@ -17,8 +17,8 @@ export default async function LogsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">{t('pageTitle')}</h1>
-                    <p className="text-gray-600">{t('pageDesc')}</p>
+                    <h1 className="text-2xl font-bold text-text-primary mb-2">{t('pageTitle')}</h1>
+                    <p className="text-text-secondary">{t('pageDesc')}</p>
                 </div>
             </div>
 

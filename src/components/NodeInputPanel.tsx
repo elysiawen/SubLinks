@@ -167,9 +167,9 @@ export default function NodeInputPanel({
         }
     };
 
-    const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white transition placeholder:text-gray-400';
+    const inputClass = 'w-full px-3 py-2 border border-border-strong rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-card transition placeholder:text-text-quaternary';
     const monoInputClass = `${inputClass} font-mono`;
-    const textareaClass = 'w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-mono resize-y outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-gray-50 transition placeholder:text-gray-400';
+    const textareaClass = 'w-full px-3 py-2.5 border border-border-strong rounded-lg text-sm font-mono resize-y outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-muted transition placeholder:text-text-quaternary';
     const btnClass = 'self-start px-4 py-2 text-sm font-medium rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2';
 
     return (
@@ -186,10 +186,10 @@ export default function NodeInputPanel({
             `}</style>
 
             {/* Input method tabs with sliding indicator */}
-            <div ref={tabBarRef} className="relative flex gap-1 p-1 bg-gray-50 border border-gray-200 rounded-lg w-fit">
+            <div ref={tabBarRef} className="relative flex gap-1 p-1 bg-muted border border-border-strong rounded-lg w-fit">
                 {/* Sliding indicator */}
                 <div
-                    className="absolute top-1 bottom-1 rounded-md bg-white shadow-sm border border-gray-200 transition-all duration-250 ease-out pointer-events-none z-0"
+                    className="absolute top-1 bottom-1 rounded-md bg-card shadow-sm border border-border-strong transition-all duration-250 ease-out pointer-events-none z-0"
                     style={{ left: indicator.left, width: indicator.width }}
                 />
                 {NODE_INPUT_TABS.map(tab => (
@@ -199,7 +199,7 @@ export default function NodeInputPanel({
                         onClick={() => handleTabChange(tab.key)}
                         className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 ${nodeTab === tab.key
                             ? 'text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
+                            : 'text-text-tertiary hover:text-text-secondary'
                             }`}
                     >
                         {tab.label}
@@ -235,36 +235,36 @@ export default function NodeInputPanel({
                     <div className="flex flex-col gap-3">
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">{t('protocol')}</label>
+                                <label className="text-xs font-medium text-text-secondary">{t('protocol')}</label>
                                 <select
                                     value={protocol}
                                     onChange={e => setProtocol(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white transition"
+                                    className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-card transition"
                                 >
                                     {PROTOCOLS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                 </select>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">{t('nodeName')} <span className="text-red-400">*</span></label>
+                                <label className="text-xs font-medium text-text-secondary">{t('nodeName')} <span className="text-red-400">*</span></label>
                                 <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('namePlaceholder')} className={inputClass} />
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                             <div className="col-span-2 flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">{t('serverAddress')} <span className="text-red-400">*</span></label>
+                                <label className="text-xs font-medium text-text-secondary">{t('serverAddress')} <span className="text-red-400">*</span></label>
                                 <input type="text" value={server} onChange={e => setServer(e.target.value)} placeholder="example.com" className={monoInputClass} />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-gray-600">{t('port')} <span className="text-red-400">*</span></label>
+                                <label className="text-xs font-medium text-text-secondary">{t('port')} <span className="text-red-400">*</span></label>
                                 <input type="number" value={port} onChange={e => setPort(e.target.value)} placeholder="443" className={monoInputClass} />
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-600">{passwordLabel}</label>
+                            <label className="text-xs font-medium text-text-secondary">{passwordLabel}</label>
                             <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder={passwordPlaceholder} className={monoInputClass} />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-500">{t('extraConfig')} <span className="font-normal">({t('optional')}, JSON)</span></label>
+                            <label className="text-xs font-medium text-text-tertiary">{t('extraConfig')} <span className="font-normal">({t('optional')}, JSON)</span></label>
                             <textarea
                                 value={extra}
                                 onChange={e => setExtra(e.target.value)}

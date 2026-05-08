@@ -25,7 +25,7 @@ export default function AdminShell({
     return (
         <ToastProvider>
             <ConfirmProvider>
-                <div className="h-screen bg-gray-50 flex font-sans overflow-hidden">
+                <div className="h-screen bg-muted flex font-sans overflow-hidden">
                     {/* Desktop Sidebar */}
                     <div className="hidden md:flex flex-col w-64 fixed inset-y-0 z-50">
                         <AdminSidebar username={username} />
@@ -41,11 +41,11 @@ export default function AdminShell({
                             />
 
                             {/* Drawer */}
-                            <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl flex flex-col animate-slide-in-left">
+                            <div className="fixed inset-y-0 left-0 w-64 bg-sidebar shadow-2xl flex flex-col animate-slide-in-left">
                                 <AdminSidebar username={username} />
                                 <button
                                     onClick={() => setSidebarOpen(false)}
-                                    className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all active:scale-95"
+                                    className="absolute top-4 right-4 p-2 text-text-quaternary hover:text-text-secondary hover:bg-muted rounded-full transition-all active:scale-95"
                                 >
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -58,16 +58,16 @@ export default function AdminShell({
                     {/* Main Content Wrapper */}
                     <div className="flex-1 flex flex-col md:pl-64 h-full">
                         {/* Mobile Header */}
-                        <div className="md:hidden bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 flex items-center justify-start gap-4 shadow-sm sticky top-0 z-30 transition-all">
+                        <div className="md:hidden bg-card/80 backdrop-blur-md border-b border-border-strong p-4 flex items-center justify-start gap-4 shadow-sm sticky top-0 z-30 transition-all">
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-transform active:scale-95"
+                                className="p-2 -ml-2 text-text-secondary hover:bg-muted rounded-lg transition-transform active:scale-95"
                             >
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <span className="font-bold text-gray-800 text-lg tracking-tight">SubLink Admin</span>
+                            <span className="font-bold text-text-primary text-lg tracking-tight">SubLink Admin</span>
                         </div>
 
                         {/* Content Area */}

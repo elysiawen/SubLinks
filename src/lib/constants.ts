@@ -14,14 +14,14 @@ export const PROTOCOLS = [
 ] as const;
 
 export const PROTOCOL_COLORS: Record<string, string> = {
-    vmess: 'bg-blue-100 text-blue-700',
-    vless: 'bg-violet-100 text-violet-700',
-    trojan: 'bg-red-100 text-red-700',
-    ss: 'bg-green-100 text-green-700',
-    hysteria2: 'bg-orange-100 text-orange-700',
-    anytls: 'bg-cyan-100 text-cyan-700',
-    tuic: 'bg-pink-100 text-pink-700',
-    wireguard: 'bg-emerald-100 text-emerald-700',
+    vmess: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
+    vless: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+    trojan: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+    ss: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
+    hysteria2: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
+    anytls: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
+    tuic: 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300',
+    wireguard: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
 };
 
 /** UUID-based protocols */

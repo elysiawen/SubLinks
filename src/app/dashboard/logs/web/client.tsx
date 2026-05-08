@@ -35,21 +35,21 @@ export default function WebLogsClient({
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">{t('logs.web.heading')}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{t('logs.web.description')}</p>
+                    <h1 className="text-2xl font-bold text-text-primary">{t('logs.web.heading')}</h1>
+                    <p className="text-sm text-text-tertiary mt-1">{t('logs.web.description')}</p>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 {/* Mobile View (Cards) */}
                 <div className="md:hidden divide-y divide-gray-100">
                     {logs.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">{t('logs.web.empty')}</div>
+                        <div className="p-6 text-center text-text-tertiary">{t('logs.web.empty')}</div>
                     ) : (
                         logs.map((log) => (
                             <div key={log.id} className="p-4 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-500 font-mono">
+                                    <span className="text-sm font-medium text-text-tertiary font-mono">
                                         {formatDate(log.timestamp)}
                                     </span>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${log.status === 200
@@ -59,12 +59,12 @@ export default function WebLogsClient({
                                         {log.status}
                                     </span>
                                 </div>
-                                <div className="text-sm font-medium text-gray-800 break-all font-mono">
+                                <div className="text-sm font-medium text-text-primary break-all font-mono">
                                     {log.path}
                                 </div>
-                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                <div className="flex items-center justify-between text-xs text-text-tertiary">
                                     <span className="font-mono">{log.ip}</span>
-                                    <span className="bg-gray-100 px-2 py-0.5 rounded truncate max-w-[120px]" title={log.ua}>
+                                    <span className="bg-muted px-2 py-0.5 rounded truncate max-w-[120px]" title={log.ua}>
                                         {log.ua}
                                     </span>
                                 </div>
@@ -76,7 +76,7 @@ export default function WebLogsClient({
                 {/* Desktop View (Table) */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                        <thead className="bg-muted text-text-tertiary font-medium border-b border-border">
                             <tr>
                                 <th className="px-6 py-4">{t('logs.web.time')}</th>
                                 <th className="px-6 py-4">{t('logs.web.path')}</th>
@@ -88,23 +88,23 @@ export default function WebLogsClient({
                         <tbody className="divide-y divide-gray-100">
                             {logs.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-text-tertiary">
                                         {t('logs.web.empty')}
                                     </td>
                                 </tr>
                             ) : (
                                 logs.map((log) => (
-                                    <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-gray-600 whitespace-nowrap font-mono">
+                                    <tr key={log.id} className="hover:bg-muted transition-colors">
+                                        <td className="px-6 py-4 text-text-secondary whitespace-nowrap font-mono">
                                             {formatDate(log.timestamp)}
                                         </td>
-                                        <td className="px-6 py-4 font-mono text-gray-700">
+                                        <td className="px-6 py-4 font-mono text-text-secondary">
                                             {log.path}
                                         </td>
-                                        <td className="px-6 py-4 font-mono text-gray-600">
+                                        <td className="px-6 py-4 font-mono text-text-secondary">
                                             {log.ip}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 max-w-xs truncate" title={log.ua}>
+                                        <td className="px-6 py-4 text-text-secondary max-w-xs truncate" title={log.ua}>
                                             {log.ua}
                                         </td>
                                         <td className="px-6 py-4">

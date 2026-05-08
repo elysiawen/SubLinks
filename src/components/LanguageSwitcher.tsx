@@ -30,7 +30,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         <div ref={ref} className={`relative ${className ?? ''}`}>
             <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-muted rounded-lg transition-colors"
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3c2.5 2.8 3.9 6.3 3.9 9s-1.4 6.2-3.9 9c-2.5-2.8-3.9-6.3-3.9-9s1.4-6.2 3.9-9z" />
@@ -42,20 +42,20 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             </button>
 
             {open && (
-                <div className="absolute bottom-full left-0 mb-1 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-[100] animate-fade-in">
+                <div className="absolute bottom-full left-0 mb-1 w-40 bg-card rounded-xl shadow-lg border border-border-strong py-1 z-[100] animate-fade-in">
                     {LOCALES.map(l => (
                         <button
                             key={l.code}
                             onClick={() => { setOpen(false); switchLocale(l.code); }}
                             className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${locale === l.code
-                                ? 'text-blue-600 bg-blue-50 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50'
+                                ? 'text-accent-foreground bg-accent font-medium'
+                                : 'text-text-secondary hover:bg-muted'
                                 }`}
                         >
                             <span className="text-base">{l.flag}</span>
                             <span>{l.label}</span>
                             {locale === l.code && (
-                                <svg className="w-4 h-4 ml-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 ml-auto text-accent-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             )}

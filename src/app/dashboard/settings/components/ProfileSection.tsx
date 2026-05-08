@@ -127,36 +127,36 @@ export default function ProfileSection({ username, initialNickname, initialAvata
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-6 border-b border-border">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     {t('settings.profile.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">{t('settings.profile.description')}</p>
+                <p className="text-sm text-text-tertiary mt-1">{t('settings.profile.description')}</p>
             </div>
             <div className="p-6 space-y-4 max-w-lg">
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.profile.username')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.profile.username')}</label>
                     <input
                         type="text"
                         value={username}
                         disabled
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 bg-muted text-text-tertiary cursor-not-allowed"
                     />
-                    <p className="text-xs text-gray-500 mt-1">{t('settings.profile.usernameHelp')}</p>
+                    <p className="text-xs text-text-tertiary mt-1">{t('settings.profile.usernameHelp')}</p>
                 </div>
 
                 {/* Avatar Upload */}
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">{t('settings.profile.avatar')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-3">{t('settings.profile.avatar')}</label>
                     <div className="flex items-center gap-4">
                         {/* Avatar Preview */}
                         <div className="relative">
-                            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+                            <div className="w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-border-strong">
                                 {avatar ? (
                                     <img src={avatar} alt={t('settings.profile.avatarAlt')} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                                    <div className="w-full h-full flex items-center justify-center text-text-quaternary text-2xl">
                                         👤
                                     </div>
                                 )}
@@ -191,27 +191,27 @@ export default function ProfileSection({ username, initialNickname, initialAvata
                                 <button
                                     onClick={handleAvatarDelete}
                                     disabled={avatarUploading}
-                                    className="ml-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="ml-2 px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {t('settings.profile.deleteAvatar')}
                                 </button>
                             )}
-                            <p className="text-xs text-gray-500">{t('settings.profile.avatarHelp')}</p>
+                            <p className="text-xs text-text-tertiary">{t('settings.profile.avatarHelp')}</p>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.profile.nickname')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.profile.nickname')}</label>
                     <input
                         type="text"
                         value={nickname}
                         onChange={(e) => setNickname(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         placeholder={t('settings.profile.nicknamePlaceholder')}
                         maxLength={50}
                     />
-                    <p className="text-xs text-gray-500 mt-1">{t('settings.profile.nicknameHelp')}</p>
+                    <p className="text-xs text-text-tertiary mt-1">{t('settings.profile.nicknameHelp')}</p>
                 </div>
                 <div className="pt-2">
                     <SubmitButton

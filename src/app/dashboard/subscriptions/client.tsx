@@ -121,7 +121,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">{t('subscriptions.heading', { count: subs.length })}</h2>
+                <h2 className="text-2xl font-bold text-text-primary">{t('subscriptions.heading', { count: subs.length })}</h2>
                 <button
                     onClick={openCreate}
                     className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 text-sm font-medium"
@@ -136,65 +136,65 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                     return (
                         <div
                             key={sub.token}
-                            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-all duration-200 group"
+                            className="bg-card p-6 rounded-2xl shadow-sm border border-border relative hover:shadow-md transition-all duration-200 group"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-lg font-bold text-gray-800">
+                                        <h3 className="text-lg font-bold text-text-primary">
                                             {sub.name}
                                         </h3>
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800' : 'bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800'}`}>
                                             {sub.enabled ? t('subscriptions.statusEnabled') : t('subscriptions.statusDisabled')}
                                         </span>
-                                        {sub.groupId && sub.groupId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 border border-purple-200">Custom Group</span>}
-                                        {sub.ruleId && sub.ruleId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 border border-indigo-200">Custom Rules</span>}
+                                        {sub.groupId && sub.groupId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">Custom Group</span>}
+                                        {sub.ruleId && sub.ruleId !== 'default' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">Custom Rules</span>}
                                     </div>
-                                    <p className="text-xs text-gray-400 font-mono mt-1 tracking-wide">Token: {sub.token}</p>
+                                    <p className="text-xs text-text-quaternary font-mono mt-1 tracking-wide">Token: {sub.token}</p>
                                 </div>
                                 <div className="space-x-3">
                                     <button
                                         onClick={() => handleToggle(sub)}
-                                        className={`text-sm hover:underline font-medium ${sub.enabled ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800'}`}
+                                        className={`text-sm hover:underline font-medium ${sub.enabled ? 'text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300' : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300'}`}
                                     >
                                         {sub.enabled ? t('subscriptions.statusDisabled') : t('subscriptions.statusEnabled')}
                                     </button>
-                                    <button onClick={() => openEdit(sub)} className="text-blue-600 text-sm hover:underline font-medium">{t('custom.groups.edit')}</button>
+                                    <button onClick={() => openEdit(sub)} className="text-accent-foreground text-sm hover:underline font-medium">{t('custom.groups.edit')}</button>
                                     <button onClick={() => handleDelete(sub.token)} className="text-red-500 text-sm hover:underline font-medium">{t('custom.groups.delete')}</button>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-between mb-4 group-hover:border-blue-100 transition-colors">
-                                <code className="text-xs text-gray-600 break-all line-clamp-1 font-mono">{link}</code>
+                            <div className="bg-muted p-3 rounded-lg border border-border flex items-center justify-between mb-4 group-hover:border-blue-100 dark:group-hover:border-blue-800 transition-colors">
+                                <code className="text-xs text-text-secondary break-all line-clamp-1 font-mono">{link}</code>
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(link);
                                         success(t('subscriptions.copySuccess'));
                                     }}
-                                    className="ml-3 text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200 transition-all shrink-0 font-medium"
+                                    className="ml-3 text-xs bg-card border border-border-strong px-3 py-1.5 rounded-md text-text-secondary hover:bg-muted hover:text-accent-foreground hover:border-blue-200 dark:hover:border-blue-800 transition-all shrink-0 font-medium"
                                 >
                                     {t('subscriptions.copyLink')}
                                 </button>
                             </div>
 
                             {/* Upstream Sources Display */}
-                            <div className="mb-4 text-xs text-gray-600">
-                                <span className="font-semibold text-gray-500 mr-2">{t('subscriptions.sourcesLabel')}</span>
+                            <div className="mb-4 text-xs text-text-secondary">
+                                <span className="font-semibold text-text-tertiary mr-2">{t('subscriptions.sourcesLabel')}</span>
                                 <div className="inline-flex flex-wrap gap-2 mt-1">
                                     {(sub.selectedSources && sub.selectedSources.length > 0) ? (
                                         sub.selectedSources.map(sourceName => {
                                             const source = availableSources.find(s => s.name === sourceName);
                                             if (!source) {
                                                 return (
-                                                    <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-500 flex items-center gap-1">
+                                                    <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/15 text-red-500 dark:text-red-400 flex items-center gap-1">
                                                         🗑️ {sourceName} ({t('subscriptions.sourceDeleted')})
                                                     </span>
                                                 );
                                             }
                                             return (
                                                 <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-100'
-                                                    : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                    ? 'bg-accent text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800'
+                                                    : 'bg-muted text-text-tertiary border-border-strong line-through decoration-border-strong'
                                                     }`}>
                                                     {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                                 </span>
@@ -203,8 +203,8 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                                     ) : (
                                         availableSources.map(source => (
                                             <span key={source.name} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
-                                                ? 'bg-blue-50 text-blue-700 border-blue-100'
-                                                : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                ? 'bg-accent text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800'
+                                                : 'bg-muted text-text-tertiary border-border-strong line-through decoration-border-strong'
                                                 }`}>
                                                 {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                             </span>
@@ -214,15 +214,15 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                             </div>
 
                             {sub.customRules && (
-                                <div className="text-xs text-gray-500">
-                                    <span className="font-semibold text-gray-400">{t('subscriptions.customRulesLabel')}</span> {sub.customRules.length > 50 ? sub.customRules.substring(0, 50) + '...' : sub.customRules}
+                                <div className="text-xs text-text-tertiary">
+                                    <span className="font-semibold text-text-quaternary">{t('subscriptions.customRulesLabel')}</span> {sub.customRules.length > 50 ? sub.customRules.substring(0, 50) + '...' : sub.customRules}
                                 </div>
                             )}
                         </div>
                     )
                 })}
                 {subs.length === 0 && (
-                    <div className="text-center py-16 text-gray-400 bg-white rounded-2xl shadow-sm border border-dashed border-gray-200">
+                    <div className="text-center py-16 text-text-quaternary bg-card rounded-2xl shadow-sm border border-dashed border-border-strong">
                         <p>{t('subscriptions.empty')}</p>
                         <button onClick={openCreate} className="mt-2 text-blue-500 hover:underline text-sm">{t('subscriptions.emptyAction')}</button>
                     </div>

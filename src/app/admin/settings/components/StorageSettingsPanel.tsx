@@ -20,8 +20,8 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
     const [s3Endpoint, setS3Endpoint] = useState(config.s3Endpoint || buildS3Endpoint(config.s3Preset || 'cloudflare-r2', config.s3AccountId, config.s3Region));
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
                 <span className="mr-2">💾</span> {t('heading')}
             </h3>
             <form data-storage-form onSubmit={async (e) => {
@@ -54,11 +54,11 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                 }
             }} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('providerLabel')}</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('providerLabel')}</label>
                     <select
                         name="storageProvider"
                         value={storageProvider}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white text-gray-900"
+                        className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-card text-text-primary"
                         onChange={(e) => {
                             const value = e.target.value as 'local' | 's3';
                             setStorageProvider(value);
@@ -67,37 +67,37 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                         <option value="local">{t('providerLocal')}</option>
                         <option value="s3">{t('providerS3')}</option>
                     </select>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-text-tertiary">
                         {t('providerHelp')}
                     </p>
                 </div>
 
                 {/* Local Storage Settings */}
                 <div id="local-fields" style={{ display: (storageProvider === 'local' ? 'block' : 'none') }}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('localPathLabel')}</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('localPathLabel')}</label>
                     <input
                         type="text"
                         name="localStoragePath"
                         defaultValue={config.localStoragePath || '/uploads/avatars'}
                         placeholder="/uploads/avatars"
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-text-tertiary">
                         {t('localPathHelp')}
                     </p>
                 </div>
 
                 {/* S3 Compatible Storage Settings */}
                 <div id="s3-fields" style={{ display: (storageProvider === 's3' ? 'block' : 'none') }} className="space-y-4 border-t pt-4">
-                    <h4 className="font-medium text-gray-800">{t('s3Config')}</h4>
+                    <h4 className="font-medium text-text-primary">{t('s3Config')}</h4>
 
                     {/* S3 Preset Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('presetLabel')}</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">{t('presetLabel')}</label>
                         <select
                             name="s3Preset"
                             defaultValue={s3Preset}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white text-gray-900"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-card text-text-primary"
                             onChange={(e) => {
                                 const preset = e.target.value;
                                 setS3Preset(preset);
@@ -137,20 +137,20 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             <option value="minio">MinIO</option>
                             <option value="custom">{t('presetCustom')}</option>
                         </select>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {t('presetHelp')}
                         </p>
                     </div>
 
                     {/* Account ID (R2 only) */}
                     <div id="s3-account-id-field" style={{ display: (s3Preset === 'cloudflare-r2' ? 'block' : 'none') }}>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Account ID</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Account ID</label>
                         <input
                             type="text"
                             name="s3AccountId"
                             defaultValue={config.s3AccountId || ''}
                             placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                             onChange={(e) => {
                                 if (s3Preset === 'cloudflare-r2') {
                                     const regionInput = document.querySelector('input[name="s3Region"]') as HTMLInputElement;
@@ -160,14 +160,14 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                                 }
                             }}
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {t('accountIdHelp')}
                         </p>
                     </div>
 
                     {/* Endpoint */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Endpoint</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Endpoint</label>
                         <input
                             type="text"
                             name="s3Endpoint"
@@ -175,9 +175,9 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                             onChange={(e) => setS3Endpoint(e.target.value)}
                             placeholder="https://..."
                             disabled={s3Preset !== 'custom' && s3Preset !== 'minio'}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border disabled:bg-gray-100"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border disabled:bg-muted"
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {s3Preset === 'custom' || s3Preset === 'minio'
                                 ? t('endpointHelpCustom')
                                 : t('endpointHelpAuto')}
@@ -186,13 +186,13 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
 
                     {/* Region */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Region</label>
                         <input
                             type="text"
                             name="s3Region"
                             defaultValue={config.s3Region || S3_PRESETS[s3Preset]?.defaultRegion || 'auto'}
                             placeholder="auto"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                             onChange={(e) => {
                                 if (s3Preset === 'aws-s3') {
                                     const newEndpoint = buildS3Endpoint(s3Preset, undefined, e.target.value);
@@ -200,73 +200,73 @@ export default function StorageSettingsPanel({ config }: { config: any }) {
                                 }
                             }}
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {t('regionHelp')}
                         </p>
                     </div>
 
                     {/* Access Key ID */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Access Key ID</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Access Key ID</label>
                         <input
                             type="text"
                             name="s3AccessKeyId"
                             defaultValue={config.s3AccessKeyId || ''}
                             placeholder="Access Key ID"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
                     </div>
 
                     {/* Secret Access Key */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Secret Access Key</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Secret Access Key</label>
                         <input
                             type="password"
                             name="s3SecretAccessKey"
                             defaultValue={config.s3SecretAccessKey || ''}
                             placeholder="Secret Access Key"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
                     </div>
 
                     {/* Bucket Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Bucket Name</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Bucket Name</label>
                         <input
                             type="text"
                             name="s3BucketName"
                             defaultValue={config.s3BucketName || ''}
                             placeholder="my-bucket"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
                     </div>
 
                     {/* Public Domain */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Public Domain</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Public Domain</label>
                         <input
                             type="text"
                             name="s3PublicDomain"
                             defaultValue={config.s3PublicDomain || ''}
                             placeholder="https://..."
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {t('publicDomainHelp')}
                         </p>
                     </div>
 
                     {/* Folder Path */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('folderPathLabel')}</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">{t('folderPathLabel')}</label>
                         <input
                             type="text"
                             name="s3FolderPath"
                             defaultValue={config.s3FolderPath || 'avatars'}
                             placeholder="avatars"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-text-tertiary">
                             {t('folderPathHelp')}
                         </p>
                     </div>

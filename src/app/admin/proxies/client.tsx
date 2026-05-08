@@ -52,14 +52,14 @@ export default function AdminProxiesClient({
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                     🌍 {t('title')}
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{totalCount}</span>
+                    <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{totalCount}</span>
                 </h2>
             </div>
 
             {sources.length === 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-text-quaternary">
                     {t('noProxies')}
                 </div>
             )}
@@ -73,9 +73,9 @@ export default function AdminProxiesClient({
                     }, {});
 
                     return (
-                        <div key={source} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                        <div key={source} className="bg-card rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                                     📡 {source}
                                     {sourceTypes[source] === 'static' && (
                                         <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
@@ -86,12 +86,12 @@ export default function AdminProxiesClient({
                             </div>
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">{t('nodeCount')}</span>
-                                    <span className="font-semibold text-blue-600">{proxies.length}</span>
+                                    <span className="text-text-secondary">{t('nodeCount')}</span>
+                                    <span className="font-semibold text-accent-foreground">{proxies.length}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-1">
                                     {Object.entries(typeCount).map(([type, count]) => (
-                                        <span key={type} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                        <span key={type} className="text-xs bg-muted text-text-secondary px-2 py-0.5 rounded">
                                             {type}: {count}
                                         </span>
                                     ))}
@@ -105,14 +105,14 @@ export default function AdminProxiesClient({
                                         setSearchTerm('');
                                         setMobileView('list');
                                     }}
-                                    className={`bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                    className={`bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
                                 >
                                     {t('viewDetail')}
                                 </button>
                                 {sourceTypes[source] === 'static' && (
                                     <button
                                         onClick={() => setEditingSource(source)}
-                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                        className="bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/25 transition-colors font-medium text-sm flex-1"
                                     >
                                         ⚙️ {t('manage')}
                                     </button>
@@ -131,7 +131,7 @@ export default function AdminProxiesClient({
                     selectedSource ? (
                         <div className="flex items-center gap-2">
                             <span>📡 {selectedSource}</span>
-                            <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                            <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">
                                 {filteredProxies.length} / {currentSourceProxies.length}
                             </span>
                         </div>
@@ -142,12 +142,12 @@ export default function AdminProxiesClient({
                 {selectedSource && (
                     <div className="-m-6 h-[70vh] flex flex-col">
                         {/* Mobile Tab Switcher */}
-                        <div className="md:hidden flex border-b border-gray-200 bg-white shrink-0">
+                        <div className="md:hidden flex border-b border-border-strong bg-card shrink-0">
                             <button
                                 onClick={() => setMobileView('list')}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${mobileView === 'list'
-                                    ? 'text-blue-600 border-b-2 border-blue-600'
-                                    : 'text-gray-500'
+                                    ? 'text-accent-foreground border-b-2 border-blue-600'
+                                    : 'text-text-tertiary'
                                     }`}
                             >
                                 {t('proxyList')} ({filteredProxies.length})
@@ -155,8 +155,8 @@ export default function AdminProxiesClient({
                             <button
                                 onClick={() => setMobileView('detail')}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${mobileView === 'detail'
-                                    ? 'text-blue-600 border-b-2 border-blue-600'
-                                    : 'text-gray-500'
+                                    ? 'text-accent-foreground border-b-2 border-blue-600'
+                                    : 'text-text-tertiary'
                                     }`}
                                 disabled={!selectedProxy}
                             >
@@ -167,8 +167,8 @@ export default function AdminProxiesClient({
                         {/* Main Content */}
                         <div className="flex flex-col md:flex-row flex-1 min-h-0">
                             {/* Left Sidebar: Proxy List */}
-                            <div className={`w-full md:w-80 border-r border-gray-100 bg-gray-50 flex flex-col min-h-0 ${mobileView === 'list' ? 'flex' : 'hidden md:flex'}`}>
-                                <div className="px-3 py-3 border-b border-gray-200 bg-white shrink-0">
+                            <div className={`w-full md:w-80 border-r border-border bg-muted flex flex-col min-h-0 ${mobileView === 'list' ? 'flex' : 'hidden md:flex'}`}>
+                                <div className="px-3 py-3 border-b border-border-strong bg-card shrink-0">
                                     <input
                                         type="text"
                                         placeholder={t('searchPlaceholder')}
@@ -177,7 +177,7 @@ export default function AdminProxiesClient({
                                             setSearchTerm(e.target.value);
                                             setSelectedProxyIndex(0);
                                         }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                     />
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -187,7 +187,7 @@ export default function AdminProxiesClient({
                                             onClick={() => handleProxySelect(idx)}
                                             className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${selectedProxy === proxy
                                                 ? 'bg-blue-600 text-white shadow-sm'
-                                                : 'hover:bg-gray-200 text-gray-700'
+                                                : 'hover:bg-muted text-text-secondary'
                                                 }`}
                                         >
                                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${proxy.type === 'ss' ? 'bg-green-400' :
@@ -199,7 +199,7 @@ export default function AdminProxiesClient({
                                         </button>
                                     ))}
                                     {filteredProxies.length === 0 && (
-                                        <div className="text-center py-8 text-gray-400 text-sm">
+                                        <div className="text-center py-8 text-text-quaternary text-sm">
                                             {t('noMatch')}
                                         </div>
                                     )}
@@ -207,13 +207,13 @@ export default function AdminProxiesClient({
                             </div>
 
                             {/* Right Panel: Detail View */}
-                            <div className={`flex-1 bg-white min-h-0 ${mobileView === 'detail' ? 'flex' : 'hidden md:flex'} flex-col`}>
+                            <div className={`flex-1 bg-card min-h-0 ${mobileView === 'detail' ? 'flex' : 'hidden md:flex'} flex-col`}>
                                 {selectedProxy ? (
                                     <div className="h-full overflow-y-auto p-6">
                                         {/* Mobile Back Button */}
                                         <button
                                             onClick={() => setMobileView('list')}
-                                            className="md:hidden flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium mb-4"
+                                            className="md:hidden flex items-center gap-2 text-accent-foreground hover:text-blue-700 text-sm font-medium mb-4"
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -224,7 +224,7 @@ export default function AdminProxiesClient({
                                         {/* Header */}
                                         <div className="flex items-start justify-between border-b pb-4 mb-6">
                                             <div>
-                                                <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedProxy.name}</h3>
+                                                <h3 className="text-xl font-bold text-text-primary mb-2">{selectedProxy.name}</h3>
                                                 <div className="flex gap-2 flex-wrap items-center">
                                                     <span className="px-2.5 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                                                         {selectedProxy.type.toUpperCase()}
@@ -251,27 +251,27 @@ export default function AdminProxiesClient({
                                         {/* Connection Info */}
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                             <div className="space-y-4">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('basicConnection')}</h4>
+                                                <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">{t('basicConnection')}</h4>
                                                 <div className="space-y-3">
                                                     <div className="group">
-                                                        <label className="text-xs text-gray-500 block mb-1">{t('serverAddress')}</label>
+                                                        <label className="text-xs text-text-tertiary block mb-1">{t('serverAddress')}</label>
                                                         <div className="flex items-center gap-2">
-                                                            <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.server}</code>
-                                                            <button onClick={() => copyToClipboard(selectedProxy.server || '', t('serverAddress'))} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
+                                                            <code className="text-sm font-mono bg-muted px-2 py-1 rounded border border-border-strong flex-1 break-all">{selectedProxy.server}</code>
+                                                            <button onClick={() => copyToClipboard(selectedProxy.server || '', t('serverAddress'))} className="text-accent-foreground hover:text-blue-700 text-xs px-2 py-1 hover:bg-accent rounded transition-colors shrink-0">
                                                                 Copy
                                                             </button>
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">{t('port')}</label>
-                                                        <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 inline-block">{selectedProxy.port}</code>
+                                                        <label className="text-xs text-text-tertiary block mb-1">{t('port')}</label>
+                                                        <code className="text-sm font-mono bg-muted px-2 py-1 rounded border border-border-strong inline-block">{selectedProxy.port}</code>
                                                     </div>
                                                     {selectedProxy.uuid && (
                                                         <div className="group">
-                                                            <label className="text-xs text-gray-500 block mb-1">UUID</label>
+                                                            <label className="text-xs text-text-tertiary block mb-1">UUID</label>
                                                             <div className="flex items-center gap-2">
-                                                                <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.uuid}</code>
-                                                                <button onClick={() => copyToClipboard(selectedProxy.uuid || '', 'UUID')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
+                                                                <code className="text-sm font-mono bg-muted px-2 py-1 rounded border border-border-strong flex-1 break-all">{selectedProxy.uuid}</code>
+                                                                <button onClick={() => copyToClipboard(selectedProxy.uuid || '', 'UUID')} className="text-accent-foreground hover:text-blue-700 text-xs px-2 py-1 hover:bg-accent rounded transition-colors shrink-0">
                                                                     Copy
                                                                 </button>
                                                             </div>
@@ -279,10 +279,10 @@ export default function AdminProxiesClient({
                                                     )}
                                                     {selectedProxy.password && (
                                                         <div className="group">
-                                                            <label className="text-xs text-gray-500 block mb-1">Password</label>
+                                                            <label className="text-xs text-text-tertiary block mb-1">Password</label>
                                                             <div className="flex items-center gap-2">
-                                                                <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-1 break-all">{selectedProxy.password}</code>
-                                                                <button onClick={() => copyToClipboard(selectedProxy.password || '', 'Password')} className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 hover:bg-blue-50 rounded transition-colors shrink-0">
+                                                                <code className="text-sm font-mono bg-muted px-2 py-1 rounded border border-border-strong flex-1 break-all">{selectedProxy.password}</code>
+                                                                <button onClick={() => copyToClipboard(selectedProxy.password || '', 'Password')} className="text-accent-foreground hover:text-blue-700 text-xs px-2 py-1 hover:bg-accent rounded transition-colors shrink-0">
                                                                     Copy
                                                                 </button>
                                                             </div>
@@ -290,8 +290,8 @@ export default function AdminProxiesClient({
                                                     )}
                                                     {selectedProxy.cipher && (
                                                         <div>
-                                                            <label className="text-xs text-gray-500 block mb-1">{t('cipher')}</label>
-                                                            <span className="text-sm text-gray-800 font-medium">{selectedProxy.cipher}</span>
+                                                            <label className="text-xs text-text-tertiary block mb-1">{t('cipher')}</label>
+                                                            <span className="text-sm text-text-primary font-medium">{selectedProxy.cipher}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -299,30 +299,30 @@ export default function AdminProxiesClient({
 
                                             {/* Transport & Security */}
                                             <div className="space-y-4">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('transportSecurity')}</h4>
+                                                <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">{t('transportSecurity')}</h4>
                                                 <div className="space-y-3">
                                                     {selectedProxy.network && (
                                                         <div>
-                                                            <label className="text-xs text-gray-500 block mb-1">{t('transportProtocol')}</label>
-                                                            <span className="text-sm font-medium text-gray-800">{selectedProxy.network}</span>
+                                                            <label className="text-xs text-text-tertiary block mb-1">{t('transportProtocol')}</label>
+                                                            <span className="text-sm font-medium text-text-primary">{selectedProxy.network}</span>
                                                         </div>
                                                     )}
 
                                                     {/* WS Settings */}
                                                     {selectedProxy['ws-opts'] && (
-                                                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                                        <div className="bg-accent p-3 rounded-lg border border-blue-100">
                                                             <div className="font-semibold text-xs text-blue-700 mb-2">{t('wsConfig')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy['ws-opts'].path && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">Path</span>
-                                                                        <code className="font-mono text-gray-900 break-all">{selectedProxy['ws-opts'].path}</code>
+                                                                        <span className="text-text-secondary text-xs block">Path</span>
+                                                                        <code className="font-mono text-text-primary break-all">{selectedProxy['ws-opts'].path}</code>
                                                                     </div>
                                                                 )}
                                                                 {selectedProxy['ws-opts'].headers?.Host && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">Host</span>
-                                                                        <code className="font-mono text-gray-900 break-all">{selectedProxy['ws-opts'].headers.Host}</code>
+                                                                        <span className="text-text-secondary text-xs block">Host</span>
+                                                                        <code className="font-mono text-text-primary break-all">{selectedProxy['ws-opts'].headers.Host}</code>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -331,13 +331,13 @@ export default function AdminProxiesClient({
 
                                                     {/* gRPC Settings */}
                                                     {selectedProxy['grpc-opts'] && (
-                                                        <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                                                            <div className="font-semibold text-xs text-purple-700 mb-2">{t('grpcConfig')}</div>
+                                                        <div className="bg-purple-50 dark:bg-purple-500/10 p-3 rounded-lg border border-purple-100 dark:border-purple-900/50">
+                                                            <div className="font-semibold text-xs text-purple-700 dark:text-purple-400 mb-2">{t('grpcConfig')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy['grpc-opts']['grpc-service-name'] && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">Service Name</span>
-                                                                        <code className="font-mono text-gray-900 break-all">{selectedProxy['grpc-opts']['grpc-service-name']}</code>
+                                                                        <span className="text-text-secondary text-xs block">Service Name</span>
+                                                                        <code className="font-mono text-text-primary break-all">{selectedProxy['grpc-opts']['grpc-service-name']}</code>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -346,18 +346,18 @@ export default function AdminProxiesClient({
 
                                                     {/* TLS Settings */}
                                                     {(selectedProxy.tls || selectedProxy.servername || selectedProxy['skip-cert-verify'] !== undefined) && (
-                                                        <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                                                            <div className="font-semibold text-xs text-green-700 mb-2">{t('tlsSecurity')}</div>
+                                                        <div className="bg-green-50 dark:bg-green-500/10 p-3 rounded-lg border border-green-100 dark:border-green-900/50">
+                                                            <div className="font-semibold text-xs text-green-700 dark:text-green-400 mb-2">{t('tlsSecurity')}</div>
                                                             <div className="space-y-2 text-sm">
                                                                 {selectedProxy.servername && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">SNI (Servername)</span>
-                                                                        <code className="font-mono text-gray-900 break-all">{selectedProxy.servername}</code>
+                                                                        <span className="text-text-secondary text-xs block">SNI (Servername)</span>
+                                                                        <code className="font-mono text-text-primary break-all">{selectedProxy.servername}</code>
                                                                     </div>
                                                                 )}
                                                                 {selectedProxy['skip-cert-verify'] !== undefined && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">{t('skipCertVerify')}</span>
+                                                                        <span className="text-text-secondary text-xs block">{t('skipCertVerify')}</span>
                                                                         <span className={`font-mono ${selectedProxy['skip-cert-verify'] ? 'text-red-600' : 'text-green-600'}`}>
                                                                             {selectedProxy['skip-cert-verify'] ? 'True' : 'False'}
                                                                         </span>
@@ -365,8 +365,8 @@ export default function AdminProxiesClient({
                                                                 )}
                                                                 {selectedProxy.alpn && (
                                                                     <div>
-                                                                        <span className="text-gray-600 text-xs block">ALPN</span>
-                                                                        <code className="font-mono text-gray-900">{selectedProxy.alpn.join(', ')}</code>
+                                                                        <span className="text-text-secondary text-xs block">ALPN</span>
+                                                                        <code className="font-mono text-text-primary">{selectedProxy.alpn.join(', ')}</code>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -379,10 +379,10 @@ export default function AdminProxiesClient({
                                         {/* Raw JSON */}
                                         <div className="space-y-3 border-t pt-4">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('rawConfig')}</h4>
+                                                <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">{t('rawConfig')}</h4>
                                                 <button
                                                     onClick={() => copyToClipboard(JSON.stringify(selectedProxy, null, 2), 'JSON')}
-                                                    className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 rounded transition-colors"
+                                                    className="text-xs text-accent-foreground hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-accent rounded transition-colors"
                                                 >
                                                     {t('copyJson')}
                                                 </button>
@@ -395,7 +395,7 @@ export default function AdminProxiesClient({
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                    <div className="h-full flex items-center justify-center text-text-quaternary">
                                         <div className="text-center">
                                             <div className="text-4xl mb-2">👈</div>
                                             <p>{t('selectNodeHint')}</p>

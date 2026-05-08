@@ -101,13 +101,13 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
             {/* Enable Toggle */}
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <label className="text-sm font-medium text-gray-700">{t('enableLabel')}</label>
-                    <p className="text-xs text-gray-500 mt-1">{t('enableDesc')}</p>
+                    <label className="text-sm font-medium text-text-secondary">{t('enableLabel')}</label>
+                    <p className="text-xs text-text-tertiary mt-1">{t('enableDesc')}</p>
                 </div>
                 <button
                     type="button"
                     onClick={() => setEnabled(!enabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-border-strong'}`}
                 >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -117,16 +117,16 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                 <>
                     {/* Mode Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('modeLabel')}</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">{t('modeLabel')}</label>
                         <select
                             value={mode}
                             onChange={(e) => setMode(e.target.value as 'blacklist' | 'whitelist')}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white text-gray-900"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-card text-text-primary"
                         >
                             <option value="blacklist">{t('blacklistMode')}</option>
                             <option value="whitelist">{t('whitelistMode')}</option>
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-text-tertiary mt-1">
                             {mode === 'blacklist' ? t('blacklistDesc') : t('whitelistDesc')}
                         </p>
                     </div>
@@ -134,30 +134,30 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                     {/* Preset Quick Add */}
                     {presets && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('quickAddPresets')}</label>
+                            <label className="block text-sm font-medium text-text-secondary mb-2">{t('quickAddPresets')}</label>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                <button type="button" onClick={() => addPreset('clash')} className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                                <button type="button" onClick={() => addPreset('clash')} className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition border border-blue-200 dark:border-blue-800">
                                     ✅ Clash
                                 </button>
-                                <button type="button" onClick={() => addPreset('shadowrocket')} className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                                <button type="button" onClick={() => addPreset('shadowrocket')} className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition border border-blue-200 dark:border-blue-800">
                                     ✅ Shadowrocket
                                 </button>
-                                <button type="button" onClick={() => addPreset('quantumult')} className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                                <button type="button" onClick={() => addPreset('quantumult')} className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition border border-blue-200 dark:border-blue-800">
                                     ✅ Quantumult X
                                 </button>
-                                <button type="button" onClick={() => addPreset('surge')} className="px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                                <button type="button" onClick={() => addPreset('surge')} className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition border border-blue-200 dark:border-blue-800">
                                     ✅ Surge
                                 </button>
-                                <button type="button" onClick={() => addPreset('chrome')} className="px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">
+                                <button type="button" onClick={() => addPreset('chrome')} className="px-3 py-2 text-sm bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-500/25 transition border border-green-200 dark:border-green-800">
                                     🌐 Chrome
                                 </button>
-                                <button type="button" onClick={() => addPreset('firefox')} className="px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">
+                                <button type="button" onClick={() => addPreset('firefox')} className="px-3 py-2 text-sm bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-500/25 transition border border-green-200 dark:border-green-800">
                                     🌐 Firefox
                                 </button>
-                                <button type="button" onClick={() => addPreset('curl')} className="px-3 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">
+                                <button type="button" onClick={() => addPreset('curl')} className="px-3 py-2 text-sm bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/25 transition border border-red-200 dark:border-red-800">
                                     🚫 cURL
                                 </button>
-                                <button type="button" onClick={() => addPreset('pythonRequests')} className="px-3 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">
+                                <button type="button" onClick={() => addPreset('pythonRequests')} className="px-3 py-2 text-sm bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/25 transition border border-red-200 dark:border-red-800">
                                     🚫 Python
                                 </button>
                             </div>
@@ -167,7 +167,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                     {/* Rules List */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">{t('customRules', { count: rules.length })}</label>
+                            <label className="block text-sm font-medium text-text-secondary">{t('customRules', { count: rules.length })}</label>
                             <button
                                 type="button"
                                 onClick={addRule}
@@ -178,26 +178,26 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                         </div>
 
                         {rules.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                            <div className="text-center py-8 text-text-quaternary border-2 border-dashed border-border-strong rounded-lg">
                                 {t('noRules')}
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {rules.map((rule, index) => (
-                                    <div key={index} className="flex flex-col sm:flex-row gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                    <div key={index} className="flex flex-col sm:flex-row gap-2 items-start p-3 bg-muted rounded-lg border border-border">
                                         <div className="flex-1 space-y-2 w-full">
                                             <input
                                                 type="text"
                                                 value={rule.pattern}
                                                 onChange={(e) => updateRule(index, 'pattern', e.target.value)}
                                                 placeholder={t('patternPlaceholder')}
-                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
+                                                className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-card text-text-primary"
                                             />
                                             <div className="flex flex-col sm:flex-row gap-2">
                                                 <select
                                                     value={rule.matchType}
                                                     onChange={(e) => updateRule(index, 'matchType', e.target.value as any)}
-                                                    className="block w-full sm:w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-white text-gray-900"
+                                                    className="block w-full sm:w-40 rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-card text-text-primary"
                                                 >
                                                     <option value="contains">{t('contains')}</option>
                                                     <option value="startsWith">{t('startsWith')}</option>
@@ -210,14 +210,14 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                                     value={rule.description || ''}
                                                     onChange={(e) => updateRule(index, 'description', e.target.value)}
                                                     placeholder={t('descriptionPlaceholder')}
-                                                    className="block flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
+                                                    className="block flex-1 rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-card text-text-primary"
                                                 />
                                             </div>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => removeRule(index)}
-                                            className="w-full sm:w-auto px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm border border-red-100 mt-2 sm:mt-0"
+                                            className="w-full sm:w-auto px-3 py-2 bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/25 transition text-sm border border-red-100 dark:border-red-800 mt-2 sm:mt-0"
                                         >
                                             {t('delete')}
                                         </button>
@@ -229,7 +229,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
 
                     {/* UA Testing Tool */}
                     <div className="border-t pt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('testUA')}</label>
+                        <label className="block text-sm font-medium text-text-secondary mb-2">{t('testUA')}</label>
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -239,7 +239,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                                     setTestResult(null);
                                 }}
                                 placeholder={t('testUaPlaceholder')}
-                                className="block flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border"
+                                className="block flex-1 rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm p-2 border bg-card text-text-primary"
                             />
                             <button
                                 type="button"
@@ -250,7 +250,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                             </button>
                         </div>
                         {testResult !== null && (
-                            <div className={`mt-2 p-3 rounded-lg ${testResult ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            <div className={`mt-2 p-3 rounded-lg ${testResult ? 'bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400'}`}>
                                 {testResult ? t('allowed') : t('blocked')}
                             </div>
                         )}

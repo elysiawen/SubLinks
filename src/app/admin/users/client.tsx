@@ -192,9 +192,9 @@ export default function AdminUsersClient({
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                     👥 {t('title')}
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
+                    <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{total}</span>
                 </h2>
                 <button
                     onClick={() => setIsAddingUser(true)}
@@ -221,37 +221,37 @@ export default function AdminUsersClient({
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('username')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('username')}</label>
                         <input
                             name="username"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             placeholder={t('usernamePlaceholder')}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('nickname')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('nickname')}</label>
                         <input
                             name="nickname"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             placeholder={t('nicknamePlaceholder')}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('password')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('password')}</label>
                         <input
                             name="password"
                             type="password"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             placeholder={t('passwordPlaceholder')}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('role')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('role')}</label>
                         <select
                             name="role"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-card"
                         >
                             <option value="user">{t('roleUser')}</option>
                             <option value="admin">{t('roleAdmin')}</option>
@@ -266,7 +266,7 @@ export default function AdminUsersClient({
                         <button
                             type="button"
                             onClick={() => setIsAddingUser(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                         >
                             {t('cancel')}
                         </button>
@@ -275,30 +275,30 @@ export default function AdminUsersClient({
             </Modal>
 
             {/* User List */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-3 sm:p-4 border-b border-gray-100">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+                <div className="p-3 sm:p-4 border-b border-border">
                     <Search placeholder={t('searchPlaceholder')} />
                 </div>
 
 
                 {/* Desktop Table View */}
                 <div className="hidden md:block w-full overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-100">
+                    <table className="min-w-full divide-y divide-border">
                         <thead>
-                            <tr className="bg-gray-50/50">
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">{t('tableUser')}</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableSecurity')}</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableStatus')}</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('tableSubLimit')}</th>
-                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">{t('tableActions')}</th>
+                            <tr className="bg-border-strong">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider rounded-l-lg">{t('tableUser')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider">{t('tableSecurity')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider">{t('tableStatus')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider">{t('tableSubLimit')}</th>
+                                <th className="px-6 py-3 text-right text-xs font-semibold text-text-primary uppercase tracking-wider rounded-r-lg">{t('tableActions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-100">
+                        <tbody className="bg-card divide-y divide-border">
                             {users.map((user) => (
-                                <tr key={user.username} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={user.username} className="hover:bg-muted transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold overflow-hidden flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-text-tertiary text-xs font-semibold overflow-hidden flex-shrink-0">
                                                 {user.avatar ? (
                                                     <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                                 ) : (
@@ -307,42 +307,42 @@ export default function AdminUsersClient({
                                             </div>
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-gray-900 font-medium">{user.username}</span>
-                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-medium rounded border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                                                    <span className="text-text-primary font-medium">{user.username}</span>
+                                                    <span className={`px-1.5 py-0.5 inline-flex text-[10px] font-medium rounded border ${user.role === 'admin' ? 'bg-purple-50 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' : 'bg-muted text-text-secondary border-border-strong'}`}>
                                                         {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
                                                     </span>
                                                 </div>
                                                 {user.nickname ? (
-                                                    <span className="text-xs text-gray-500">{user.nickname}</span>
+                                                    <span className="text-xs text-text-tertiary">{user.nickname}</span>
                                                 ) : (
-                                                    <span className="text-xs text-gray-400 italic">{t('noNickname')}</span>
+                                                    <span className="text-xs text-text-quaternary italic">{t('noNickname')}</span>
                                                 )}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-tertiary">
                                         <div className="flex flex-col gap-1 items-start">
                                             {user.totpEnabled && (
-                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title={t('totpEnabled')}>
+                                                <span className="px-2 py-0.5 bg-accent text-accent-foreground text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter" title={t('totpEnabled')}>
                                                     2FA
                                                 </span>
                                             )}
                                             {user.passkeyCount > 0 && (
-                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter" title={t('passkeyCount', { count: user.passkeyCount })}>
+                                                <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded border border-purple-100 dark:border-purple-800 uppercase tracking-tighter" title={t('passkeyCount', { count: user.passkeyCount })}>
                                                     KEY
                                                 </span>
                                             )}
                                             {!user.totpEnabled && user.passkeyCount === 0 && (
-                                                <span className="text-gray-400 text-xs pl-1">-</span>
+                                                <span className="text-text-quaternary text-xs pl-1">-</span>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-tertiary">
                                         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                                             {user.status === 'active' ? t('statusActive') : t('statusDisabled')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                                         {user.maxSubscriptions === null
                                             ? t('followGlobal', { count: globalMaxSubs })
                                             : t('customLimit', { count: user.maxSubscriptions })}
@@ -360,7 +360,7 @@ export default function AdminUsersClient({
                                                 avatar: user.avatar,
                                                 totpEnabled: user.totpEnabled
                                             })}
-                                            className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                                            className="text-accent-foreground hover:text-blue-800 font-medium transition-colors"
                                         >
                                             {t('edit')}
                                         </button>
@@ -397,13 +397,13 @@ export default function AdminUsersClient({
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="md:hidden divide-y divide-gray-100">
+                <div className="md:hidden divide-y divide-border">
                     {users.map((user) => (
-                        <div key={user.username} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div key={user.username} className="p-4 hover:bg-muted transition-colors">
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-semibold overflow-hidden flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-text-tertiary text-sm font-semibold overflow-hidden flex-shrink-0">
                                             {user.avatar ? (
                                                 <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                             ) : (
@@ -412,28 +412,28 @@ export default function AdminUsersClient({
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="mb-2">
-                                                <span className="font-medium text-gray-900">{user.username}</span>
+                                                <span className="font-medium text-text-primary">{user.username}</span>
                                                 {user.nickname && (
-                                                    <span className="ml-1 text-sm text-gray-500">({user.nickname})</span>
+                                                    <span className="ml-1 text-sm text-text-tertiary">({user.nickname})</span>
                                                 )}
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
                                                     {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
                                                 </span>
-                                                <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+                                                <div className="flex items-center gap-1 border-l border-border-strong pl-2">
                                                     {user.totpEnabled && (
-                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter">
+                                                        <span className="px-2 py-0.5 bg-accent text-accent-foreground text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter">
                                                             2FA
                                                         </span>
                                                     )}
                                                     {user.passkeyCount > 0 && (
-                                                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 uppercase tracking-tighter">
+                                                        <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded border border-purple-100 dark:border-purple-800 uppercase tracking-tighter">
                                                             KEY
                                                         </span>
                                                     )}
                                                     {!user.totpEnabled && user.passkeyCount === 0 && (
-                                                        <span className="text-xs text-gray-400">{t('noSecurity')}</span>
+                                                        <span className="text-xs text-text-quaternary">{t('noSecurity')}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -441,8 +441,8 @@ export default function AdminUsersClient({
                                                 <span className={`px-2.5 py-0.5 inline-flex font-medium rounded-full ${user.status === 'active' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                                                     {user.status === 'active' ? t('statusActive') : t('statusDisabled')}
                                                 </span>
-                                                <span className="text-gray-400">|</span>
-                                                <span className="text-gray-600">
+                                                <span className="text-text-quaternary">|</span>
+                                                <span className="text-text-secondary">
                                                     {t('subCount', { count: user.maxSubscriptions === null ? `${globalMaxSubs}${t('globalSuffix')}` : user.maxSubscriptions })}
                                                 </span>
                                             </div>
@@ -462,7 +462,7 @@ export default function AdminUsersClient({
                                             avatar: user.avatar,
                                             totpEnabled: user.totpEnabled
                                         })}
-                                        className="flex-1 min-w-[80px] text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-blue-50 text-center"
+                                        className="flex-1 min-w-[80px] text-accent-foreground hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-accent text-center"
                                     >
                                         {t('edit')}
                                     </button>
@@ -476,7 +476,7 @@ export default function AdminUsersClient({
                                                 success(t('userToggled', { action, username: user.username }));
                                             }
                                         }}
-                                        className={`flex-1 min-w-[80px] font-medium transition-colors text-sm py-2 px-3 border rounded-lg text-center ${user.status === 'active' ? 'text-orange-500 hover:text-orange-700 border-orange-200 hover:bg-orange-50' : 'text-green-600 hover:text-green-800 border-green-200 hover:bg-green-50'}`}
+                                        className={`flex-1 min-w-[80px] font-medium transition-colors text-sm py-2 px-3 border rounded-lg text-center ${user.status === 'active' ? 'text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-500/15' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-500/15'}`}
                                     >
                                         {user.status === 'active' ? t('disable') : t('enable')}
                                     </button>
@@ -507,12 +507,12 @@ export default function AdminUsersClient({
                 {editingUser && (
                     <div className="space-y-4">
                         {/* Avatar Manager */}
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-white border border-gray-200 shadow-sm shrink-0">
+                        <div className="flex items-center gap-4 p-4 bg-muted rounded-lg border border-border">
+                            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-card border border-border-strong shadow-sm shrink-0">
                                 {editingUser.avatar ? (
                                     <img src={editingUser.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xl font-bold bg-gray-100">
+                                    <div className="w-full h-full flex items-center justify-center text-text-quaternary text-xl font-bold bg-muted">
                                         {editingUser.username.slice(0, 2).toUpperCase()}
                                     </div>
                                 )}
@@ -523,9 +523,9 @@ export default function AdminUsersClient({
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold text-gray-900 mb-1">{editingUser.username}</h3>
+                                <h3 className="text-sm font-semibold text-text-primary mb-1">{editingUser.username}</h3>
                                 <div className="flex items-center gap-3">
-                                    <label className={`inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <label className={`inline-flex items-center px-3 py-1.5 bg-card border border-border-input rounded-md shadow-sm text-xs font-medium text-text-secondary hover:bg-muted cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         {editingUser.avatar ? t('changeAvatar') : t('uploadAvatar')}
                                         <input
                                             type="file"
@@ -551,42 +551,42 @@ export default function AdminUsersClient({
 
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('nickname')}</label>
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">{t('nickname')}</label>
                             <input
                                 type="text"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.nickname}
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, nickname: e.target.value })}
                                 placeholder={t('nicknamePlaceholder')}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('newPassword')}</label>
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">{t('newPassword')}</label>
                             <input
                                 type="password"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                 value={editingUser.newPassword}
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, newPassword: e.target.value })}
                                 placeholder={t('newPasswordPlaceholder')}
                             />
                         </div>
 
-                        <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('passkeys')}</label>
+                        <div className="border-t border-border-strong pt-4">
+                            <label className="block text-sm font-semibold text-text-secondary mb-3">{t('passkeys')}</label>
                             {loadingPasskeys ? (
-                                <div className="text-center py-4 text-gray-500 text-sm">{t('loading')}</div>
+                                <div className="text-center py-4 text-text-tertiary text-sm">{t('loading')}</div>
                             ) : userPasskeys.length > 0 ? (
                                 <div className="space-y-2">
                                     {userPasskeys.map((passkey: any) => (
-                                        <div key={passkey.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                                        <div key={passkey.id} className="flex items-center justify-between p-3 bg-muted border border-border rounded-lg">
                                             <div>
-                                                <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                                <div className="text-sm font-medium text-text-primary flex items-center gap-2">
                                                     <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                                     </svg>
                                                     {passkey.name || t('unnamedKey')}
                                                 </div>
-                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                <div className="text-xs text-text-tertiary mt-0.5">
                                                     {t('createdAt', { date: new Date(passkey.createdAt).toLocaleDateString() })}
                                                     {passkey.lastUsed ? t('lastUsed', { date: new Date(passkey.lastUsed).toLocaleDateString() }) : ''}
                                                 </div>
@@ -605,19 +605,19 @@ export default function AdminUsersClient({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-100 border-dashed">
-                                    <span className="text-sm text-gray-500">{t('noPasskeys')}</span>
+                                <div className="text-center py-4 bg-muted rounded-lg border border-border border-dashed">
+                                    <span className="text-sm text-text-tertiary">{t('noPasskeys')}</span>
                                 </div>
                             )}
                         </div>
-                        <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('securityOptions')}</label>
+                        <div className="border-t border-border-strong pt-4">
+                            <label className="block text-sm font-semibold text-text-secondary mb-3">{t('securityOptions')}</label>
                             {editingUser.totpEnabled ? (
-                                <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/50 rounded-lg">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
                                         <div>
-                                            <div className="text-sm font-medium text-orange-800">{t('totpEnabledTitle')}</div>
+                                            <div className="text-sm font-medium text-orange-800 dark:text-orange-300">{t('totpEnabledTitle')}</div>
                                             <div className="text-xs text-orange-600">{t('totpResetHint')}</div>
                                         </div>
                                     </div>
@@ -633,13 +633,13 @@ export default function AdminUsersClient({
                                                 }
                                             }
                                         }}
-                                        className="px-3 py-1.5 bg-white border border-orange-200 text-orange-600 rounded-md text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm"
+                                        className="px-3 py-1.5 bg-card border border-orange-200 text-orange-600 rounded-md text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm"
                                     >
                                         {t('reset2FA')}
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 text-sm">
+                                <div className="flex items-center gap-2 p-3 bg-muted border border-border rounded-lg text-text-tertiary text-sm">
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
@@ -648,37 +648,37 @@ export default function AdminUsersClient({
                             )}
                         </div>
 
-                        <div className="border-t border-gray-200 pt-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">{t('subLimit')}</label>
+                        <div className="border-t border-border-strong pt-4">
+                            <label className="block text-sm font-semibold text-text-secondary mb-3">{t('subLimit')}</label>
                             <div className="space-y-3">
-                                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                                     <input
                                         type="radio"
                                         checked={editingUser.useGlobalLimit}
                                         onChange={() => editingUser && setEditingUser({ ...editingUser, useGlobalLimit: true })}
-                                        className="w-4 h-4 text-blue-600"
+                                        className="w-4 h-4 text-accent-foreground"
                                     />
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900">{t('useGlobalLimit')}</div>
-                                        <div className="text-xs text-gray-500">{t('globalLimitDesc', { count: globalMaxSubs })}</div>
+                                        <div className="font-medium text-text-primary">{t('useGlobalLimit')}</div>
+                                        <div className="text-xs text-text-tertiary">{t('globalLimitDesc', { count: globalMaxSubs })}</div>
                                     </div>
                                 </label>
-                                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                                     <input
                                         type="radio"
                                         checked={!editingUser.useGlobalLimit}
                                         onChange={() => editingUser && setEditingUser({ ...editingUser, useGlobalLimit: false })}
-                                        className="w-4 h-4 text-blue-600"
+                                        className="w-4 h-4 text-accent-foreground"
                                     />
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900">{t('customSubLimit')}</div>
+                                        <div className="font-medium text-text-primary">{t('customSubLimit')}</div>
                                         {!editingUser.useGlobalLimit && (
                                             <input
                                                 type="number"
                                                 min="0"
                                                 value={editingUser.customLimit}
                                                 onChange={e => editingUser && setEditingUser({ ...editingUser, customLimit: parseInt(e.target.value) || 0 })}
-                                                className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                className="mt-2 w-full border border-border-input rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                                 placeholder={t('customSubPlaceholder')}
                                                 onClick={e => e.stopPropagation()}
                                             />
@@ -697,7 +697,7 @@ export default function AdminUsersClient({
                             />
                             <button
                                 onClick={() => setEditingUser(null)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                             >
                                 {t('cancel')}
                             </button>

@@ -79,10 +79,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             {children}
             {isOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 transform transition-all animate-zoom-in">
+                    <div className="bg-card rounded-2xl shadow-2xl max-w-sm w-full p-6 transform transition-all animate-zoom-in">
                         <div className="mb-4">
-                            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                            <p className="mt-2 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                            <h3 className="text-lg font-bold text-text-primary">{title}</h3>
+                            <p className="mt-2 text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
                                 {message}
                             </p>
                         </div>
@@ -90,7 +90,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                             <button
                                 onClick={handleCancel}
                                 disabled={isLoading}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 text-sm font-medium text-text-secondary bg-muted rounded-xl hover:bg-border-strong transition-colors border border-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {cancelText}
                             </button>

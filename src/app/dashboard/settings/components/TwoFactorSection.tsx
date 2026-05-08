@@ -80,23 +80,23 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-6 border-b border-border">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     {t('settings.twoFactor.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">{t('settings.twoFactor.description')}</p>
+                <p className="text-sm text-text-tertiary mt-1">{t('settings.twoFactor.description')}</p>
             </div>
             <div className="p-6 space-y-4 max-w-lg">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-text-primary">
                             {t('settings.twoFactor.statusLabel')}
-                            <span className={`ml-2 px-2 py-1 rounded text-xs ${twoFAEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className={`ml-2 px-2 py-1 rounded text-xs ${twoFAEnabled ? 'bg-green-100 text-green-700' : 'bg-muted text-text-tertiary'}`}>
                                 {twoFAEnabled ? t('settings.twoFactor.enabled') : t('settings.twoFactor.disabled')}
                             </span>
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-text-tertiary mt-1">
                             {twoFAEnabled
                                 ? t('settings.twoFactor.enabledDesc')
                                 : t('settings.twoFactor.disabledDesc')}
@@ -106,7 +106,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                         onClick={twoFAEnabled ? () => setShowDisableVerify(true) : handleSetup2FA}
                         disabled={twoFALoading}
                         className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${twoFAEnabled
-                            ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                            ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900'
                             : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
@@ -123,26 +123,26 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
             >
                 <div className="space-y-6">
                     <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-sm text-text-secondary mb-4">
                             {t('settings.twoFactor.scanQR')}
                         </p>
                         {qrCode && (
                             <div className="flex justify-center mb-4">
-                                <img src={qrCode} alt="2FA QR Code" className="w-48 h-48 border border-gray-200 rounded-lg" />
+                                <img src={qrCode} alt="2FA QR Code" className="w-48 h-48 border border-border-strong rounded-lg" />
                             </div>
                         )}
                         {secret && (
-                            <p className="text-xs text-gray-400 font-mono select-all">{t('settings.twoFactor.secret')} {secret}</p>
+                            <p className="text-xs text-text-quaternary font-mono select-all">{t('settings.twoFactor.secret')} {secret}</p>
                         )}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.twoFactor.verificationCode')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.twoFactor.verificationCode')}</label>
                         <input
                             type="text"
                             value={token}
                             onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             placeholder="000000"
                             autoFocus
                         />

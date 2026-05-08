@@ -46,28 +46,28 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
-            <div className="p-6 border-b border-red-50 bg-red-50/30">
-                <h2 className="text-lg font-bold text-red-700 flex items-center gap-2">
+        <div className="bg-card rounded-xl shadow-sm border border-red-100 dark:border-red-900/50 overflow-hidden">
+            <div className="p-6 border-b border-red-50 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/30">
+                <h2 className="text-lg font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
                     {t('settings.dangerZone.heading')}
                 </h2>
-                <p className="text-sm text-red-600/80 mt-1">{t('settings.dangerZone.description')}</p>
+                <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">{t('settings.dangerZone.description')}</p>
             </div>
             <div className="p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="font-medium text-gray-900">{t('settings.dangerZone.deleteAccount')}</h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <h3 className="font-medium text-text-primary">{t('settings.dangerZone.deleteAccount')}</h3>
+                        <p className="text-sm text-text-tertiary mt-1">
                             {t('settings.dangerZone.deleteAccountDesc')}
-                            {role === 'admin' && <span className="block mt-1 text-red-500 font-medium">{t('settings.dangerZone.adminCannotDelete')}</span>}
+                            {role === 'admin' && <span className="block mt-1 text-red-500 dark:text-red-400 font-medium">{t('settings.dangerZone.adminCannotDelete')}</span>}
                         </p>
                     </div>
                     <button
                         onClick={() => setIsDeleteModalOpen(true)}
                         disabled={role === 'admin' || deleteLoading}
                         className={`px-4 py-2 rounded-lg border font-medium transition-colors ${role === 'admin'
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+                            ? 'bg-muted text-text-quaternary border-border-strong cursor-not-allowed'
+                            : 'bg-card text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 hover:border-red-300 dark:hover:border-red-700'
                             }`}
                     >
                         {t('settings.dangerZone.deleteAccount')}

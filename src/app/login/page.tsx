@@ -69,11 +69,11 @@ function PasskeyLogin() {
                 type="button"
                 onClick={handleLogin}
                 disabled={loading}
-                className="w-full py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200"
+                className="w-full py-3 bg-card text-accent-foreground border-2 border-blue-600 rounded-xl hover:bg-accent transition-colors font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-muted disabled:text-text-quaternary disabled:border-border-strong"
             >
                 {loading ? (
                     <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-accent-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -177,14 +177,14 @@ function QrCodeLogin() {
         <div className="flex flex-col items-center justify-center space-y-4 py-4 min-h-[300px]">
             {status === 'loading' && (
                 <div className="animate-pulse flex flex-col items-center">
-                    <div className="w-48 h-48 bg-gray-200 rounded-lg"></div>
-                    <div className="h-4 bg-gray-200 rounded w-32 mt-4"></div>
+                    <div className="w-48 h-48 bg-border-strong rounded-lg"></div>
+                    <div className="h-4 bg-border-strong rounded w-32 mt-4"></div>
                 </div>
             )}
 
             {(status === 'pending' || status === 'scanned') && qrUrl && (
                 <div className="relative group">
-                    <div className={`p-2 bg-white rounded-lg border-2 ${status === 'scanned' ? 'border-green-500' : 'border-gray-200'} transition-colors duration-300`}>
+                    <div className={`p-2 bg-card rounded-lg border-2 ${status === 'scanned' ? 'border-green-500' : 'border-border-strong'} transition-colors duration-300`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={qrUrl} alt="Login QR Code" className={`w-48 h-48 ${status === 'scanned' ? 'opacity-50' : ''}`} />
 
@@ -203,7 +203,7 @@ function QrCodeLogin() {
                             {t('scanned')}
                         </p>
                     ) : (
-                        <p className="text-gray-500 text-sm text-center mt-4">
+                        <p className="text-text-tertiary text-sm text-center mt-4">
                             {t('scanHint')}
                         </p>
                     )}
@@ -212,13 +212,13 @@ function QrCodeLogin() {
 
             {status === 'expired' && (
                 <div className="text-center">
-                    <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
-                        <span className="text-gray-400 text-3xl">⚠️</span>
+                    <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center mb-4 border-2 border-dashed border-border-input">
+                        <span className="text-text-quaternary text-3xl">⚠️</span>
                     </div>
-                    <p className="text-gray-600 mb-2">{t('expired')}</p>
+                    <p className="text-text-secondary mb-2">{t('expired')}</p>
                     <button
                         onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                        className="text-accent-foreground hover:text-blue-700 font-medium text-sm hover:underline"
                     >
                         {t('refresh')}
                     </button>
@@ -232,7 +232,7 @@ function QrCodeLogin() {
                     <p className="text-red-600 mb-2">{t('generateFailed')}</p>
                     <button
                         onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                        className="text-accent-foreground hover:text-blue-700 font-medium text-sm hover:underline"
                     >
                         {t('retry')}
                     </button>
@@ -247,7 +247,7 @@ function QrCodeLogin() {
                     <p className="text-red-600 mb-2">{t('rejected')}</p>
                     <button
                         onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                        className="text-accent-foreground hover:text-blue-700 font-medium text-sm hover:underline"
                     >
                         {t('retry')}
                     </button>
@@ -260,7 +260,7 @@ function QrCodeLogin() {
                         <span className="text-green-500 text-4xl">✅</span>
                     </div>
                     <p className="text-green-600 font-bold">{t('success')}</p>
-                    <p className="text-gray-500 text-sm">{t('redirecting')}</p>
+                    <p className="text-text-tertiary text-sm">{t('redirecting')}</p>
                 </div>
             )}
         </div>
@@ -335,7 +335,7 @@ function PasswordLogin() {
 
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label htmlFor="username" className="block text-sm font-semibold text-text-secondary mb-2">
                             👤 {t('login.username')}
                         </label>
                         <input
@@ -345,12 +345,12 @@ function PasswordLogin() {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             autoComplete="username"
-                            className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                            className="appearance-none relative block w-full px-4 py-3 border border-border-input placeholder-text-quaternary text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-card/50"
                             placeholder={t('login.usernamePlaceholder')}
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label htmlFor="password" className="block text-sm font-semibold text-text-secondary mb-2">
                             🔑 {t('login.password')}
                         </label>
                         <input
@@ -360,7 +360,7 @@ function PasswordLogin() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             autoComplete="current-password"
-                            className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50"
+                            className="appearance-none relative block w-full px-4 py-3 border border-border-input placeholder-text-quaternary text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-card/50"
                             placeholder={t('login.passwordPlaceholder')}
                         />
                     </div>
@@ -381,16 +381,16 @@ function PasswordLogin() {
             >
                 <div className="space-y-6">
                     <div className="text-center">
-                        <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <div className="mx-auto w-12 h-12 bg-accent rounded-full flex items-center justify-center mb-4">
                             <span className="text-2xl">🛡️</span>
                         </div>
-                        <p className="text-gray-600">
+                        <p className="text-text-secondary">
                             {t('twoFactor.description')}
                         </p>
                     </div>
 
                     <div>
-                        <label htmlFor="modal-code" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                        <label htmlFor="modal-code" className="block text-sm font-semibold text-text-secondary mb-2 text-center">
                             {t('twoFactor.codeLabel')}
                         </label>
                         <input
@@ -404,7 +404,7 @@ function PasswordLogin() {
                                 }
                             }}
                             autoFocus
-                            className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-border-input rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             placeholder="000000"
                             maxLength={6}
                         />
@@ -415,7 +415,7 @@ function PasswordLogin() {
                             type="button"
                             onClick={handle2FASubmit}
                             disabled={isPending || code.length !== 6}
-                            className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isPending ? (
                                 <>
@@ -441,26 +441,26 @@ function LoginBox() {
     const t = useTranslations('auth.login');
 
     return (
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">
+        <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">
             <div className="mb-6">
                 <PasskeyLogin />
 
                 <div className="relative mt-6">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
+                        <div className="w-full border-t border-border-strong"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-500">{t('orUseOther')}</span>
+                        <span className="px-2 bg-card text-text-tertiary">{t('orUseOther')}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="flex p-1 bg-gray-100/50 rounded-xl mb-6 relative">
+            <div className="flex p-1 bg-muted/50 rounded-xl mb-6 relative">
                 <button
                     onClick={() => setLoginMethod('password')}
                     className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'password'
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-card text-accent-foreground shadow-sm ring-1 ring-black/5'
+                        : 'text-text-tertiary hover:text-text-secondary'
                         }`}
                 >
                     <span className="mr-2">🔑</span>
@@ -469,8 +469,8 @@ function LoginBox() {
                 <button
                     onClick={() => setLoginMethod('qr')}
                     className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'qr'
-                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-card text-accent-foreground shadow-sm ring-1 ring-black/5'
+                        : 'text-text-tertiary hover:text-text-secondary'
                         }`}
                 >
                     <span className="mr-2">📱</span>
@@ -497,24 +497,24 @@ export default function LoginPage() {
     const t = useTranslations('auth.login');
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-            <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
             <div className="max-w-md w-full relative z-10 transition-all duration-300">
                 <div className="text-center mb-8">
                     <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
                         SubLinks
                     </h2>
-                    <p className="mt-3 text-gray-600 font-medium">
+                    <p className="mt-3 text-text-secondary font-medium">
                         {t('title')}
                     </p>
                 </div>
 
                 <Suspense fallback={
-                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 min-h-[300px] flex items-center justify-center">
-                        <div className="text-center text-gray-500">{t('loading')}</div>
+                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 min-h-[300px] flex items-center justify-center">
+                        <div className="text-center text-text-tertiary">{t('loading')}</div>
                     </div>
                 }>
                     <LoginBox />
@@ -522,7 +522,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 flex flex-col items-center gap-3">
                     <LanguageSwitcher />
-                    <p className="text-center text-sm text-gray-500">Powered by Next.js • Secure & Fast</p>
+                    <p className="text-center text-sm text-text-tertiary">Powered by Next.js • Secure & Fast</p>
                 </div>
             </div>
         </div>

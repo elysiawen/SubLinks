@@ -205,9 +205,9 @@ export default function AdminSubsClient({
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-2xl font-bold text-gray-800">
+                <h1 className="text-2xl font-bold text-text-primary">
                     {t('title')}
-                    <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total}</span>
+                    <span className="ml-2 text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{total}</span>
                 </h1>
                 <div className="flex flex-wrap gap-2">
                     <button
@@ -223,7 +223,7 @@ export default function AdminSubsClient({
                     <button
                         onClick={() => setShowRebuildModal(true)}
                         disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/25 rounded-lg text-sm font-medium transition-colors border border-green-200 dark:border-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span>🔄</span>
                         {t('rebuildAllCache')}
@@ -234,7 +234,7 @@ export default function AdminSubsClient({
             {subs.length === 0 ? (
                 <div className="space-y-4">
                     <Search placeholder={t('searchPlaceholder')} />
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                    <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-text-quaternary">
                         {t('noSubscriptions')}
                     </div>
                 </div>
@@ -244,10 +244,10 @@ export default function AdminSubsClient({
                         <Search placeholder={t('searchPlaceholder')} />
                     </div>
                     {/* Desktop View: Table */}
-                    <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="hidden md:block bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                         <div className="w-full overflow-x-auto">
-                            <table className="w-full text-left text-sm text-gray-600">
-                                <thead className="bg-gray-50 text-gray-900 font-medium">
+                            <table className="w-full text-left text-sm text-text-secondary">
+                                <thead className="bg-border-strong text-text-primary font-medium">
                                     <tr>
                                         <th className="px-6 py-4 whitespace-nowrap">{t('tableRemark')}</th>
                                         <th className="px-6 py-4 whitespace-nowrap">{t('tableUser')}</th>
@@ -258,30 +258,30 @@ export default function AdminSubsClient({
                                         <th className="px-6 py-4 whitespace-nowrap text-right">{t('tableActions')}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-border">
                                     {subs.map((sub) => (
-                                        <tr key={sub.token} className="hover:bg-gray-50/50 transition-colors">
+                                        <tr key={sub.token} className="hover:bg-muted/50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-col max-w-[180px]">
                                                     <div className="flex items-center gap-2">
                                                         <div className={`w-2 h-2 rounded-full shrink-0 ${sub.enabled ? 'bg-green-500' : 'bg-red-500'}`} title={sub.enabled ? t('enabled') : t('disabled')} />
-                                                        <span className="truncate text-sm font-medium text-gray-700" title={sub.remark}>{sub.remark}</span>
+                                                        <span className="truncate text-sm font-medium text-text-secondary" title={sub.remark}>{sub.remark}</span>
                                                     </div>
-                                                    <span className="truncate text-xs text-gray-400 font-mono" title={sub.token}>{sub.token}</span>
+                                                    <span className="truncate text-xs text-text-quaternary font-mono" title={sub.token}>{sub.token}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{sub.username}</td>
+                                            <td className="px-6 py-4 font-medium text-text-primary whitespace-nowrap">{sub.username}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {sub.cacheTime ? (
                                                     sub.cacheTime > Date.now() ? (
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded w-fit border border-blue-100">{t('cacheValid')}</span>
-                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
+                                                            <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded w-fit border border-blue-100">{t('cacheValid')}</span>
+                                                            <span className="text-xs text-text-quaternary mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded w-fit border border-green-100">{t('cacheCached')}</span>
-                                                            <span className="text-xs text-gray-400 mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()}</span>
+                                                            <span className="text-xs bg-green-50 dark:bg-green-500/15 text-green-600 dark:text-green-400 px-2 py-1 rounded w-fit border border-green-100 dark:border-green-800">{t('cacheCached')}</span>
+                                                            <span className="text-xs text-text-quaternary mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()}</span>
                                                         </div>
                                                     )
                                                 ) : (
@@ -295,33 +295,33 @@ export default function AdminSubsClient({
                                                             const source = availableSources.find(s => s.name === sourceName);
                                                             if (!source) {
                                                                 return (
-                                                                    <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-500 flex items-center gap-1" title="Source Deleted">
+                                                                    <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/15 text-red-500 dark:text-red-400 flex items-center gap-1" title="Source Deleted">
                                                                         🗑️ {sourceName}
                                                                     </span>
                                                                 );
                                                             }
                                                             return (
                                                                 <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${source.enabled !== false
-                                                                    ? 'bg-blue-50 text-blue-700 border-blue-100'
-                                                                    : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                                    ? 'bg-accent text-blue-700 border-blue-100'
+                                                                    : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400'
                                                                     }`}>
                                                                     {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                                                 </span>
                                                             );
                                                         })
                                                     ) : (
-                                                        <span className="text-gray-400 italic">{t('allSources')}</span>
+                                                        <span className="text-text-quaternary italic">{t('allSources')}</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-xs whitespace-nowrap">
                                                 <div className="space-y-1">
-                                                    {sub.groupId && sub.groupId !== 'default' && <div className="text-purple-600 bg-purple-50 px-1 py-0.5 rounded w-fit">Group: Custom</div>}
-                                                    {sub.ruleId && sub.ruleId !== 'default' && <div className="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded w-fit">Rules: Custom</div>}
-                                                    {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && <span className="text-gray-400">{t('configDefault')}</span>}
+                                                    {sub.groupId && sub.groupId !== 'default' && <div className="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/15 px-1 py-0.5 rounded w-fit">Group: Custom</div>}
+                                                    {sub.ruleId && sub.ruleId !== 'default' && <div className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/15 px-1 py-0.5 rounded w-fit">Rules: Custom</div>}
+                                                    {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && <span className="text-text-quaternary">{t('configDefault')}</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-gray-400 text-xs whitespace-nowrap">
+                                            <td className="px-6 py-4 text-text-quaternary text-xs whitespace-nowrap">
                                                 {new Date(sub.createdAt).toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
@@ -331,20 +331,20 @@ export default function AdminSubsClient({
                                                             await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                         }
                                                     }}
-                                                    className="text-green-600 hover:text-blue-800 font-medium"
+                                                    className="text-green-600 dark:text-green-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                                                     title={t('confirmRebuild')}
                                                 >
                                                     {t('rebuild')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(sub)}
-                                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                                    className="text-accent-foreground hover:text-blue-800 font-medium"
                                                 >
                                                     {t('edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(sub.token)}
-                                                    className="text-red-400 hover:text-red-600 font-medium"
+                                                    className="text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium"
                                                 >
                                                     {t('delete')}
                                                 </button>
@@ -361,82 +361,82 @@ export default function AdminSubsClient({
                         {subs.map((sub, index) => (
                             <div
                                 key={sub.token}
-                                className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 animate-slide-in-up"
+                                className="bg-card p-4 rounded-xl shadow-sm border border-border flex flex-col gap-3 animate-slide-in-up"
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <div className="font-bold text-gray-800 text-lg">{sub.username}</div>
-                                        <div className="text-sm text-gray-500 mt-0.5">{sub.remark}</div>
+                                        <div className="font-bold text-text-primary text-lg">{sub.username}</div>
+                                        <div className="text-sm text-text-tertiary mt-0.5">{sub.remark}</div>
                                     </div>
-                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${sub.enabled ? 'bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800' : 'bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800'}`}>
                                         {sub.enabled ? t('enabled') : t('disabled')}
                                     </span>
                                 </div>
 
-                                <div className="text-xs text-gray-400 font-mono bg-gray-50 p-2 rounded break-all border border-gray-100">
+                                <div className="text-xs text-text-quaternary font-mono bg-muted p-2 rounded break-all border border-border">
                                     Token: {sub.token}
                                 </div>
                                 <div className="flex items-center gap-2 text-xs">
-                                    <span className="font-semibold text-gray-500">{t('mobileCache')}</span>
+                                    <span className="font-semibold text-text-tertiary">{t('mobileCache')}</span>
                                     {sub.cacheTime ? (
                                         sub.cacheTime > Date.now() ? (
-                                            <span className="text-blue-600">{t('cacheValid')} ({t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()})</span>
+                                            <span className="text-accent-foreground">{t('cacheValid')} ({t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()})</span>
                                         ) : (
-                                            <span className="text-green-600">{t('cacheCached')} ({t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()})</span>
+                                            <span className="text-green-600 dark:text-green-400">{t('cacheCached')} ({t('cacheUpdate')}: {new Date(sub.cacheTime).toLocaleString()})</span>
                                         )
                                     ) : (
-                                        <span className="text-gray-400">{t('cacheNotCached')}</span>
+                                        <span className="text-text-quaternary">{t('cacheNotCached')}</span>
                                     )}
                                 </div>
 
                                 <div className="text-xs flex items-center gap-2">
-                                    <div className="font-semibold text-gray-500 shrink-0">{t('mobileSources')}</div>
+                                    <div className="font-semibold text-text-tertiary shrink-0">{t('mobileSources')}</div>
                                     <div className="flex flex-wrap gap-1">
                                         {(sub.selectedSources && sub.selectedSources.length > 0) ? (
                                             sub.selectedSources.map(sourceName => {
                                                 const source = availableSources.find(s => s.name === sourceName);
                                                 if (!source) {
                                                     return (
-                                                        <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-500 flex items-center gap-1">
+                                                        <span key={sourceName} className="px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/15 text-red-500 dark:text-red-400 flex items-center gap-1">
                                                             🗑️ {sourceName}
                                                         </span>
                                                     );
                                                 }
                                                 return (
                                                     <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
-                                                        ? 'bg-blue-50 text-blue-700 border-blue-100'
-                                                        : 'bg-gray-100 text-gray-500 border-gray-200 line-through decoration-gray-400'
+                                                        ? 'bg-accent text-blue-700 border-blue-100'
+                                                        : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400'
                                                         }`}>
                                                         {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                                     </span>
                                                 );
                                             })
                                         ) : (
-                                            <span className="text-gray-400 italic">{t('allSources')}</span>
+                                            <span className="text-text-quaternary italic">{t('allSources')}</span>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 text-xs">
                                     {sub.groupId && sub.groupId !== 'default' && (
-                                        <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100 font-medium">
+                                        <div className="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/15 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 font-medium">
                                             {t('configGroup')}
                                         </div>
                                     )}
                                     {sub.ruleId && sub.ruleId !== 'default' && (
-                                        <div className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 font-medium">
+                                        <div className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/15 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-800 font-medium">
                                             {t('configRule')}
                                         </div>
                                     )}
                                     {!((sub.groupId && sub.groupId !== 'default') || (sub.ruleId && sub.ruleId !== 'default')) && (
-                                        <div className="text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                                        <div className="text-text-tertiary bg-muted px-2 py-1 rounded border border-border-strong">
                                             {t('configDefault')}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-50 text-xs text-gray-400">
+                                <div className="flex items-center justify-between pt-3 border-t border-muted text-xs text-text-quaternary">
                                     <span>{new Date(sub.createdAt).toLocaleDateString()}</span>
                                     <div className="flex gap-4 text-sm font-medium">
                                         <button
@@ -445,19 +445,19 @@ export default function AdminSubsClient({
                                                     await handleSingleRebuild(sub.token, sub.username, sub.remark);
                                                 }
                                             }}
-                                            className="text-green-600 hover:text-green-800 font-medium"
+                                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium"
                                         >
                                             {t('rebuild')}
                                         </button>
                                         <button
                                             onClick={() => handleEdit(sub)}
-                                            className="text-blue-600 hover:text-blue-800"
+                                            className="text-accent-foreground hover:text-blue-800 dark:hover:text-blue-300"
                                         >
                                             {t('edit')}
                                         </button>
                                         <button
                                             onClick={() => handleDelete(sub.token)}
-                                            className="text-red-400 hover:text-red-600"
+                                            className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
                                         >
                                             {t('delete')}
                                         </button>
@@ -480,9 +480,9 @@ export default function AdminSubsClient({
                 <div className="space-y-4">
                     {/* User Selector */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('selectUser')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('selectUser')}</label>
                         <select
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
+                            className="w-full border border-border-input rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-card"
                             value={selectedUser}
                             onChange={e => setSelectedUser(e.target.value)}
                         >
@@ -542,7 +542,7 @@ export default function AdminSubsClient({
                     )}
 
                     {!selectedUser && (
-                        <div className="text-center py-8 text-gray-400">
+                        <div className="text-center py-8 text-text-quaternary">
                             {t('selectUserHint')}
                         </div>
                     )}
@@ -612,72 +612,72 @@ export default function AdminSubsClient({
                 title={t('rebuildTitle')}
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-text-secondary">
                         {t('rebuildDesc')}
                     </p>
 
                     <div className="space-y-3">
-                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                             <input
                                 type="radio"
                                 checked={rebuildBatchSize === 0}
                                 onChange={() => setRebuildBatchSize(0)}
-                                className="w-4 h-4 text-blue-600"
+                                className="w-4 h-4 text-accent-foreground"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">{t('fullConcurrency')}</div>
-                                <div className="text-xs text-gray-500">{t('fullConcurrencyDesc')}</div>
+                                <div className="font-medium text-text-primary">{t('fullConcurrency')}</div>
+                                <div className="text-xs text-text-tertiary">{t('fullConcurrencyDesc')}</div>
                             </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                             <input
                                 type="radio"
                                 checked={rebuildBatchSize === 10}
                                 onChange={() => setRebuildBatchSize(10)}
-                                className="w-4 h-4 text-blue-600"
+                                className="w-4 h-4 text-accent-foreground"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">{t('batch10')}</div>
-                                <div className="text-xs text-gray-500">{t('batch10Desc')}</div>
+                                <div className="font-medium text-text-primary">{t('batch10')}</div>
+                                <div className="text-xs text-text-tertiary">{t('batch10Desc')}</div>
                             </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                             <input
                                 type="radio"
                                 checked={rebuildBatchSize === 5}
                                 onChange={() => setRebuildBatchSize(5)}
-                                className="w-4 h-4 text-blue-600"
+                                className="w-4 h-4 text-accent-foreground"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">{t('batch5')}</div>
-                                <div className="text-xs text-gray-500">{t('batch5Desc')}</div>
+                                <div className="font-medium text-text-primary">{t('batch5')}</div>
+                                <div className="text-xs text-text-tertiary">{t('batch5Desc')}</div>
                             </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                             <input
                                 type="radio"
                                 checked={rebuildBatchSize === 1}
                                 onChange={() => setRebuildBatchSize(1)}
-                                className="w-4 h-4 text-blue-600"
+                                className="w-4 h-4 text-accent-foreground"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">{t('batch1')}</div>
-                                <div className="text-xs text-gray-500">{t('batch1Desc')}</div>
+                                <div className="font-medium text-text-primary">{t('batch1')}</div>
+                                <div className="text-xs text-text-tertiary">{t('batch1Desc')}</div>
                             </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <label className="flex items-center gap-3 p-3 border border-border-strong rounded-lg cursor-pointer hover:bg-muted transition-colors">
                             <input
                                 type="radio"
                                 checked={rebuildBatchSize > 1 && rebuildBatchSize !== 5 && rebuildBatchSize !== 10}
                                 onChange={() => setRebuildBatchSize(20)}
-                                className="w-4 h-4 text-blue-600"
+                                className="w-4 h-4 text-accent-foreground"
                             />
                             <div className="flex-1">
-                                <div className="font-medium text-gray-900">{t('customBatch')}</div>
+                                <div className="font-medium text-text-primary">{t('customBatch')}</div>
                                 {(rebuildBatchSize > 1 && rebuildBatchSize !== 5 && rebuildBatchSize !== 10) && (
                                     <input
                                         type="number"
@@ -689,11 +689,11 @@ export default function AdminSubsClient({
                                             setRebuildBatchSize(Math.max(1, Math.min(1000, val)));
                                         }}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="mt-2 w-full border border-border-input rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                         placeholder={t('customBatchPlaceholder')}
                                     />
                                 )}
-                                <div className="text-xs text-gray-500 mt-1">{t('customBatchDesc')}</div>
+                                <div className="text-xs text-text-tertiary mt-1">{t('customBatchDesc')}</div>
                             </div>
                         </label>
                     </div>
@@ -716,7 +716,7 @@ export default function AdminSubsClient({
                         </button>
                         <button
                             onClick={() => setShowRebuildModal(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                            className="px-4 py-2 border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors font-medium"
                         >
                             {t('cancel')}
                         </button>

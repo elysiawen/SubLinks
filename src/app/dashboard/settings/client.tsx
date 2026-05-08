@@ -26,8 +26,8 @@ export default function SettingsClient({
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-10">
             <div>
-                <h1 className="text-2xl font-bold text-gray-800">{t('settings.heading')}</h1>
-                <p className="text-sm text-gray-500 mt-1">{t('settings.description')}</p>
+                <h1 className="text-2xl font-bold text-text-primary">{t('settings.heading')}</h1>
+                <p className="text-sm text-text-tertiary mt-1">{t('settings.description')}</p>
             </div>
 
             {/* Profile Section */}

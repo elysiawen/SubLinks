@@ -194,21 +194,21 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
     return (
         <div className={className}>
             <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-text-secondary">
                     {t('contentLabel')}
                 </label>
-                <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs">
+                <div className="bg-muted p-0.5 rounded-lg flex text-xs">
                     <button
                         onClick={() => handleSwitchMode('simple')}
                         disabled={isSwitching}
-                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
+                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'simple' ? 'bg-card text-accent-foreground shadow-sm font-medium' : 'text-text-tertiary'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         {t('simpleMode')}
                     </button>
                     <button
                         onClick={() => handleSwitchMode('advanced')}
                         disabled={isSwitching}
-                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500'} ${isSwitching ? 'opacity-50' : ''}`}
+                        className={`px-3 py-1 rounded-md transition-all ${groupMode === 'advanced' ? 'bg-card text-accent-foreground shadow-sm font-medium' : 'text-text-tertiary'} ${isSwitching ? 'opacity-50' : ''}`}
                     >
                         {t('advancedMode')}
                     </button>
@@ -216,7 +216,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
             </div>
 
             {isSwitching ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400 border border-dashed border-gray-200 rounded-lg animate-in fade-in duration-200">
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg animate-in fade-in duration-200">
                     <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-xs italic">{t('switching')}</span>
                 </div>
@@ -225,18 +225,18 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                     <textarea
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        className="w-full px-4 py-3 border border-border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                         rows={15}
                         placeholder={t('yamlPlaceholder')}
                     />
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-text-quaternary mt-1">
                         {t('yamlFormat')}
                     </p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {/* Add Group Form */}
-                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="border border-border-strong rounded-lg p-4 bg-muted">
                         <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="text"
@@ -244,13 +244,13 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 onChange={(e) => setNewGroupName(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addGuiGroup()}
                                 placeholder={t('groupNamePlaceholder')}
-                                className="w-full sm:flex-1 sm:min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-1"
+                                className="w-full sm:flex-1 sm:min-w-0 border border-border-input rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent order-1 sm:order-1"
                             />
                             <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-2">
                                 <select
                                     value={newGroupType}
                                     onChange={(e) => setNewGroupType(e.target.value)}
-                                    className="flex-1 sm:w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="flex-1 sm:w-32 border border-border-input rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
                                     <option value="select">select</option>
                                     <option value="url-test">url-test</option>
@@ -270,7 +270,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                     {/* Search Bar */}
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-4 w-4 text-text-quaternary group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
@@ -279,22 +279,22 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             value={groupSearch}
                             onChange={(e) => setGroupSearch(e.target.value)}
                             placeholder={t('searchGroupsPlaceholder')}
-                            className="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                            className="block w-full pl-9 pr-3 py-2 border border-border-strong rounded-lg bg-card placeholder-text-quaternary focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
 
                     {/* Groups List */}
                     {filteredGroups.length === 0 ? (
-                        <div className="text-center text-gray-400 text-sm py-8 border border-dashed border-gray-300 rounded-lg">
+                        <div className="text-center text-text-quaternary text-sm py-8 border border-dashed border-border-input rounded-lg">
                             {groupSearch ? t('noGroupsMatch') : t('noGroups')}
                         </div>
                     ) : (
                         <div className="space-y-3">
                             {filteredGroups.map((group) => (
-                                <div key={group.id} className="border border-gray-200 rounded-lg p-4">
+                                <div key={group.id} className="border border-border-strong rounded-lg p-4">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-gray-800">{group.name}</span>
+                                            <span className="font-semibold text-text-primary">{group.name}</span>
                                             <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">
                                                 {group.type}
                                             </span>
@@ -312,7 +312,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                         {group.proxies.length > 0 && (
                                             <div className="flex flex-wrap gap-2 mb-2">
                                                 {group.proxies.map((proxy, idx) => {
-                                                    let badgeClass = 'bg-blue-50 text-blue-700';
+                                                    let badgeClass = 'bg-accent text-blue-700';
                                                     let displayText = proxy;
 
                                                     if (proxy.startsWith('SOURCE:')) {
@@ -345,7 +345,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                         )}
                                         <button
                                             onClick={() => openProxySelector(group.id)}
-                                            className="w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 text-sm transition-colors flex items-center justify-center gap-1"
+                                            className="w-full py-1.5 border border-dashed border-border-input rounded-lg text-text-tertiary hover:border-blue-500 hover:text-blue-500 text-sm transition-colors flex items-center justify-center gap-1"
                                         >
                                             <span>{t('addNode')}</span>
                                         </button>
@@ -354,7 +354,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             ))}
                         </div>
                     )}
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-text-quaternary">
                         {t('groupCount', { count: guiGroups.length })}
                     </p>
                 </div>
@@ -369,11 +369,11 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                 zIndex={60}
             >
                 <div className="flex flex-col h-[65vh]">
-                    <div className="border-b border-gray-100 space-y-4 shrink-0 pb-4 px-1">
+                    <div className="border-b border-border space-y-4 shrink-0 pb-4 px-1">
                         {/* Search Bar */}
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="h-5 w-5 text-text-quaternary group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
@@ -382,34 +382,34 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 value={proxySearch}
                                 onChange={(e) => setProxySearch(e.target.value)}
                                 placeholder={t('searchNodes')}
-                                className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm"
+                                className="block w-full pl-10 pr-3 py-2.5 border border-border-strong rounded-xl leading-5 bg-muted placeholder-text-quaternary focus:outline-none focus:bg-card focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm"
                             />
                         </div>
 
                         {/* Dynamic Filter Section */}
-                        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                            <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                                <h4 className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                        <div className="bg-card border border-border-strong rounded-xl shadow-sm overflow-hidden">
+                            <div className="px-3 py-2 bg-muted border-b border-border flex justify-between items-center">
+                                <h4 className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
                                     <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                                     </svg>
                                     {t('dynamicFilter')}
                                 </h4>
-                                <span className="text-[10px] text-gray-400">{t('dynamicFilterHint')}</span>
+                                <span className="text-[10px] text-text-quaternary">{t('dynamicFilterHint')}</span>
                             </div>
 
                             <div className="p-3 space-y-3">
                                 <div className="flex gap-2">
                                     <div className="relative shrink-0">
                                         <select
-                                            className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg pl-3 pr-8 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                                            className="appearance-none bg-muted border border-border-strong text-text-secondary text-sm rounded-lg pl-3 pr-8 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                                             value={dynamicFilterType}
                                             onChange={(e) => setDynamicFilterType(e.target.value)}
                                         >
                                             <option value="KEYWORD">{t('keyword')}</option>
                                             <option value="REGEX">{t('regex')}</option>
                                         </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-tertiary">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
@@ -422,7 +422,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             value={dynamicFilterValue}
                                             onChange={(e) => setDynamicFilterValue(e.target.value)}
                                             placeholder={dynamicFilterType === 'KEYWORD' ? t('keywordPlaceholder') : t('regexPlaceholder')}
-                                            className="block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                            className="block w-full border border-border-strong rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                             onKeyPress={(e) => {
                                                 if (e.key === 'Enter' && dynamicFilterValue.trim()) {
                                                     const key = `${dynamicFilterType}:${dynamicFilterValue.trim()}`;
@@ -448,7 +448,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                         disabled={!dynamicFilterValue.trim()}
                                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${dynamicFilterValue.trim()
                                             ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow shadow-indigo-200'
-                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            : 'bg-muted text-text-quaternary cursor-not-allowed'
                                             }`}
                                     >
                                         {t('add')}
@@ -481,7 +481,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
 
                                             if (matchedProxies.length === 0) {
                                                 return (
-                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                    <div className="flex items-center gap-2 text-xs text-text-tertiary">
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                         </svg>
@@ -502,12 +502,12 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     </div>
                                                     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
                                                         {matchedProxies.slice(0, 50).map(p => (
-                                                            <div key={p.id} className="px-2 py-1 bg-white text-gray-600 rounded-md border border-indigo-100 text-[10px] shadow-sm truncate max-w-[120px]" title={p.name}>
+                                                            <div key={p.id} className="px-2 py-1 bg-card text-text-secondary rounded-md border border-indigo-100 text-[10px] shadow-sm truncate max-w-[120px]" title={p.name}>
                                                                 {p.name}
                                                             </div>
                                                         ))}
                                                         {matchedProxies.length > 50 && (
-                                                            <span className="px-2 py-1 text-[10px] text-gray-400 flex items-center">{t('moreNodes', { count: matchedProxies.length })}</span>
+                                                            <span className="px-2 py-1 text-[10px] text-text-quaternary flex items-center">{t('moreNodes', { count: matchedProxies.length })}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -522,8 +522,8 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                     <div className="overflow-y-auto flex-1 py-2 space-y-6 px-1 custom-scrollbar">
                         {/* Special Proxies */}
                         <div>
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                            <h4 className="text-xs font-bold text-text-quaternary uppercase tracking-widest mb-3 pl-1 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-text-quaternary"></span>
                                 {t('builtinPolicies')}
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -540,10 +540,10 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             }}
                                             disabled={!!isAdded}
                                             className={`text-left px-3 py-2 rounded-lg border transition-all text-sm font-medium flex items-center justify-between ${isAdded
-                                                ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                                ? 'bg-muted border-border-strong text-text-quaternary cursor-not-allowed'
                                                 : isSelected
-                                                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-gray-700'
+                                                    ? 'bg-accent border-blue-500 text-blue-700'
+                                                    : 'border-border-strong hover:border-blue-500 hover:bg-accent text-text-secondary'
                                                 }`}
                                         >
                                             <span>{p}</span>
@@ -560,7 +560,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                     <button
                                         key={p}
                                         onClick={() => toggleProxySelection(p)}
-                                        className="text-left px-3 py-2 rounded-lg border border-blue-500 bg-blue-50 text-blue-700 transition-all text-sm font-medium flex items-center justify-between"
+                                        className="text-left px-3 py-2 rounded-lg border border-blue-500 bg-accent text-blue-700 transition-all text-sm font-medium flex items-center justify-between"
                                     >
                                         <span className="truncate">
                                             {p.startsWith('KEYWORD:') ? `🔍 ${p.substring(8)}` : `🔡 ${p.substring(6)}`}
@@ -573,19 +573,19 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
 
                         {/* Upstream Proxies */}
                         {Object.entries(groupedProxies).map(([source, sourceProxies]) => (
-                            <div key={source} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md">
+                            <div key={source} className="border border-border rounded-xl overflow-hidden bg-card shadow-sm transition-all hover:shadow-md">
                                 <div
-                                    className="flex items-center justify-between p-3 bg-gray-50/50 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                                    className="flex items-center justify-between p-3 bg-muted/50 cursor-pointer hover:bg-muted transition-colors select-none"
                                     onClick={() => toggleSourceCollapse(source)}
                                 >
-                                    <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
-                                        <div className={`w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm text-gray-400 transform transition-transform duration-200 ${collapsedSources.includes(source) ? '-rotate-90' : ''}`}>
+                                    <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                        <div className={`w-5 h-5 rounded-full bg-card border border-border-strong flex items-center justify-center shadow-sm text-text-quaternary transform transition-transform duration-200 ${collapsedSources.includes(source) ? '-rotate-90' : ''}`}>
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
                                         </div>
                                         {source}
-                                        <span className="bg-white text-gray-500 px-2 py-0.5 rounded-full text-[10px] border border-gray-200 shadow-sm font-normal">{sourceProxies.length}</span>
+                                        <span className="bg-card text-text-tertiary px-2 py-0.5 rounded-full text-[10px] border border-border-strong shadow-sm font-normal">{sourceProxies.length}</span>
                                     </h4>
                                     <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                                         <button
@@ -599,8 +599,8 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             className={`text-[10px] px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 font-medium ${selectedProxies.includes(`SOURCE:${source}`)
                                                 ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
                                                 : guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(`SOURCE:${source}`)
-                                                    ? 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed'
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 hover:shadow-sm'
+                                                    ? 'bg-muted text-text-quaternary border-border cursor-not-allowed'
+                                                    : 'bg-card border-border-strong text-text-secondary hover:border-purple-300 hover:text-purple-600 hover:shadow-sm'
                                                 }`}
                                             title={t('sourceAllHint')}
                                         >
@@ -609,7 +609,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             </span>
                                             {selectedProxies.includes(`SOURCE:${source}`) ? t('selectedAll') : t('dynamicSelectAll')}
                                         </button>
-                                        <div className="h-4 w-px bg-gray-200"></div>
+                                        <div className="h-4 w-px bg-border-strong"></div>
                                         <button
                                             onClick={() => {
                                                 const proxiesToAdd = sourceProxies
@@ -625,14 +625,14 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     setSelectedProxies(Array.from(newSelected));
                                                 }
                                             }}
-                                            className="text-[10px] text-gray-500 hover:text-blue-600 font-medium transition-colors"
+                                            className="text-[10px] text-text-tertiary hover:text-blue-600 font-medium transition-colors"
                                         >
                                             {t('selectAllDeselect')}
                                         </button>
                                     </div>
                                 </div>
                                 {!collapsedSources.includes(source) && (
-                                    <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 border-t border-gray-100 bg-white">
+                                    <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 border-t border-border bg-card">
                                         {sourceProxies.map(p => {
                                             const isSelected = selectedProxies.includes(p.name);
                                             const isAdded = guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(p.name);
@@ -646,16 +646,16 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     }}
                                                     disabled={!!isAdded}
                                                     className={`text-left px-3 py-2 rounded-lg border transition-all text-sm truncate flex items-center justify-between group relative ${isAdded
-                                                        ? 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                                        ? 'bg-muted border-border text-text-quaternary cursor-not-allowed opacity-60'
                                                         : isSelected
-                                                            ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                                                            : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5'
+                                                            ? 'bg-accent border-blue-200 text-blue-700 shadow-sm ring-1 ring-blue-200'
+                                                            : 'bg-card border-border-strong text-text-secondary hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5'
                                                         }`}
                                                     title={p.name}
                                                 >
                                                     <span className="truncate pr-2">{p.name}</span>
                                                     {isAdded ? (
-                                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded">{t('joined')}</span>
+                                                        <span className="text-[10px] bg-muted text-text-tertiary px-1.5 rounded">{t('joined')}</span>
                                                     ) : isSelected && (
                                                         <span className="text-blue-600 flex-shrink-0">
                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -672,10 +672,10 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                         ))}
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200 flex gap-3">
+                    <div className="pt-4 border-t border-border-strong flex gap-3">
                         <button
                             onClick={() => setShowProxySelector(false)}
-                            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="flex-1 px-4 py-2 bg-muted text-text-secondary rounded-lg hover:bg-border-strong transition-colors"
                         >
                             {t('cancel')}
                         </button>
@@ -683,7 +683,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             onClick={addSelectedProxies}
                             disabled={selectedProxies.length === 0}
                             className={`flex-1 px-4 py-2 rounded-lg transition-colors ${selectedProxies.length === 0
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                ? 'bg-border-strong text-text-quaternary cursor-not-allowed'
                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                                 }`}
                         >

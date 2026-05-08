@@ -46,7 +46,7 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
 
     return (
         <div className="flex flex-col gap-4 mt-6 px-2">
-            <div className="text-sm text-gray-500 text-center sm:text-left">
+            <div className="text-sm text-text-tertiary text-center sm:text-left">
                 {t('showingRange', {
                     from: (currentPage - 1) * itemsPerPage + 1,
                     to: Math.min(currentPage * itemsPerPage, total),
@@ -60,7 +60,7 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
                         value={itemsPerPage}
                         onChange={handleLimitChange}
                         disabled={isPending}
-                        className="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 outline-none focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50"
+                        className="w-full border border-border-input rounded-lg text-sm px-3 py-2 outline-none focus:border-accent-foreground disabled:opacity-50 disabled:bg-muted"
                     >
                         <option value="10">{t('perPage', { count: 10 })}</option>
                         <option value="30">{t('perPage', { count: 30 })}</option>
@@ -72,10 +72,10 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage <= 1 || isPending}
-                        className="px-3 sm:px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center gap-2 min-w-[70px] sm:min-w-[90px] justify-center"
+                        className="px-3 sm:px-4 py-2 rounded-lg border border-border-input bg-card text-text-secondary text-sm font-medium hover:bg-muted hover:text-text-primary transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card flex items-center gap-2 min-w-[70px] sm:min-w-[90px] justify-center"
                     >
                         {isPending ? (
-                            <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 text-text-tertiary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
@@ -83,7 +83,7 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
                     </button>
 
                     <div className="flex items-center gap-2 px-1 sm:px-2">
-                        <span className="text-sm font-medium text-gray-600 whitespace-nowrap">
+                        <span className="text-sm font-medium text-text-secondary whitespace-nowrap">
                             {t('pageInfo', { current: currentPage, total: Math.max(1, totalPages) })}
                         </span>
                         <div className="hidden sm:flex items-center gap-1">
@@ -91,7 +91,7 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
                                 type="number"
                                 min={1}
                                 max={totalPages}
-                                className="w-12 px-1 py-1 text-center border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="w-12 px-1 py-1 text-center border border-border-input rounded-md text-sm outline-none focus:border-accent-foreground focus:ring-1 focus:ring-accent-foreground"
                                 placeholder={t('pagePlaceholder')}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
@@ -103,17 +103,17 @@ export default function Pagination({ total, currentPage, itemsPerPage }: Paginat
                                     }
                                 }}
                             />
-                            <span className="text-xs text-gray-400">{t('go')}</span>
+                            <span className="text-xs text-text-quaternary">{t('go')}</span>
                         </div>
                     </div>
 
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage >= totalPages || isPending}
-                        className="px-3 sm:px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white flex items-center gap-2 min-w-[70px] sm:min-w-[90px] justify-center"
+                        className="px-3 sm:px-4 py-2 rounded-lg border border-border-input bg-card text-text-secondary text-sm font-medium hover:bg-muted hover:text-text-primary transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card flex items-center gap-2 min-w-[70px] sm:min-w-[90px] justify-center"
                     >
                         {isPending ? (
-                            <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 text-text-tertiary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>

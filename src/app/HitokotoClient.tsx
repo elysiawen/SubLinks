@@ -85,7 +85,7 @@ export default function HitokotoClient({ customBg }: { customBg?: string }) {
                                     </blockquote>
 
                                     {/* Source */}
-                                    <div className="text-gray-400 text-sm space-y-1">
+                                    <div className="text-text-quaternary text-sm space-y-1">
                                         <p className="font-medium">
                                             — {quote.from_who ? `${quote.from_who}，` : ''}{quote.from}
                                         </p>
@@ -117,7 +117,7 @@ export default function HitokotoClient({ customBg }: { customBg?: string }) {
             </div>
 
             {/* Footer - at bottom */}
-            <div className="z-10 text-center text-xs text-gray-500 space-y-2 pb-4">
+            <div className="z-10 text-center text-xs text-text-tertiary space-y-2 pb-4">
                 <p>一言 · Hitokoto</p>
                 <p>&copy; {new Date().getFullYear()}</p>
             </div>

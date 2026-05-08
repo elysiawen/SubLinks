@@ -297,12 +297,12 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
     ];
 
     const editorFooter = (
-        <div className="px-5 py-4 bg-white border-t border-gray-100 flex-shrink-0">
-            <div className="flex justify-between items-center bg-gray-50/80 px-5 py-3 border border-gray-200/60 rounded-xl shadow-sm">
-                <div className="text-sm font-medium text-gray-500">
+        <div className="px-5 py-4 bg-card border-t border-border flex-shrink-0">
+            <div className="flex justify-between items-center bg-muted/80 px-5 py-3 border border-border-strong/60 rounded-xl shadow-sm">
+                <div className="text-sm font-medium text-text-tertiary">
                     {tab === 'nodes' && (hasNodeChanges ? <span className="text-amber-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> {t('unsavedNodes')}</span> : t('allNodesSaved'))}
                     {tab === 'groups' && (hasGroupChanges ? <span className="text-amber-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> {t('unsavedGroups')}</span> : t('allGroupsSaved'))}
-                    {tab === 'rules' && (hasRuleChanges ? <span className="text-blue-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> {t('unsavedRules')}</span> : t('allRulesSaved'))}
+                    {tab === 'rules' && (hasRuleChanges ? <span className="text-accent-foreground flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent0 animate-pulse"></span> {t('unsavedRules')}</span> : t('allRulesSaved'))}
                 </div>
                 {tab === 'nodes' && (
                     <button onClick={handleSaveNodes} disabled={!hasNodeChanges || savingNodes} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 transition-all flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                     </button>
                 )}
                 {tab === 'groups' && (
-                    <button onClick={handleSaveGroups} disabled={!hasGroupChanges || savingGroups} className="px-6 py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-300 transition-all flex items-center gap-2">
+                    <button onClick={handleSaveGroups} disabled={!hasGroupChanges || savingGroups} className="px-6 py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-border-strong transition-all flex items-center gap-2">
                         {savingGroups ? t('savingGroups') : t('saveGroups')}
                     </button>
                 )}
@@ -332,20 +332,20 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
             footer={!loading && editorFooter}
         >
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
+                <div className="flex flex-col items-center justify-center py-16 text-text-quaternary gap-3">
                     <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-sm">{t('loading')}</span>
                 </div>
             ) : (
                 <div className="flex flex-col gap-5">
-                    <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+                    <div className="flex gap-1 p-1 bg-muted rounded-xl">
                         {tabs.map(tabItem => (
                             <button
                                 key={tabItem.key} onClick={() => setTab(tabItem.key)}
-                                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === tabItem.key ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:bg-white/50'}`}
+                                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === tabItem.key ? 'bg-card text-text-primary shadow-sm' : 'text-text-tertiary hover:bg-card/50'}`}
                             >
                                 <span>{tabItem.emoji} {tabItem.label}</span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === tabItem.key ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-500'}`}>{tabItem.count}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === tabItem.key ? 'bg-blue-100 text-accent-foreground' : 'bg-gray-200 text-text-tertiary'}`}>{tabItem.count}</span>
                             </button>
                         ))}
                     </div>
@@ -361,13 +361,13 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                 hideConfigInput={!!importPreview}
                             />
                             {importPreview && (
-                                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex flex-col gap-4">
+                                <div className="bg-accent border border-blue-100 rounded-2xl p-5 flex flex-col gap-4">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-bold text-blue-800">{t('parsePreview')}</h4>
-                                        <button onClick={() => setImportPreview(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                                        <button onClick={() => setImportPreview(null)} className="text-text-quaternary hover:text-text-secondary">✕</button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.nodes ? 'bg-white border-blue-200' : 'bg-white/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.nodes ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.nodes} onChange={e => setImportOptions(prev => ({ ...prev, nodes: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('proxyNodes', { count: importPreview.proxies.length })}</span>
@@ -378,7 +378,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                                 </select>
                                             )}
                                         </label>
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.groups ? 'bg-white border-blue-200' : 'bg-white/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.groups ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.groups} onChange={e => setImportOptions(prev => ({ ...prev, groups: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('proxyGroups', { count: importPreview.groups.length })}</span>
@@ -389,7 +389,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                                 </select>
                                             )}
                                         </label>
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.rules ? 'bg-white border-blue-200' : 'bg-white/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.rules ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.rules} onChange={e => setImportOptions(prev => ({ ...prev, rules: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('routingRules', { count: importPreview.rules.length })}</span>
@@ -405,7 +405,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                         <button onClick={handleConfirmImport} disabled={isImporting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">
                                             {isImporting ? t('importing') : t('confirmImport')}
                                         </button>
-                                        <button onClick={() => setImportPreview(null)} disabled={isImporting} className="px-6 py-2 border bg-white rounded-xl font-medium text-gray-600 hover:bg-gray-50">{t('cancel')}</button>
+                                        <button onClick={() => setImportPreview(null)} disabled={isImporting} className="px-6 py-2 border bg-card rounded-xl font-medium text-text-secondary hover:bg-muted">{t('cancel')}</button>
                                     </div>
                                 </div>
                             )}
@@ -413,31 +413,31 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                             {nodes.length > 0 && (
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-3">
-                                        <input type="text" value={nodeSearch} onChange={e => setNodeSearch(e.target.value)} placeholder={t('searchNodes')} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white" />
+                                        <input type="text" value={nodeSearch} onChange={e => setNodeSearch(e.target.value)} placeholder={t('searchNodes')} className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-sm bg-card" />
                                         {selectedNodeIds.size > 0 && (
-                                            <button onClick={handleDeleteSelectedNodes} disabled={deletingNodes} className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shrink-0">
+                                            <button onClick={handleDeleteSelectedNodes} disabled={deletingNodes} className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 rounded-lg shrink-0">
                                                 {t('deleteSelected', { count: selectedNodeIds.size })}
                                             </button>
                                         )}
                                     </div>
-                                    <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                                        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
+                                    <div className="border border-border-strong rounded-xl overflow-hidden shadow-sm">
+                                        <div className="flex items-center justify-between px-3 py-2 bg-muted border-b border-border-strong">
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={filteredNodes.length > 0 && selectedNodeIds.size === filteredNodes.length} onChange={() => setSelectedNodeIds(selectedNodeIds.size === filteredNodes.length && filteredNodes.length > 0 ? new Set() : new Set(filteredNodes.map(n => n.id)))} className="cursor-pointer" />
-                                                <span className="text-xs font-semibold text-gray-500">{t('nodeList')}</span>
+                                                <span className="text-xs font-semibold text-text-tertiary">{t('nodeList')}</span>
                                             </div>
-                                            <span className="text-xs text-gray-400">{t('nodeCount', { filtered: filteredNodes.length, total: nodes.length })}</span>
+                                            <span className="text-xs text-text-quaternary">{t('nodeCount', { filtered: filteredNodes.length, total: nodes.length })}</span>
                                         </div>
-                                        <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-                                            {filteredNodes.length === 0 ? <div className="py-8 text-center text-gray-400 text-sm">{t('noMatchNodes')}</div> : filteredNodes.map(node => (
-                                                <div key={node.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 group">
+                                        <div className="max-h-64 overflow-y-auto divide-y divide-border">
+                                            {filteredNodes.length === 0 ? <div className="py-8 text-center text-text-quaternary text-sm">{t('noMatchNodes')}</div> : filteredNodes.map(node => (
+                                                <div key={node.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-muted group">
                                                     <div className="flex items-center gap-3">
                                                         <input type="checkbox" checked={selectedNodeIds.has(node.id)} onChange={() => { const s = new Set(selectedNodeIds); s.has(node.id) ? s.delete(node.id) : s.add(node.id); setSelectedNodeIds(s); }} className="cursor-pointer" />
-                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${PROTOCOL_COLORS[node.type] || 'bg-gray-100 text-gray-600'}`}>{node.type}</span>
-                                                        <span className="text-sm font-medium text-gray-700">{node.name}</span>
-                                                        <span className="text-xs text-gray-400 font-mono hidden sm:block">{node.server}:{node.port}</span>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${PROTOCOL_COLORS[node.type] || 'bg-muted text-text-secondary'}`}>{node.type}</span>
+                                                        <span className="text-sm font-medium text-text-secondary">{node.name}</span>
+                                                        <span className="text-xs text-text-quaternary font-mono hidden sm:block">{node.server}:{node.port}</span>
                                                     </div>
-                                                    <button onClick={() => handleDeleteNode(node.id, node.name)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100">✕</button>
+                                                    <button onClick={() => handleDeleteNode(node.id, node.name)} className="text-text-quaternary hover:text-red-500 opacity-0 group-hover:opacity-100">✕</button>
                                                 </div>
                                             ))}
                                         </div>
@@ -449,14 +449,14 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
 
                     {tab === 'groups' && (
                         <div className="relative">
-                            {savingGroups && <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-gray-600"><div className="w-5 h-5 border-2 border-green-500 border-t-green-200 rounded-full animate-spin mr-2" /> {t('saveGroupConfig')}</div>}
+                            {savingGroups && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-green-500 border-t-green-200 rounded-full animate-spin mr-2" /> {t('saveGroupConfig')}</div>}
                             <GroupEditor value={groupsText} onChange={handleGroupsTextChange} proxies={memoizedProxies} />
                         </div>
                     )}
 
                     {tab === 'rules' && (
                         <div className="relative">
-                            {savingRules && <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-gray-600"><div className="w-5 h-5 border-2 border-blue-500 border-t-blue-200 rounded-full animate-spin mr-2" /> {t('saveRuleConfig')}</div>}
+                            {savingRules && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-blue-500 border-t-blue-200 rounded-full animate-spin mr-2" /> {t('saveRuleConfig')}</div>}
                             <RuleEditor value={rulesText} onChange={handleRulesTextChange} proxyGroups={memoizedGroups} />
                         </div>
                     )}

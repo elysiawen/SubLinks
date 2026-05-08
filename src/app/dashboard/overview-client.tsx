@@ -102,39 +102,39 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Combined Subscription Stats */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-2xl p-6 border border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-blue-900">{t('subscriptionStats')}</h3>
+                        <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('subscriptionStats')}</h3>
                         <span className="text-2xl">📋</span>
                     </div>
                     <div className="flex items-end justify-between">
                         <div>
-                            <p className="text-4xl font-bold text-blue-900">{totalSubs}</p>
-                            <p className="text-xs text-blue-700 mt-1">{t('totalSubs')}</p>
+                            <p className="text-4xl font-bold text-blue-900 dark:text-blue-100">{totalSubs}</p>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{t('totalSubs')}</p>
                         </div>
                         <div className="text-right space-y-1">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-blue-700">{t('enabled')}</span>
+                                <span className="text-xs text-blue-700 dark:text-blue-300">{t('enabled')}</span>
                                 <span className="text-lg font-bold text-green-600">{enabledSubs}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-blue-700">{t('disabled')}</span>
-                                <span className="text-lg font-bold text-gray-500">{totalSubs - enabledSubs}</span>
+                                <span className="text-xs text-blue-700 dark:text-blue-300">{t('disabled')}</span>
+                                <span className="text-lg font-bold text-text-tertiary">{totalSubs - enabledSubs}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Registration Time */}
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-2xl p-6 border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-purple-900">{t('registrationTime')}</h3>
+                        <h3 className="text-sm font-medium text-purple-900 dark:text-purple-200">{t('registrationTime')}</h3>
                         <span className="text-2xl">📅</span>
                     </div>
                     <div>
-                        <p className="text-3xl font-bold text-purple-900">{formatDate(userCreatedAt)}</p>
-                        <div className="mt-3 pt-3 border-t border-purple-200">
-                            <p className="text-xs text-purple-700">
+                        <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{formatDate(userCreatedAt)}</p>
+                        <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
+                            <p className="text-xs text-purple-700 dark:text-purple-300">
                                 {t('daysUsed', { days: Math.floor((Date.now() - userCreatedAt) / (1000 * 60 * 60 * 24)) })}
                             </p>
                         </div>
@@ -142,15 +142,15 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                 </div>
 
                 {/* 24h API Count */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-2xl p-6 border border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-medium text-green-900">{t('requests24h')}</h3>
+                        <h3 className="text-sm font-medium text-green-900 dark:text-green-200">{t('requests24h')}</h3>
                         <span className="text-2xl">📊</span>
                     </div>
                     <div>
-                        <p className="text-4xl font-bold text-green-900">{apiCount24h}</p>
-                        <div className="mt-3 pt-3 border-t border-green-200">
-                            <p className="text-xs text-green-700">{t('apiAccessCount')}</p>
+                        <p className="text-4xl font-bold text-green-900 dark:text-green-100">{apiCount24h}</p>
+                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                            <p className="text-xs text-green-700 dark:text-green-300">{t('apiAccessCount')}</p>
                         </div>
                     </div>
                 </div>
@@ -158,8 +158,8 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
 
             {/* Upstream Sources */}
             {upstreamSources.length > 0 && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('upstreamInfo')}</h2>
+                <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+                    <h2 className="text-lg font-semibold text-text-primary mb-4">{t('upstreamInfo')}</h2>
                     <div className="space-y-4">
                         {upstreamSources.map((source) => {
                             const formatBytes = (bytes: number) => {
@@ -183,13 +183,13 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                             };
 
                             const getStatusColor = (source: UpstreamSource) => {
-                                if (source.enabled === false) return 'bg-gray-100 text-gray-500 border-gray-200';
+                                if (source.enabled === false) return 'bg-muted text-text-tertiary border-border-strong';
 
                                 switch (source.status) {
-                                    case 'success': return 'bg-green-100 text-green-700 border-green-200';
-                                    case 'failure': return 'bg-red-100 text-red-700 border-red-200';
-                                    case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-                                    default: return 'bg-gray-100 text-gray-700 border-gray-200';
+                                    case 'success': return 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800';
+                                    case 'failure': return 'bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
+                                    case 'pending': return 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+                                    default: return 'bg-muted text-text-secondary border-border-strong';
                                 }
                             };
 
@@ -205,9 +205,9 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                             };
 
                             return (
-                                <div key={source.name} className="border border-gray-200 rounded-lg p-4 hover:border-blue-200 transition-colors">
+                                <div key={source.name} className="border border-border-strong rounded-lg p-4 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
                                     <div className="flex items-start justify-between mb-3">
-                                        <h3 className="font-semibold text-gray-800">{source.name}</h3>
+                                        <h3 className="font-semibold text-text-primary">{source.name}</h3>
                                         <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(source)}`}>
                                             {getStatusText(source)}
                                         </span>
@@ -216,18 +216,18 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                     {source.traffic ? (
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">{t('usedTraffic')}</span>
-                                                <span className="font-medium text-gray-800">
+                                                <span className="text-text-secondary">{t('usedTraffic')}</span>
+                                                <span className="font-medium text-text-primary">
                                                     {formatBytes(source.traffic.upload + source.traffic.download)}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">{t('totalTraffic')}</span>
-                                                <span className="font-medium text-gray-800">
+                                                <span className="text-text-secondary">{t('totalTraffic')}</span>
+                                                <span className="font-medium text-text-primary">
                                                     {formatBytes(source.traffic.total)}
                                                 </span>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                            <div className="w-full bg-muted rounded-full h-2 mt-2">
                                                 <div
                                                     className="bg-blue-600 h-2 rounded-full transition-all"
                                                     style={{
@@ -235,7 +235,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                                     }}
                                                 />
                                             </div>
-                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <div className="flex justify-between text-xs text-text-tertiary mt-1">
                                                 <span>{t('usageRate', { rate: Math.round(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100) })}</span>
                                                 {source.traffic.expire > 0 && (
                                                     <span>{t('expire', { date: new Date(source.traffic.expire * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) })}</span>
@@ -243,10 +243,10 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">{t('noTrafficInfo')}</p>
+                                        <p className="text-sm text-text-tertiary">{t('noTrafficInfo')}</p>
                                     )}
 
-                                    <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                                    <div className="mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
                                         {t('lastUpdated', { time: formatSourceDate(source.lastUpdated) })}
                                     </div>
                                 </div>
@@ -258,10 +258,10 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
 
             {/* Access Logs */}
             {accessLogs.length > 0 && (
-                <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+                <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base md:text-lg font-semibold text-gray-800">{t('accessLogs')}</h2>
-                        <span className="text-xs md:text-sm text-gray-500">{t('recentCount', { count: accessLogs.length })}</span>
+                        <h2 className="text-base md:text-lg font-semibold text-text-primary">{t('accessLogs')}</h2>
+                        <span className="text-xs md:text-sm text-text-tertiary">{t('recentCount', { count: accessLogs.length })}</span>
                     </div>
                     <div className="space-y-2 md:space-y-3">
                         {accessLogs.map((log) => {
@@ -276,32 +276,32 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                             };
 
                             const getStatusColor = (status: number) => {
-                                if (status >= 200 && status < 300) return 'text-green-600';
-                                if (status >= 400) return 'text-red-600';
-                                return 'text-gray-600';
+                                if (status >= 200 && status < 300) return 'text-green-600 dark:text-green-400';
+                                if (status >= 400) return 'text-red-600 dark:text-red-400';
+                                return 'text-text-secondary';
                             };
 
                             return (
-                                <div key={log.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 gap-2">
+                                <div key={log.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-3 rounded-lg hover:bg-muted transition-colors border border-border gap-2">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-medium text-gray-800 text-xs md:text-sm truncate">
+                                            <span className="font-medium text-text-primary text-xs md:text-sm truncate">
                                                 {log.apiType || t('subscriptionRequest')}
                                             </span>
                                             <span className={`text-xs font-mono ${getStatusColor(log.status)}`}>
                                                 {log.status}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <div className="flex items-center gap-2 text-xs text-text-tertiary">
                                             <span className="font-mono">{log.ip}</span>
                                             <span className="hidden md:inline">•</span>
                                             <span className="hidden md:inline truncate">{log.ua.substring(0, 40)}...</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between md:flex-col md:items-end md:text-right md:ml-4 flex-shrink-0">
-                                        <p className="text-xs text-gray-500">{formatLogDate(log.timestamp)}</p>
+                                        <p className="text-xs text-text-tertiary">{formatLogDate(log.timestamp)}</p>
                                         {log.requestMethod && (
-                                            <p className="text-xs text-gray-400">{log.requestMethod}</p>
+                                            <p className="text-xs text-text-quaternary">{log.requestMethod}</p>
                                         )}
                                     </div>
                                 </div>

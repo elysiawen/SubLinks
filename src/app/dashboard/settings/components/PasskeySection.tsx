@@ -110,17 +110,17 @@ export default function PasskeySection() {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-6 border-b border-border">
+                <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     {t('settings.passkey.heading')}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">{t('settings.passkey.description')}</p>
+                <p className="text-sm text-text-tertiary mt-1">{t('settings.passkey.description')}</p>
             </div>
 
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-gray-800">{t('settings.passkey.savedKeys')}</h3>
+                    <h3 className="text-lg font-bold text-text-primary">{t('settings.passkey.savedKeys')}</h3>
                     <button
                         onClick={startAddFlow}
                         disabled={loading}
@@ -137,7 +137,7 @@ export default function PasskeySection() {
 
                 <div className="space-y-3">
                     {loading && passkeys.length === 0 ? (
-                        <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2">
+                        <div className="text-center py-10 text-text-tertiary bg-muted rounded-xl border border-border flex items-center justify-center gap-2">
                             <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -145,20 +145,20 @@ export default function PasskeySection() {
                             <span className="text-sm">{t('settings.passkey.loading')}</span>
                         </div>
                     ) : passkeys.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
+                        <div className="text-center py-8 text-text-quaternary bg-muted rounded-xl border border-border border-dashed">
                             {t('settings.passkey.empty')}
                         </div>
                     ) : (
                         passkeys.map(key => (
-                            <div key={key.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                            <div key={key.id} className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:border-border-strong transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-xl shadow-sm border border-gray-100">
+                                    <div className="w-10 h-10 bg-card rounded-lg flex items-center justify-center text-xl shadow-sm border border-border">
                                         🔑
                                     </div>
                                     <div>
-                                        <div className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <div className="font-semibold text-text-primary flex items-center gap-2">
                                             {key.name || t('settings.passkey.unnamed')}
-                                            <span className="text-xs font-normal px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1" title={`AAGUID: ${key.aaguid || 'N/A'}`}>
+                                            <span className="text-xs font-normal px-2 py-0.5 bg-muted rounded-full text-text-tertiary border border-border-strong flex items-center gap-1" title={`AAGUID: ${key.aaguid || 'N/A'}`}>
                                                 <img
                                                     src={key.providerIcon || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIxMSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4='}
                                                     alt={key.providerName || 'Unknown'}
@@ -167,16 +167,16 @@ export default function PasskeySection() {
                                                 <span>{key.providerName || 'Unknown Provider'}</span>
                                             </span>
                                         </div>
-                                        <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                        <div className="text-xs text-text-tertiary flex items-center gap-2 mt-0.5">
                                             <span>{t('settings.passkey.createdAt')} {new Date(key.createdAt).toLocaleDateString()}</span>
-                                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                            <span className="w-1 h-1 bg-border-strong rounded-full"></span>
                                             <span>{t('settings.passkey.lastUsed')} {new Date(key.lastUsed).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(key.id)}
-                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    className="p-2 text-text-quaternary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors"
                                     title={t('settings.passkey.deleteTitle')}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -198,7 +198,7 @@ export default function PasskeySection() {
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.passkey.keyName')}</label>
+                        <label className="block text-sm font-semibold text-text-secondary mb-2">{t('settings.passkey.keyName')}</label>
                         <input
                             type="text"
                             autoFocus
@@ -209,10 +209,10 @@ export default function PasskeySection() {
                                     handleAddPasskey();
                                 }
                             }}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                             placeholder="e.g. Windows Hello, Security Key..."
                         />
-                        <p className="text-xs text-gray-500 mt-1">{t('settings.passkey.keyNameHelp')}</p>
+                        <p className="text-xs text-text-tertiary mt-1">{t('settings.passkey.keyNameHelp')}</p>
                     </div>
 
                     <div className="flex gap-2 pt-2">

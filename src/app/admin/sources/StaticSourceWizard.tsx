@@ -270,13 +270,13 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         <div className="flex items-center gap-2 shrink-0">
                             <div className={`
                                 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300
-                                ${i <= step ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-400'}
+                                ${i <= step ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-muted text-text-quaternary'}
                             `}>
                                 {i < step ? '✓' : i + 1}
                             </div>
                             <span className={`
                                 text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap
-                                ${i === step ? 'text-gray-900 font-bold block' : 'text-gray-400 font-medium hidden md:block'}
+                                ${i === step ? 'text-text-primary font-bold block' : 'text-text-quaternary font-medium hidden md:block'}
                             `}>
                                 {title}
                             </span>
@@ -292,7 +292,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             {step === 0 && (
                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-2">
-                        <label className="block text-sm font-bold text-gray-700">
+                        <label className="block text-sm font-bold text-text-secondary">
                             {t('nameLabel')} <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -304,17 +304,17 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             }}
                             placeholder={t('namePlaceholder')}
                             onKeyDown={e => e.key === 'Enter' && handleNameNext()}
-                            className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all"
+                            className="w-full border border-border-input rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all"
                             autoFocus
                         />
-                        <p className="text-xs text-gray-400 flex items-center gap-1.5 ml-1">
+                        <p className="text-xs text-text-quaternary flex items-center gap-1.5 ml-1">
                             <span>ℹ️</span> {t('nameHint')}
                         </p>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             onClick={handleClose}
-                            className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                            className="px-6 py-2.5 border border-border-strong rounded-xl bg-card text-text-secondary hover:bg-muted hover:border-border-input transition-all font-semibold text-sm"
                         >
                             {t('cancel')}
                         </button>
@@ -341,12 +341,12 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 {/* Node list */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
-                        <span className="text-sm font-bold text-gray-700">{t('addedNodes')}</span>
-                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full ring-1 ring-blue-100">{nodes.length}</span>
+                        <span className="text-sm font-bold text-text-secondary">{t('addedNodes')}</span>
+                        <span className="text-[10px] font-bold bg-accent text-accent-foreground px-2 py-0.5 rounded-full ring-1 ring-blue-100">{nodes.length}</span>
                     </div>
                     {nodes.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-100 rounded-2xl text-gray-300">
-                            <div className="p-3 bg-gray-50 rounded-full">
+                        <div className="py-12 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-2xl text-gray-300">
+                            <div className="p-3 bg-muted rounded-full">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
@@ -354,19 +354,19 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             <span className="text-sm font-medium">{t('noNodesHint')}</span>
                         </div>
                     ) : (
-                        <div className="max-h-[220px] overflow-y-auto rounded-2xl border border-gray-200/50 divide-y divide-gray-50">
+                        <div className="max-h-[220px] overflow-y-auto rounded-2xl border border-border-strong/50 divide-y divide-gray-50">
                             {nodes.map(node => (
-                                <div key={node.id} className="group flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+                                <div key={node.id} className="group flex items-center justify-between p-3 hover:bg-muted transition-colors">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <span className={`
                                                 shrink-0 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider
-                                                ${PROTOCOL_COLORS[node.type] || 'bg-gray-100 text-gray-600'}
+                                                ${PROTOCOL_COLORS[node.type] || 'bg-muted text-text-secondary'}
                                             `}>
                                             {node.type}
                                         </span>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-[13px] font-bold text-gray-700 truncate">{node.name}</span>
-                                            <span className="text-[10px] text-gray-400 font-mono tracking-tight">{node.server}:{node.port}</span>
+                                            <span className="text-[13px] font-bold text-text-secondary truncate">{node.name}</span>
+                                            <span className="text-[10px] text-text-quaternary font-mono tracking-tight">{node.server}:{node.port}</span>
                                         </div>
                                     </div>
                                     <button
@@ -385,10 +385,10 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 </div>
 
                 {/* Navigation */}
-                <div className="flex justify-between gap-3 sm:gap-4 pt-4 border-t border-gray-50">
+                <div className="flex justify-between gap-3 sm:gap-4 pt-4 border-t border-muted">
                     <button
                         onClick={() => initialName ? handleClose() : setStep(0)}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border border-border-strong rounded-xl bg-card text-text-tertiary hover:bg-muted hover:border-border-input transition-all font-semibold text-sm"
                     >
                         {initialName ? t('cancel') : t('prev')}
                     </button>
@@ -408,8 +408,8 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 
             {/* Step 2: Proxy Groups */}
             <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 2 ? 'block' : 'hidden'}`}>
-                <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
-                    <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
+                <p className="text-sm text-text-quaternary bg-muted p-4 rounded-xl border border-border-strong/50 leading-relaxed">
+                    <span className="font-bold text-text-secondary italic mr-1">TIPS:</span>
                     {t('groupsTip')}
                 </p>
 
@@ -422,10 +422,10 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 </div>
 
                 {/* Navigation */}
-                <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                <div className="flex justify-between gap-4 pt-4 border-t border-muted">
                     <button
                         onClick={() => setStep(1)}
-                        className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                        className="px-6 py-2.5 border border-border-strong rounded-xl bg-card text-text-tertiary hover:bg-muted hover:border-border-input transition-all font-semibold text-sm"
                     >
                         {t('prev')}
                     </button>
@@ -440,8 +440,8 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 
             {/* Step 3: Rules */}
             <div className={`flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${step === 3 ? 'block' : 'hidden'}`}>
-                <p className="text-sm text-gray-400 bg-gray-50 p-4 rounded-xl border border-gray-200/50 leading-relaxed">
-                    <span className="font-bold text-gray-600 italic mr-1">TIPS:</span>
+                <p className="text-sm text-text-quaternary bg-muted p-4 rounded-xl border border-border-strong/50 leading-relaxed">
+                    <span className="font-bold text-text-secondary italic mr-1">TIPS:</span>
                     {t('rulesTip')}
                 </p>
 
@@ -454,10 +454,10 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                 </div>
 
                 {/* Navigation */}
-                <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                <div className="flex justify-between gap-4 pt-4 border-t border-muted">
                     <button
                         onClick={() => setStep(2)}
-                        className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                        className="px-6 py-2.5 border border-border-strong rounded-xl bg-card text-text-tertiary hover:bg-muted hover:border-border-input transition-all font-semibold text-sm"
                     >
                         {t('prev')}
                     </button>
@@ -473,64 +473,64 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             {/* Step 4: Confirm */}
             {step === 4 && (
                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
+                    <div className="bg-accent/30 p-4 rounded-xl border border-blue-100/50">
                         <h4 className="text-sm font-bold text-blue-800 mb-1 flex items-center gap-2">
                             <span>🔍</span> {t('confirmTitle')}
                         </h4>
-                        <p className="text-xs text-blue-600 leading-relaxed">
+                        <p className="text-xs text-accent-foreground leading-relaxed">
                             {t('confirmDesc')}
                         </p>
                     </div>
 
-                    <div className="p-5 sm:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
-                        <div className="font-bold text-gray-800 text-xs sm:text-sm flex items-center gap-2 uppercase tracking-wider pb-3 border-b border-gray-50">
+                    <div className="p-5 sm:p-6 bg-card border border-border-strong rounded-2xl shadow-sm space-y-6">
+                        <div className="font-bold text-text-primary text-xs sm:text-sm flex items-center gap-2 uppercase tracking-wider pb-3 border-b border-muted">
                             <span>📊</span> {t('configSummary')}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-12 animate-in fade-in slide-in-from-top-1 duration-500">
                             <div className="space-y-1.5 group">
-                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <div className="text-[10px] text-text-quaternary font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-blue-400"></span>
                                     {t('sourceNameLabel')}
                                 </div>
-                                <div className="text-sm text-gray-800 font-black pl-2.5 border-l-2 border-blue-100 group-hover:border-blue-400 transition-colors">{sourceName.trim()}</div>
+                                <div className="text-sm text-text-primary font-black pl-2.5 border-l-2 border-blue-100 group-hover:border-blue-400 transition-colors">{sourceName.trim()}</div>
                             </div>
 
                             <div className="space-y-1.5 group">
-                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <div className="text-[10px] text-text-quaternary font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
                                     {t('nodeCountLabel')}
                                 </div>
-                                <div className="text-sm text-emerald-600 font-black pl-2.5 border-l-2 border-emerald-100 group-hover:border-emerald-400 transition-colors">{nodes.length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('nodesReady')}</span></div>
+                                <div className="text-sm text-emerald-600 font-black pl-2.5 border-l-2 border-emerald-100 group-hover:border-emerald-400 transition-colors">{nodes.length} <span className="text-[10px] font-medium text-text-quaternary ml-1">{t('nodesReady')}</span></div>
                             </div>
 
                             <div className="space-y-1.5 group">
-                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <div className="text-[10px] text-text-quaternary font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
                                     {t('groupConfigLabel')}
                                 </div>
                                 <div className="text-sm text-indigo-600 font-black pl-2.5 border-l-2 border-indigo-100 group-hover:border-indigo-400 transition-colors">
-                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('visualGroups')}</span>
+                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-text-quaternary ml-1">{t('visualGroups')}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-1.5 group">
-                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                <div className="text-[10px] text-text-quaternary font-bold uppercase tracking-widest flex items-center gap-1.5">
                                     <span className="w-1 h-1 rounded-full bg-purple-400"></span>
                                     {t('routingRulesLabel')}
                                 </div>
-                                <div className="text-sm text-purple-600 font-black pl-2.5 border-l-2 border-purple-100 group-hover:border-purple-400 transition-colors">
-                                    {rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} <span className="text-[10px] font-medium text-gray-400 ml-1">{t('ruleLogic')}</span>
+                                <div className="text-sm text-purple-600 dark:text-purple-400 font-black pl-2.5 border-l-2 border-purple-100 dark:border-purple-800 group-hover:border-purple-400 transition-colors">
+                                    {rulesText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} <span className="text-[10px] font-medium text-text-quaternary ml-1">{t('ruleLogic')}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Navigation */}
-                    <div className="flex justify-between gap-4 pt-4 border-t border-gray-50">
+                    <div className="flex justify-between gap-4 pt-4 border-t border-muted">
                         <button
                             onClick={() => setStep(3)}
-                            className="px-6 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold text-sm"
+                            className="px-6 py-2.5 border border-border-strong rounded-xl bg-card text-text-tertiary hover:bg-muted hover:border-border-input transition-all font-semibold text-sm"
                         >
                             {t('prev')}
                         </button>

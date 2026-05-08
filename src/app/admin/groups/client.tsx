@@ -47,24 +47,24 @@ export default function AdminGroupsClient({
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                     🎯 {t('title')}
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{totalCount}</span>
+                    <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{totalCount}</span>
                 </h2>
                 <a
                     href="/admin/groups/custom"
-                    className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                    className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors font-medium"
                 >
                     📝 {t('manageCustom')}
                 </a>
             </div>
 
             {customSets.length > 0 && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-sm border border-purple-100 p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">📚 {t('customGroupSets')}</h3>
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40 rounded-xl shadow-sm border border-purple-100 dark:border-purple-900/50 p-4">
+                    <h3 className="text-sm font-semibold text-text-secondary mb-2">📚 {t('customGroupSets')}</h3>
                     <div className="flex flex-wrap gap-2">
                         {customSets.map(set => (
-                            <span key={set.id} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white text-purple-700 border border-purple-200">
+                            <span key={set.id} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-card text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                                 {set.name}
                             </span>
                         ))}
@@ -73,7 +73,7 @@ export default function AdminGroupsClient({
             )}
 
             {sources.length === 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-text-quaternary">
                     {t('noGroups')}
                 </div>
             )}
@@ -83,12 +83,12 @@ export default function AdminGroupsClient({
                     const groups = groupsBySource[source];
 
                     return (
-                        <div key={source} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                        <div key={source} className="bg-card rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                                     📡 {source}
                                     {sourceTypes[source] === 'static' && (
-                                        <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                        <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                                             {t('staticBadge')}
                                         </span>
                                     )}
@@ -96,21 +96,21 @@ export default function AdminGroupsClient({
                             </div>
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">{t('groupCount')}</span>
+                                    <span className="text-text-secondary">{t('groupCount')}</span>
                                     <span className="font-semibold text-green-600">{groups.length}</span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setSelectedSource(source)}
-                                    className={`bg-green-50 text-green-600 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                    className={`bg-green-50 dark:bg-green-500/15 text-green-600 dark:text-green-400 px-4 py-2 rounded-lg hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
                                 >
                                     {t('viewDetail')}
                                 </button>
                                 {sourceTypes[source] === 'static' && (
                                     <button
                                         onClick={() => setEditingSource(source)}
-                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                        className="bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/25 transition-colors font-medium text-sm flex-1"
                                     >
                                         ⚙️ {t('manage')}
                                     </button>
@@ -129,7 +129,7 @@ export default function AdminGroupsClient({
                     selectedSource ? (
                         <div className="flex items-center gap-2">
                             <span>📡 {selectedSource}</span>
-                            <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                            <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">
                                 {t('detailCount', { filtered: filteredGroups.length, total: selectedGroups.length })}
                             </span>
                         </div>
@@ -142,19 +142,19 @@ export default function AdminGroupsClient({
                         {/* Search Box */}
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400" />
+                                <Search className="h-4 w-4 text-text-quaternary" />
                             </div>
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('searchPlaceholder')}
-                                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
+                                className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-quaternary hover:text-text-secondary"
                                 >
                                     ✕
                                 </button>
@@ -165,36 +165,36 @@ export default function AdminGroupsClient({
                         <div className="overflow-auto max-h-[60vh] space-y-4">
                             {filteredGroups.length > 0 ? (
                                 filteredGroups.map((group, idx) => (
-                                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
+                                    <div key={idx} className="border border-border-strong rounded-lg p-4 hover:border-green-300 transition-colors">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h4 className="text-base font-semibold text-gray-800">{group.name}</h4>
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                                            <h4 className="text-base font-semibold text-text-primary">{group.name}</h4>
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800">
                                                 {group.type}
                                             </span>
                                         </div>
-                                        <div className="text-sm text-gray-600">
+                                        <div className="text-sm text-text-secondary">
                                             <span className="font-medium">{t('proxyList')}</span>
                                             <div className="mt-1 flex flex-wrap gap-1">
                                                 {group.proxies && group.proxies.length > 0 ? (
                                                     group.proxies.map((proxy: string, i: number) => (
-                                                        <span key={i} className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                                                        <span key={i} className="inline-block px-2 py-0.5 bg-muted text-text-secondary rounded text-xs">
                                                             {proxy}
                                                         </span>
                                                     ))
                                                 ) : (
-                                                    <span className="text-gray-400 text-xs">{t('noProxy')}</span>
+                                                    <span className="text-text-quaternary text-xs">{t('noProxy')}</span>
                                                 )}
                                             </div>
                                         </div>
                                         {group.url && (
-                                            <div className="mt-2 text-xs text-gray-500">
+                                            <div className="mt-2 text-xs text-text-tertiary">
                                                 <span className="font-medium">URL:</span> {group.url}
                                             </div>
                                         )}
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-text-quaternary">
                                     {searchQuery ? t('noMatch') : t('noGroupsModal')}
                                 </div>
                             )}

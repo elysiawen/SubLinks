@@ -36,7 +36,7 @@ export default async function AdminGroupsPage() {
     if (error) {
         return (
             <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-800">🎯 策略组列表</h2>
+                <h2 className="text-2xl font-bold text-text-primary">🎯 策略组列表</h2>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-red-600">⚠️ 加载失败: {error}</p>
                 </div>

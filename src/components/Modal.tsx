@@ -57,13 +57,13 @@ export default function Modal({
             />
 
             {/* Modal Content */}
-            <div className={`bg-white rounded-xl shadow-2xl w-full ${maxWidth} flex flex-col relative z-20 animate-zoom-in max-h-[90vh] ${className}`}>
+            <div className={`bg-card rounded-xl shadow-2xl w-full ${maxWidth} flex flex-col relative z-20 animate-zoom-in max-h-[90vh] ${className}`}>
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100 shrink-0">
-                    <div className="text-lg font-bold text-gray-800">{title}</div>
+                <div className="flex justify-between items-center p-6 border-b border-border shrink-0">
+                    <div className="text-lg font-bold text-text-primary">{title}</div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 outline-none p-1 rounded-md hover:bg-gray-50 transition-colors"
+                        className="text-text-quaternary hover:text-text-secondary outline-none p-1 rounded-md hover:bg-muted transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

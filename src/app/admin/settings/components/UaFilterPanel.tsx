@@ -31,11 +31,11 @@ export default function UaFilterPanel({ initialConfig }: { initialConfig?: any }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
                 <span className="mr-2">🛡️</span> {t('heading')}
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-text-secondary mb-4">
                 {t('description')}
             </p>
             <div>

@@ -192,22 +192,22 @@ export default function SessionManager({
 
     return (
         <div className="space-y-6">
-            <div className="bg-gray-50/50 dark:bg-zinc-900/20 rounded-[2.5rem] p-4 sm:p-6 border border-gray-100 dark:border-zinc-800/50 space-y-5">
+            <div className="bg-muted/50 rounded-[2.5rem] p-4 sm:p-6 border border-border space-y-5">
                 {/* Filter Options */}
                 {!loading && sessions.length > 0 && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-1">
-                        <div className="flex items-center gap-2 text-gray-400 dark:text-zinc-500">
+                        <div className="flex items-center gap-2 text-text-quaternary">
                             <Filter className="w-4 h-4" />
                             <span className="text-xs font-bold uppercase tracking-widest">{t('session.filterSessions')}</span>
                         </div>
 
-                        <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-zinc-800 rounded-2xl border border-gray-200/50 dark:border-zinc-700/30 shadow-sm">
+                        <div className="flex items-center gap-2 p-1.5 bg-card rounded-2xl border border-border-strong shadow-sm">
                             <button
                                 onClick={() => toggleFilterType('web')}
                                 className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                                     filterTypes.includes('web')
                                         ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                                        : 'text-text-tertiary hover:text-text-secondary hover:bg-muted'
                                 }`}
                             >
                                 <Monitor className="w-3.5 h-3.5" />
@@ -217,14 +217,14 @@ export default function SessionManager({
                                 )}
                             </button>
 
-                            <div className="w-px h-4 bg-gray-200 dark:bg-zinc-700" />
+                            <div className="w-px h-4 bg-border-strong" />
 
                             <button
                                 onClick={() => toggleFilterType('client')}
                                 className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                                     filterTypes.includes('client')
                                         ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700'
+                                        : 'text-text-tertiary hover:text-text-secondary hover:bg-muted'
                                 }`}
                             >
                                 <Box className="w-3.5 h-3.5" />
@@ -239,11 +239,11 @@ export default function SessionManager({
 
                 {/* Search Bar */}
                 <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-quaternary group-focus-within:text-blue-500 transition-colors" />
                     <input
                         type="text"
                         placeholder={isAdmin ? t('session.searchAdmin') : t('session.searchUser')}
-                        className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700/50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium text-sm shadow-sm"
+                        className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium text-sm shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -253,13 +253,13 @@ export default function SessionManager({
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <RefreshCcw className="w-10 h-10 text-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                    <p className="text-sm text-gray-400 font-medium animate-pulse">{t('session.loading')}</p>
+                    <p className="text-sm text-text-quaternary font-medium animate-pulse">{t('session.loading')}</p>
                 </div>
             ) : filteredSessions.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50/30 dark:bg-zinc-900/10 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800">
-                    <ShieldCheck className="w-16 h-16 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('session.noSessions')}</h3>
-                    <p className="text-sm text-gray-500 mt-2">{t('session.noSessionsDesc')}</p>
+                <div className="text-center py-20 bg-muted/30 rounded-3xl border border-dashed border-border-strong">
+                    <ShieldCheck className="w-16 h-16 text-text-quaternary mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-text-primary">{t('session.noSessions')}</h3>
+                    <p className="text-sm text-text-tertiary mt-2">{t('session.noSessionsDesc')}</p>
                 </div>
             ) : (
                 <div className="grid gap-4">
@@ -270,16 +270,16 @@ export default function SessionManager({
                         return (
                             <div
                                 key={session.id}
-                                className={`group relative flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 sm:p-5 bg-white dark:bg-zinc-900/40 rounded-3xl border transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/40 dark:hover:shadow-black/20 ${isCurrent
+                                className={`group relative flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 sm:p-5 bg-card rounded-3xl border transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/40 dark:hover:shadow-black/20 ${isCurrent
                                     ? 'border-blue-500/30 bg-blue-50/10 dark:bg-blue-900/10 shadow-sm shadow-blue-500/5'
-                                    : 'border-gray-100 dark:border-zinc-800 hover:border-blue-200 dark:hover:border-blue-900/40'
+                                    : 'border-border hover:border-blue-200 dark:hover:border-blue-900/40'
                                     }`}
                             >
                                 <div className="flex items-start lg:items-center gap-3 sm:gap-5 w-full">
                                     {/* Icon */}
                                     <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 ${isCurrent
                                         ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30'
-                                        : 'bg-gray-50 dark:bg-zinc-800 border-gray-100 dark:border-zinc-700 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-zinc-700 group-hover:text-blue-600 group-hover:border-blue-200 dark:group-hover:border-blue-900/50 group-hover:scale-105'
+                                        : 'bg-muted border-border text-text-quaternary group-hover:bg-card group-hover:text-blue-600 group-hover:border-blue-200 dark:group-hover:border-blue-900/50 group-hover:scale-105'
                                         }`}>
                                         {session.type === 'client' ? (
                                             <Box className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -294,12 +294,12 @@ export default function SessionManager({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap mb-1.5">
                                             {isAdmin && session.username && (
-                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-lg whitespace-nowrap">
-                                                    <UserIcon className="w-3.5 h-3.5 text-gray-500" />
-                                                    <span className="text-sm font-black text-gray-900 dark:text-gray-100">{session.username}</span>
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-lg whitespace-nowrap">
+                                                    <UserIcon className="w-3.5 h-3.5 text-text-tertiary" />
+                                                    <span className="text-sm font-black text-text-primary">{session.username}</span>
                                                 </div>
                                             )}
-                                            <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight break-all sm:break-normal whitespace-normal sm:whitespace-nowrap leading-snug">
+                                            <h4 className="font-bold text-text-primary text-lg tracking-tight break-all sm:break-normal whitespace-normal sm:whitespace-nowrap leading-snug">
                                                 {session.deviceInfo && session.deviceInfo !== session.ua ? session.deviceInfo : resolveUAName(info)}
                                             </h4>
                                             {isCurrent && (
@@ -327,7 +327,7 @@ export default function SessionManager({
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                                            <div className="flex items-center gap-4 text-xs text-text-tertiary flex-wrap">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     <div className="flex items-center gap-1.5 shrink-0">
                                                         <Globe className="w-4 h-4 text-blue-500/60" />
@@ -359,12 +359,12 @@ export default function SessionManager({
 
                                             {/* UA with Tooltip */}
                                             <div className="group/ua relative">
-                                                <div className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-zinc-500 font-mono transition-colors group-hover:text-gray-500 dark:group-hover:text-zinc-400 cursor-help">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-text-quaternary font-mono transition-colors group-hover:text-text-tertiary cursor-help">
                                                     <LayoutPanelLeft className="w-3.5 h-3.5 flex-shrink-0" />
                                                     <span className="truncate max-w-[200px] sm:max-w-md md:max-w-lg">{session.ua}</span>
                                                 </div>
                                                 <div className="absolute bottom-full left-0 mb-2 invisible group-hover/ua:visible bg-zinc-900 text-zinc-100 text-[10px] p-3 rounded-xl w-72 break-all shadow-2xl z-30 border border-zinc-700 whitespace-normal leading-relaxed">
-                                                    <div className="font-bold text-gray-400 mb-1 border-b border-zinc-700 pb-1">{t('session.fullUA')}</div>
+                                                    <div className="font-bold text-text-quaternary mb-1 border-b border-zinc-700 pb-1">{t('session.fullUA')}</div>
                                                     {session.ua}
                                                 </div>
                                             </div>
@@ -373,7 +373,7 @@ export default function SessionManager({
                                 </div>
 
                                 {/* Actions */}
-                                <div className={`flex items-center justify-end w-full lg:w-auto lg:mt-0 lg:pt-0 lg:border-t-0 border-gray-100 dark:border-zinc-800/60 ${!isCurrent ? 'mt-5 pt-4 border-t' : 'mt-2'}`}>
+                                <div className={`flex items-center justify-end w-full lg:w-auto lg:mt-0 lg:pt-0 lg:border-t-0 border-border ${!isCurrent ? 'mt-5 pt-4 border-t' : 'mt-2'}`}>
                                     {!isCurrent ? (
                                         <button
                                             onClick={() => handleRevokeAction(session.id, session.type, isCurrent)}
@@ -388,7 +388,7 @@ export default function SessionManager({
                                             <span>{isAdmin ? t('session.forceLogout') : t('session.forceOffline')}</span>
                                         </button>
                                     ) : (
-                                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-zinc-600 font-medium px-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-1.5 text-[10px] text-text-quaternary font-medium px-4 whitespace-nowrap">
                                             <ShieldCheck className="w-3.5 h-3.5" />
                                             {t('session.protectedSession')}
                                         </div>

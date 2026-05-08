@@ -41,24 +41,24 @@ export default function AdminRulesClient({
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                     ⚡ {t('title')}
-                    <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{totalCount}</span>
+                    <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">{totalCount}</span>
                 </h2>
                 <a
                     href="/admin/rules/custom"
-                    className="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                    className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors font-medium"
                 >
                     📝 {t('manageCustom')}
                 </a>
             </div>
 
             {customSets.length > 0 && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-sm border border-purple-100 p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">📚 {t('customRuleSets')}</h3>
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40 rounded-xl shadow-sm border border-purple-100 dark:border-purple-900/50 p-4">
+                    <h3 className="text-sm font-semibold text-text-secondary mb-2">📚 {t('customRuleSets')}</h3>
                     <div className="flex flex-wrap gap-2">
                         {customSets.map(set => (
-                            <span key={set.id} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white text-purple-700 border border-purple-200">
+                            <span key={set.id} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-card text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                                 {set.name}
                             </span>
                         ))}
@@ -67,7 +67,7 @@ export default function AdminRulesClient({
             )}
 
             {sources.length === 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-text-quaternary">
                     {t('noRules')}
                 </div>
             )}
@@ -77,12 +77,12 @@ export default function AdminRulesClient({
                     const rules = rulesBySource[source];
 
                     return (
-                        <div key={source} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                        <div key={source} className="bg-card rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                                     📡 {source}
                                     {sourceTypes[source] === 'static' && (
-                                        <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                        <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                                             {t('staticBadge')}
                                         </span>
                                     )}
@@ -90,21 +90,21 @@ export default function AdminRulesClient({
                             </div>
                             <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">{t('ruleCount')}</span>
+                                    <span className="text-text-secondary">{t('ruleCount')}</span>
                                     <span className="font-semibold text-orange-600">{rules.length}</span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setSelectedSource(source)}
-                                    className={`bg-orange-50 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
+                                    className={`bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 px-4 py-2 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/25 transition-colors font-medium text-sm ${sourceTypes[source] === 'static' ? 'flex-1' : 'w-full'}`}
                                 >
                                     {t('viewDetail')}
                                 </button>
                                 {sourceTypes[source] === 'static' && (
                                     <button
                                         onClick={() => setEditingSource(source)}
-                                        className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm flex-1"
+                                        className="bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/25 transition-colors font-medium text-sm flex-1"
                                     >
                                         ⚙️ {t('manage')}
                                     </button>
@@ -123,7 +123,7 @@ export default function AdminRulesClient({
                     selectedSource ? (
                         <div className="flex items-center gap-2">
                             <span>📡 {selectedSource}</span>
-                            <span className="text-sm font-normal text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                            <span className="text-sm font-normal text-text-tertiary bg-muted px-2 py-1 rounded-full">
                                 {t('detailCount', { filtered: filteredRules.length, total: selectedRules.length })}
                             </span>
                         </div>
@@ -136,19 +136,19 @@ export default function AdminRulesClient({
                         {/* Search Box */}
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400" />
+                                <Search className="h-4 w-4 text-text-quaternary" />
                             </div>
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('searchPlaceholder')}
-                                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
+                                className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-quaternary hover:text-text-secondary"
                                 >
                                     ✕
                                 </button>
@@ -158,16 +158,16 @@ export default function AdminRulesClient({
                         {/* Rules List */}
                         <div className="overflow-auto max-h-[60vh]">
                             {filteredRules.length > 0 ? (
-                                <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-1">
+                                <div className="bg-muted rounded-lg p-4 font-mono text-xs space-y-1">
                                     {filteredRules.map((rule, idx) => (
-                                        <div key={idx} className="text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors">
-                                            <span className="text-gray-400 mr-2">{selectedRules.indexOf(rule) + 1}.</span>
+                                        <div key={idx} className="text-text-secondary hover:bg-muted px-2 py-1 rounded transition-colors">
+                                            <span className="text-text-quaternary mr-2">{selectedRules.indexOf(rule) + 1}.</span>
                                             {rule}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-text-quaternary">
                                     {searchQuery ? t('noMatch') : t('noRulesModal')}
                                 </div>
                             )}

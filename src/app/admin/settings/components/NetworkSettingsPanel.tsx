@@ -10,8 +10,8 @@ export default function NetworkSettingsPanel({ config }: { config: any }) {
     const t = useTranslations('admin.settingsPanels.network');
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
                 <span className="mr-2">🌐</span> {t('heading')}
             </h3>
             <form action={async (formData) => {
@@ -21,17 +21,17 @@ export default function NetworkSettingsPanel({ config }: { config: any }) {
                 success(t('saved'));
             }} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('uaLabel')}</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('uaLabel')}</label>
                     <div className="flex flex-col space-y-2">
                         <input
                             type="text"
                             name="upstreamUserAgent"
                             defaultValue={config.upstreamUserAgent || ''}
                             placeholder="Clash/Vercel-Sub-Manager"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="block w-full rounded-md border-border-input shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                         />
-                        <p className="text-sm text-gray-500">
-                            {t('uaHelp')} <code className="bg-gray-100 px-1 rounded">Clash/Vercel-Sub-Manager</code>
+                        <p className="text-sm text-text-tertiary">
+                            {t('uaHelp')} <code className="bg-muted px-1 rounded">Clash/Vercel-Sub-Manager</code>
                         </p>
                     </div>
                 </div>

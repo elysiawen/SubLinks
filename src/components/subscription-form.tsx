@@ -208,9 +208,9 @@ export default function SubscriptionForm({
     return (
         <div className="space-y-5">
             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('remarkLabel')}</label>
+                <label className="block text-sm font-semibold text-text-secondary mb-1">{t('remarkLabel')}</label>
                 <input
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    className="w-full border border-border-input rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-card text-text-primary"
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder={t('remarkPlaceholder')}
@@ -220,7 +220,7 @@ export default function SubscriptionForm({
             {/* Upstream Source Selection */}
             {availableSources.length > 0 && (
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">{t('selectSource')}</label>
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">{t('selectSource')}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
                         {availableSources.map(source => {
                             const isSelected = selectedSources.includes(source.name);
@@ -240,27 +240,27 @@ export default function SubscriptionForm({
                                     className={`
                                         relative flex items-center p-3 rounded-xl border transition-all cursor-pointer select-none group
                                         ${isDisabled
-                                            ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed grayscale'
+                                            ? 'bg-muted border-border-strong opacity-60 cursor-not-allowed grayscale'
                                             : isSelected
-                                                ? 'bg-blue-50 border-blue-500 shadow-sm ring-1 ring-blue-500'
-                                                : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                                                ? 'bg-accent border-blue-500 shadow-sm ring-1 ring-blue-500'
+                                                : 'bg-card border-border-strong hover:border-blue-300 hover:shadow-sm'
                                         }
                                     `}
                                 >
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`font-medium text-sm truncate ${isDisabled ? 'text-gray-500' : 'text-gray-900'}`}>{source.name}</span>
+                                            <span className={`font-medium text-sm truncate ${isDisabled ? 'text-text-tertiary' : 'text-text-primary'}`}>{source.name}</span>
                                             {isDisabled && (
-                                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-200 text-gray-500 font-medium">{t('disabled')}</span>
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-text-tertiary font-medium">{t('disabled')}</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={`flex h-2 w-2 rounded-full ${source.status === 'success' ? 'bg-green-500' : source.status === 'failure' ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
-                                            <span className="text-xs text-gray-500">
+                                            <span className="text-xs text-text-tertiary">
                                                 {source.status === 'success' ? t('normal') : source.status === 'failure' ? t('failure') : t('waiting')}
                                             </span>
                                             {source.lastUpdated && source.lastUpdated > 0 && (
-                                                <span className="text-[10px] text-gray-400">
+                                                <span className="text-[10px] text-text-quaternary">
                                                     {new Date(source.lastUpdated).toLocaleDateString()}
                                                 </span>
                                             )}
@@ -271,9 +271,9 @@ export default function SubscriptionForm({
                                         w-5 h-5 rounded-full border flex items-center justify-center transition-colors ml-3 shrink-0
                                         ${isSelected
                                             ? 'bg-blue-500 border-blue-500 text-white'
-                                            : 'border-gray-300 bg-white group-hover:border-blue-400'
+                                            : 'border-border-input bg-card group-hover:border-blue-400'
                                         }
-                                        ${isDisabled ? 'bg-gray-100 border-gray-200' : ''}
+                                        ${isDisabled ? 'bg-muted border-border-strong' : ''}
                                     `}>
                                         {isSelected && (
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -285,7 +285,7 @@ export default function SubscriptionForm({
                             );
                         })}
                     </div>
-                    <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <p className="text-xs text-text-quaternary mt-2 flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -302,26 +302,26 @@ export default function SubscriptionForm({
                             type="checkbox"
                             checked={enabled}
                             onChange={e => setEnabled(e.target.checked)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-border-input text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-sm font-medium text-gray-700">{t('enableSubscription')}</span>
+                        <span className="text-sm font-medium text-text-secondary">{t('enableSubscription')}</span>
                     </label>
                 </div>
             )}
 
             {/* Advanced Settings - Collapsible */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-border-strong pt-4">
                 <button
                     type="button"
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted hover:bg-accent rounded-lg transition-colors group"
                 >
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-700">{t('advancedConfig')}</span>
-                        <span className="text-xs text-gray-500">{t('advancedConfigDesc')}</span>
+                        <span className="text-sm font-semibold text-text-secondary">{t('advancedConfig')}</span>
+                        <span className="text-xs text-text-tertiary">{t('advancedConfigDesc')}</span>
                     </div>
                     <svg
-                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''
+                        className={`w-5 h-5 text-text-quaternary transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''
                             }`}
                         fill="none"
                         stroke="currentColor"
@@ -335,9 +335,9 @@ export default function SubscriptionForm({
                     <div className="mt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('groupConfig')}</label>
+                                <label className="block text-sm font-semibold text-text-secondary mb-1">{t('groupConfig')}</label>
                                 <select
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
+                                    className="w-full border border-border-input rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-card"
                                     value={groupId}
                                     onChange={e => setGroupId(e.target.value)}
                                 >
@@ -348,9 +348,9 @@ export default function SubscriptionForm({
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('ruleConfig')}</label>
+                                <label className="block text-sm font-semibold text-text-secondary mb-1">{t('ruleConfig')}</label>
                                 <select
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
+                                    className="w-full border border-border-input rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-card"
                                     value={ruleId}
                                     onChange={e => setRuleId(e.target.value)}
                                 >
@@ -375,7 +375,7 @@ export default function SubscriptionForm({
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 border border-gray-200"
+                    className="flex-1 px-5 py-2.5 text-sm font-medium text-text-secondary bg-muted rounded-xl hover:bg-border-strong border border-border-strong"
                 >
                     {t('cancel')}
                 </button>
@@ -403,11 +403,11 @@ export default function SubscriptionForm({
                 }
                 maxWidth="max-w-md"
             >
-                <p className="text-sm text-gray-500 mb-4">{t('dependencyDesc')}</p>
+                <p className="text-sm text-text-tertiary mb-4">{t('dependencyDesc')}</p>
 
-                <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+                <div className="bg-muted rounded-lg p-4 mb-4 space-y-3">
                     <div>
-                        <span className="text-xs text-gray-500 font-medium">{t('missingSourcesLabel')}</span>
+                        <span className="text-xs text-text-tertiary font-medium">{t('missingSourcesLabel')}</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {missingSources.map(source => (
                                 <span key={source} className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-lg border border-amber-200">
@@ -417,27 +417,27 @@ export default function SubscriptionForm({
                         </div>
                     </div>
                     <div>
-                        <span className="text-xs text-gray-500 font-medium">{t('selectedSourcesLabel')}</span>
+                        <span className="text-xs text-text-tertiary font-medium">{t('selectedSourcesLabel')}</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {selectedSources.length > 0 ? selectedSources.map(source => (
-                                <span key={source} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg border border-blue-200">
+                                <span key={source} className="px-2 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs rounded-lg border border-blue-200 dark:border-blue-800">
                                     {source}
                                 </span>
                             )) : (
-                                <span className="text-xs text-gray-400">{t('none')}</span>
+                                <span className="text-xs text-text-quaternary">{t('none')}</span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-text-secondary mb-4">
                     {t('dependencyQuestion')}
                 </p>
 
                 <div className="flex gap-3">
                     <button
                         onClick={declineAddMissingSources}
-                        className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-text-secondary bg-muted rounded-lg hover:bg-border-strong transition-colors"
                     >
                         {t('noContinue')}
                     </button>
