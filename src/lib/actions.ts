@@ -102,7 +102,7 @@ export async function login(prevState: any, formData: FormData) {
     };
 }
 
-export async function logout() {
+export async function clearSession() {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -111,7 +111,11 @@ export async function logout() {
     }
 
     cookieStore.delete(COOKIE_NAME);
-    redirect('/login');
+}
+
+export async function logout() {
+    await clearSession();
+    redirect('/logout');
 }
 
 // QR Code Login Actions

@@ -265,5 +265,11 @@
         "dark": "深色",
         "auto": "自動",
         "system": "跟隨系統"
+    },
+    "logout": {
+        "title": "已登出",
+        "message": "您已安全登出，工作階段已終止。",
+        "backToLogin": "返回登入頁",
+        "loggingOut": "正在登出..."
     }
 }
