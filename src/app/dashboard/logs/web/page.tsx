@@ -15,12 +15,12 @@ export default async function WebLogsPage({ searchParams }: PageProps) {
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const user = await getSession(sessionId);
     if (!user) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const resolvedParams = await searchParams;

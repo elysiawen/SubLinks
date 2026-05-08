@@ -438,7 +438,20 @@ function PasswordLogin() {
 
 function LoginBox() {
     const [loginMethod, setLoginMethod] = useState<'password' | 'qr'>('password');
+    const searchParams = useSearchParams();
+    const { success: toastSuccess } = useToast();
     const t = useTranslations('auth.login');
+    const logoutToastShown = useRef(false);
+
+    useEffect(() => {
+        if (!logoutToastShown.current && searchParams.get('logout') === '1') {
+            logoutToastShown.current = true;
+            toastSuccess(t('logoutSuccess'));
+            const url = new URL(window.location.href);
+            url.searchParams.delete('logout');
+            window.history.replaceState({}, '', url.pathname + url.search);
+        }
+    }, []);
 
     return (
         <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">

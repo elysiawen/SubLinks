@@ -265,11 +265,5 @@
         "dark": "Dark",
         "auto": "Auto",
         "system": "System"
-    },
-    "logout": {
-        "title": "Logged Out",
-        "message": "You have been safely logged out. Your session has been terminated.",
-        "backToLogin": "Back to Login",
-        "loggingOut": "Logging out..."
     }
 }

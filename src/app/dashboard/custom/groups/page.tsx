@@ -12,12 +12,12 @@ export default async function CustomGroupsPage() {
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const user = await getSession(sessionId);
     if (!user) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const groups = await getGroupSets();

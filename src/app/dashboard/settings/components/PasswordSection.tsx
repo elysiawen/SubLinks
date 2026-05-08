@@ -46,7 +46,7 @@ export default function PasswordSection() {
         } else {
             success(t('settings.password.success'));
             setTimeout(() => {
-                router.push('/login');
+                router.push('/auth/login');
             }, 1500);
         }
     };

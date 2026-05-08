@@ -40,7 +40,7 @@ export default function DangerZoneSection({ role }: DangerZoneSectionProps) {
                 error(tError(result.error));
             } else {
                 success(t('settings.dangerZone.deleted'));
-                router.push('/login');
+                router.push('/auth/login');
             }
         }
     };

@@ -12,14 +12,14 @@ export default async function DashboardLayout({
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const headersList = await import('next/headers').then(mod => mod.headers());
     const ip = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || undefined;
     const user = await getSession(sessionId, ip);
     if (!user) {
-        redirect('/login?revoked=1');
+        redirect('/auth/logout');
     }
 
     return <DashboardLayoutClient username={user.username} role={user.role} nickname={user.nickname} avatar={user.avatar}>{children}</DashboardLayoutClient>;

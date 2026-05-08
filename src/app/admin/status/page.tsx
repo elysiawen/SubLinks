@@ -8,12 +8,12 @@ export default async function ServerStatusPage() {
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const session = await getSession(sessionId);
     if (!session || session.role !== 'admin') {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     return <ServerStatusClient />;

@@ -115,7 +115,7 @@ export async function clearSession() {
 
 export async function logout() {
     await clearSession();
-    redirect('/logout');
+    redirect('/auth/login?logout=1');
 }
 
 // QR Code Login Actions

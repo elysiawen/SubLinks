@@ -47,7 +47,6 @@ export async function getSession(sessionId: string, currentIp?: string) {
 
     // Check if account is banned or disabled
     if (user.status !== 'active') {
-        await db.deleteSession(sessionId);
         return null;
     }
 
@@ -56,7 +55,6 @@ export async function getSession(sessionId: string, currentIp?: string) {
 
     if (sessionVersion !== currentVersion) {
         // Token version mismatch, session is invalid
-        await db.deleteSession(sessionId);
         return null;
     }
 

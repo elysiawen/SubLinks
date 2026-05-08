@@ -48,13 +48,13 @@ export function middleware(request: NextRequest) {
     const hasSession = request.cookies.has('auth_session');
 
     if (isProtectedRoute && !hasSession) {
-        const url = new URL('/login', request.url);
+        const url = new URL('/auth/login', request.url);
         url.searchParams.set('callbackUrl', path);
         return NextResponse.redirect(url);
     }
 
     // If we are on login page:
-    if (path === '/login') {
+    if (path === '/auth/login') {
         const isRevoked = request.nextUrl.searchParams.has('revoked');
 
         // 1. If signaled as revoked, clear cookie and stay on login
@@ -90,5 +90,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/api/s/:path*', '/api/client/:path*', '/admin/:path*', '/dashboard/:path*', '/login'],
+    matcher: ['/api/s/:path*', '/api/client/:path*', '/admin/:path*', '/dashboard/:path*', '/auth/login'],
 }

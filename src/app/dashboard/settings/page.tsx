@@ -10,12 +10,12 @@ export default async function SettingsPage() {
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const user = await getSession(sessionId);
     if (!user) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     // 从数据库获取最新的用户信息以包含 2FA 状态

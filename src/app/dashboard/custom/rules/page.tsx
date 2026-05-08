@@ -11,12 +11,12 @@ export default async function CustomRulesPage() {
     const sessionId = cookieStore.get('auth_session')?.value;
 
     if (!sessionId) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const user = await getSession(sessionId);
     if (!user) {
-        redirect('/login');
+        redirect('/auth/login');
     }
 
     const rules = await getRuleSets();

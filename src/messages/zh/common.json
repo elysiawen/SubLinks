@@ -265,11 +265,5 @@
         "dark": "深色",
         "auto": "自动",
         "system": "跟随系统"
-    },
-    "logout": {
-        "title": "已退出登录",
-        "message": "您已安全退出登录，会话已终止。",
-        "backToLogin": "返回登录页",
-        "loggingOut": "正在退出..."
     }
 }

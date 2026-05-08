@@ -1,11 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { clearSession } from '@/lib/actions';
 
-export default function LogoutUI() {
-    const t = useTranslations('common.logout');
+export default function LogoutPage() {
+    const t = useTranslations('auth.logout');
+    const [cleared, setCleared] = useState(false);
+
+    useEffect(() => {
+        clearSession().then(() => setCleared(true));
+    }, []);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 relative overflow-hidden animate-fade-in">
@@ -37,11 +44,11 @@ export default function LogoutUI() {
                         {t('title')}
                     </h3>
                     <p className="text-text-secondary mb-8">
-                        {t('message')}
+                        {cleared ? t('message') : t('loggingOut')}
                     </p>
 
                     <Link
-                        href="/login"
+                        href="/auth/login"
                         className="inline-block w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30"
                     >
                         {t('backToLogin')}
