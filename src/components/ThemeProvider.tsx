@@ -31,7 +31,10 @@ function AutoThemeEffect() {
             }, 60_000);
 
             return () => clearInterval(interval);
+        } else if (mode === 'system') {
+            setTheme('system');
         }
+        // 'light' and 'dark' are handled by next-themes storageKey directly
     }, [setTheme]);
 
     return null;
@@ -43,6 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             attribute="class"
             defaultTheme="light"
             storageKey="theme"
+            enableSystem
             disableTransitionOnChange
         >
             <AutoThemeEffect />

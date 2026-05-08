@@ -2,7 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { Sun, Moon, Clock } from 'lucide-react';
+import { Sun, Moon, Clock, Monitor } from 'lucide-react';
 
 const MODE_KEY = 'sublinks-theme-mode';
 
@@ -26,20 +26,17 @@ export function ThemeToggle() {
     }
 
     const cycleMode = () => {
-        let next: string;
-        if (mode === 'light') {
-            next = 'dark';
-        } else if (mode === 'dark') {
-            next = 'auto';
-        } else {
-            next = 'light';
-        }
+        const order = ['light', 'dark', 'auto', 'system'];
+        const idx = order.indexOf(mode);
+        const next = order[(idx + 1) % order.length];
 
         localStorage.setItem(MODE_KEY, next);
         setMode(next);
 
         if (next === 'auto') {
             setTheme(isDarkHour() ? 'dark' : 'light');
+        } else if (next === 'system') {
+            setTheme('system');
         } else {
             setTheme(next);
         }
@@ -49,9 +46,11 @@ export function ThemeToggle() {
         ? <Sun className="w-4 h-4" />
         : mode === 'dark'
             ? <Moon className="w-4 h-4" />
-            : <Clock className="w-4 h-4" />;
+            : mode === 'auto'
+                ? <Clock className="w-4 h-4" />
+                : <Monitor className="w-4 h-4" />;
 
-    const label = mode === 'light' ? 'Light' : mode === 'dark' ? 'Dark' : 'Auto';
+    const label = mode === 'light' ? 'Light' : mode === 'dark' ? 'Dark' : mode === 'auto' ? 'Auto' : 'System';
 
     return (
         <button
