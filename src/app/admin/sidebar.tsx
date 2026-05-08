@@ -80,9 +80,10 @@ export default function AdminSidebar({ username }: SidebarProps) {
                 <div className="px-4 py-2 mb-2 text-xs text-text-tertiary">
                     {t('currentAdmin')}: <span className="font-bold text-text-secondary">{username}</span>
                 </div>
-                <div className="flex justify-center gap-2 mb-2">
-                    <ThemeToggle />
+                <div className="flex justify-center items-center gap-2 mb-2">
                     <LanguageSwitcher />
+                    <div className="w-px h-4 bg-border-strong" />
+                    <ThemeToggle />
                 </div>
                 <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-accent-foreground bg-accent rounded-lg hover:bg-accent transition-colors font-medium">
                     🏠 {t('backToDashboard')}

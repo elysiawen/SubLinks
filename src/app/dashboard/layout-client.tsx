@@ -304,9 +304,10 @@ export default function DashboardLayoutClient({ children, username, role, nickna
 
                                 {/* Footer / Logout */}
                                 <div className="p-4 border-t border-sidebar-border bg-muted/50 space-y-2">
-                                    <div className="flex justify-center gap-2 mb-1">
-                                        <ThemeToggle />
+                                    <div className="flex justify-center items-center gap-2 mb-1">
                                         <LanguageSwitcher />
+                                        <div className="w-px h-4 bg-border-strong" />
+                                        <ThemeToggle />
                                     </div>
                                     {role === 'admin' && (
                                         <Link
