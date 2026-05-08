@@ -312,7 +312,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                     {role === 'admin' && (
                                         <Link
                                             href="/admin"
-                                            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-accent-foreground bg-accent border border-accent/60 rounded-xl hover:bg-accent hover:border-accent hover:shadow-sm transition-all duration-200 group"
+                                            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-accent-foreground bg-accent border border-accent/60 rounded-xl hover:bg-accent-foreground/10 hover:border-accent-foreground/30 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
                                         >
                                             <span className="group-hover:scale-110 transition-transform duration-200">🛡️</span>
                                             <span>{t('adminPanel')}</span>

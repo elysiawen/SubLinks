@@ -85,7 +85,7 @@ export default function AdminSidebar({ username }: SidebarProps) {
                     <div className="w-px h-4 bg-border-strong" />
                     <ThemeToggle />
                 </div>
-                <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-accent-foreground bg-accent rounded-lg hover:bg-accent transition-colors font-medium">
+                <Link href="/dashboard" className="w-full flex items-center justify-center px-4 py-2 mb-2 text-sm text-accent-foreground bg-accent border border-accent/60 rounded-xl hover:bg-accent-foreground/10 hover:border-accent-foreground/30 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-medium">
                     🏠 {t('backToDashboard')}
                 </Link>
 
