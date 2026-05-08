@@ -219,7 +219,7 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
                                                 <span className="truncate max-w-[150px]" title={log.token || log.path}>{displayPath}</span>
                                                 {log.ip && (
                                                     <>
-                                                        <span className="text-gray-300">|</span>
+                                                        <span className="text-text-tertiary">|</span>
                                                         <span>{log.ip}</span>
                                                     </>
                                                 )}

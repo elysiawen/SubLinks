@@ -285,7 +285,7 @@ export default function AdminUsersClient({
                 <div className="hidden md:block w-full overflow-x-auto">
                     <table className="min-w-full divide-y divide-border">
                         <thead>
-                            <tr className="bg-border-strong">
+                            <tr className="bg-surface">
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider rounded-l-lg">{t('tableUser')}</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider">{t('tableSecurity')}</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-text-primary uppercase tracking-wider">{t('tableStatus')}</th>
@@ -298,7 +298,7 @@ export default function AdminUsersClient({
                                 <tr key={user.username} className="hover:bg-muted transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-text-tertiary text-xs font-semibold overflow-hidden flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-border-strong flex items-center justify-center text-text-tertiary text-xs font-semibold overflow-hidden flex-shrink-0">
                                                 {user.avatar ? (
                                                     <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                                 ) : (
@@ -403,7 +403,7 @@ export default function AdminUsersClient({
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-text-tertiary text-sm font-semibold overflow-hidden flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-border-strong flex items-center justify-center text-text-tertiary text-sm font-semibold overflow-hidden flex-shrink-0">
                                             {user.avatar ? (
                                                 <img src={user.avatar} alt={t('avatar')} className="w-full h-full object-cover" />
                                             ) : (

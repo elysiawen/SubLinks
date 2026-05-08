@@ -259,5 +259,11 @@
         "goHttp": "Go HTTP Client",
         "axios": "Axios (Node.js)",
         "postman": "Postman"
+    },
+    "theme": {
+        "light": "Light",
+        "dark": "Dark",
+        "auto": "Auto",
+        "system": "System"
     }
 }

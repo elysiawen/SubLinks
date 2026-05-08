@@ -9,6 +9,7 @@
   --card-foreground: #111827;
   --muted: #f9fafb;
   --muted-foreground: #6b7280;
+  --surface: #f3f4f6;
   --border: #f3f4f6;
   --border-strong: #e5e7eb;
   --border-input: #d1d5db;
@@ -43,6 +44,7 @@
   --card-foreground: #f4f4f5;
   --muted: #27272a;
   --muted-foreground: #a1a1aa;
+  --surface: #313134;
   --border: #27272a;
   --border-strong: #3f3f46;
   --border-input: #52525b;
@@ -77,6 +79,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-surface: var(--surface);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-border-input: var(--border-input);
@@ -110,6 +113,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.dark select,
+.dark select option,
+.dark select optgroup {
+  background-color: var(--card);
+  color: var(--card-foreground);
 }
 
 /* Custom Animations */

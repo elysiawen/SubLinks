@@ -67,7 +67,7 @@ export default function RefreshApiModal({
                             />
                             <button
                                 onClick={generateKey}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium whitespace-nowrap"
+                                className="px-4 py-2 bg-border-strong text-text-primary rounded-lg hover:bg-muted transition-colors font-medium whitespace-nowrap"
                             >
                                 {t('generate')}
                             </button>
@@ -136,17 +136,17 @@ function CodeBlock({ title, code }: { title: string; code: string }) {
     };
 
     return (
-        <div className="bg-gray-900 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
-                <span className="text-xs text-gray-300 font-medium">{title}</span>
+        <div className="bg-muted rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 bg-border-strong">
+                <span className="text-xs text-text-secondary font-medium">{title}</span>
                 <button
                     onClick={handleCopy}
-                    className="text-xs text-gray-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-700"
+                    className="text-xs text-text-secondary hover:text-text-primary transition-colors px-2 py-1 rounded hover:bg-muted"
                 >
                     {copied ? t('copied') : t('copy')}
                 </button>
             </div>
-            <pre className="px-4 py-3 text-xs text-gray-100 overflow-x-auto">
+            <pre className="px-4 py-3 text-xs text-text-primary overflow-x-auto">
                 <code>{code}</code>
             </pre>
         </div>
@@ -311,7 +311,7 @@ function UsageModal({
                                     onClick={() => setMethod('get')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'get'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >
                                     GET
@@ -320,7 +320,7 @@ function UsageModal({
                                     onClick={() => setMethod('post')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'post'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >
                                     POST
@@ -329,7 +329,7 @@ function UsageModal({
                                     onClick={() => setMethod('bearer')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'bearer'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-muted text-text-secondary hover:bg-gray-200'
+                                        : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >
                                     Bearer
@@ -410,7 +410,7 @@ function UsageModal({
                             <h3 className="text-lg font-semibold text-text-primary mb-3">{t('paramDesc')}</h3>
                             <div className="overflow-x-auto">
                                 <table className="min-w-full text-sm border border-border-strong rounded-lg">
-                                    <thead className="bg-muted">
+                                    <thead className="bg-surface">
                                         <tr>
                                             <th className="px-4 py-2 text-left font-semibold border-b">{t('paramName')}</th>
                                             <th className="px-4 py-2 text-left font-semibold border-b">{t('paramType')}</th>

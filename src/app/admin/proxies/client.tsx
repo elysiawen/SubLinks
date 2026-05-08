@@ -193,7 +193,7 @@ export default function AdminProxiesClient({
                                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${proxy.type === 'ss' ? 'bg-green-400' :
                                                 proxy.type === 'vmess' ? 'bg-purple-400' :
                                                     proxy.type === 'trojan' ? 'bg-orange-400' :
-                                                        proxy.type === 'vless' ? 'bg-pink-400' : 'bg-gray-400'
+                                                        proxy.type === 'vless' ? 'bg-pink-400' : 'bg-text-tertiary'
                                                 }`} />
                                             <div className="truncate font-medium flex-1">{proxy.name}</div>
                                         </button>
@@ -387,7 +387,7 @@ export default function AdminProxiesClient({
                                                     {t('copyJson')}
                                                 </button>
                                             </div>
-                                            <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                                            <div className="bg-muted rounded-lg p-4 overflow-x-auto">
                                                 <pre className="text-xs text-green-400 font-mono leading-relaxed">
                                                     {JSON.stringify(selectedProxy, null, 2)}
                                                 </pre>

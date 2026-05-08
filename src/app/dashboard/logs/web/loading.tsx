@@ -12,7 +12,7 @@ export default function WebLogsLoading() {
             {/* Logs List - Mobile/Desktop Responsive */}
             <div className="bg-card rounded-xl shadow-sm border border-border-strong overflow-hidden">
                 {/* Table Header (Desktop) */}
-                <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted border-b border-border-strong">
+                <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-surface border-b border-border-strong">
                     <div className="col-span-2 h-4 bg-muted rounded"></div>
                     <div className="col-span-2 h-4 bg-muted rounded"></div>
                     <div className="col-span-5 h-4 bg-muted rounded"></div>

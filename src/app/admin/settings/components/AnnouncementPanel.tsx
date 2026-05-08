@@ -62,7 +62,7 @@ export default function AnnouncementPanel({ initialValue }: { initialValue: stri
                 {/* Hidden input to ensure value is always submitted */}
                 <input type="hidden" name="announcement" value={announcement || ''} />
 
-                <div className="mb-4" data-color-mode={resolvedTheme === 'dark' ? 'dark' : 'light'}>
+                <div className="mb-4" suppressHydrationWarning data-color-mode={resolvedTheme === 'dark' ? 'dark' : 'light'}>
                     <label className="block text-sm font-medium text-text-secondary mb-2">{t('label')}</label>
                     <div className="border rounded-lg overflow-hidden">
                         <style>{`

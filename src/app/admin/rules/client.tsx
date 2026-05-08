@@ -143,7 +143,7 @@ export default function AdminRulesClient({
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('searchPlaceholder')}
-                                className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full pl-10 p-2.5 shadow-sm"
+                                className="bg-card border border-border-input text-text-primary text-sm rounded-lg focus:ring-accent focus:border-accent block w-full pl-10 p-2.5 shadow-sm"
                             />
                             {searchQuery && (
                                 <button

@@ -5,7 +5,7 @@ export default function AdminSessionsLoading() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border pb-8">
                 <div className="space-y-3">
                     <div className="h-3 w-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-full"></div>
-                    <div className="h-10 w-64 bg-gray-200 dark:bg-zinc-800 rounded-lg"></div>
+                    <div className="h-10 w-64 bg-border-strong rounded-lg"></div>
                     <div className="h-4 w-96 bg-muted rounded-md"></div>
                 </div>
                 <div className="w-48 h-20 bg-blue-50/50 dark:bg-blue-900/10 rounded-3xl"></div>
@@ -22,7 +22,7 @@ export default function AdminSessionsLoading() {
                             <div className="w-14 h-14 rounded-2xl bg-muted flex-shrink-0"></div>
                             <div className="flex-1 space-y-3">
                                 <div className="flex gap-2">
-                                    <div className="h-6 w-24 bg-gray-200 dark:bg-zinc-800 rounded-lg"></div>
+                                    <div className="h-6 w-24 bg-border-strong rounded-lg"></div>
                                     <div className="h-5 w-32 bg-muted rounded-md"></div>
                                     <div className="h-5 w-12 bg-muted rounded-full"></div>
                                 </div>

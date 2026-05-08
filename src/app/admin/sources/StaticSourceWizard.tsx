@@ -282,7 +282,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                             </span>
                         </div>
                         {i < stepTitles.length - 1 && (
-                            <div className={`h-px transition-colors duration-300 ${i < step ? 'bg-blue-200' : 'bg-gray-200'} flex-1 min-w-[1rem] max-w-[2rem] sm:max-w-none sm:w-8`} />
+                            <div className={`h-px transition-colors duration-300 ${i < step ? 'bg-accent' : 'bg-border-strong'} flex-1 min-w-[1rem] max-w-[2rem] sm:max-w-none sm:w-8`} />
                         )}
                     </Fragment>
                 ))}
@@ -345,7 +345,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         <span className="text-[10px] font-bold bg-accent text-accent-foreground px-2 py-0.5 rounded-full ring-1 ring-blue-100">{nodes.length}</span>
                     </div>
                     {nodes.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-2xl text-gray-300">
+                        <div className="py-12 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-2xl text-text-tertiary">
                             <div className="p-3 bg-muted rounded-full">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -371,7 +371,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                     </div>
                                     <button
                                         onClick={() => handleRemoveNode(node.id)}
-                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        className="p-1.5 text-text-tertiary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                         title={t('removeNode')}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +398,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                 flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl text-white transition-all font-bold text-sm
                                 ${nodes.length > 0
                                 ? 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'
-                                : 'bg-gray-200 cursor-not-allowed'}
+                                : 'bg-border-strong cursor-not-allowed'}
                             `}
                     >
                         {t('next')}

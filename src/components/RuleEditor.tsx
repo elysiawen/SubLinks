@@ -159,7 +159,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
 
             {isSwitching ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg animate-in fade-in duration-200">
-                    <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-blue-200 dark:border-blue-800 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-xs italic">{t('switching')}</span>
                 </div>
             ) : ruleMode === 'advanced' ? (
@@ -257,7 +257,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                     {/* Rules List */}
                     {isParsing ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg">
-                            <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-6 h-6 border-2 border-blue-200 dark:border-blue-800 border-t-blue-500 rounded-full animate-spin" />
                             <span className="text-xs italic">{t('parsingRules')}</span>
                         </div>
                     ) : filteredRules.length === 0 ? (
@@ -270,7 +270,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 {visibleRules.map((rule) => (
                                     <div key={rule.id} className="flex items-center justify-between p-3 hover:bg-muted">
                                         <div className="flex items-center gap-3 flex-1 font-mono text-sm">
-                                            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-semibold">
+                                            <span className="px-2 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded text-xs font-semibold">
                                                 {rule.type}
                                             </span>
                                             <span className="text-text-secondary break-all">{rule.value}</span>
@@ -296,7 +296,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
                                 {visibleCount < filteredRules.length && (
                                     <button
                                         onClick={() => setVisibleCount(prev => prev + 200)}
-                                        className="text-xs font-bold text-accent-foreground hover:text-blue-700 bg-accent px-3 py-1.5 rounded-lg transition"
+                                        className="text-xs font-bold text-accent-foreground hover:text-accent-foreground/80 bg-accent px-3 py-1.5 rounded-lg transition"
                                     >
                                         {t('loadMore')}
                                     </button>

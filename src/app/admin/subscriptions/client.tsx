@@ -247,7 +247,7 @@ export default function AdminSubsClient({
                     <div className="hidden md:block bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                         <div className="w-full overflow-x-auto">
                             <table className="w-full text-left text-sm text-text-secondary">
-                                <thead className="bg-border-strong text-text-primary font-medium">
+                                <thead className="bg-surface text-text-primary font-medium">
                                     <tr>
                                         <th className="px-6 py-4 whitespace-nowrap">{t('tableRemark')}</th>
                                         <th className="px-6 py-4 whitespace-nowrap">{t('tableUser')}</th>
@@ -275,7 +275,7 @@ export default function AdminSubsClient({
                                                 {sub.cacheTime ? (
                                                     sub.cacheTime > Date.now() ? (
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded w-fit border border-blue-100">{t('cacheValid')}</span>
+                                                            <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded w-fit border border-blue-200 dark:border-blue-800">{t('cacheValid')}</span>
                                                             <span className="text-xs text-text-quaternary mt-0.5" title={new Date(sub.cacheTime).toLocaleString()}>{t('cacheExpired')}: {new Date(sub.cacheTime).toLocaleTimeString()}</span>
                                                         </div>
                                                     ) : (
@@ -285,7 +285,7 @@ export default function AdminSubsClient({
                                                         </div>
                                                     )
                                                 ) : (
-                                                    <span className="text-xs text-gray-300 italic">{t('cacheNotCached')}</span>
+                                                    <span className="text-xs text-text-tertiary italic">{t('cacheNotCached')}</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-xs">
@@ -302,8 +302,8 @@ export default function AdminSubsClient({
                                                             }
                                                             return (
                                                                 <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${source.enabled !== false
-                                                                    ? 'bg-accent text-blue-700 border-blue-100'
-                                                                    : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400'
+                                                                    ? 'bg-accent text-accent-foreground border-blue-200 dark:border-blue-800'
+                                                                    : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400 dark:decoration-gray-600'
                                                                     }`}>
                                                                     {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                                                 </span>
@@ -405,8 +405,8 @@ export default function AdminSubsClient({
                                                 }
                                                 return (
                                                     <span key={sourceName} className={`px-1.5 py-0.5 rounded border flex items-center gap-1 ${source.enabled !== false
-                                                        ? 'bg-accent text-blue-700 border-blue-100'
-                                                        : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400'
+                                                        ? 'bg-accent text-accent-foreground border-blue-200 dark:border-blue-800'
+                                                        : 'bg-muted text-text-tertiary border-border-strong line-through decoration-gray-400 dark:decoration-gray-600'
                                                         }`}>
                                                         {source.enabled !== false ? '✅' : '⛔'} {source.name}
                                                     </span>

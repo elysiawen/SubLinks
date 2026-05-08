@@ -217,7 +217,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
 
             {isSwitching ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-quaternary border border-dashed border-border-strong rounded-lg animate-in fade-in duration-200">
-                    <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-blue-200 dark:border-blue-800 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-xs italic">{t('switching')}</span>
                 </div>
             ) : groupMode === 'advanced' ? (
@@ -295,7 +295,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-text-primary">{group.name}</span>
-                                            <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">
+                                            <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 rounded text-xs">
                                                 {group.type}
                                             </span>
                                         </div>
@@ -312,17 +312,17 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                         {group.proxies.length > 0 && (
                                             <div className="flex flex-wrap gap-2 mb-2">
                                                 {group.proxies.map((proxy, idx) => {
-                                                    let badgeClass = 'bg-accent text-blue-700';
+                                                    let badgeClass = 'bg-accent text-accent-foreground border border-blue-200 dark:border-blue-800';
                                                     let displayText = proxy;
 
                                                     if (proxy.startsWith('SOURCE:')) {
-                                                        badgeClass = 'bg-purple-100 text-purple-700 border border-purple-200';
+                                                        badgeClass = 'bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800';
                                                         displayText = `📚 ${t('fullSource')}: ${proxy.substring(7)}`;
                                                     } else if (proxy.startsWith('KEYWORD:')) {
-                                                        badgeClass = 'bg-amber-100 text-amber-700 border border-amber-200';
+                                                        badgeClass = 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
                                                         displayText = `🔍 ${t('contains')}: ${proxy.substring(8)}`;
                                                     } else if (proxy.startsWith('REGEX:')) {
-                                                        badgeClass = 'bg-pink-100 text-pink-700 border border-pink-200';
+                                                        badgeClass = 'bg-pink-50 dark:bg-pink-500/15 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800';
                                                         displayText = `🔡 ${t('regexLabel')}: ${proxy.substring(6)}`;
                                                     }
 
@@ -542,7 +542,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             className={`text-left px-3 py-2 rounded-lg border transition-all text-sm font-medium flex items-center justify-between ${isAdded
                                                 ? 'bg-muted border-border-strong text-text-quaternary cursor-not-allowed'
                                                 : isSelected
-                                                    ? 'bg-accent border-blue-500 text-blue-700'
+                                                    ? 'bg-accent border-blue-500 text-accent-foreground'
                                                     : 'border-border-strong hover:border-blue-500 hover:bg-accent text-text-secondary'
                                                 }`}
                                         >
@@ -550,7 +550,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             {isAdded ? (
                                                 <span className="text-xs">{t('added')}</span>
                                             ) : isSelected && (
-                                                <span className="text-blue-600">✓</span>
+                                                <span className="text-blue-600 dark:text-blue-400">✓</span>
                                             )}
                                         </button>
                                     );
@@ -560,12 +560,12 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                     <button
                                         key={p}
                                         onClick={() => toggleProxySelection(p)}
-                                        className="text-left px-3 py-2 rounded-lg border border-blue-500 bg-accent text-blue-700 transition-all text-sm font-medium flex items-center justify-between"
+                                        className="text-left px-3 py-2 rounded-lg border border-blue-500 bg-accent text-accent-foreground transition-all text-sm font-medium flex items-center justify-between"
                                     >
                                         <span className="truncate">
                                             {p.startsWith('KEYWORD:') ? `🔍 ${p.substring(8)}` : `🔡 ${p.substring(6)}`}
                                         </span>
-                                        <span className="text-blue-600">✕</span>
+                                        <span className="text-blue-600 dark:text-blue-400">✕</span>
                                     </button>
                                 ))}
                             </div>
@@ -597,10 +597,10 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                             }}
                                             disabled={!!guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(`SOURCE:${source}`)}
                                             className={`text-[10px] px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 font-medium ${selectedProxies.includes(`SOURCE:${source}`)
-                                                ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
+                                                ? 'bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 ring-1 ring-purple-200 dark:ring-purple-800'
                                                 : guiGroups.find(g => g.id === selectorGroupId)?.proxies.includes(`SOURCE:${source}`)
                                                     ? 'bg-muted text-text-quaternary border-border cursor-not-allowed'
-                                                    : 'bg-card border-border-strong text-text-secondary hover:border-purple-300 hover:text-purple-600 hover:shadow-sm'
+                                                    : 'bg-card border-border-strong text-text-secondary hover:border-purple-300 dark:hover:border-purple-700 hover:text-purple-600 dark:hover:text-purple-400 hover:shadow-sm'
                                                 }`}
                                             title={t('sourceAllHint')}
                                         >
@@ -648,8 +648,8 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     className={`text-left px-3 py-2 rounded-lg border transition-all text-sm truncate flex items-center justify-between group relative ${isAdded
                                                         ? 'bg-muted border-border text-text-quaternary cursor-not-allowed opacity-60'
                                                         : isSelected
-                                                            ? 'bg-accent border-blue-200 text-blue-700 shadow-sm ring-1 ring-blue-200'
-                                                            : 'bg-card border-border-strong text-text-secondary hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5'
+                                                            ? 'bg-accent border-blue-200 dark:border-blue-800 text-accent-foreground shadow-sm ring-1 ring-blue-200 dark:ring-blue-800'
+                                                            : 'bg-card border-border-strong text-text-secondary hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md hover:-translate-y-0.5'
                                                         }`}
                                                     title={p.name}
                                                 >
@@ -657,7 +657,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                                     {isAdded ? (
                                                         <span className="text-[10px] bg-muted text-text-tertiary px-1.5 rounded">{t('joined')}</span>
                                                     ) : isSelected && (
-                                                        <span className="text-blue-600 flex-shrink-0">
+                                                        <span className="text-blue-600 dark:text-blue-400 flex-shrink-0">
                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                             </svg>

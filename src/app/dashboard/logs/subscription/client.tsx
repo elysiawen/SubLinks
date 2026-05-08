@@ -42,7 +42,7 @@ export default function SubscriptionLogsClient({
 
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 {/* Mobile View (Cards) */}
-                <div className="md:hidden divide-y divide-gray-100">
+                <div className="md:hidden divide-y divide-border">
                     {logs.length === 0 ? (
                         <div className="p-6 text-center text-text-tertiary">{t('logs.subscription.empty')}</div>
                     ) : (
@@ -53,16 +53,16 @@ export default function SubscriptionLogsClient({
                                         {formatDate(log.timestamp)}
                                     </span>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${log.status === 200
-                                            ? 'bg-green-50 text-green-700'
-                                            : 'bg-red-50 text-red-700'
+                                            ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'
+                                            : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
                                         }`}>
                                         {log.status}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${log.apiType?.includes('订阅')
-                                            ? 'bg-green-50 text-green-700'
-                                            : 'bg-accent text-blue-700'
+                                            ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'
+                                            : 'bg-accent text-accent-foreground'
                                         }`}>
                                         {log.apiType || t('logs.subscription.unknown')}
                                     </span>
@@ -79,7 +79,7 @@ export default function SubscriptionLogsClient({
                 {/* Desktop View (Table) */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-muted text-text-tertiary font-medium border-b border-border">
+                        <thead className="bg-surface text-text-tertiary font-medium border-b border-border">
                             <tr>
                                 <th className="px-6 py-4">{t('logs.subscription.time')}</th>
                                 <th className="px-6 py-4">{t('logs.subscription.type')}</th>
@@ -88,7 +88,7 @@ export default function SubscriptionLogsClient({
                                 <th className="px-6 py-4">{t('logs.subscription.status')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-border">
                             {logs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-text-tertiary">
@@ -103,8 +103,8 @@ export default function SubscriptionLogsClient({
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${log.apiType?.includes('订阅')
-                                                    ? 'bg-green-50 text-green-700'
-                                                    : 'bg-accent text-blue-700'
+                                                    ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'
+                                                    : 'bg-accent text-accent-foreground'
                                                 }`}>
                                                 {log.apiType || t('logs.subscription.unknown')}
                                             </span>
@@ -117,8 +117,8 @@ export default function SubscriptionLogsClient({
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${log.status === 200
-                                                    ? 'bg-green-50 text-green-700'
-                                                    : 'bg-red-50 text-red-700'
+                                                    ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400'
+                                                    : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
                                                 }`}>
                                                 {log.status}
                                             </span>

@@ -302,10 +302,10 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                 <div className="text-sm font-medium text-text-tertiary">
                     {tab === 'nodes' && (hasNodeChanges ? <span className="text-amber-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> {t('unsavedNodes')}</span> : t('allNodesSaved'))}
                     {tab === 'groups' && (hasGroupChanges ? <span className="text-amber-600 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> {t('unsavedGroups')}</span> : t('allGroupsSaved'))}
-                    {tab === 'rules' && (hasRuleChanges ? <span className="text-accent-foreground flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent0 animate-pulse"></span> {t('unsavedRules')}</span> : t('allRulesSaved'))}
+                    {tab === 'rules' && (hasRuleChanges ? <span className="text-accent-foreground flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span> {t('unsavedRules')}</span> : t('allRulesSaved'))}
                 </div>
                 {tab === 'nodes' && (
-                    <button onClick={handleSaveNodes} disabled={!hasNodeChanges || savingNodes} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 transition-all flex items-center gap-2">
+                    <button onClick={handleSaveNodes} disabled={!hasNodeChanges || savingNodes} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-border-strong transition-all flex items-center gap-2">
                         {savingNodes ? t('savingNodes') : t('saveNodes')}
                     </button>
                 )}
@@ -315,7 +315,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                     </button>
                 )}
                 {tab === 'rules' && (
-                    <button onClick={handleSaveRules} disabled={!hasRuleChanges || savingRules} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 transition-all flex items-center gap-2">
+                    <button onClick={handleSaveRules} disabled={!hasRuleChanges || savingRules} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-border-strong transition-all flex items-center gap-2">
                         {savingRules ? t('savingRules') : t('saveRules')}
                     </button>
                 )}
@@ -333,7 +333,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         >
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 text-text-quaternary gap-3">
-                    <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-blue-200 dark:border-blue-800 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-sm">{t('loading')}</span>
                 </div>
             ) : (
@@ -345,7 +345,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === tabItem.key ? 'bg-card text-text-primary shadow-sm' : 'text-text-tertiary hover:bg-card/50'}`}
                             >
                                 <span>{tabItem.emoji} {tabItem.label}</span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === tabItem.key ? 'bg-blue-100 text-accent-foreground' : 'bg-gray-200 text-text-tertiary'}`}>{tabItem.count}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === tabItem.key ? 'bg-accent text-accent-foreground' : 'bg-border-strong text-text-tertiary'}`}>{tabItem.count}</span>
                             </button>
                         ))}
                     </div>
@@ -361,41 +361,41 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                 hideConfigInput={!!importPreview}
                             />
                             {importPreview && (
-                                <div className="bg-accent border border-blue-100 rounded-2xl p-5 flex flex-col gap-4">
+                                <div className="bg-accent border border-blue-200 dark:border-blue-800 rounded-2xl p-5 flex flex-col gap-4">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-blue-800">{t('parsePreview')}</h4>
+                                        <h4 className="font-bold text-accent-foreground">{t('parsePreview')}</h4>
                                         <button onClick={() => setImportPreview(null)} className="text-text-quaternary hover:text-text-secondary">✕</button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.nodes ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.nodes ? 'bg-card border-blue-200 dark:border-blue-800' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.nodes} onChange={e => setImportOptions(prev => ({ ...prev, nodes: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('proxyNodes', { count: importPreview.proxies.length })}</span>
                                             </div>
                                             {importOptions.nodes && (
-                                                <select className="text-xs p-1 border rounded" value={importOptions.nodeMode} onChange={e => setImportOptions(prev => ({ ...prev, nodeMode: e.target.value as any }))}>
+                                                <select className="text-xs p-1 border border-border-input rounded bg-card text-text-primary" value={importOptions.nodeMode} onChange={e => setImportOptions(prev => ({ ...prev, nodeMode: e.target.value as any }))}>
                                                     <option value="append">{t('appendMode')}</option><option value="overwrite">{t('overwriteMode')}</option>
                                                 </select>
                                             )}
                                         </label>
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.groups ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.groups ? 'bg-card border-blue-200 dark:border-blue-800' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.groups} onChange={e => setImportOptions(prev => ({ ...prev, groups: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('proxyGroups', { count: importPreview.groups.length })}</span>
                                             </div>
                                             {importOptions.groups && (
-                                                <select className="text-xs p-1 border rounded" value={importOptions.groupMode} onChange={e => setImportOptions(prev => ({ ...prev, groupMode: e.target.value as any }))}>
+                                                <select className="text-xs p-1 border border-border-input rounded bg-card text-text-primary" value={importOptions.groupMode} onChange={e => setImportOptions(prev => ({ ...prev, groupMode: e.target.value as any }))}>
                                                     <option value="append">{t('appendMode')}</option><option value="overwrite">{t('overwriteMode')}</option>
                                                 </select>
                                             )}
                                         </label>
-                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.rules ? 'bg-card border-blue-200' : 'bg-card/50 border-transparent opacity-60'}`}>
+                                        <label className={`p-3 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${importOptions.rules ? 'bg-card border-blue-200 dark:border-blue-800' : 'bg-card/50 border-transparent opacity-60'}`}>
                                             <div className="flex items-center gap-2">
                                                 <input type="checkbox" checked={importOptions.rules} onChange={e => setImportOptions(prev => ({ ...prev, rules: e.target.checked }))} />
                                                 <span className="font-bold text-sm">{t('routingRules', { count: importPreview.rules.length })}</span>
                                             </div>
                                             {importOptions.rules && (
-                                                <select className="text-xs p-1 border rounded" value={importOptions.ruleMode} onChange={e => setImportOptions(prev => ({ ...prev, ruleMode: e.target.value as any }))}>
+                                                <select className="text-xs p-1 border border-border-input rounded bg-card text-text-primary" value={importOptions.ruleMode} onChange={e => setImportOptions(prev => ({ ...prev, ruleMode: e.target.value as any }))}>
                                                     <option value="append">{t('appendMode')}</option><option value="overwrite">{t('overwriteMode')}</option>
                                                 </select>
                                             )}
@@ -449,14 +449,14 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
 
                     {tab === 'groups' && (
                         <div className="relative">
-                            {savingGroups && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-green-500 border-t-green-200 rounded-full animate-spin mr-2" /> {t('saveGroupConfig')}</div>}
+                            {savingGroups && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-green-500 border-t-green-200 dark:border-t-green-800 rounded-full animate-spin mr-2" /> {t('saveGroupConfig')}</div>}
                             <GroupEditor value={groupsText} onChange={handleGroupsTextChange} proxies={memoizedProxies} />
                         </div>
                     )}
 
                     {tab === 'rules' && (
                         <div className="relative">
-                            {savingRules && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-blue-500 border-t-blue-200 rounded-full animate-spin mr-2" /> {t('saveRuleConfig')}</div>}
+                            {savingRules && <div className="absolute inset-0 z-10 bg-card/50 backdrop-blur-sm flex items-center justify-center rounded-xl font-bold text-text-secondary"><div className="w-5 h-5 border-2 border-blue-500 border-t-blue-200 dark:border-t-blue-800 rounded-full animate-spin mr-2" /> {t('saveRuleConfig')}</div>}
                             <RuleEditor value={rulesText} onChange={handleRulesTextChange} proxyGroups={memoizedGroups} />
                         </div>
                     )}
