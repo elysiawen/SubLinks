@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 
 
 interface SidebarProps {
-    username: string;
+    username?: string;
 }
 
 export default function AdminSidebar({ username }: SidebarProps) {

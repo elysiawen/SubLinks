@@ -48,7 +48,7 @@ export function middleware(request: NextRequest) {
     const hasSession = request.cookies.has('auth_session');
 
     if (isProtectedRoute && !hasSession) {
-        const url = new URL('/auth/login', request.url);
+        const url = new URL('/auth/logout', request.url);
         url.searchParams.set('callbackUrl', path);
         return NextResponse.redirect(url);
     }

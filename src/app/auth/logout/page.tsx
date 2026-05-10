@@ -9,9 +9,15 @@ import { clearSession } from '@/lib/actions';
 export default function LogoutPage() {
     const t = useTranslations('auth.logout');
     const [cleared, setCleared] = useState(false);
+    const [loginUrl, setLoginUrl] = useState('/auth/login');
 
     useEffect(() => {
         clearSession().then(() => setCleared(true));
+        const params = new URLSearchParams(window.location.search);
+        const callbackUrl = params.get('callbackUrl');
+        if (callbackUrl && callbackUrl.startsWith('/')) {
+            setLoginUrl(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        }
     }, []);
 
     return (
@@ -48,7 +54,7 @@ export default function LogoutPage() {
                     </p>
 
                     <Link
-                        href="/auth/login"
+                        href={loginUrl}
                         className="inline-block w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30"
                     >
                         {t('backToLogin')}

@@ -153,7 +153,8 @@ function QrCodeLogin() {
                     setStatus('success');
                     if (pollingRef.current) clearInterval(pollingRef.current);
                     success(tLogin('loginSuccess'));
-                    router.push('/dashboard');
+                    const cb = new URLSearchParams(window.location.search).get('callbackUrl');
+                    router.push(cb && cb.startsWith('/') ? cb : '/dashboard');
                     router.refresh();
                 } else if (res.status === 'expired') {
                     setStatus('expired');

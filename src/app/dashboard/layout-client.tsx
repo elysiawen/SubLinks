@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -10,10 +10,11 @@ import { useTranslations } from 'next-intl';
 
 interface DashboardLayoutClientProps {
     children: React.ReactNode;
-    username: string;
-    role: string;
+    username?: string;
+    role?: string;
     nickname?: string;
     avatar?: string;
+    sessionInvalid?: boolean;
 }
 
 interface NavItemProps {
@@ -103,12 +104,18 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
     </Link>
 );
 
-export default function DashboardLayoutClient({ children, username, role, nickname, avatar }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children, username, role, nickname, avatar, sessionInvalid }: DashboardLayoutClientProps) {
     const pathname = usePathname();
     const { confirm } = useConfirm();
     const t = useTranslations('dashboard.sidebar');
     const tCommon = useTranslations('common.status');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (sessionInvalid) {
+            window.location.href = `/auth/logout?callbackUrl=${encodeURIComponent(pathname)}`;
+        }
+    }, [sessionInvalid, pathname]);
     // Initialize with open submenus if current path matches
     const [openSubmenus, setOpenSubmenus] = useState<string[]>(() => {
         const initial: string[] = [];
@@ -126,6 +133,8 @@ export default function DashboardLayoutClient({ children, username, role, nickna
     const handleItemClick = () => {
         setIsSidebarOpen(false);
     };
+
+    if (sessionInvalid) return null;
 
     return (
                 <div className="min-h-screen bg-muted">
@@ -192,11 +201,11 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                             {avatar ? (
                                                 <img src={avatar} alt="头像" className="w-full h-full object-cover" />
                                             ) : (
-                                                <span>{(nickname || username).slice(0, 2).toUpperCase()}</span>
+                                                <span>{(nickname || username || '').slice(0, 2).toUpperCase()}</span>
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-text-primary truncate">{nickname || username}</p>
+                                            <p className="text-sm font-semibold text-text-primary truncate">{nickname || username || ''}</p>
                                             <p className="text-xs text-text-tertiary truncate flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
                                                 {tCommon('connected')}

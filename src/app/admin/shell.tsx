@@ -6,18 +6,33 @@ import AdminSidebar from './sidebar';
 
 export default function AdminShell({
     children,
-    username
+    username,
+    sessionInvalid,
+    redirectPath = '/auth/logout'
 }: {
     children: React.ReactNode;
-    username: string;
+    username?: string;
+    sessionInvalid?: boolean;
+    redirectPath?: string;
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
+
+    useEffect(() => {
+        if (sessionInvalid) {
+            const url = redirectPath.startsWith('/') && redirectPath !== '/auth/logout'
+                ? redirectPath
+                : `${redirectPath}?callbackUrl=${encodeURIComponent(pathname)}`;
+            window.location.href = url;
+        }
+    }, [sessionInvalid, redirectPath, pathname]);
 
     // Close sidebar on navigation
     useEffect(() => {
         setSidebarOpen(false);
     }, [pathname]);
+
+    if (sessionInvalid) return null;
 
     return (
                 <div className="h-screen bg-muted flex font-sans overflow-hidden">

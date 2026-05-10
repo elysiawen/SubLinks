@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 /**
  * Get the current user session. Returns null if session is invalid.
- * The dashboard/admin layout already handles invalid sessions by rendering SessionRedirect,
+ * The dashboard/admin layout already handles invalid sessions via sessionInvalid prop,
  * so pages don't need to redirect themselves.
  */
 export async function requireSession() {

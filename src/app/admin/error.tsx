@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { clearSession } from '@/lib/actions';
 
 export default function AdminError({
@@ -11,8 +10,6 @@ export default function AdminError({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
-    const router = useRouter();
-
     useEffect(() => {
         console.error('[Admin Error Boundary]', error.message);
 
@@ -31,7 +28,7 @@ export default function AdminError({
                 });
             return;
         }
-    }, [error, router]);
+    }, [error]);
 
     return (
         <div className="flex items-center justify-center min-h-[60vh] p-6">
