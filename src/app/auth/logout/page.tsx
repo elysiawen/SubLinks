@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { clearSession } from '@/lib/actions';
@@ -12,12 +11,12 @@ export default function LogoutPage() {
     const [loginUrl, setLoginUrl] = useState('/auth/login');
 
     useEffect(() => {
-        clearSession().then(() => setCleared(true));
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get('callbackUrl');
         if (callbackUrl && callbackUrl.startsWith('/')) {
             setLoginUrl(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
+        clearSession().then(() => setCleared(true));
     }, []);
 
     return (
@@ -53,12 +52,13 @@ export default function LogoutPage() {
                         {cleared ? t('message') : t('loggingOut')}
                     </p>
 
-                    <Link
-                        href={loginUrl}
-                        className="inline-block w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30"
+                    <button
+                        onClick={() => { if (cleared) window.location.href = loginUrl; }}
+                        disabled={!cleared}
+                        className="w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {t('backToLogin')}
-                    </Link>
+                        {cleared ? t('backToLogin') : t('loggingOut')}
+                    </button>
                 </div>
             </div>
         </div>
