@@ -329,7 +329,7 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                                                 }
                                             });
                                         }}
-                                        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-destructive bg-card border border-border-strong/60 rounded-xl hover:bg-error hover:border-error hover:text-destructive-foreground hover:shadow-sm transition-all duration-200 group"
+                                        className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-[14px] font-medium text-destructive bg-card border border-border-strong/60 rounded-xl hover:bg-error hover:border-error hover:text-error-foreground hover:shadow-sm transition-all duration-200 group cursor-pointer"
                                     >
                                         <span className="group-hover:-translate-x-0.5 transition-transform duration-200">🚪</span>
                                         <span>{t('logout')}</span>
