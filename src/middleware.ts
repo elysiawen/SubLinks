@@ -53,21 +53,9 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // If we are on login page:
-    if (path === '/auth/login') {
-        const isRevoked = request.nextUrl.searchParams.has('revoked');
-
-        // 1. If signaled as revoked, clear cookie and stay on login
-        if (isRevoked && hasSession) {
-            const response = NextResponse.next();
-            response.cookies.delete('auth_session');
-            return response;
-        }
-
-        // 2. If not revoked and has a session, optimize by redirecting to dashboard
-        if (!isRevoked && hasSession) {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
-        }
+    // If we are on login page and already logged in, redirect to dashboard
+    if (path === '/auth/login' && hasSession) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     const response = NextResponse.next();

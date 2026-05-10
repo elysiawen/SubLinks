@@ -27,7 +27,7 @@ export default function AdminError({
             clearSession()
                 .catch(() => {})
                 .finally(() => {
-                    window.location.href = '/auth/login?revoked=1';
+                    window.location.href = '/auth/logout';
                 });
             return;
         }
