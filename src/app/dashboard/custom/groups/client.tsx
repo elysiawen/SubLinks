@@ -96,7 +96,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                 </div>
                 <button
                     onClick={handleCreate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors flex items-center gap-2"
                 >
                     <span>➕</span>
                     <span>{t('custom.groups.create')}</span>
@@ -113,7 +113,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                     <p className="text-text-tertiary mb-6 max-w-sm mx-auto">{t('custom.groups.emptyDesc')}</p>
                     <button
                         onClick={handleCreate}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
+                        className="px-6 py-2.5 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors shadow-sm hover:shadow font-medium"
                     >
                         {t('custom.groups.createNow')}
                     </button>
@@ -251,7 +251,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                         </button>
                         <button
                             onClick={handleSave}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="px-6 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors disabled:opacity-50"
                             disabled={loading}
                         >
                             {loading ? t('custom.groups.saving') : t('custom.groups.save')}

@@ -102,7 +102,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                 </div>
                 <button
                     onClick={handleCreate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors flex items-center gap-2"
                 >
                     <span>➕</span>
                     <span>{t('custom.rules.create')}</span>
@@ -119,7 +119,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                     <p className="text-text-tertiary mb-6">{t('custom.rules.emptyDesc')}</p>
                     <button
                         onClick={handleCreate}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
+                        className="px-6 py-2.5 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors shadow-sm hover:shadow font-medium"
                     >
                         {t('custom.rules.createNow')}
                     </button>
@@ -241,7 +241,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                         </button>
                         <button
                             onClick={handleSave}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="px-6 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors disabled:opacity-50"
                             disabled={loading}
                         >
                             {loading ? t('custom.rules.saving') : t('custom.rules.save')}

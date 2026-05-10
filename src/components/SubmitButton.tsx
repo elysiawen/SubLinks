@@ -21,7 +21,7 @@ export function SubmitButton({ children, text, className = '', isLoading, onClic
     const displayText = text || t('submit');
 
     // Default classes
-    const baseClasses = "px-4 py-2 bg-accent-foreground text-white rounded-lg hover:bg-accent-foreground/90 transition flex items-center justify-center font-medium shadow-sm";
+    const baseClasses = "px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition flex items-center justify-center font-medium shadow-sm";
     const disabledClasses = "opacity-70 cursor-not-allowed";
 
     return (

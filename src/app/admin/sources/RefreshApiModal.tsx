@@ -99,7 +99,7 @@ export default function RefreshApiModal({
                         <div className="pt-4 border-t">
                             <button
                                 onClick={() => setShowUsage(true)}
-                                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+                                className="w-full px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors font-medium flex items-center justify-center gap-2"
                             >
                                 <span>📖</span>
                                 <span>{t('viewUsage')}</span>
@@ -310,7 +310,7 @@ function UsageModal({
                                 <button
                                     onClick={() => setMethod('get')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'get'
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-accent-button text-white'
                                         : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >
@@ -319,7 +319,7 @@ function UsageModal({
                                 <button
                                     onClick={() => setMethod('post')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'post'
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-accent-button text-white'
                                         : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >
@@ -328,7 +328,7 @@ function UsageModal({
                                 <button
                                     onClick={() => setMethod('bearer')}
                                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${method === 'bearer'
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-accent-button text-white'
                                         : 'bg-muted text-text-secondary hover:bg-border-strong'
                                         }`}
                                 >

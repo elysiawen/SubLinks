@@ -231,7 +231,7 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
                                             </div>
                                             <div className="w-full bg-muted rounded-full h-2 mt-2">
                                                 <div
-                                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                                    className="bg-accent-button h-2 rounded-full transition-all"
                                                     style={{
                                                         width: `${Math.min(100, ((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100)}%`
                                                     }}

@@ -215,7 +215,7 @@ export default function AdminSubsClient({
                             setSelectedUser('');
                             setIsCreating(true);
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20"
+                        className="flex items-center gap-2 px-4 py-2 bg-accent-button text-white hover:bg-accent-button-hover rounded-lg text-sm font-medium transition-colors shadow-lg shadow-accent-button/20"
                     >
                         <span>➕</span>
                         {t('addSubscription')}
@@ -710,7 +710,7 @@ export default function AdminSubsClient({
                                 setShowRebuildModal(false);
                                 await handleStreamRebuild(rebuildBatchSize);
                             }}
-                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            className="flex-1 px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors font-medium"
                         >
                             {t('startRebuild')}
                         </button>

@@ -50,7 +50,7 @@ export default function UaFilterPanel({ initialConfig }: { initialConfig?: any }
                         onClick={handleSave}
                         isLoading={isSaving}
                         text={t('save')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                        className="px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors font-medium shadow-sm"
                     />
                 </div>
             </div>

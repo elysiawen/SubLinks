@@ -270,7 +270,7 @@ export default function SubscriptionForm({
                                     <div className={`
                                         w-5 h-5 rounded-full border flex items-center justify-center transition-colors ml-3 shrink-0
                                         ${isSelected
-                                            ? 'bg-blue-500 border-blue-500 text-white'
+                                            ? 'bg-accent-button border-accent-button text-white'
                                             : 'border-border-input bg-card group-hover:border-blue-400'
                                         }
                                         ${isDisabled ? 'bg-muted border-border-strong' : ''}
@@ -383,7 +383,7 @@ export default function SubscriptionForm({
                     onClick={handleSubmit}
                     isLoading={loading}
                     text={displaySubmitLabel}
-                    className="flex-1 px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20"
+                    className="flex-1 px-5 py-2.5 rounded-xl shadow-lg shadow-accent-button/20"
                 />
             </div>
 
@@ -443,7 +443,7 @@ export default function SubscriptionForm({
                     </button>
                     <button
                         onClick={confirmAddMissingSources}
-                        className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-accent-button rounded-lg hover:bg-accent-button-hover transition-colors"
                     >
                         {t('yesSelectAll')}
                     </button>

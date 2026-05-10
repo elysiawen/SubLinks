@@ -305,7 +305,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                     {tab === 'rules' && (hasRuleChanges ? <span className="text-accent-foreground flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span> {t('unsavedRules')}</span> : t('allRulesSaved'))}
                 </div>
                 {tab === 'nodes' && (
-                    <button onClick={handleSaveNodes} disabled={!hasNodeChanges || savingNodes} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-border-strong transition-all flex items-center gap-2">
+                    <button onClick={handleSaveNodes} disabled={!hasNodeChanges || savingNodes} className="px-6 py-2 rounded-lg font-bold text-white bg-accent-button hover:bg-accent-button-hover disabled:bg-border-strong transition-all flex items-center gap-2">
                         {savingNodes ? t('savingNodes') : t('saveNodes')}
                     </button>
                 )}
@@ -315,7 +315,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                     </button>
                 )}
                 {tab === 'rules' && (
-                    <button onClick={handleSaveRules} disabled={!hasRuleChanges || savingRules} className="px-6 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-border-strong transition-all flex items-center gap-2">
+                    <button onClick={handleSaveRules} disabled={!hasRuleChanges || savingRules} className="px-6 py-2 rounded-lg font-bold text-white bg-accent-button hover:bg-accent-button-hover disabled:bg-border-strong transition-all flex items-center gap-2">
                         {savingRules ? t('savingRules') : t('saveRules')}
                     </button>
                 )}
@@ -402,7 +402,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
                                         </label>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={handleConfirmImport} disabled={isImporting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">
+                                        <button onClick={handleConfirmImport} disabled={isImporting} className="flex-1 py-2 bg-accent-button text-white font-bold rounded-xl hover:bg-accent-button-hover">
                                             {isImporting ? t('importing') : t('confirmImport')}
                                         </button>
                                         <button onClick={() => setImportPreview(null)} disabled={isImporting} className="px-6 py-2 border bg-card rounded-xl font-medium text-text-secondary hover:bg-muted">{t('cancel')}</button>

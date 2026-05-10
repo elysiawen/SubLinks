@@ -270,7 +270,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         <div className="flex items-center gap-2 shrink-0">
                             <div className={`
                                 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300
-                                ${i <= step ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-muted text-text-quaternary'}
+                                ${i <= step ? 'bg-accent-button text-white shadow-md shadow-accent-button/20' : 'bg-muted text-text-quaternary'}
                             `}>
                                 {i < step ? '✓' : i + 1}
                             </div>
@@ -320,7 +320,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         </button>
                         <button
                             onClick={handleNameNext}
-                            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all font-semibold text-sm"
+                            className="px-6 py-2.5 rounded-xl bg-accent-button text-white hover:bg-accent-button-hover shadow-lg shadow-accent-button/20 transition-all font-semibold text-sm"
                         >
                             {t('next')}
                         </button>
@@ -397,7 +397,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         className={`
                                 flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl text-white transition-all font-bold text-sm
                                 ${nodes.length > 0
-                                ? 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'
+                                ? 'bg-accent-button hover:bg-accent-button-hover shadow-md shadow-accent-button/20'
                                 : 'bg-border-strong cursor-not-allowed'}
                             `}
                     >
@@ -431,7 +431,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                     </button>
                     <button
                         onClick={() => setStep(3)}
-                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
+                        className="px-6 py-2.5 rounded-xl bg-accent-button text-white hover:bg-accent-button-hover shadow-md shadow-accent-button/20 transition-all font-bold text-sm"
                     >
                         {t('next')}
                     </button>
@@ -463,7 +463,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                     </button>
                     <button
                         onClick={() => setStep(4)}
-                        className="px-8 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all font-bold text-sm"
+                        className="px-8 py-2.5 rounded-xl bg-accent-button text-white hover:bg-accent-button-hover shadow-md shadow-accent-button/20 transition-all font-bold text-sm"
                     >
                         {t('next')}
                     </button>
@@ -537,7 +537,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="px-8 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 disabled:bg-blue-300 transition-all font-bold text-sm flex items-center gap-2"
+                            className="px-8 py-2.5 rounded-xl bg-accent-button text-white hover:bg-accent-button-hover shadow-xl shadow-accent-button/20 disabled:bg-border-strong transition-all font-bold text-sm flex items-center gap-2"
                         >
                             {saving ? (
                                 <>

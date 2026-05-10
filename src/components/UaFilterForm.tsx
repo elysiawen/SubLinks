@@ -107,7 +107,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                 <button
                     type="button"
                     onClick={() => setEnabled(!enabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-border-strong'}`}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-accent-button' : 'bg-border-strong'}`}
                 >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -171,7 +171,7 @@ export default function UaFilterForm({ value, onChange }: UaFilterFormProps) {
                             <button
                                 type="button"
                                 onClick={addRule}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                className="px-3 py-1 text-sm bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition"
                             >
                                 {t('addRule')}
                             </button>

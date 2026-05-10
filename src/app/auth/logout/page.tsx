@@ -55,7 +55,7 @@ export default function LogoutPage() {
                     <button
                         onClick={() => { if (cleared) window.location.href = loginUrl; }}
                         disabled={!cleared}
-                        className="w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 bg-accent-button text-white rounded-xl hover:bg-accent-button-hover transition-colors font-semibold shadow-lg shadow-accent-button/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {cleared ? t('backToLogin') : t('loggingOut')}
                     </button>

@@ -223,7 +223,7 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                         <button
                             onClick={handleConfirm}
                             disabled={loading}
-                            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>

@@ -99,7 +99,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                                 disabled={isLoading}
                                 className={`px-4 py-2 text-sm font-medium text-white rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2 ${isDestructive
                                     ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/30'
-                                    : 'bg-accent-foreground hover:bg-accent-foreground/90 shadow-accent/30'
+                                    : 'bg-accent-button hover:bg-accent-button-hover shadow-accent-button/30'
                                     }`}
                             >
                                 {isLoading && (

@@ -259,7 +259,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                                 </select>
                                 <button
                                     onClick={addGuiGroup}
-                                    className="shrink-0 bg-blue-600 text-white rounded-lg px-4 hover:bg-blue-700 transition-colors text-sm font-medium"
+                                    className="shrink-0 bg-accent-button text-white rounded-lg px-4 hover:bg-accent-button-hover transition-colors text-sm font-medium"
                                 >
                                     +
                                 </button>
@@ -684,7 +684,7 @@ const GroupEditor = memo(function GroupEditor({ value, onChange, proxies, classN
                             disabled={selectedProxies.length === 0}
                             className={`flex-1 px-4 py-2 rounded-lg transition-colors ${selectedProxies.length === 0
                                 ? 'bg-border-strong text-text-quaternary cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-accent-button text-white hover:bg-accent-button-hover'
                                 }`}
                         >
                             {t('confirmAdd')} {selectedProxies.length > 0 && `(${selectedProxies.length})`}

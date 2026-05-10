@@ -424,7 +424,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                             setEditingSource(null);
                             setIsAdding(!isAdding);
                         }}
-                        className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm"
+                        className="bg-accent-button text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-accent-button-hover transition-colors font-medium text-xs sm:text-sm"
                     >
                         {isAdding ? t('cancelAdd') : `+ ${t('addSource')}`}
                     </button>
@@ -684,7 +684,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                             </div>
                                             <div className="w-full bg-border-strong rounded-full h-1.5 mb-2 overflow-hidden">
                                                 <div
-                                                    className="bg-blue-500 h-1.5 rounded-full"
+                                                    className="bg-accent-button h-1.5 rounded-full"
                                                     style={{ width: `${Math.min(((source.traffic.upload + source.traffic.download) / source.traffic.total) * 100, 100)}%` }}
                                                 ></div>
                                             </div>
@@ -768,7 +768,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                                 onChange={(e) => setRefreshAndCache(e.target.checked)}
                                 className="sr-only peer"
                             />
-                            <div className="w-10 h-5 bg-border-strong rounded-full peer-checked:bg-blue-600 transition-colors"></div>
+                            <div className="w-10 h-5 bg-border-strong rounded-full peer-checked:bg-accent-button transition-colors"></div>
                             <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-card rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
                         </div>
                         <div className="flex-1">

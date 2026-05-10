@@ -206,7 +206,7 @@ export default function SessionManager({
                                 onClick={() => toggleFilterType('web')}
                                 className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                                     filterTypes.includes('web')
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                                        ? 'bg-accent-button text-white shadow-md shadow-accent-button/20'
                                         : 'text-text-tertiary hover:text-text-secondary hover:bg-muted'
                                 }`}
                             >
@@ -278,7 +278,7 @@ export default function SessionManager({
                                 <div className="flex items-start lg:items-center gap-3 sm:gap-5 w-full">
                                     {/* Icon */}
                                     <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 ${isCurrent
-                                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30'
+                                        ? 'bg-accent-button border-accent-button text-white shadow-lg shadow-accent-button/30'
                                         : 'bg-muted border-border text-text-quaternary group-hover:bg-card group-hover:text-blue-600 group-hover:border-blue-200 dark:group-hover:border-blue-900/50 group-hover:scale-105'
                                         }`}>
                                         {session.type === 'client' ? (

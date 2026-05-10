@@ -227,7 +227,7 @@ const RuleEditor = memo(function RuleEditor({ value, onChange, proxyGroups = [],
 
                                 <button
                                     onClick={addGuiRule}
-                                    className="shrink-0 bg-blue-600 text-white rounded-lg px-4 hover:bg-blue-700 transition-colors text-sm font-medium sm:order-4"
+                                    className="shrink-0 bg-accent-button text-white rounded-lg px-4 hover:bg-accent-button-hover transition-colors text-sm font-medium sm:order-4"
                                 >
                                     +
                                 </button>

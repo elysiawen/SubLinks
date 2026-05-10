@@ -198,7 +198,7 @@ export default function AdminUsersClient({
                 </h2>
                 <button
                     onClick={() => setIsAddingUser(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm font-medium text-sm"
+                    className="bg-accent-button text-white px-4 py-2 rounded-lg hover:bg-accent-button-hover transition-colors flex items-center gap-2 shadow-sm font-medium text-sm"
                 >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

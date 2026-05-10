@@ -76,7 +76,7 @@ function GettingStarted() {
 
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-l-4 border-blue-500 p-6 rounded-r-xl mb-8">
                 <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <div className="flex-shrink-0 w-12 h-12 bg-accent-button rounded-xl flex items-center justify-center">
                         <span className="text-2xl">👋</span>
                     </div>
                     <div>
@@ -96,7 +96,7 @@ function GettingStarted() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-5 rounded-xl border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 bg-accent-button rounded-lg flex items-center justify-center">
                             <span className="text-xl">📋</span>
                         </div>
                         <h4 className="font-bold text-text-primary">订阅管理</h4>
@@ -213,7 +213,7 @@ function SubscriptionGuide() {
                 {/* Step 1 */}
                 <div className="border-l-4 border-blue-500 pl-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">1</div>
+                        <div className="w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">1</div>
                         <h4 className="text-xl font-bold text-text-primary">进入订阅管理</h4>
                     </div>
                     <p className="text-text-secondary mb-4">在左侧导航栏点击"订阅中心"，进入订阅管理页面</p>
@@ -376,21 +376,21 @@ function ClientsGuide() {
                     </div>
                     <div className="space-y-4">
                         <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">1</div>
+                            <div className="flex-shrink-0 w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">1</div>
                             <div className="flex-1">
                                 <p className="text-text-secondary"><strong>打开 Clash 客户端</strong></p>
                                 <p className="text-sm text-text-secondary mt-1">启动 Clash for Windows 或 Clash Verge</p>
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">2</div>
+                            <div className="flex-shrink-0 w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">2</div>
                             <div className="flex-1">
                                 <p className="text-text-secondary"><strong>进入配置页面</strong></p>
                                 <p className="text-sm text-text-secondary mt-1">点击左侧"配置"或"Profiles"选项卡</p>
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">3</div>
+                            <div className="flex-shrink-0 w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">3</div>
                             <div className="flex-1">
                                 <p className="text-text-secondary"><strong>添加订阅</strong></p>
                                 <p className="text-sm text-text-secondary mt-1">点击"新建配置"→"从 URL 导入"</p>
@@ -405,14 +405,14 @@ function ClientsGuide() {
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">4</div>
+                            <div className="flex-shrink-0 w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">4</div>
                             <div className="flex-1">
                                 <p className="text-text-secondary"><strong>启用配置</strong></p>
                                 <p className="text-sm text-text-secondary mt-1">在配置列表中选中新下载的配置，点击"启用"</p>
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">5</div>
+                            <div className="flex-shrink-0 w-8 h-8 bg-accent-button rounded-lg flex items-center justify-center text-white font-bold">5</div>
                             <div className="flex-1">
                                 <p className="text-text-secondary"><strong>选择节点</strong></p>
                                 <p className="text-sm text-text-secondary mt-1">切换到"代理"页面，选择合适的节点或策略组</p>
@@ -629,7 +629,7 @@ function AdvancedFeatures() {
             <div className="space-y-8">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-accent-button rounded-xl flex items-center justify-center">
                             <span className="text-2xl">🤖</span>
                         </div>
                         <h3 className="text-2xl font-bold text-text-primary">自定义策略组</h3>
@@ -806,7 +806,7 @@ function ClientDownloads() {
                                         href="https://vermanager-api.135150.xyz/api/download/latest?app=sublinks-client-desktop&platform=windows&arch=x64&buildType=release&redirect=true"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>💻</span>
                                         <span className="hidden sm:inline">下载 Windows 官方版 (x64)</span>
@@ -822,7 +822,7 @@ function ClientDownloads() {
                                         href="https://vermanager-api.135150.xyz/api/github/clash-verge-rev/clash-verge-rev/latest?platform=windows&arch=x64&redirect=true&proxy=cdn.gh-proxy.org"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium no-underline"
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors text-xs font-medium no-underline"
                                     >
                                         <span>📦</span>
                                         <span className="hidden sm:inline">下载 Windows 版 (x64)</span>
@@ -1163,7 +1163,7 @@ function FAQ() {
                     <div className="flex justify-center gap-4">
                         <a
                             href="/dashboard/subscriptions"
-                            className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg"
+                            className="inline-flex items-center gap-2 bg-card text-accent-foreground px-6 py-3 rounded-xl font-bold hover:bg-accent transition-colors shadow-lg border border-border-strong"
                         >
                             <span>📋</span>
                             <span>前往订阅中心</span>

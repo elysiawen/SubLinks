@@ -124,7 +124,7 @@ export default function SubscriptionsClient({ initialSubs, username, baseUrl, co
                 <h2 className="text-2xl font-bold text-text-primary">{t('subscriptions.heading', { count: subs.length })}</h2>
                 <button
                     onClick={openCreate}
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 text-sm font-medium"
+                    className="bg-accent-button text-white px-5 py-2.5 rounded-xl hover:bg-accent-button-hover shadow-lg shadow-accent-button/20 transition-all active:scale-95 text-sm font-medium"
                 >
                     {t('subscriptions.addSubscription')}
                 </button>

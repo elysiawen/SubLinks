@@ -23,7 +23,7 @@ export default async function AdminSessionsPage() {
                 </div>
 
                 <div className="flex items-center gap-4 bg-accent/50 dark:bg-blue-950/20 p-4 rounded-3xl border border-blue-100/50 dark:border-blue-900/20">
-                    <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+                    <div className="bg-accent-button p-3 rounded-2xl text-white shadow-lg shadow-accent-button/20">
                         <ShieldCheck className="w-6 h-6" />
                     </div>
                     <div>

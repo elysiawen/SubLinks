@@ -107,7 +107,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                         disabled={twoFALoading}
                         className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${twoFAEnabled
                             ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-accent-button text-white hover:bg-accent-button-hover'
                             }`}
                     >
                         {twoFALoading ? t('settings.twoFactor.processing') : (twoFAEnabled ? t('settings.twoFactor.disable') : t('settings.twoFactor.enable'))}

@@ -170,7 +170,7 @@ export default function NodeInputPanel({
     const inputClass = 'w-full px-3 py-2 border border-border-strong rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-card transition placeholder:text-text-quaternary';
     const monoInputClass = `${inputClass} font-mono`;
     const textareaClass = 'w-full px-3 py-2.5 border border-border-strong rounded-lg text-sm font-mono resize-y outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-muted transition placeholder:text-text-quaternary';
-    const btnClass = 'self-start px-4 py-2 text-sm font-medium rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2';
+    const btnClass = 'self-start px-4 py-2 text-sm font-medium rounded-lg bg-accent-button hover:bg-accent-button-hover text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2';
 
     return (
         <>

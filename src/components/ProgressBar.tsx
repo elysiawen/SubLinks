@@ -74,7 +74,7 @@ export default function ProgressBar() {
             className={`fixed top-0 left-0 z-[100] w-full h-1 bg-transparent pointer-events-none transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         >
             <div
-                className="h-full bg-blue-600 transition-all duration-300 ease-out shadow-[0_0_10px_#2563eb,0_0_5px_#2563eb]"
+                className="h-full bg-accent-button transition-all duration-300 ease-out shadow-[0_0_10px_var(--accent-button),0_0_5px_var(--accent-button)]"
                 style={{ width: `${progress}%` }}
             />
         </div>

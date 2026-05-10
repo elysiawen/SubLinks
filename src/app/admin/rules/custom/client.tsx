@@ -109,7 +109,7 @@ export default function CustomRulesClient({
                     </a>
                     <button
                         onClick={openCreate}
-                        className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        className="text-sm bg-accent-button text-white px-4 py-2 rounded-lg hover:bg-accent-button-hover transition-colors font-medium"
                     >
                         + {t('createNew')}
                     </button>
@@ -191,7 +191,7 @@ export default function CustomRulesClient({
                         <p className="text-text-tertiary mb-6">{t('noRulesHint')}</p>
                         <button
                             onClick={openCreate}
-                            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow font-medium"
+                            className="px-6 py-2.5 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors shadow-sm hover:shadow font-medium"
                         >
                             {t('createFirst')}
                         </button>

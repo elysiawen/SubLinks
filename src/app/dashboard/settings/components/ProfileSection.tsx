@@ -183,7 +183,7 @@ export default function ProfileSection({ username, initialNickname, initialAvata
                             />
                             <label
                                 htmlFor="avatar-upload"
-                                className={`inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm font-medium ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`inline-block px-4 py-2 bg-accent-button text-white rounded-lg hover:bg-accent-button-hover transition-colors cursor-pointer text-sm font-medium ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 {avatar ? t('settings.profile.changeAvatar') : t('settings.profile.uploadAvatar')}
                             </label>

@@ -370,7 +370,7 @@ function PasswordLogin() {
                 <div>
                     <SubmitButton
                         text={`🔐 ${t('login.loginButton')}`}
-                        className="w-full py-3 rounded-xl shadow-lg shadow-blue-500/30"
+                        className="w-full py-3 rounded-xl shadow-lg shadow-accent-button/30"
                     />
                 </div>
             </form>
@@ -416,7 +416,7 @@ function PasswordLogin() {
                             type="button"
                             onClick={handle2FASubmit}
                             disabled={isPending || code.length !== 6}
-                            className="w-full py-3 bg-accent-foreground text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-3 bg-accent-button text-white rounded-xl hover:bg-accent-button-hover transition-colors font-semibold shadow-lg shadow-accent-button/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isPending ? (
                                 <>
