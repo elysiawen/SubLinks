@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 
@@ -50,6 +50,7 @@ interface OverviewClientProps {
 export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, upstreamSources, apiCount24h, userCreatedAt, customBackgroundUrl, baseUrl, username, nickname, announcement }: OverviewClientProps) {
     const { success, error } = useToast();
     const t = useTranslations('dashboard.overview');
+    const locale = useLocale();
 
     const [hitokoto, setHitokoto] = useState(t('hitokotoLoading'));
 
@@ -69,9 +70,10 @@ export default function OverviewClient({ totalSubs, enabledSubs, accessLogs, ups
 
 
 
+    const localeMap: Record<string, string> = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', 'zh-TW': 'zh-TW', ko: 'ko-KR' };
     const formatDate = (timestamp: number) => {
         const date = new Date(timestamp);
-        return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        return date.toLocaleDateString(localeMap[locale] || 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
 
     return (

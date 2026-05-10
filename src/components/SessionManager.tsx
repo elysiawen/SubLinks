@@ -363,8 +363,8 @@ export default function SessionManager({
                                                     <LayoutPanelLeft className="w-3.5 h-3.5 flex-shrink-0" />
                                                     <span className="truncate max-w-[200px] sm:max-w-md md:max-w-lg">{session.ua}</span>
                                                 </div>
-                                                <div className="absolute bottom-full left-0 mb-2 invisible group-hover/ua:visible bg-zinc-900 text-zinc-100 text-[10px] p-3 rounded-xl w-72 break-all shadow-2xl z-30 border border-zinc-700 whitespace-normal leading-relaxed">
-                                                    <div className="font-bold text-text-quaternary mb-1 border-b border-zinc-700 pb-1">{t('session.fullUA')}</div>
+                                                <div className="absolute bottom-full left-0 mb-2 invisible group-hover/ua:visible bg-card text-card-foreground text-[10px] p-3 rounded-xl w-72 break-all shadow-2xl z-30 border border-border-strong whitespace-normal leading-relaxed">
+                                                    <div className="font-bold text-text-quaternary mb-1 border-b border-border-strong pb-1">{t('session.fullUA')}</div>
                                                     {session.ua}
                                                 </div>
                                             </div>

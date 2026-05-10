@@ -74,7 +74,7 @@ export default function AdminUsersClient({
 
     const handleDeletePasskey = async (passkeyId: string) => {
         if (!editingUser) return;
-        if (await confirm(t('confirmDeletePasskey'))) {
+        if (await confirm(t('confirmDeletePasskey'), { confirmColor: 'red' })) {
             const res = await adminDeletePasskey(passkeyId, editingUser.id);
             if (res.success) {
                 // Remove from local state
@@ -142,7 +142,7 @@ export default function AdminUsersClient({
     // Handle Avatar Delete
     const handleAdminAvatarDelete = async () => {
         if (!editingUser) return;
-        if (await confirm(t('confirmDeleteAvatar'))) {
+        if (await confirm(t('confirmDeleteAvatar'), { confirmColor: 'red' })) {
             setAvatarUploading(true);
             try {
                 const result = await adminDeleteAvatar(editingUser.username);

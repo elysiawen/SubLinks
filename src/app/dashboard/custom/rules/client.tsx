@@ -7,7 +7,7 @@ import { saveRuleSet, deleteRuleSet, type ConfigSet } from '@/lib/config-actions
 import Modal from '@/components/Modal';
 import RuleEditor from '@/components/RuleEditor';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { formatDate } from '@/lib/utils';
 
 interface ProxyGroup {
@@ -26,6 +26,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
     const { confirm } = useConfirm();
     const router = useRouter();
     const t = useTranslations('dashboard');
+    const locale = useLocale();
     const [rules, setRules] = useState(initialRules);
     useEffect(() => { setRules(initialRules); }, [initialRules]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,7 +77,8 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
 
     const handleDelete = async (rule: ConfigSet) => {
         const confirmed = await confirm(
-            t('custom.rules.deleteConfirm', { name: rule.name })
+            t('custom.rules.deleteConfirm', { name: rule.name }),
+            { confirmColor: 'red' }
         );
 
         if (!confirmed) return;
@@ -146,7 +148,7 @@ export default function RulesClient({ rules: initialRules, proxyGroups }: RulesC
                                             <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            {formatDate(rule.updatedAt)}
+                                            {formatDate(rule.updatedAt, locale)}
                                         </div>
                                     </div>
                                 </div>

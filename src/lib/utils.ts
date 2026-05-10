@@ -18,8 +18,10 @@ export function generateToken(length = 16) {
 
 export const BLOCKED_UAS = ['MicroMessenger', 'QQ/'];
 
-export function formatDate(timestamp: number): string {
-    return new Date(timestamp).toLocaleString('zh-CN', {
+export function formatDate(timestamp: number, locale?: string): string {
+    const localeMap: Record<string, string> = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', 'zh-TW': 'zh-TW', ko: 'ko-KR' };
+    const resolved = localeMap[locale || ''] || 'en-US';
+    return new Date(timestamp).toLocaleString(resolved, {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',

@@ -4,7 +4,7 @@ import { useLocale } from 'next-intl';
 import { useState, useRef, useEffect } from 'react';
 import { LOCALES } from '@/i18n/locales';
 
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({ className, dropDown, align = 'left' }: { className?: string; dropDown?: boolean; align?: 'left' | 'right' }) {
     const locale = useLocale();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -39,7 +39,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             </button>
 
             {open && (
-                <div className="absolute bottom-full left-0 mb-1 w-40 bg-card rounded-xl shadow-lg border border-border-strong py-1 z-[100] animate-fade-in">
+                <div className={`absolute ${dropDown ? 'top-full mt-1' : 'bottom-full mb-1'} ${align === 'right' ? 'right-0' : 'left-0'} w-40 bg-card rounded-xl shadow-lg border border-border-strong py-1 z-[100] animate-fade-in`}>
                     {LOCALES.map(l => (
                         <button
                             key={l.code}

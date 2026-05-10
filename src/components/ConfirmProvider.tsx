@@ -72,7 +72,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     const title = options.title || t('title');
     const confirmText = options.confirmText || t('confirm');
     const cancelText = options.cancelText || t('cancel');
-    const isDestructive = options.confirmColor === 'red' || (!options.confirmColor && message.includes('删除'));
+    const isDestructive = options.confirmColor === 'red';
 
     return (
         <ConfirmContext.Provider value={{ confirm }}>
@@ -98,8 +98,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                                 onClick={handleConfirm}
                                 disabled={isLoading}
                                 className={`px-4 py-2 text-sm font-medium text-white rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2 ${isDestructive
-                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
-                                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+                                    ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/30'
+                                    : 'bg-accent-foreground hover:bg-accent-foreground/90 shadow-accent/30'
                                     }`}
                             >
                                 {isLoading && (

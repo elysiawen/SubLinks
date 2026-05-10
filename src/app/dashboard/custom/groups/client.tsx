@@ -7,7 +7,7 @@ import { saveGroupSet, deleteGroupSet, type ConfigSet } from '@/lib/config-actio
 import Modal from '@/components/Modal';
 import GroupEditor from '@/components/GroupEditor';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { getGroupDependencies } from '@/lib/group-dependencies';
 import { formatDate } from '@/lib/utils';
 
@@ -21,6 +21,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
     const { confirm } = useConfirm();
     const router = useRouter();
     const t = useTranslations('dashboard');
+    const locale = useLocale();
     const [groups, setGroups] = useState(initialGroups);
     useEffect(() => { setGroups(initialGroups); }, [initialGroups]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,7 +71,8 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
 
     const handleDelete = async (group: ConfigSet) => {
         const confirmed = await confirm(
-            t('custom.groups.deleteConfirm', { name: group.name })
+            t('custom.groups.deleteConfirm', { name: group.name }),
+            { confirmColor: 'red' }
         );
 
         if (!confirmed) return;
@@ -141,7 +143,7 @@ export default function GroupsClient({ groups: initialGroups, proxies }: GroupsC
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            {formatDate(group.updatedAt)}
+                                            {formatDate(group.updatedAt, locale)}
                                         </div>
                                     </div>
                                 </div>

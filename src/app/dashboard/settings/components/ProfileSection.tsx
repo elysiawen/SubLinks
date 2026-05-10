@@ -105,7 +105,7 @@ export default function ProfileSection({ username, initialNickname, initialAvata
     const handleAvatarDelete = async () => {
         if (!avatar) return;
 
-        if (await confirm(t('settings.profile.deleteAvatarConfirm'))) {
+        if (await confirm(t('settings.profile.deleteAvatarConfirm'), { confirmColor: 'red' })) {
             setAvatarUploading(true);
 
             try {

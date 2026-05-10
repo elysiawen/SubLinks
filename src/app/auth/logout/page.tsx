@@ -21,7 +21,7 @@ export default function LogoutPage() {
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
             <div className="absolute top-4 right-4 z-20">
-                <LanguageSwitcher />
+                <LanguageSwitcher dropDown align="right" />
             </div>
 
             <div className="max-w-md w-full relative z-10">

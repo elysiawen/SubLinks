@@ -3,8 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ToastProvider } from '@/components/ToastProvider';
-import { ConfirmProvider, useConfirm } from '@/components/ConfirmProvider';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTranslations } from 'next-intl';
@@ -129,8 +128,6 @@ export default function DashboardLayoutClient({ children, username, role, nickna
     };
 
     return (
-        <ToastProvider>
-            <ConfirmProvider>
                 <div className="min-h-screen bg-muted">
                     {/* Mobile Header */}
                     <div className="lg:hidden bg-card/80 backdrop-blur-md border-b border-border-strong p-4 flex items-center sticky top-0 z-40 gap-3">
@@ -344,7 +341,5 @@ export default function DashboardLayoutClient({ children, username, role, nickna
                         </main>
                     </div>
                 </div>
-            </ConfirmProvider>
-        </ToastProvider>
     );
 }

@@ -454,7 +454,7 @@ function LoginBox() {
     }, []);
 
     return (
-        <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 flex flex-col">
+        <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 flex flex-col">
             <div className="mb-6">
                 <PasskeyLogin />
 
@@ -526,7 +526,7 @@ export default function LoginPage() {
                 </div>
 
                 <Suspense fallback={
-                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 min-h-[300px] flex items-center justify-center">
+                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 min-h-[300px] flex items-center justify-center">
                         <div className="text-center text-text-tertiary">{t('loading')}</div>
                     </div>
                 }>

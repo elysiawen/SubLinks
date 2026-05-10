@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminSidebar from './sidebar';
 
-import { ToastProvider } from '@/components/ToastProvider';
-import { ConfirmProvider } from '@/components/ConfirmProvider';
-
 export default function AdminShell({
     children,
     username
@@ -23,8 +20,6 @@ export default function AdminShell({
     }, [pathname]);
 
     return (
-        <ToastProvider>
-            <ConfirmProvider>
                 <div className="h-screen bg-muted flex font-sans overflow-hidden">
                     {/* Desktop Sidebar */}
                     <div className="hidden md:flex flex-col w-64 fixed inset-y-0 z-50">
@@ -78,7 +73,5 @@ export default function AdminShell({
                         </main>
                     </div>
                 </div>
-            </ConfirmProvider>
-        </ToastProvider>
     );
 }
