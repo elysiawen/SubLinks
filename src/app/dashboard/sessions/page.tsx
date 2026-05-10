@@ -1,23 +1,12 @@
-import { getSession } from '@/lib/auth';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { requireSession } from '@/lib/require-session';
 import { getTranslations } from 'next-intl/server';
 import SessionsList from './SessionsList';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SessionsPage() {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-
-    if (!sessionId) {
-        redirect('/auth/login');
-    }
-
-    const user = await getSession(sessionId);
-    if (!user) {
-        redirect('/auth/login');
-    }
+    const user = await requireSession();
+    if (!user) return null;
 
     const t = await getTranslations('dashboard.sessions');
 

@@ -1,7 +1,5 @@
 import { getUserWebAccessLogs } from '@/lib/log-actions';
-import { getSession } from '@/lib/auth';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { requireSession } from '@/lib/require-session';
 import WebLogsClient from './client';
 
 export const dynamic = 'force-dynamic';
@@ -11,17 +9,8 @@ interface PageProps {
 }
 
 export default async function WebLogsPage({ searchParams }: PageProps) {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-
-    if (!sessionId) {
-        redirect('/auth/login');
-    }
-
-    const user = await getSession(sessionId);
-    if (!user) {
-        redirect('/auth/login');
-    }
+    const user = await requireSession();
+    if (!user) return null;
 
     const resolvedParams = await searchParams;
     const page = Number(resolvedParams.page) || 1;

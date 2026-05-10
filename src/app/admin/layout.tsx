@@ -2,6 +2,7 @@ import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AdminShell from './shell';
+import SessionRedirect from '@/components/SessionRedirect';
 
 export default async function AdminLayout({
     children,
@@ -19,7 +20,7 @@ export default async function AdminLayout({
     const ip = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || undefined;
     const session = await getSession(sessionId, ip);
     if (!session) {
-        redirect('/auth/logout');
+        return <SessionRedirect />;
     }
 
     if (session.role !== 'admin') {

@@ -2,6 +2,7 @@ import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DashboardLayoutClient from './layout-client';
+import SessionRedirect from '@/components/SessionRedirect';
 
 export default async function DashboardLayout({
     children,
@@ -19,7 +20,7 @@ export default async function DashboardLayout({
     const ip = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || undefined;
     const user = await getSession(sessionId, ip);
     if (!user) {
-        redirect('/auth/logout');
+        return <SessionRedirect />;
     }
 
     return <DashboardLayoutClient username={user.username} role={user.role} nickname={user.nickname} avatar={user.avatar}>{children}</DashboardLayoutClient>;

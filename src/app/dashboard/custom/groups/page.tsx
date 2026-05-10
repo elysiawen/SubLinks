@@ -1,24 +1,13 @@
 import { getGroupSets } from '@/lib/config-actions';
-import { getSession } from '@/lib/auth';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { requireSession } from '@/lib/require-session';
 import { db } from '@/lib/db';
 import GroupsClient from './client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CustomGroupsPage() {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('auth_session')?.value;
-
-    if (!sessionId) {
-        redirect('/auth/login');
-    }
-
-    const user = await getSession(sessionId);
-    if (!user) {
-        redirect('/auth/login');
-    }
+    const user = await requireSession();
+    if (!user) return null;
 
     const groups = await getGroupSets();
     const proxies = await db.getProxies();
