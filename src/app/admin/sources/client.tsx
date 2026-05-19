@@ -426,7 +426,7 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
                         }}
                         className="bg-accent-button text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-accent-button-hover transition-colors font-medium text-xs sm:text-sm"
                     >
-                        {isAdding ? t('cancelAdd') : `+ ${t('addSource')}`}
+                        {isAdding ? t('cancelAdd') : t('addSource')}
                     </button>
                 </div>
             </div>
