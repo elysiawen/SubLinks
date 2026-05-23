@@ -67,6 +67,12 @@ JWT_SECRET=your-random-secret-string
 
 # 公网地址（用于二维码和客户端链接）
 NEXT_PUBLIC_URL=https://your-domain.com
+
+# 数据统计（可选，仅生产环境启用）
+# CLARITY_ID=your-clarity-id
+# UMAMI_WEBSITE_ID=your-umami-website-id
+# UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js  # 不填则默认使用 Umami Cloud
+# GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 ### 数据库初始化

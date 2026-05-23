@@ -67,6 +67,12 @@ JWT_SECRET=your-random-secret-string
 
 # Public URL (used for QR codes and client links)
 NEXT_PUBLIC_URL=https://your-domain.com
+
+# Analytics (optional, only enabled in production)
+# CLARITY_ID=your-clarity-id
+# UMAMI_WEBSITE_ID=your-umami-website-id
+# UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js  # defaults to Umami Cloud if omitted
+# GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 ### Database Setup
