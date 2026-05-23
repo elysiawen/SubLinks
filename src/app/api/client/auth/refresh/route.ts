@@ -46,17 +46,20 @@ export async function POST(request: NextRequest) {
 
         // IP/UA/LastActive are now updated by getRefreshToken if changed
 
+        // Fetch current user from DB to avoid stale JWT payload after rename
+        const user = await db.getUserById(payload.userId);
+        if (!user || user.status !== 'active') {
+            return NextResponse.json(
+                { error: await tApi('auth.invalidRefreshToken') },
+                { status: 401 }
+            );
+        }
 
-        // Create new access token with full avatar URL
-        const fullAvatarUrl = getFullAvatarUrl(payload.avatar);
+        // Create new access token — only userId + tokenVersion + refreshTokenId
         const newAccessToken = await createAccessToken({
-            userId: payload.userId,
-            username: payload.username,
-            role: payload.role,
-            tokenVersion: payload.tokenVersion,
-            nickname: payload.nickname,
-            avatar: fullAvatarUrl,
-            refreshTokenId: storedToken.id, // Carry forward the device's DB ID for session validation
+            userId: user.id,
+            tokenVersion: user.tokenVersion || '',
+            refreshTokenId: storedToken.id,
         });
 
         return NextResponse.json({

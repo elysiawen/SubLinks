@@ -1,6 +1,7 @@
 {
     "subscription": {
-        "allSourcesDisabled": "所選訂閱來源均已被停用或不可用"
+        "allSourcesDisabled": "所選訂閱來源均已被停用或不可用",
+        "defaultSubscription": "預設訂閱"
     },
     "auth": {
         "emptyCredentials": "使用者名稱和密碼不能為空",

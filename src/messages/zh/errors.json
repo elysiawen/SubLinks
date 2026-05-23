@@ -23,7 +23,8 @@
         "noAvatar": "未设置头像",
         "userNoAvatar": "该用户未设置头像",
         "qrGenerateFailed": "生成二维码失败",
-        "configNotFound": "配置不存在"
+        "configNotFound": "配置不存在",
+        "usernameEmpty": "用户名不能为空"
     },
     "admin": {
         "requireAdmin": "需要管理员权限",
@@ -35,6 +36,7 @@
         "sessionNotFound": "会话不存在或已过期",
         "userCreatedSubLimitExceeded": "用户已创建，但无法创建订阅：已达订阅上限",
         "newUsernameExists": "新用户名已存在",
+        "usernameEmpty": "用户名不能为空",
         "selectUser": "请选择用户",
         "rebuiltSubscriptionCache": "已重建订阅缓存",
         "unnamedSubscription": "未命名订阅",

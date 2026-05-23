@@ -52,7 +52,7 @@
             "heading": "👤 프로필",
             "description": "표시 닉네임 설정",
             "username": "사용자명",
-            "usernameHelp": "사용자명은 로그인에 사용되며 변경할 수 없습니다",
+            "usernameHelp": "사용자명은 로그인에 사용됩니다. 변경하려면 관리자에게 문의하세요",
             "avatar": "아바타",
             "changeAvatar": "아바타 변경",
             "uploadAvatar": "아바타 업로드",
@@ -93,7 +93,9 @@
             "disabledSuccess": "2단계 인증이 비활성화되었습니다",
             "disableTitle": "2단계 인증 비활성화",
             "disableDesc": "계정 보안을 위해 2단계 인증 비활성화 전 로그인 비밀번호를 확인해야 합니다.",
-            "disableConfirm": "비활성화 확인"
+            "disableConfirm": "비활성화 확인",
+            "copySecret": "시크릿 복사",
+            "secretCopied": "시크릿이 복사되었습니다"
         },
         "password": {
             "heading": "🔐 비밀번호 변경",

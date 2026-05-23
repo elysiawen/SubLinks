@@ -114,7 +114,9 @@
         "reset": "重置",
         "cancel": "取消",
         "processing": "处理中...",
-        "confirmUpload": "确认上传"
+        "confirmUpload": "确认上传",
+        "zoom": "缩放",
+        "fit": "适应"
     },
     "submitButton": {
         "submit": "提交"

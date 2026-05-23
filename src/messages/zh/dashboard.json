@@ -52,7 +52,7 @@
             "heading": "👤 个人资料",
             "description": "设置您的显示昵称",
             "username": "用户名",
-            "usernameHelp": "用户名用于登录，无法修改",
+            "usernameHelp": "用户名用于登录，请联系管理员修改",
             "avatar": "头像",
             "changeAvatar": "更换头像",
             "uploadAvatar": "上传头像",
@@ -93,7 +93,9 @@
             "disabledSuccess": "两步验证已关闭",
             "disableTitle": "关闭两步验证",
             "disableDesc": "为了保障您的账户安全，在关闭两步验证前我们需要验证您的登录密码。",
-            "disableConfirm": "确认关闭"
+            "disableConfirm": "确认关闭",
+            "copySecret": "复制密钥",
+            "secretCopied": "密钥已复制"
         },
         "password": {
             "heading": "🔐 修改密码",

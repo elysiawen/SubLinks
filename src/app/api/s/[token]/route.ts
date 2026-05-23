@@ -45,6 +45,7 @@ export async function GET(
             await db.createAPIAccessLog({
                 token,
                 username: sub.username,
+                userId: sub.userId,
                 ip,
                 ua,
                 status,

@@ -3,9 +3,11 @@
 import { db } from '@/lib/db';
 import { generateToken } from '@/lib/utils';
 import { hashPassword } from '@/lib/auth';
+import { nanoid } from 'nanoid';
 import { revalidatePath } from 'next/cache';
 import { SubData } from '@/lib/database/interface';
 import { requireAdmin } from '@/lib/admin-guard';
+import { tApi } from '@/lib/api-i18n';
 
 // User Management
 export async function getUsers(page: number = 1, limit: number = 10, search?: string) {
@@ -28,9 +30,9 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
 
 export async function createUser(formData: FormData) {
     await requireAdmin();
-    const username = formData.get('username') as string;
+    const username = (formData.get('username') as string)?.trim();
     const password = formData.get('password') as string;
-    const nickname = formData.get('nickname') as string;
+    const nickname = (formData.get('nickname') as string)?.trim();
     const rules = formData.get('customRules') as string;
     const role = (formData.get('role') as string) || 'user';
     const status = 'active';
@@ -58,9 +60,10 @@ export async function createUser(formData: FormData) {
 
     // Check subscription limit before creating default subscription
     const user = await db.getUser(username);
+    if (!user) return { error: 'User creation failed' };
     const config = await db.getGlobalConfig();
-    const userLimit = user?.maxSubscriptions ?? config.maxUserSubscriptions ?? 10;
-    const currentSubs = await db.getUserSubscriptions(username);
+    const userLimit = user.maxSubscriptions ?? config.maxUserSubscriptions ?? 10;
+    const currentSubs = await db.getUserSubscriptions(user.id);
 
     if (currentSubs.length >= userLimit) {
         // User created but can't create subscription due to limit
@@ -86,7 +89,7 @@ export async function createUser(formData: FormData) {
     const token = generateToken();
     const subData: SubData = {
         username,
-        remark: 'defaultSubscription',
+        remark: await tApi('subscription.defaultSubscription'),
         customRules: rules || '',
         groupId: 'default',
         ruleId: 'default',
@@ -94,7 +97,7 @@ export async function createUser(formData: FormData) {
         enabled: true,
         createdAt: Date.now()
     };
-    await db.createSubscription(token, username, subData);
+    await db.createSubscription(token, username, user.id, subData);
 
     revalidatePath('/admin');
     return { success: true };
@@ -122,68 +125,34 @@ export async function updateUserMaxSubscriptions(username: string, maxSubscripti
 
 export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string, nickname?: string) {
     await requireAdmin();
-    // Get existing user data
+    newUsername = newUsername.trim();
+    if (!newUsername) return { error: 'usernameEmpty' };
     const user = await db.getUser(oldUsername);
     if (!user) return { error: 'User not found' };
 
-    // If username changed, check if new username exists
+    // If username changed, rename first (preserves UUID)
     if (oldUsername !== newUsername) {
         if (await db.userExists(newUsername)) {
             return { error: 'newUsernameExists' };
         }
+        await db.renameUser(oldUsername, newUsername);
+    }
 
-        // Update password if provided
-        if (newPassword) {
-            user.password = await hashPassword(newPassword);
-            user.tokenVersion = (user.tokenVersion || 0) + 1;
-        }
+    // Update password/nickname fields
+    if (newPassword) {
+        user.password = await hashPassword(newPassword);
+        user.tokenVersion = nanoid(16);
+    }
+    user.nickname = nickname || undefined;
+    user.username = newUsername;
+    await db.setUser(newUsername, user);
 
-        // Update nickname
-        user.nickname = nickname || undefined;
-
-        // 1. Create new user record
-        await db.setUser(newUsername, {
-            ...user,
-            username: newUsername // Ensure username is updated in the object
-        });
-
-        // 2. Migrate subscriptions
-        const subs = await db.getUserSubscriptions(oldUsername);
-        for (const sub of subs) {
-            const token = sub.token;
-            const { token: _, ...subData } = sub;
-            subData.username = newUsername;
-            await db.updateSubscription(token, subData); // TODO: Verify if username/user_id update is needed for rename support
-        }
-
-        // 3. Delete old user
-        await db.deleteUser(oldUsername);
-
-        // If password changed or username changed (which means new identity), invalidating old sessions is good.
-        // Old sessions were for `oldUsername` (and old `user_id`).
-        // `deleteUser` deletes the user.
-        // `sessions` table might need manual cleanup if no cascade.
+    // Invalidate sessions if password changed
+    if (newPassword) {
         await Promise.all([
             db.deleteAllUserSessions(user.id),
             db.deleteAllUserRefreshTokens(user.id)
         ]);
-
-    } else {
-        // Just password/nickname update
-        if (newPassword) {
-            user.password = await hashPassword(newPassword);
-            user.tokenVersion = (user.tokenVersion || 0) + 1;
-        }
-        user.nickname = nickname || undefined;
-        await db.setUser(oldUsername, user);
-
-        // Invalidate sessions if password changed
-        if (newPassword) {
-            await Promise.all([
-                db.deleteAllUserSessions(user.id),
-                db.deleteAllUserRefreshTokens(user.id)
-            ]);
-        }
     }
 
     revalidatePath('/admin');
@@ -193,15 +162,14 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
 
 export async function deleteUser(username: string) {
     await requireAdmin();
-    // Delete all subscriptions for this user first
-    const userSubs = await db.getUserSubscriptions(username);
-    for (const sub of userSubs) {
-        await db.deleteSubscription(sub.token, username);
-    }
-
-    // Delete avatar if exists
     const user = await db.getUser(username);
     if (user) {
+        // Delete all subscriptions for this user first
+        const userSubs = await db.getUserSubscriptions(user.id);
+        for (const sub of userSubs) {
+            await db.deleteSubscription(sub.token, user.id);
+        }
+
         // Delete avatar if exists
         if (user.avatar) {
             try {

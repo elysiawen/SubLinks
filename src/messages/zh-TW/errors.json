@@ -23,7 +23,8 @@
         "noAvatar": "未設定頭像",
         "userNoAvatar": "該使用者未設定頭像",
         "qrGenerateFailed": "產生二維碼失敗",
-        "configNotFound": "設定不存在"
+        "configNotFound": "設定不存在",
+        "usernameEmpty": "使用者名稱不能為空"
     },
     "admin": {
         "requireAdmin": "需要管理員權限",
@@ -35,6 +36,7 @@
         "sessionNotFound": "會話不存在或已過期",
         "userCreatedSubLimitExceeded": "使用者已建立，但無法建立訂閱：已達訂閱上限",
         "newUsernameExists": "新使用者名稱已存在",
+        "usernameEmpty": "使用者名稱不能為空",
         "selectUser": "請選擇使用者",
         "rebuiltSubscriptionCache": "已重建訂閱快取",
         "unnamedSubscription": "未命名訂閱",

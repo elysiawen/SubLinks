@@ -114,7 +114,9 @@
         "reset": "リセット",
         "cancel": "キャンセル",
         "processing": "処理中...",
-        "confirmUpload": "アップロードを確定"
+        "confirmUpload": "アップロードを確定",
+        "zoom": "ズーム",
+        "fit": "合わせる"
     },
     "submitButton": {
         "submit": "送信"

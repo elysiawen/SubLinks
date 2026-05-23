@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import { type Locale, localeCodes, DEFAULT_LOCALE, isLocale } from '@/i18n/locales';
 
 const messagesCache: Record<string, any> = {};
@@ -11,6 +11,14 @@ async function loadMessages(locale: Locale) {
 }
 
 export async function getApiLocale(): Promise<Locale> {
+    // 1. Check NEXT_LOCALE cookie (app language switch)
+    const cookieStore = await cookies();
+    const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value;
+    if (cookieLocale && isLocale(cookieLocale)) {
+        return cookieLocale as Locale;
+    }
+
+    // 2. Fallback to accept-language header
     const headersList = await headers();
     const acceptLanguage = headersList.get('accept-language');
     if (acceptLanguage) {
@@ -19,7 +27,7 @@ export async function getApiLocale(): Promise<Locale> {
             return preferred;
         }
     }
-    return 'en';
+    return DEFAULT_LOCALE;
 }
 
 export async function tApi(key: string, locale?: Locale): Promise<string> {

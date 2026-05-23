@@ -20,13 +20,13 @@ export async function createSubscription(remark: string, customRules: string, gr
     if (!session) return { error: 'Unauthorized' };
 
     // Check subscription limit (all users including admins)
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     const config = await db.getGlobalConfig();
     // Use user's custom limit if set, otherwise use global limit
     const maxSubs = user?.maxSubscriptions ?? config.maxUserSubscriptions ?? 1;
 
     if (maxSubs > 0) {
-        const userSubs = await db.getUserSubscriptions(session.username);
+        const userSubs = await db.getUserSubscriptions(session.userId);
         if (userSubs.length >= maxSubs) {
             return { error: 'limitExceeded' };
         }
@@ -62,7 +62,7 @@ export async function createSubscription(remark: string, customRules: string, gr
         return { error: 'createFailed' };
     }
 
-    await db.createSubscription(token, session.username, subData);
+    await db.createSubscription(token, session.username, session.userId, subData);
 
     revalidatePath('/dashboard');
     return { success: true, token };
@@ -73,10 +73,10 @@ export async function deleteSubscription(token: string) {
     if (!session) return { error: 'Unauthorized' };
 
     // Verify ownership
-    const isOwner = await db.isSubscriptionOwner(session.username, token);
+    const isOwner = await db.isSubscriptionOwner(session.userId, token);
     if (!isOwner) return { error: 'Forbidden' };
 
-    await db.deleteSubscription(token, session.username);
+    await db.deleteSubscription(token, session.userId);
 
     revalidatePath('/dashboard');
     return { success: true };
@@ -87,7 +87,7 @@ export async function updateSubscription(token: string, remark: string, customRu
     if (!session) return { error: 'Unauthorized' };
 
     // Verify ownership
-    const isOwner = await db.isSubscriptionOwner(session.username, token);
+    const isOwner = await db.isSubscriptionOwner(session.userId, token);
     if (!isOwner) return { error: 'Forbidden' };
 
     const subData = await db.getSubscription(token);
@@ -96,7 +96,6 @@ export async function updateSubscription(token: string, remark: string, customRu
     subData.remark = remark;
     subData.customRules = customRules;
     subData.groupId = groupId;
-    subData.ruleId = ruleId;
     subData.ruleId = ruleId;
 
     // Filter and Validate selectedSources
@@ -135,7 +134,7 @@ export async function getUserSubscriptions() {
     const session = await getCurrentSession();
     if (!session) return [];
 
-    const subs = await db.getUserSubscriptions(session.username);
+    const subs = await db.getUserSubscriptions(session.userId);
     return subs.sort((a, b) => b.createdAt - a.createdAt);
 }
 
@@ -145,7 +144,7 @@ export async function toggleSubscriptionEnabled(token: string, enabled: boolean)
     if (!session) return { error: 'Unauthorized' };
 
     // Verify ownership
-    const isOwner = await db.isSubscriptionOwner(session.username, token);
+    const isOwner = await db.isSubscriptionOwner(session.userId, token);
     if (!isOwner) return { error: 'Forbidden' };
 
     const subData = await db.getSubscription(token);

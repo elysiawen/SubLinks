@@ -23,7 +23,8 @@
         "noAvatar": "アバターが設定されていません",
         "userNoAvatar": "このユーザーはアバターを設定していません",
         "qrGenerateFailed": "QRコードの生成に失敗しました",
-        "configNotFound": "設定が見つかりません"
+        "configNotFound": "設定が見つかりません",
+        "usernameEmpty": "ユーザー名を入力してください"
     },
     "admin": {
         "requireAdmin": "管理者権限が必要です",
@@ -35,6 +36,7 @@
         "sessionNotFound": "セッションが見つからないか、期限切れです",
         "userCreatedSubLimitExceeded": "ユーザーは作成されましたが、サブスクリプションの上限に達しているため作成できません",
         "newUsernameExists": "新しいユーザー名は既に存在します",
+        "usernameEmpty": "ユーザー名を入力してください",
         "selectUser": "ユーザーを選択してください",
         "rebuiltSubscriptionCache": "サブスクリプションキャッシュを再構築しました",
         "unnamedSubscription": "名前のないサブスクリプション",

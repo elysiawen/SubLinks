@@ -23,7 +23,8 @@
         "noAvatar": "아바타가 설정되지 않았습니다",
         "userNoAvatar": "이 사용자는 아바타를 설정하지 않았습니다",
         "qrGenerateFailed": "QR 코드 생성 실패",
-        "configNotFound": "설정을 찾을 수 없습니다"
+        "configNotFound": "설정을 찾을 수 없습니다",
+        "usernameEmpty": "사용자명은 비워둘 수 없습니다"
     },
     "admin": {
         "requireAdmin": "관리자 권한이 필요합니다",
@@ -35,6 +36,7 @@
         "sessionNotFound": "세션이 존재하지 않거나 만료되었습니다",
         "userCreatedSubLimitExceeded": "사용자가 생성되었지만 구독을 생성할 수 없습니다: 한도 초과",
         "newUsernameExists": "새 사용자명이 이미 존재합니다",
+        "usernameEmpty": "사용자명은 비워둘 수 없습니다",
         "selectUser": "사용자를 선택하세요",
         "rebuiltSubscriptionCache": "구독 캐시가 재구축되었습니다",
         "unnamedSubscription": "이름 없는 구독",

@@ -1,6 +1,7 @@
 {
     "subscription": {
-        "allSourcesDisabled": "선택한 모든 상위 소스가 비활성화되었거나 사용할 수 없습니다"
+        "allSourcesDisabled": "선택한 모든 상위 소스가 비활성화되었거나 사용할 수 없습니다",
+        "defaultSubscription": "기본 구독"
     },
     "auth": {
         "emptyCredentials": "사용자명과 비밀번호가 필요합니다",

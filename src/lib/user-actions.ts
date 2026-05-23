@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
+import { nanoid } from 'nanoid';
 import { Session, RefreshToken } from '@/lib/database/interface';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -14,13 +15,13 @@ async function refreshSession(updates: { nickname?: string; avatar?: string }) {
     if (!sessionId) return;
     const existingSession = await db.getSession(sessionId);
     if (!existingSession) return;
-    const user = await db.getUser(existingSession.username);
+    const user = await db.getUserById(existingSession.userId);
     if (!user) return;
     await db.createSession(sessionId, {
         userId: user.id,
         username: user.username,
         role: user.role,
-        tokenVersion: user.tokenVersion || 0,
+        tokenVersion: user.tokenVersion || nanoid(16),
         nickname: updates.nickname ?? user.nickname,
         avatar: updates.avatar ?? user.avatar,
         loginMethod: existingSession?.loginMethod,
@@ -71,7 +72,7 @@ export async function enable2FA(secret: string, token: string) {
     }
 
     // Update user
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) return { error: 'userNotFound' };
 
     await db.setUser(session.username, {
@@ -86,7 +87,7 @@ export async function enable2FA(secret: string, token: string) {
 export async function getCurrentUser() {
     const session = await getCurrentSession();
     if (!session) return null;
-    return db.getUser(session.username); // Or return session user details if sufficient
+    return db.getUserById(session.userId); // Or return session user details if sufficient
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {
@@ -96,7 +97,7 @@ export async function changePassword(oldPassword: string, newPassword: string) {
     }
 
     // Get user
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'userNotFound' };
     }
@@ -114,7 +115,7 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 
     // Hash and update password
     const hashedPassword = await hashPassword(newPassword);
-    const newTokenVersion = (user.tokenVersion || 0) + 1;
+    const newTokenVersion = nanoid(16);
     await db.setUser(session.username, {
         ...user,
         password: hashedPassword,
@@ -145,7 +146,7 @@ export async function deleteOwnAccount(password: string) {
     }
 
     // Get user
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'userNotFound' };
     }
@@ -182,7 +183,7 @@ export async function updateNickname(nickname: string) {
     }
 
     // Get user
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'userNotFound' };
     }
@@ -235,7 +236,7 @@ export async function uploadAvatar(formData: FormData) {
         const processedBuffer = await ImageProcessor.processAvatar(buffer, 500);
 
         // Get user
-        const user = await db.getUser(session.username);
+        const user = await db.getUserById(session.userId);
         if (!user) {
             return { error: 'userNotFound' };
         }
@@ -282,7 +283,7 @@ export async function deleteAvatar() {
     }
 
     // Get user
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'userNotFound' };
     }
@@ -322,8 +323,8 @@ export async function getUserSessionsList(search?: string) {
         db.getUserRefreshTokens(session.userId)
     ]);
 
-    const user = await db.getUser(session.username);
-    const currentTokenVersion = user?.tokenVersion || 0;
+    const user = await db.getUserById(session.userId);
+    const currentTokenVersion = user?.tokenVersion || '';
 
     const cookieStore = await cookies();
     const currentSessionId = cookieStore.get('auth_session')?.value;
@@ -331,7 +332,7 @@ export async function getUserSessionsList(search?: string) {
     // Normalize and filter data
     let sessions = [
         ...webSessions
-            .filter((s: Session) => (s.tokenVersion || 0) === currentTokenVersion)
+            .filter((s: Session) => (s.tokenVersion || '') === currentTokenVersion)
             .map((s: Session & { sessionId?: string }) => ({
                 id: s.sessionId || 'unknown',
                 type: 'web' as const,
@@ -384,7 +385,7 @@ export async function disable2FA(password: string) {
     const session = await getCurrentSession();
     if (!session) return { error: 'notLoggedIn' };
 
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) return { error: 'userNotFound' };
 
     // Verify password

@@ -1,6 +1,7 @@
 {
   "subscription": {
-    "allSourcesDisabled": "選択されたすべての上流ソースが無効または利用できません"
+    "allSourcesDisabled": "選択されたすべての上流ソースが無効または利用できません",
+    "defaultSubscription": "デフォルトのサブスクリプション"
   },
   "auth": {
     "emptyCredentials": "ユーザー名とパスワードは必須です",

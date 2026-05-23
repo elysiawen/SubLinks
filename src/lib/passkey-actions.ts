@@ -3,6 +3,7 @@
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { db } from '@/lib/db';
 import { getCurrentSession } from '@/lib/user-actions';
+import { nanoid } from 'nanoid';
 import { PasskeyCredentials, PasskeyProfile } from '@/lib/database/interface';
 import { headers, cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
@@ -17,7 +18,7 @@ export async function getPasskeys(): Promise<PasskeyProfile[]> {
         throw new Error('Unauthorized');
     }
 
-    const user = await db.getUser(session.username); // Get user to retrieve ID
+    const user = await db.getUserById(session.userId); // Get user to retrieve ID
     if (!user) {
         throw new Error('User not found');
     }
@@ -40,7 +41,7 @@ export async function generatePasskeyRegistrationOptions() {
         return { error: 'Unauthorized' };
     }
 
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'User not found' };
     }
@@ -79,7 +80,7 @@ export async function verifyPasskeyRegistration(response: any, credentialName: s
         return { error: 'Unauthorized' };
     }
 
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return { error: 'User not found' };
     }
@@ -236,7 +237,7 @@ export async function verifyPasskeyLogin(response: any, flowId: string) {
                 userId: user.id,
                 username: user.username,
                 role: user.role,
-                tokenVersion: user.tokenVersion || 0,
+                tokenVersion: user.tokenVersion || nanoid(16),
                 nickname: user.nickname,
                 avatar: user.avatar,
                 ip,

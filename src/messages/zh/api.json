@@ -1,6 +1,7 @@
 {
   "subscription": {
-    "allSourcesDisabled": "所选订阅源均已被禁用或不可用"
+    "allSourcesDisabled": "所选订阅源均已被禁用或不可用",
+    "defaultSubscription": "默认订阅"
   },
   "auth": {
     "emptyCredentials": "用户名和密码不能为空",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, extractBearerToken } from '@/lib/jwt-client';
 import { getFullAvatarUrl } from '@/lib/utils';
 import { tApi } from '@/lib/api-i18n';
+import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -33,15 +34,24 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Fetch current user data from DB (payload may be stale after rename)
+        const user = await db.getUserById(payload.userId);
+        if (!user || user.status !== 'active') {
+            return NextResponse.json(
+                { error: await tApi('auth.invalidToken') },
+                { status: 401 }
+            );
+        }
+
         // Return user info
         return NextResponse.json({
             success: true,
             user: {
-                id: payload.userId,
-                username: payload.username,
-                role: payload.role,
-                nickname: payload.nickname,
-                avatar: getFullAvatarUrl(payload.avatar) // Ensure full URL
+                id: user.id,
+                username: user.username,
+                role: user.role,
+                nickname: user.nickname,
+                avatar: getFullAvatarUrl(user.avatar)
             }
         });
 

@@ -68,12 +68,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: await tApi('auth.invalidQrStatus') }, { status: 400 });
         }
 
-        // Update status to confirmed and attach userId
+        // Update status to confirmed and attach user info
+        const user = await db.getUserById(payload.userId);
         const newData = {
             ...data,
             status: 'confirmed',
             userId: payload.userId,
-            username: payload.username
+            username: user?.username
         };
 
         await db.setCache(cacheKey, JSON.stringify(newData));

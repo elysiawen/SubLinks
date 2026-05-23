@@ -52,7 +52,7 @@
             "heading": "👤 個人資料",
             "description": "設定您的顯示暱稱",
             "username": "使用者名稱",
-            "usernameHelp": "使用者名稱用於登入，無法修改",
+            "usernameHelp": "使用者名稱用於登入，請聯繫管理員修改",
             "avatar": "頭像",
             "changeAvatar": "更換頭像",
             "uploadAvatar": "上傳頭像",
@@ -93,7 +93,9 @@
             "disabledSuccess": "兩步驗證已關閉",
             "disableTitle": "關閉兩步驗證",
             "disableDesc": "為了保障您的帳號安全，在關閉兩步驗證前我們需要驗證您的登入密碼。",
-            "disableConfirm": "確認關閉"
+            "disableConfirm": "確認關閉",
+            "copySecret": "複製密鑰",
+            "secretCopied": "密鑰已複製"
         },
         "password": {
             "heading": "🔐 變更密碼",

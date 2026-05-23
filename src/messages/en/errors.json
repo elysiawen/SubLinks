@@ -23,7 +23,8 @@
         "noAvatar": "No avatar set",
         "userNoAvatar": "This user has not set an avatar",
         "qrGenerateFailed": "Failed to generate QR code",
-        "configNotFound": "Configuration not found"
+        "configNotFound": "Configuration not found",
+        "usernameEmpty": "Username cannot be empty"
     },
     "admin": {
         "requireAdmin": "Admin privileges required",
@@ -35,6 +36,7 @@
         "sessionNotFound": "Session not found or expired",
         "userCreatedSubLimitExceeded": "User created, but cannot create subscription: limit reached",
         "newUsernameExists": "New username already exists",
+        "usernameEmpty": "Username cannot be empty",
         "selectUser": "Please select a user",
         "rebuiltSubscriptionCache": "Subscription cache rebuilt",
         "unnamedSubscription": "Unnamed subscription",

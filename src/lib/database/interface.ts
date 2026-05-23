@@ -22,7 +22,7 @@ export interface User {
     role: string;
     status: string;
     maxSubscriptions: number | null; // null = follow global, number = custom limit
-    tokenVersion?: number; // Incremented on password change to invalidate tokens
+    tokenVersion?: string; // nanoid - regenerated on password change to invalidate tokens
     nickname?: string;   // Display name (optional)
     avatar?: string;     // Avatar URL (optional)
     createdAt: number;
@@ -34,7 +34,7 @@ export interface Session {
     userId: string;      // UUID reference to User
     username: string;    // Kept for backward compatibility
     role: string;
-    tokenVersion?: number; // Token version for invalidation
+    tokenVersion?: string; // nanoid for invalidation
     nickname?: string;   // Display name (optional)
     avatar?: string;     // Avatar URL (optional)
     ip?: string;         // IP address
@@ -68,6 +68,7 @@ export interface PaginatedResult<T> {
 
 export interface SubData {
     username: string;
+    userId?: string;         // UUID reference to User (primary key for ownership)
     remark: string;
     customRules: string;
     groupId?: string;
@@ -83,6 +84,7 @@ export interface APIAccessLog {
     id: string;
     token: string;
     username: string;
+    userId?: string;         // UUID reference to User
     nickname?: string;       // User's display name
     subRemark?: string;      // Subscription remark/name (fetched via JOIN, not stored)
     ip: string;
@@ -99,6 +101,7 @@ export interface WebAccessLog {
     ip: string;
     ua: string;
     username?: string;
+    userId?: string;         // UUID reference to User
     nickname?: string;       // User's display name
     status: number;
     timestamp: number;
@@ -230,6 +233,7 @@ export interface IDatabase {
     getUser(username: string): Promise<User | null>;
     getUserById(id: string): Promise<User | null>;  // New: Get user by UUID
     setUser(username: string, data: User): Promise<void>;
+    renameUser(oldUsername: string, newUsername: string): Promise<void>;
     deleteUser(username: string): Promise<void>;
     getAllUsers(page?: number, limit?: number, search?: string): Promise<PaginatedResult<User & { username: string }>>;
     userExists(username: string): Promise<boolean>;
@@ -256,13 +260,13 @@ export interface IDatabase {
     cleanupExpiredRefreshTokens(): Promise<number>;
 
     // Subscription operations
-    createSubscription(token: string, username: string, data: SubData): Promise<void>;
+    createSubscription(token: string, username: string, userId: string, data: SubData): Promise<void>;
     getSubscription(token: string): Promise<(SubData & { token: string }) | null>;
-    deleteSubscription(token: string, username: string): Promise<void>;
+    deleteSubscription(token: string, userId?: string): Promise<void>;
     updateSubscription(token: string, data: SubData): Promise<void>;
-    getUserSubscriptions(username: string): Promise<Array<SubData & { token: string }>>;
+    getUserSubscriptions(userId: string): Promise<Array<SubData & { token: string }>>;
     getAllSubscriptions(page?: number, limit?: number, search?: string): Promise<PaginatedResult<SubData & { token: string }>>;
-    isSubscriptionOwner(username: string, token: string): Promise<boolean>;
+    isSubscriptionOwner(userId: string, token: string): Promise<boolean>;
     getSubscriptionsBySource(sourceName: string): Promise<Array<SubData & { token: string }>>; // Find subscriptions using a specific source
 
     // Config operations
@@ -325,10 +329,10 @@ export interface IDatabase {
 
     // Logs
     createAPIAccessLog(log: Omit<APIAccessLog, 'id'>): Promise<void>;
-    getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<APIAccessLog>>;
+    getAPIAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<PaginatedResult<APIAccessLog>>;
 
     createWebAccessLog(log: Omit<WebAccessLog, 'id'>): Promise<void>;
-    getWebAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<WebAccessLog>>;
+    getWebAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<PaginatedResult<WebAccessLog>>;
 
     createSystemLog(log: Omit<SystemLog, 'id'>): Promise<void>;
     getSystemLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<SystemLog>>;

@@ -52,7 +52,7 @@
             "heading": "👤 Profile",
             "description": "Set your display nickname",
             "username": "Username",
-            "usernameHelp": "Username is used for login and cannot be changed",
+            "usernameHelp": "Username is used for login, please contact an administrator to change it",
             "avatar": "Avatar",
             "changeAvatar": "Change Avatar",
             "uploadAvatar": "Upload Avatar",
@@ -93,7 +93,9 @@
             "disabledSuccess": "Two-factor authentication disabled",
             "disableTitle": "Disable Two-Factor Authentication",
             "disableDesc": "For your account security, we need to verify your login password before disabling two-factor authentication.",
-            "disableConfirm": "Confirm Disable"
+            "disableConfirm": "Confirm Disable",
+            "copySecret": "Copy Secret",
+            "secretCopied": "Secret Copied"
         },
         "password": {
             "heading": "🔐 Change Password",

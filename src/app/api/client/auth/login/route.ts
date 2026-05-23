@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Create tokens with full avatar URL
+        // Create tokens — only store userId + tokenVersion, user info fetched from DB on demand
         const fullAvatarUrl = getFullAvatarUrl(user.avatar);
 
         // Generate refresh token ID first so we can embed it in the access token
@@ -88,19 +88,13 @@ export async function POST(request: NextRequest) {
 
         const refreshToken = await createRefreshToken({
             userId: user.id,
-            username: user.username,
-            role: user.role,
-            tokenVersion: user.tokenVersion || 0
+            tokenVersion: user.tokenVersion || nanoid(16)
         });
 
         const accessToken = await createAccessToken({
             userId: user.id,
-            username: user.username,
-            role: user.role,
-            tokenVersion: user.tokenVersion || 0,
-            nickname: user.nickname,
-            avatar: fullAvatarUrl || user.avatar,
-            refreshTokenId: refreshTokenDbId // Embed device ID for session validation
+            tokenVersion: user.tokenVersion || nanoid(16),
+            refreshTokenId: refreshTokenDbId
         });
 
         // Store Refresh Token in DB

@@ -114,7 +114,9 @@
         "reset": "초기화",
         "cancel": "취소",
         "processing": "처리 중...",
-        "confirmUpload": "업로드 확인"
+        "confirmUpload": "업로드 확인",
+        "zoom": "확대/축소",
+        "fit": "맞춤"
     },
     "submitButton": {
         "submit": "제출"

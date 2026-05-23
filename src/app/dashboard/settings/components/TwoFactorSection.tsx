@@ -87,7 +87,7 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                 </h2>
                 <p className="text-sm text-text-tertiary mt-1">{t('settings.twoFactor.description')}</p>
             </div>
-            <div className="p-6 space-y-4 max-w-lg">
+            <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="font-medium text-text-primary">
@@ -132,7 +132,22 @@ export default function TwoFactorSection({ initialTotpEnabled }: TwoFactorSectio
                             </div>
                         )}
                         {secret && (
-                            <p className="text-xs text-text-quaternary font-mono select-all">{t('settings.twoFactor.secret')} {secret}</p>
+                            <div className="flex items-center justify-center gap-2">
+                                <p className="text-xs text-text-quaternary font-mono select-all">{t('settings.twoFactor.secret')} {secret}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(secret);
+                                        success(t('settings.twoFactor.secretCopied'));
+                                    }}
+                                    className="text-text-tertiary hover:text-text-primary transition-colors"
+                                    title={t('settings.twoFactor.copySecret')}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                            </div>
                         )}
                     </div>
 

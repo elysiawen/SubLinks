@@ -1,6 +1,7 @@
 {
   "subscription": {
-    "allSourcesDisabled": "All selected upstream sources are disabled or unavailable"
+    "allSourcesDisabled": "All selected upstream sources are disabled or unavailable",
+    "defaultSubscription": "Default Subscription"
   },
   "auth": {
     "emptyCredentials": "Username and password are required",

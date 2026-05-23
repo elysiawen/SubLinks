@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Pencil } from 'lucide-react';
 import { useErrors } from '@/lib/use-errors';
 import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey } from './actions';
 import { useToast } from '@/components/ToastProvider';
@@ -33,6 +34,7 @@ export default function AdminUsersClient({
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
     const [editingUser, setEditingUser] = useState<{ id: string, username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
+    const [editingUsername, setEditingUsername] = useState(false);
 
     // Passkey State
     const [userPasskeys, setUserPasskeys] = useState<any[]>([]);
@@ -349,17 +351,20 @@ export default function AdminUsersClient({
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                         <button
-                                            onClick={() => setEditingUser({
-                                                id: user.id,
-                                                username: user.username,
-                                                newUsername: user.username,
-                                                newPassword: '',
-                                                nickname: user.nickname || '',
-                                                useGlobalLimit: user.maxSubscriptions === null,
-                                                customLimit: user.maxSubscriptions || globalMaxSubs,
-                                                avatar: user.avatar,
-                                                totpEnabled: user.totpEnabled
-                                            })}
+                                            onClick={() => {
+                                                setEditingUser({
+                                                    id: user.id,
+                                                    username: user.username,
+                                                    newUsername: user.username,
+                                                    newPassword: '',
+                                                    nickname: user.nickname || '',
+                                                    useGlobalLimit: user.maxSubscriptions === null,
+                                                    customLimit: user.maxSubscriptions || globalMaxSubs,
+                                                    avatar: user.avatar,
+                                                    totpEnabled: user.totpEnabled
+                                                });
+                                                setEditingUsername(false);
+                                            }}
                                             className="text-accent-foreground hover:text-blue-800 font-medium transition-colors"
                                         >
                                             {t('edit')}
@@ -451,17 +456,20 @@ export default function AdminUsersClient({
                                 </div>
                                 <div className="flex flex-wrap gap-2 pt-2">
                                     <button
-                                        onClick={() => setEditingUser({
-                                            id: user.id,
-                                            username: user.username,
-                                            newUsername: user.username,
-                                            newPassword: '',
-                                            nickname: user.nickname || '',
-                                            useGlobalLimit: user.maxSubscriptions === null,
-                                            customLimit: user.maxSubscriptions || globalMaxSubs,
-                                            avatar: user.avatar,
-                                            totpEnabled: user.totpEnabled
-                                        })}
+                                        onClick={() => {
+                                            setEditingUser({
+                                                id: user.id,
+                                                username: user.username,
+                                                newUsername: user.username,
+                                                newPassword: '',
+                                                nickname: user.nickname || '',
+                                                useGlobalLimit: user.maxSubscriptions === null,
+                                                customLimit: user.maxSubscriptions || globalMaxSubs,
+                                                avatar: user.avatar,
+                                                totpEnabled: user.totpEnabled
+                                            });
+                                            setEditingUsername(false);
+                                        }}
                                         className="flex-1 min-w-[80px] text-accent-foreground hover:text-blue-800 font-medium transition-colors text-sm py-2 px-3 border border-blue-200 rounded-lg hover:bg-accent text-center"
                                     >
                                         {t('edit')}
@@ -523,7 +531,30 @@ export default function AdminUsersClient({
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold text-text-primary mb-1">{editingUser.username}</h3>
+                                <div className="flex items-center gap-1 mb-1">
+                                    {editingUsername ? (
+                                        <input
+                                            type="text"
+                                            className="text-sm font-semibold text-text-primary border border-border-input rounded px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full max-w-[200px]"
+                                            value={editingUser.newUsername}
+                                            onChange={e => setEditingUser({ ...editingUser, newUsername: e.target.value })}
+                                            onBlur={() => setEditingUsername(false)}
+                                            onKeyDown={e => e.key === 'Enter' && setEditingUsername(false)}
+                                            autoFocus
+                                        />
+                                    ) : (
+                                        <>
+                                            <h3 className="text-sm font-semibold text-text-primary">{editingUser.newUsername || editingUser.username}</h3>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingUsername(true)}
+                                                className="text-text-tertiary hover:text-text-secondary transition-colors p-0.5"
+                                            >
+                                                <Pencil size={13} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-3">
                                     <label className={`inline-flex items-center px-3 py-1.5 bg-card border border-border-input rounded-md shadow-sm text-xs font-medium text-text-secondary hover:bg-muted cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         {editingUser.avatar ? t('changeAvatar') : t('uploadAvatar')}

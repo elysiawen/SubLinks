@@ -52,7 +52,7 @@
             "heading": "👤 プロフィール",
             "description": "表示ニックネームを設定します",
             "username": "ユーザー名",
-            "usernameHelp": "ユーザー名はログインに使用され、変更できません",
+            "usernameHelp": "ユーザー名はログインに使用されます。変更するには管理者にお問い合わせください",
             "avatar": "アバター",
             "changeAvatar": "アバターを変更",
             "uploadAvatar": "アバターをアップロード",
@@ -93,7 +93,9 @@
             "disabledSuccess": "二要素認証を無効にしました",
             "disableTitle": "二要素認証を無効にする",
             "disableDesc": "アカウントのセキュリティのため、二要素認証を無効にする前にログインパスワードの確認が必要です。",
-            "disableConfirm": "無効化を確認"
+            "disableConfirm": "無効化を確認",
+            "copySecret": "シークレットをコピー",
+            "secretCopied": "シークレットをコピーしました"
         },
         "password": {
             "heading": "🔐 パスワード変更",

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Get user subscriptions
-        const subscriptions = await db.getUserSubscriptions(payload.username);
+        const subscriptions = await db.getUserSubscriptions(payload.userId);
 
         // Format subscriptions for client
         const formattedSubscriptions = subscriptions.map(sub => ({

@@ -114,7 +114,9 @@
         "reset": "Reset",
         "cancel": "Cancel",
         "processing": "Processing...",
-        "confirmUpload": "Confirm Upload"
+        "confirmUpload": "Confirm Upload",
+        "zoom": "Zoom",
+        "fit": "Fit"
     },
     "submitButton": {
         "submit": "Submit"

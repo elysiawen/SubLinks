@@ -14,16 +14,13 @@ const REFRESH_TOKEN_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export interface TokenPayload {
     userId: string;
-    username: string;
-    role: string;
-    tokenVersion?: number;
-    nickname?: string;
-    avatar?: string;
+    tokenVersion?: string;
     refreshTokenId?: string; // DB ID of the device's refresh token, for device-level session validation
 }
 
 /**
  * Create JWT access token for client authentication
+ * Only stores userId, tokenVersion, refreshTokenId — user info fetched from DB on demand
  */
 export async function createAccessToken(payload: TokenPayload): Promise<string> {
     const token = await new SignJWT({ ...payload })
@@ -50,23 +47,20 @@ export async function createRefreshToken(payload: TokenPayload): Promise<string>
 
 /**
  * Verify and decode JWT token
+ * Returns only userId, tokenVersion, refreshTokenId — call db.getUserById() for full user info
  */
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
         const tokenPayload: TokenPayload = {
             userId: payload.userId as string,
-            username: payload.username as string,
-            role: payload.role as string,
-            tokenVersion: payload.tokenVersion as number | undefined,
-            nickname: payload.nickname as string | undefined,
-            avatar: payload.avatar as string | undefined,
+            tokenVersion: payload.tokenVersion as string | undefined,
             refreshTokenId: payload.refreshTokenId as string | undefined,
         };
 
         // Verify token version to invalidate tokens after password change
         const { db } = await import('@/lib/db');
-        const user = await db.getUser(tokenPayload.username);
+        const user = await db.getUserById(tokenPayload.userId);
         if (!user) {
             return null;
         }
@@ -76,20 +70,15 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
             return null;
         }
 
-        const tokenVersion = tokenPayload.tokenVersion || 0;
-        const currentVersion = user.tokenVersion || 0;
+        const tokenVersion = tokenPayload.tokenVersion || '';
+        const currentVersion = user.tokenVersion || '';
 
         if (tokenVersion !== currentVersion) {
             // Token version mismatch, token is invalid
             return null;
         }
 
-        // Return payload with latest user info (nickname/avatar) from DB
-        return {
-            ...tokenPayload,
-            nickname: user.nickname,
-            avatar: user.avatar
-        };
+        return tokenPayload;
     } catch (error) {
         // Log validation failures gracefully without stack trace
         if (error instanceof Error) {

@@ -65,7 +65,8 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
                 
                 -- Ensure all required columns exist in users
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT '';
+                ALTER TABLE users ALTER COLUMN token_version TYPE VARCHAR(64);
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
@@ -74,20 +75,25 @@ export default class PostgresDatabase implements IDatabase {
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
                     username VARCHAR(255) NOT NULL,
+                    user_id UUID,
                     remark VARCHAR(255),
                     group_id VARCHAR(255),
                     rule_id VARCHAR(255),
                     custom_rules TEXT,
-                    selected_sources JSONB,
                     selected_sources JSONB,
                     enabled BOOLEAN DEFAULT TRUE,
                     auto_disabled BOOLEAN DEFAULT FALSE,
                     created_at BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_subscriptions_username ON subscriptions(username);
-                
-                -- Ensure auto_disabled column exists
+
+                -- Ensure columns exist (must be before index creation for existing databases)
+                ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS user_id UUID;
                 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS auto_disabled BOOLEAN DEFAULT FALSE;
+                CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
+
+                -- Backfill user_id from username
+                UPDATE subscriptions SET user_id = (SELECT id FROM users WHERE users.username = subscriptions.username) WHERE user_id IS NULL AND EXISTS (SELECT 1 FROM users WHERE users.username = subscriptions.username);
 
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
@@ -101,7 +107,8 @@ export default class PostgresDatabase implements IDatabase {
                 
                 -- Ensure all required columns exist in sessions
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id UUID;
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0;
+                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT '';
+                ALTER TABLE sessions ALTER COLUMN token_version TYPE VARCHAR(64);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT;
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip VARCHAR(45);
@@ -112,6 +119,7 @@ export default class PostgresDatabase implements IDatabase {
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
                 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS login_method VARCHAR(50);
+                ALTER TABLE sessions ALTER COLUMN username DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS refresh_tokens (
                     id VARCHAR(255) PRIMARY KEY,
@@ -131,6 +139,7 @@ export default class PostgresDatabase implements IDatabase {
 
                 ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
                 ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
+                ALTER TABLE refresh_tokens ALTER COLUMN username DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
@@ -199,6 +208,7 @@ export default class PostgresDatabase implements IDatabase {
                     id VARCHAR(255) PRIMARY KEY,
                     token VARCHAR(255) NOT NULL,
                     username VARCHAR(255) NOT NULL,
+                    user_id UUID,
                     ip VARCHAR(255) NOT NULL,
                     ua TEXT NOT NULL,
                     status INTEGER NOT NULL,
@@ -208,6 +218,8 @@ export default class PostgresDatabase implements IDatabase {
                 );
                 CREATE INDEX IF NOT EXISTS idx_api_logs_token ON api_access_logs(token);
                 CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_access_logs(timestamp);
+                ALTER TABLE api_access_logs ADD COLUMN IF NOT EXISTS user_id UUID;
+                CREATE INDEX IF NOT EXISTS idx_api_logs_user_id ON api_access_logs(user_id);
 
                 CREATE TABLE IF NOT EXISTS web_access_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -215,10 +227,13 @@ export default class PostgresDatabase implements IDatabase {
                     ip VARCHAR(255) NOT NULL,
                     ua TEXT NOT NULL,
                     username VARCHAR(255),
+                    user_id UUID,
                     status INTEGER NOT NULL,
                     timestamp BIGINT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_web_logs_timestamp ON web_access_logs(timestamp);
+                ALTER TABLE web_access_logs ADD COLUMN IF NOT EXISTS user_id UUID;
+                CREATE INDEX IF NOT EXISTS idx_web_logs_user_id ON web_access_logs(user_id);
 
                 CREATE TABLE IF NOT EXISTS system_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -343,8 +358,23 @@ export default class PostgresDatabase implements IDatabase {
                  totp_secret = EXCLUDED.totp_secret,
                  totp_enabled = EXCLUDED.totp_enabled
              RETURNING id`,
-            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
+            [username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || '', data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
         );
+    }
+
+    async renameUser(oldUsername: string, newUsername: string): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('UPDATE users SET username = $1 WHERE username = $2', [newUsername, oldUsername]);
+            await client.query('UPDATE subscriptions SET username = $1 WHERE username = $2', [newUsername, oldUsername]);
+            await client.query('COMMIT');
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
     }
 
     async deleteUser(username: string): Promise<void> {
@@ -413,11 +443,10 @@ export default class PostgresDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO sessions (session_id, user_id, username, role, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, created_at, expires_at, login_method)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            `INSERT INTO sessions (session_id, user_id, role, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, created_at, expires_at, login_method)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
              ON CONFLICT (session_id) DO UPDATE SET
                  user_id = EXCLUDED.user_id,
-                 username = EXCLUDED.username,
                  role = EXCLUDED.role,
                  token_version = EXCLUDED.token_version,
                  nickname = EXCLUDED.nickname,
@@ -432,7 +461,7 @@ export default class PostgresDatabase implements IDatabase {
                  expires_at = EXCLUDED.expires_at,
                  login_method = EXCLUDED.login_method`,
             [
-                sessionId, data.userId, data.username, data.role, data.tokenVersion || 0, data.nickname, data.avatar,
+                sessionId, data.userId, data.role, data.tokenVersion || '', data.nickname, data.avatar,
                 data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || createdAt, createdAt, expiresAt, data.loginMethod
             ]
         );
@@ -446,7 +475,9 @@ export default class PostgresDatabase implements IDatabase {
             await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
             const result = await this.pool.query(
-                'SELECT * FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                `SELECT s.*, u.username as username FROM sessions s
+                 LEFT JOIN users u ON s.user_id = u.id
+                 WHERE s.session_id = $1 AND s.expires_at > $2`,
                 [sessionId, Date.now()]
             );
             if (result.rows.length === 0) return null;
@@ -499,7 +530,9 @@ export default class PostgresDatabase implements IDatabase {
                 await this.ensureInitialized();
                 // Retry once
                 const result = await this.pool.query(
-                    'SELECT user_id, username, role FROM sessions WHERE session_id = $1 AND expires_at > $2',
+                    `SELECT s.user_id, u.username, s.role FROM sessions s
+                     LEFT JOIN users u ON s.user_id = u.id
+                     WHERE s.session_id = $1 AND s.expires_at > $2`,
                     [sessionId, Date.now()]
                 );
                 if (result.rows.length === 0) return null;
@@ -534,7 +567,9 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
         const result = await this.pool.query(
-            'SELECT * FROM sessions WHERE user_id = $1 ORDER BY last_active DESC',
+            `SELECT s.*, u.username as username FROM sessions s
+             LEFT JOIN users u ON s.user_id = u.id
+             WHERE s.user_id = $1 ORDER BY s.last_active DESC`,
             [userId]
         );
 
@@ -560,17 +595,17 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
         await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
 
-        let query = 'SELECT * FROM sessions';
-        let countQuery = 'SELECT COUNT(*) FROM sessions';
+        let query = `SELECT s.*, u.username as username FROM sessions s LEFT JOIN users u ON s.user_id = u.id`;
+        let countQuery = 'SELECT COUNT(*) FROM sessions s LEFT JOIN users u ON s.user_id = u.id';
         const params: any[] = [];
 
         if (search) {
-            query += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR nickname ILIKE $1)';
-            countQuery += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR nickname ILIKE $1)';
+            query += ' WHERE (u.username ILIKE $1 OR s.ip ILIKE $1 OR s.ua ILIKE $1 OR s.nickname ILIKE $1)';
+            countQuery += ' WHERE (u.username ILIKE $1 OR s.ip ILIKE $1 OR s.ua ILIKE $1 OR s.nickname ILIKE $1)';
             params.push(`%${search}%`);
         }
 
-        query += ` ORDER BY last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        query += ` ORDER BY s.last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
         const offset = (page - 1) * limit;
         params.push(limit, offset);
 
@@ -604,17 +639,17 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
 
-        let query = 'SELECT * FROM refresh_tokens';
-        let countQuery = 'SELECT COUNT(*) FROM refresh_tokens';
+        let query = `SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id`;
+        let countQuery = 'SELECT COUNT(*) FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id';
         const params: any[] = [];
 
         if (search) {
-            query += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR device_info ILIKE $1)';
-            countQuery += ' WHERE (username ILIKE $1 OR ip ILIKE $1 OR ua ILIKE $1 OR device_info ILIKE $1)';
+            query += ' WHERE (u.username ILIKE $1 OR r.ip ILIKE $1 OR r.ua ILIKE $1 OR r.device_info ILIKE $1)';
+            countQuery += ' WHERE (u.username ILIKE $1 OR r.ip ILIKE $1 OR r.ua ILIKE $1 OR r.device_info ILIKE $1)';
             params.push(`%${search}%`);
         }
 
-        query += ` ORDER BY last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        query += ` ORDER BY r.last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
         const offset = (page - 1) * limit;
         params.push(limit, offset);
 
@@ -661,10 +696,10 @@ export default class PostgresDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
             [
-                token.id, token.userId, token.username, token.token,
+                token.id, token.userId, token.token,
                 token.ip, location, isp, token.ua, token.deviceInfo,
                 token.createdAt, token.expiresAt, token.lastActive
             ]
@@ -677,7 +712,9 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
 
         const result = await this.pool.query(
-            'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > $2',
+            `SELECT r.*, u.username as username FROM refresh_tokens r
+             LEFT JOIN users u ON r.user_id = u.id
+             WHERE r.token = $1 AND r.expires_at > $2`,
             [tokenString, Date.now()]
         );
 
@@ -746,7 +783,9 @@ export default class PostgresDatabase implements IDatabase {
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
 
         const result = await this.pool.query(
-            'SELECT * FROM refresh_tokens WHERE user_id = $1 ORDER BY last_active DESC',
+            `SELECT r.*, u.username as username FROM refresh_tokens r
+             LEFT JOIN users u ON r.user_id = u.id
+             WHERE r.user_id = $1 ORDER BY r.last_active DESC`,
             [userId]
         );
 
@@ -772,11 +811,7 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     // Subscription operations
-    async createSubscription(token: string, username: string, data: SubData): Promise<void> {
-        // Get user_id from username
-        const user = await this.getUser(username);
-        const userId = user?.id || null;
-
+    async createSubscription(token: string, username: string, userId: string, data: SubData): Promise<void> {
         await this.pool.query(
             `INSERT INTO subscriptions (token, username, user_id, remark, group_id, rule_id, custom_rules, selected_sources, enabled, auto_disabled, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
@@ -803,6 +838,7 @@ export default class PostgresDatabase implements IDatabase {
         return {
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -843,6 +879,7 @@ export default class PostgresDatabase implements IDatabase {
         const data = result.rows.map((row) => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -857,8 +894,12 @@ export default class PostgresDatabase implements IDatabase {
         return { data, total };
     }
 
-    async deleteSubscription(token: string, username: string): Promise<void> {
-        await this.pool.query('DELETE FROM subscriptions WHERE token = $1', [token]);
+    async deleteSubscription(token: string, userId?: string): Promise<void> {
+        if (userId) {
+            await this.pool.query('DELETE FROM subscriptions WHERE token = $1 AND user_id = $2', [token, userId]);
+        } else {
+            await this.pool.query('DELETE FROM subscriptions WHERE token = $1', [token]);
+        }
     }
 
     async updateSubscription(token: string, data: SubData): Promise<void> {
@@ -885,11 +926,12 @@ export default class PostgresDatabase implements IDatabase {
         );
     }
 
-    async getUserSubscriptions(username: string): Promise<Array<SubData & { token: string }>> {
-        const result = await this.pool.query('SELECT * FROM subscriptions WHERE username = $1', [username]);
+    async getUserSubscriptions(userId: string): Promise<Array<SubData & { token: string }>> {
+        const result = await this.pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [userId]);
         return result.rows.map((row) => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -901,10 +943,10 @@ export default class PostgresDatabase implements IDatabase {
         }));
     }
 
-    async isSubscriptionOwner(username: string, token: string): Promise<boolean> {
+    async isSubscriptionOwner(userId: string, token: string): Promise<boolean> {
         const result = await this.pool.query(
-            'SELECT 1 FROM subscriptions WHERE token = $1 AND username = $2',
-            [token, username]
+            'SELECT 1 FROM subscriptions WHERE token = $1 AND user_id = $2',
+            [token, userId]
         );
         return result.rows.length > 0;
     }
@@ -927,6 +969,7 @@ export default class PostgresDatabase implements IDatabase {
         return result.rows.map(row => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -1597,40 +1640,55 @@ export default class PostgresDatabase implements IDatabase {
     async createAPIAccessLog(log: Omit<import('./interface').APIAccessLog, 'id'>): Promise<void> {
         const id = nanoid();
         await this.pool.query(
-            `INSERT INTO api_access_logs (id, token, username, ip, ua, status, timestamp, api_type, request_method)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [id, log.token, log.username, log.ip, log.ua, log.status, log.timestamp, log.apiType || null, log.requestMethod || null]
+            `INSERT INTO api_access_logs (id, token, username, user_id, ip, ua, status, timestamp, api_type, request_method)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [id, log.token, log.username, log.userId || null, log.ip, log.ua, log.status, log.timestamp, log.apiType || null, log.requestMethod || null]
         );
     }
 
-    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').PaginatedResult<import('./interface').APIAccessLog>> {
+    async getAPIAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<import('./interface').PaginatedResult<import('./interface').APIAccessLog>> {
         let query = `
-            SELECT 
-                l.*,
+            SELECT
+                l.id, l.token, COALESCE(u.username, l.username) as username, l.user_id,
+                l.ip, l.ua, l.status, l.timestamp, l.api_type, l.request_method,
                 u.nickname,
                 s.remark as sub_remark
             FROM api_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN subscriptions s ON l.token = s.token
         `;
         let countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM api_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN subscriptions s ON l.token = s.token
         `;
 
         const params: any[] = [];
         const countParams: any[] = [];
         let paramIndex = 1;
+        const conditions: string[] = [];
+        const countConditions: string[] = [];
+
+        if (userId) {
+            conditions.push(`l.user_id = $${paramIndex}`);
+            countConditions.push(`l.user_id = $${paramIndex}`);
+            params.push(userId);
+            countParams.push(userId);
+            paramIndex++;
+        }
 
         if (search) {
-            const searchClause = ` WHERE l.token ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex}`;
-            query += searchClause;
-            countQuery += searchClause;
+            conditions.push(`(l.token ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex})`);
+            countConditions.push(`(l.token ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex})`);
             params.push(`%${search}%`);
             countParams.push(`%${search}%`);
             paramIndex++;
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+            countQuery += ' WHERE ' + countConditions.join(' AND ');
         }
 
         const countResult = await this.pool.query(countQuery, countParams);
@@ -1645,6 +1703,7 @@ export default class PostgresDatabase implements IDatabase {
             id: row.id,
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             nickname: row.nickname || undefined,
             subRemark: row.sub_remark || undefined,
             ip: row.ip,
@@ -1661,37 +1720,52 @@ export default class PostgresDatabase implements IDatabase {
     async createWebAccessLog(log: Omit<import('./interface').WebAccessLog, 'id'>): Promise<void> {
         const id = nanoid();
         await this.pool.query(
-            `INSERT INTO web_access_logs (id, path, ip, ua, username, status, timestamp)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [id, log.path, log.ip, log.ua, log.username, log.status, log.timestamp]
+            `INSERT INTO web_access_logs (id, path, ip, ua, username, user_id, status, timestamp)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [id, log.path, log.ip, log.ua, log.username, log.userId || null, log.status, log.timestamp]
         );
     }
 
-    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<import('./interface').PaginatedResult<import('./interface').WebAccessLog>> {
+    async getWebAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<import('./interface').PaginatedResult<import('./interface').WebAccessLog>> {
         let query = `
-            SELECT 
-                l.*,
+            SELECT
+                l.id, l.path, l.ip, l.ua, COALESCE(u.username, l.username) as username, l.user_id,
+                l.status, l.timestamp,
                 u.nickname
             FROM web_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
         `;
         let countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM web_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
         `;
 
         const params: any[] = [];
         const countParams: any[] = [];
         let paramIndex = 1;
+        const conditions: string[] = [];
+        const countConditions: string[] = [];
+
+        if (userId) {
+            conditions.push(`l.user_id = $${paramIndex}`);
+            countConditions.push(`l.user_id = $${paramIndex}`);
+            params.push(userId);
+            countParams.push(userId);
+            paramIndex++;
+        }
 
         if (search) {
-            const searchClause = ` WHERE l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex}`;
-            query += searchClause;
-            countQuery += searchClause;
+            conditions.push(`(l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex})`);
+            countConditions.push(`(l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex})`);
             params.push(`%${search}%`);
             countParams.push(`%${search}%`);
             paramIndex++;
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+            countQuery += ' WHERE ' + countConditions.join(' AND ');
         }
 
         const countResult = await this.pool.query(countQuery, countParams);
@@ -1707,6 +1781,7 @@ export default class PostgresDatabase implements IDatabase {
             ip: row.ip,
             ua: row.ua,
             username: row.username,
+            userId: row.user_id || undefined,
             nickname: row.nickname || undefined,
             status: row.status,
             timestamp: parseInt(row.timestamp)

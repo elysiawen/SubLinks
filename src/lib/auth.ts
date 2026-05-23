@@ -1,6 +1,5 @@
 import { db } from './db';
 import { nanoid } from 'nanoid';
-import { SignJWT, jwtVerify } from 'jose';
 
 // Use simple session ID instead of JWT for simplicity.
 // or use JWT stateless.
@@ -22,7 +21,7 @@ export async function createSession(username: string, role: string, ip?: string,
         userId: user.id,
         username,
         role,
-        tokenVersion: user.tokenVersion || 0,
+        tokenVersion: user.tokenVersion || nanoid(16),
         nickname: user.nickname,
         avatar: user.avatar,
         ip,
@@ -40,7 +39,7 @@ export async function getSession(sessionId: string, currentIp?: string) {
     }
 
     // Verify token version to invalidate sessions after password change
-    const user = await db.getUser(session.username);
+    const user = await db.getUserById(session.userId);
     if (!user) {
         return null;
     }
@@ -50,8 +49,8 @@ export async function getSession(sessionId: string, currentIp?: string) {
         return null;
     }
 
-    const sessionVersion = session.tokenVersion || 0;
-    const currentVersion = user.tokenVersion || 0;
+    const sessionVersion = session.tokenVersion || '';
+    const currentVersion = user.tokenVersion || '';
 
     if (sessionVersion !== currentVersion) {
         // Token version mismatch, session is invalid
@@ -64,7 +63,7 @@ export async function getSession(sessionId: string, currentIp?: string) {
             userId: user.id,
             username: user.username,
             role: user.role,
-            tokenVersion: user.tokenVersion || 0,
+            tokenVersion: user.tokenVersion || nanoid(16),
             nickname: user.nickname,
             avatar: user.avatar
         }, SESSION_TTL);

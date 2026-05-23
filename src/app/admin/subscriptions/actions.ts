@@ -69,7 +69,7 @@ export async function createAdminSubscription(
         return { error: 'selectAtLeastOne' };
     }
 
-    await db.createSubscription(token, username.trim(), newSub);
+    await db.createSubscription(token, username.trim(), user.id, newSub);
 
     revalidatePath('/admin/subscriptions');
     return { success: true, token };
@@ -83,7 +83,7 @@ export async function deleteAdminSubscription(token: string) {
     const sub = await db.getSubscription(token);
     if (!sub) return { error: 'Not found' };
 
-    await db.deleteSubscription(token, sub.username);
+    await db.deleteSubscription(token, sub.userId || '');
 
     // Invalidate cache
     await db.deleteCache(`cache:subscription:${token}`);

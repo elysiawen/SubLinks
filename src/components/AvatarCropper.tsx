@@ -15,36 +15,55 @@ interface AvatarCropperProps {
 export default function AvatarCropper({ image, onCropComplete, onCancel }: AvatarCropperProps) {
     const t = useTranslations('common.avatarCropper');
     const imgRef = useRef<HTMLImageElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [rotation, setRotation] = useState(0);
     const [loading, setLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [scale, setScale] = useState(1);
+    const [fitScale, setFitScale] = useState(1);
 
     useEffect(() => {
         setMounted(true);
-        // Prevent scrolling when open
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = 'unset';
         };
     }, []);
 
-    // Initialize crop when image loads
     const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-        const { width, height } = e.currentTarget;
-        const size = Math.min(width, height) * 0.8;
-        const x = (width - size) / 2;
-        const y = (height - size) / 2;
+        const { naturalWidth, naturalHeight } = e.currentTarget;
+        const container = containerRef.current;
+
+        let newFitScale = 1;
+        if (container) {
+            const padding = 48;
+            const maxW = container.clientWidth - padding;
+            const maxH = container.clientHeight - padding;
+            const scaleW = maxW / naturalWidth;
+            const scaleH = maxH / naturalHeight;
+            newFitScale = Math.min(scaleW, scaleH, 1);
+        }
+        setFitScale(newFitScale);
+        setScale(newFitScale);
+
+        const size = Math.min(naturalWidth, naturalHeight) * 0.8;
+        const x = (naturalWidth - size) / 2;
+        const y = (naturalHeight - size) / 2;
 
         setCrop({
-            unit: 'px',
-            width: size,
-            height: size,
-            x: x,
-            y: y,
+            unit: '%',
+            width: (size / naturalWidth) * 100,
+            height: (size / naturalHeight) * 100,
+            x: (x / naturalWidth) * 100,
+            y: (y / naturalHeight) * 100,
         });
     };
+
+    const handleZoomIn = () => setScale(prev => Math.min(prev * 1.25, 3));
+    const handleZoomOut = () => setScale(prev => Math.max(prev / 1.25, fitScale * 0.5));
+    const handleZoomReset = () => setScale(fitScale);
 
     const handleConfirm = async () => {
         if (!completedCrop || !imgRef.current) {
@@ -61,59 +80,44 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                 throw new Error('Failed to get canvas context');
             }
 
-            // Set canvas size to 500x500 (final size)
             canvas.width = 500;
             canvas.height = 500;
 
             const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
             const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
 
-            // If rotation is needed, create a temporary canvas for rotation
             if (rotation !== 0) {
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
                 if (!tempCtx) throw new Error('Failed to get temp canvas context');
 
-                // Set temp canvas to original image size
                 tempCanvas.width = imgRef.current.naturalWidth;
                 tempCanvas.height = imgRef.current.naturalHeight;
 
-                // Translate to center, rotate, then translate back
                 tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
                 tempCtx.rotate((rotation * Math.PI) / 180);
                 tempCtx.translate(-tempCanvas.width / 2, -tempCanvas.height / 2);
-
-                // Draw rotated image
                 tempCtx.drawImage(imgRef.current, 0, 0);
 
-                // Draw cropped area from rotated image
                 ctx.drawImage(
                     tempCanvas,
                     completedCrop.x * scaleX,
                     completedCrop.y * scaleY,
                     completedCrop.width * scaleX,
                     completedCrop.height * scaleY,
-                    0,
-                    0,
-                    500,
-                    500
+                    0, 0, 500, 500
                 );
             } else {
-                // Draw cropped image scaled to 500x500 (no rotation)
                 ctx.drawImage(
                     imgRef.current,
                     completedCrop.x * scaleX,
                     completedCrop.y * scaleY,
                     completedCrop.width * scaleX,
                     completedCrop.height * scaleY,
-                    0,
-                    0,
-                    500,
-                    500
+                    0, 0, 500, 500
                 );
             }
 
-            // Convert to blob
             canvas.toBlob((blob) => {
                 if (blob) {
                     onCropComplete(blob);
@@ -133,15 +137,15 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
 
     return createPortal(
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-card rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl animate-zoom-in">
+            <div className="bg-card rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-zoom-in">
                 {/* Header */}
-                <div className="p-6 border-b border-border-strong">
+                <div className="p-6 border-b border-border-strong shrink-0">
                     <h2 className="text-xl font-bold text-text-primary">{t('title')}</h2>
                     <p className="text-sm text-text-tertiary mt-1">{t('description')}</p>
                 </div>
 
                 {/* Cropper */}
-                <div className="relative bg-muted p-8 flex items-center justify-center max-h-[60vh] overflow-hidden">
+                <div ref={containerRef} className="relative bg-muted flex-1 min-h-0 overflow-auto p-6 flex items-center justify-center">
                     <ReactCrop
                         crop={crop}
                         onChange={(c) => setCrop(c)}
@@ -154,13 +158,56 @@ export default function AvatarCropper({ image, onCropComplete, onCancel }: Avata
                             src={image}
                             alt="Crop preview"
                             onLoad={onImageLoad}
-                            className="max-w-full max-h-[50vh] object-contain"
                             style={{
+                                width: imgRef.current ? imgRef.current.naturalWidth * scale : undefined,
+                                height: imgRef.current ? imgRef.current.naturalHeight * scale : undefined,
+                                maxWidth: 'none',
                                 transform: `rotate(${rotation}deg)`,
-                                transition: 'transform 0.2s ease-in-out',
+                                transition: 'transform 0.2s ease-in-out, width 0.15s ease, height 0.15s ease',
                             }}
                         />
                     </ReactCrop>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="px-6 py-3 bg-muted border-b border-border-strong shrink-0">
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-text-secondary shrink-0">
+                            {t('zoom')}
+                        </label>
+                        <button
+                            onClick={handleZoomOut}
+                            className="p-1.5 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                            </svg>
+                        </button>
+                        <input
+                            type="range"
+                            min={fitScale * 0.5}
+                            max={3}
+                            step={0.01}
+                            value={scale}
+                            onChange={(e) => setScale(Number(e.target.value))}
+                            className="flex-1 h-2 bg-border-strong rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <button
+                            onClick={handleZoomIn}
+                            className="p-1.5 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={handleZoomReset}
+                            className="px-2 py-1.5 bg-card border border-border-input text-text-secondary rounded-lg hover:bg-muted transition-colors text-xs font-medium shrink-0"
+                        >
+                            {t('fit')}
+                        </button>
+                        <span className="text-xs text-text-tertiary w-12 text-right shrink-0">{Math.round(scale * 100)}%</span>
+                    </div>
                 </div>
 
                 {/* Rotation Controls */}

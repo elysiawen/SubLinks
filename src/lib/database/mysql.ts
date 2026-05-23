@@ -83,7 +83,7 @@ export default class MysqlDatabase implements IDatabase {
                 role VARCHAR(50) NOT NULL,
                 status VARCHAR(50) NOT NULL,
                 max_subscriptions INTEGER,
-                token_version INTEGER DEFAULT 0,
+                token_version VARCHAR(64) DEFAULT '',
                 nickname VARCHAR(100),
                 avatar TEXT,
                 totp_secret TEXT,
@@ -107,6 +107,7 @@ export default class MysqlDatabase implements IDatabase {
             CREATE TABLE IF NOT EXISTS subscriptions (
                 token VARCHAR(255) PRIMARY KEY,
                 username VARCHAR(255) NOT NULL,
+                user_id CHAR(36),
                 remark VARCHAR(255),
                 group_id VARCHAR(255),
                 rule_id VARCHAR(255),
@@ -115,14 +116,24 @@ export default class MysqlDatabase implements IDatabase {
                 enabled TINYINT(1) DEFAULT 1,
                 auto_disabled TINYINT(1) DEFAULT 0,
                 created_at BIGINT NOT NULL,
-                INDEX idx_subscriptions_username (username)
+                INDEX idx_subscriptions_username (username),
+                INDEX idx_subscriptions_user_id (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure user_id column exists (Migration)
+            SELECT count(*) INTO @exist_sub_user_id FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'subscriptions' AND column_name = 'user_id';
+            SET @query = IF(@exist_sub_user_id=0, 'ALTER TABLE subscriptions ADD COLUMN user_id CHAR(36)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             -- Ensure auto_disabled column exists (Migration)
             SELECT count(*) INTO @exist_auto_disabled FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'subscriptions' AND column_name = 'auto_disabled';
             SET @query = IF(@exist_auto_disabled=0, 'ALTER TABLE subscriptions ADD COLUMN auto_disabled TINYINT(1) DEFAULT 0', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
+
+            -- Backfill user_id from username
+            UPDATE subscriptions s SET s.user_id = (SELECT u.id FROM users u WHERE u.username = s.username) WHERE s.user_id IS NULL AND EXISTS (SELECT 1 FROM users u WHERE u.username = s.username);
 
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id VARCHAR(255) PRIMARY KEY,
@@ -131,7 +142,7 @@ export default class MysqlDatabase implements IDatabase {
                 created_at BIGINT NOT NULL DEFAULT 0,
                 expires_at BIGINT NOT NULL,
                 user_id CHAR(36),
-                token_version INTEGER DEFAULT 0,
+                token_version VARCHAR(64) DEFAULT '',
                 nickname VARCHAR(100),
                 avatar TEXT,
                 ip VARCHAR(45),
@@ -163,6 +174,13 @@ export default class MysqlDatabase implements IDatabase {
             PREPARE stmt FROM @query;
             EXECUTE stmt;
 
+            -- Make sessions.username nullable (no longer primary identifier)
+            ALTER TABLE sessions MODIFY COLUMN username VARCHAR(255);
+
+            -- Change token_version from INTEGER to VARCHAR for nanoid support
+            ALTER TABLE users MODIFY COLUMN token_version VARCHAR(64) DEFAULT '';
+            ALTER TABLE sessions MODIFY COLUMN token_version VARCHAR(64) DEFAULT '';
+
             CREATE TABLE IF NOT EXISTS refresh_tokens (
                 id VARCHAR(255) PRIMARY KEY,
                 user_id CHAR(36) NOT NULL,
@@ -189,7 +207,10 @@ export default class MysqlDatabase implements IDatabase {
             SET @query = IF(@exist_rt_isp=0, 'ALTER TABLE refresh_tokens ADD COLUMN isp VARCHAR(255)', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
-            
+
+            -- Make refresh_tokens.username nullable (no longer primary identifier)
+            ALTER TABLE refresh_tokens MODIFY COLUMN username VARCHAR(255);
+
             CREATE TABLE IF NOT EXISTS custom_config (
                 id VARCHAR(255) PRIMARY KEY,
                 user_id CHAR(36) NOT NULL,
@@ -281,6 +302,7 @@ export default class MysqlDatabase implements IDatabase {
                 id CHAR(36) PRIMARY KEY,
                 token VARCHAR(255),
                 username VARCHAR(255),
+                user_id CHAR(36),
                 nickname VARCHAR(255),
                 ip VARCHAR(45),
                 ua TEXT,
@@ -289,8 +311,15 @@ export default class MysqlDatabase implements IDatabase {
                 api_type VARCHAR(50),
                 request_method VARCHAR(20),
                 INDEX idx_api_logs_username (username),
+                INDEX idx_api_logs_user_id (user_id),
                 INDEX idx_api_logs_timestamp (timestamp)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure user_id column exists in api_access_logs
+            SELECT count(*) INTO @exist_api_uid FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'api_access_logs' AND column_name = 'user_id';
+            SET @query = IF(@exist_api_uid=0, 'ALTER TABLE api_access_logs ADD COLUMN user_id CHAR(36)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS web_access_logs (
                 id CHAR(36) PRIMARY KEY,
@@ -298,12 +327,20 @@ export default class MysqlDatabase implements IDatabase {
                 ip VARCHAR(45),
                 ua TEXT,
                 username VARCHAR(255),
+                user_id CHAR(36),
                 nickname VARCHAR(255),
                 status INTEGER,
                 timestamp BIGINT,
                 INDEX idx_web_logs_username (username),
+                INDEX idx_web_logs_user_id (user_id),
                 INDEX idx_web_logs_timestamp (timestamp)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            -- Ensure user_id column exists in web_access_logs
+            SELECT count(*) INTO @exist_web_uid FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'web_access_logs' AND column_name = 'user_id';
+            SET @query = IF(@exist_web_uid=0, 'ALTER TABLE web_access_logs ADD COLUMN user_id CHAR(36)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS system_logs (
                 id CHAR(36) PRIMARY KEY,
@@ -405,8 +442,23 @@ export default class MysqlDatabase implements IDatabase {
                  avatar = VALUES(avatar),
                  totp_secret = VALUES(totp_secret),
                  totp_enabled = VALUES(totp_enabled)`,
-            [id, username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || 0, data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
+            [id, username, data.password, data.role, data.status, data.maxSubscriptions, data.tokenVersion || '', data.nickname, data.avatar, data.totpSecret, data.totpEnabled || false, data.createdAt]
         );
+    }
+
+    async renameUser(oldUsername: string, newUsername: string): Promise<void> {
+        const conn = await this.pool.getConnection();
+        try {
+            await conn.beginTransaction();
+            await conn.query('UPDATE users SET username = ? WHERE username = ?', [newUsername, oldUsername]);
+            await conn.query('UPDATE subscriptions SET username = ? WHERE username = ?', [newUsername, oldUsername]);
+            await conn.commit();
+        } catch (e) {
+            await conn.rollback();
+            throw e;
+        } finally {
+            conn.release();
+        }
     }
 
     async deleteUser(username: string): Promise<void> {
@@ -484,6 +536,7 @@ export default class MysqlDatabase implements IDatabase {
         return rows.map(row => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -511,10 +564,9 @@ export default class MysqlDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO sessions (session_id, username, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, login_method)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO sessions (session_id, role, created_at, expires_at, user_id, token_version, nickname, avatar, ip, ip_location, isp, ua, device_info, last_active, login_method)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
-                username = VALUES(username),
                 role = VALUES(role),
                 expires_at = VALUES(expires_at),
                 token_version = VALUES(token_version),
@@ -522,7 +574,7 @@ export default class MysqlDatabase implements IDatabase {
                 avatar = VALUES(avatar),
                 last_active = VALUES(last_active),
                 login_method = VALUES(login_method)`,
-            [sessionId, data.username, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || 0, data.nickname, data.avatar, data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || Date.now(), data.loginMethod]
+            [sessionId, data.role, Date.now(), expiresAt, data.userId, data.tokenVersion || '', data.nickname, data.avatar, data.ip, location, isp, data.ua, data.deviceInfo, data.lastActive || Date.now(), data.loginMethod]
         );
     }
 
@@ -535,7 +587,7 @@ export default class MysqlDatabase implements IDatabase {
             this.cleanupExpiredSessions();
         }
 
-        const [rows] = await this.query<any[]>('SELECT * FROM sessions WHERE session_id = ? AND expires_at > ?', [sessionId, Date.now()]);
+        const [rows] = await this.query<any[]>(`SELECT s.*, u.username as username FROM sessions s LEFT JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > ?`, [sessionId, Date.now()]);
         if (rows.length === 0) return null;
 
         const row = rows[0];
@@ -598,7 +650,7 @@ export default class MysqlDatabase implements IDatabase {
 
     async getUserSessions(userId: string): Promise<Session[]> {
         await this.ensureInitialized();
-        const [rows] = await this.pool.query<any[]>('SELECT * FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY last_active DESC', [userId, Date.now()]);
+        const [rows] = await this.pool.query<any[]>(`SELECT s.*, u.username as username FROM sessions s LEFT JOIN users u ON s.user_id = u.id WHERE s.user_id = ? AND s.expires_at > ? ORDER BY s.last_active DESC`, [userId, Date.now()]);
 
         return rows.map(row => ({
             sessionId: row.session_id, // Add sessionId to return type if needed by caller, but interface matches Session
@@ -622,25 +674,25 @@ export default class MysqlDatabase implements IDatabase {
         await this.ensureInitialized();
         const offset = (page - 1) * limit;
 
-        let query = 'SELECT * FROM sessions WHERE expires_at > ?';
+        let query = `SELECT s.*, u.username as username FROM sessions s LEFT JOIN users u ON s.user_id = u.id WHERE s.expires_at > ?`;
         let params: any[] = [Date.now()];
 
         if (search) {
-            query += ' AND (username LIKE ? OR nickname LIKE ? OR ip LIKE ?)';
+            query += ' AND (u.username LIKE ? OR s.nickname LIKE ? OR s.ip LIKE ?)';
             params.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
-        query += ' ORDER BY last_active DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY s.last_active DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
 
         // Count
-        let countQuery = 'SELECT COUNT(*) as total FROM sessions WHERE expires_at > ?';
+        let countQuery = 'SELECT COUNT(*) as total FROM sessions s LEFT JOIN users u ON s.user_id = u.id WHERE s.expires_at > ?';
         let countParams: any[] = [Date.now()];
 
         if (search) {
-            countQuery += ' AND (username LIKE ? OR nickname LIKE ? OR ip LIKE ?)';
+            countQuery += ' AND (u.username LIKE ? OR s.nickname LIKE ? OR s.ip LIKE ?)';
             countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
@@ -660,7 +712,8 @@ export default class MysqlDatabase implements IDatabase {
                 isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
-                lastActive: Number(row.last_active)
+                lastActive: Number(row.last_active),
+                loginMethod: row.login_method
             })),
             total: countRows[0].total
         };
@@ -689,15 +742,15 @@ export default class MysqlDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, username, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [token.id, token.userId, token.username, token.token, token.ip, location, isp, token.ua, token.deviceInfo, token.createdAt, token.expiresAt, token.lastActive]
+            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [token.id, token.userId, token.token, token.ip, location, isp, token.ua, token.deviceInfo, token.createdAt, token.expiresAt, token.lastActive]
         );
     }
 
     async getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null> {
         await this.ensureInitialized();
-        const [rows] = await this.pool.query<any[]>('SELECT * FROM refresh_tokens WHERE token = ?', [tokenString]);
+        const [rows] = await this.pool.query<any[]>(`SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id WHERE r.token = ?`, [tokenString]);
         if (rows.length === 0) return null;
 
         const row = rows[0];
@@ -762,7 +815,7 @@ export default class MysqlDatabase implements IDatabase {
         // Cleanup
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
 
-        const [rows] = await this.pool.query<any[]>('SELECT * FROM refresh_tokens WHERE user_id = ? ORDER BY last_active DESC', [userId]);
+        const [rows] = await this.pool.query<any[]>(`SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id WHERE r.user_id = ? ORDER BY r.last_active DESC`, [userId]);
 
         return rows.map(row => ({
             id: row.id,
@@ -787,25 +840,25 @@ export default class MysqlDatabase implements IDatabase {
         // Cleanup first
         await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
 
-        let query = 'SELECT * FROM refresh_tokens';
+        let query = `SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id`;
         let params: any[] = [];
 
         if (search) {
-            query += ' WHERE username LIKE ? OR ip LIKE ?';
+            query += ' WHERE u.username LIKE ? OR r.ip LIKE ?';
             params.push(`%${search}%`, `%${search}%`);
         }
 
-        query += ' ORDER BY last_active DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY r.last_active DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
 
         // Count
-        let countQuery = 'SELECT COUNT(*) as total FROM refresh_tokens';
+        let countQuery = 'SELECT COUNT(*) as total FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id';
         let countParams: any[] = [];
 
         if (search) {
-            countQuery += ' WHERE username LIKE ? OR ip LIKE ?';
+            countQuery += ' WHERE u.username LIKE ? OR r.ip LIKE ?';
             countParams.push(`%${search}%`, `%${search}%`);
         }
 
@@ -836,15 +889,13 @@ export default class MysqlDatabase implements IDatabase {
     }
 
     // Subscription Operations
-    async createSubscription(token: string, username: string, data: SubData): Promise<void> {
+    async createSubscription(token: string, username: string, userId: string, data: SubData): Promise<void> {
         await this.ensureInitialized();
-        const existingUser = await this.getUser(username);
-        // We assume we want to use the JSON column for selected_sources
 
         await this.pool.query(
-            `INSERT INTO subscriptions (token, username, remark, group_id, rule_id, custom_rules, selected_sources, enabled, auto_disabled, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [token, username, data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, data.autoDisabled || false, data.createdAt]
+            `INSERT INTO subscriptions (token, username, user_id, remark, group_id, rule_id, custom_rules, selected_sources, enabled, auto_disabled, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [token, username, userId, data.remark, data.groupId, data.ruleId, data.customRules, JSON.stringify(data.selectedSources || []), data.enabled, data.autoDisabled || false, data.createdAt]
         );
     }
 
@@ -857,6 +908,7 @@ export default class MysqlDatabase implements IDatabase {
         return {
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -868,19 +920,22 @@ export default class MysqlDatabase implements IDatabase {
         };
     }
 
-    async deleteSubscription(token: string, username: string): Promise<void> {
-        // Technically username check is good for security ownership verification
-        await this.pool.query('DELETE FROM subscriptions WHERE token = ? AND username = ?', [token, username]);
+    async deleteSubscription(token: string, userId?: string): Promise<void> {
+        if (userId) {
+            await this.pool.query('DELETE FROM subscriptions WHERE token = ? AND user_id = ?', [token, userId]);
+        } else {
+            await this.pool.query('DELETE FROM subscriptions WHERE token = ?', [token]);
+        }
     }
 
     async updateSubscription(token: string, data: SubData): Promise<void> {
         await this.pool.query(
-            `UPDATE subscriptions SET 
-                remark = ?, 
-                group_id = ?, 
-                rule_id = ?, 
-                custom_rules = ?, 
-                selected_sources = ?, 
+            `UPDATE subscriptions SET
+                remark = ?,
+                group_id = ?,
+                rule_id = ?,
+                custom_rules = ?,
+                selected_sources = ?,
                 enabled = ?,
                 auto_disabled = ?
              WHERE token = ?`,
@@ -888,13 +943,14 @@ export default class MysqlDatabase implements IDatabase {
         );
     }
 
-    async getUserSubscriptions(username: string): Promise<Array<SubData & { token: string }>> {
+    async getUserSubscriptions(userId: string): Promise<Array<SubData & { token: string }>> {
         await this.ensureInitialized();
-        const [rows] = await this.pool.query<any[]>('SELECT * FROM subscriptions WHERE username = ? ORDER BY created_at DESC', [username]);
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC', [userId]);
 
         return rows.map(row => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -906,8 +962,9 @@ export default class MysqlDatabase implements IDatabase {
         }));
     }
 
-    async getAllSubscriptions(limit: number, offset: number, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
+    async getAllSubscriptions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<SubData & { token: string }>> {
         await this.ensureInitialized();
+        const offset = (page - 1) * limit;
         let query = 'SELECT s.*, c.expires_at as cache_time FROM subscriptions s LEFT JOIN cache c ON c.`key` = CONCAT(\'cache:subscription:\', s.token)';
         let countQuery = 'SELECT COUNT(*) as count FROM subscriptions s';
         const params: any[] = [];
@@ -933,6 +990,7 @@ export default class MysqlDatabase implements IDatabase {
         const data = rows.map((row) => ({
             token: row.token,
             username: row.username,
+            userId: row.user_id || undefined,
             remark: row.remark,
             groupId: row.group_id,
             ruleId: row.rule_id,
@@ -950,8 +1008,8 @@ export default class MysqlDatabase implements IDatabase {
         };
     }
 
-    async isSubscriptionOwner(username: string, token: string): Promise<boolean> {
-        const [rows] = await this.pool.query<any[]>('SELECT 1 FROM subscriptions WHERE token = ? AND username = ?', [token, username]);
+    async isSubscriptionOwner(userId: string, token: string): Promise<boolean> {
+        const [rows] = await this.pool.query<any[]>('SELECT 1 FROM subscriptions WHERE token = ? AND user_id = ?', [token, userId]);
         return rows.length > 0;
     }
 
@@ -1464,37 +1522,51 @@ export default class MysqlDatabase implements IDatabase {
     // Logs
     async createAPIAccessLog(log: Omit<APIAccessLog, 'id'>): Promise<void> {
         await this.ensureInitialized();
-        // Fire and forget (optional await)
         this.pool.query(
-            'INSERT INTO api_access_logs (id, token, username, nickname, ip, ua, status, timestamp, api_type, request_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [randomUUID(), log.token, log.username, log.nickname, log.ip, log.ua, log.status, log.timestamp, log.apiType, log.requestMethod]
+            'INSERT INTO api_access_logs (id, token, username, user_id, nickname, ip, ua, status, timestamp, api_type, request_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [randomUUID(), log.token, log.username, log.userId || null, log.nickname, log.ip, log.ua, log.status, log.timestamp, log.apiType, log.requestMethod]
         ).catch(e => console.error('Log error', e));
     }
 
-    async getAPIAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<APIAccessLog>> {
+    async getAPIAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<PaginatedResult<APIAccessLog>> {
         await this.ensureInitialized();
         let query = `
-            SELECT l.*, u.nickname, s.remark as sub_remark
+            SELECT l.id, l.token, COALESCE(u.username, l.username) as username, l.user_id,
+                l.ip, l.ua, l.status, l.timestamp, l.api_type, l.request_method,
+                u.nickname, s.remark as sub_remark
             FROM api_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN subscriptions s ON l.token = s.token
         `;
         let countQuery = `
             SELECT COUNT(*) as total
             FROM api_access_logs l
-            LEFT JOIN users u ON l.username = u.username
+            LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN subscriptions s ON l.token = s.token
         `;
 
         const params: any[] = [];
         const countParams: any[] = [];
+        const conditions: string[] = [];
+        const countConditions: string[] = [];
+
+        if (userId) {
+            conditions.push('l.user_id = ?');
+            countConditions.push('l.user_id = ?');
+            params.push(userId);
+            countParams.push(userId);
+        }
 
         if (search) {
-            const searchClause = ' WHERE l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?';
-            query += searchClause;
-            countQuery += searchClause;
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
-            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            conditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?)');
+            countConditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?)');
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+            countQuery += ' WHERE ' + countConditions.join(' AND ');
         }
 
         query += ' ORDER BY l.timestamp DESC LIMIT ? OFFSET ?';
@@ -1508,6 +1580,7 @@ export default class MysqlDatabase implements IDatabase {
                 id: row.id,
                 token: row.token,
                 username: row.username,
+                userId: row.user_id || undefined,
                 nickname: row.nickname,
                 subRemark: row.sub_remark || undefined,
                 ip: row.ip,
@@ -1524,30 +1597,42 @@ export default class MysqlDatabase implements IDatabase {
     async createWebAccessLog(log: Omit<WebAccessLog, 'id'>): Promise<void> {
         await this.ensureInitialized();
         this.pool.query(
-            'INSERT INTO web_access_logs (id, path, ip, ua, username, nickname, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [randomUUID(), log.path, log.ip, log.ua, log.username, log.nickname, log.status, log.timestamp]
+            'INSERT INTO web_access_logs (id, path, ip, ua, username, user_id, nickname, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [randomUUID(), log.path, log.ip, log.ua, log.username, log.userId || null, log.nickname, log.status, log.timestamp]
         ).catch(e => console.error('Log error', e));
     }
 
-
-
-    async getWebAccessLogs(limit: number, offset: number, search?: string): Promise<PaginatedResult<WebAccessLog>> {
+    async getWebAccessLogs(limit: number, offset: number, search?: string, userId?: string): Promise<PaginatedResult<WebAccessLog>> {
         await this.ensureInitialized();
-        let query = 'SELECT * FROM web_access_logs';
-        let countQuery = 'SELECT COUNT(*) as total FROM web_access_logs';
+        let query = `SELECT l.id, l.path, l.ip, l.ua, COALESCE(u.username, l.username) as username, l.user_id, l.status, l.timestamp, u.nickname
+            FROM web_access_logs l LEFT JOIN users u ON l.user_id = u.id`;
+        let countQuery = 'SELECT COUNT(*) as total FROM web_access_logs l LEFT JOIN users u ON l.user_id = u.id';
 
         const params: any[] = [];
         const countParams: any[] = [];
+        const conditions: string[] = [];
+        const countConditions: string[] = [];
 
-        if (search) {
-            const searchClause = ' WHERE username LIKE ? OR ip LIKE ? OR path LIKE ?';
-            query += searchClause;
-            countQuery += searchClause;
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        if (userId) {
+            conditions.push('user_id = ?');
+            countConditions.push('user_id = ?');
+            params.push(userId);
+            countParams.push(userId);
         }
 
-        query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+        if (search) {
+            conditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.path LIKE ?)');
+            countConditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.path LIKE ?)');
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+            countQuery += ' WHERE ' + countConditions.join(' AND ');
+        }
+
+        query += ' ORDER BY l.timestamp DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const [rows] = await this.pool.query<any[]>(query, params);
@@ -1560,6 +1645,7 @@ export default class MysqlDatabase implements IDatabase {
                 ip: row.ip,
                 ua: row.ua,
                 username: row.username,
+                userId: row.user_id || undefined,
                 nickname: row.nickname,
                 status: row.status,
                 timestamp: Number(row.timestamp)
