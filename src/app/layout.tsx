@@ -49,6 +49,26 @@ export default async function RootLayout({
             }}
           />
         )}
+        {process.env.UMAMI_WEBSITE_ID && process.env.NODE_ENV === 'production' && (
+          <script
+            defer
+            src={process.env.UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js'}
+            data-website-id={process.env.UMAMI_WEBSITE_ID}
+          />
+        )}
+        {process.env.GA_MEASUREMENT_ID && process.env.NODE_ENV === 'production' && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${process.env.GA_MEASUREMENT_ID}')`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
