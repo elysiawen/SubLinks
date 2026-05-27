@@ -653,7 +653,14 @@
             "customEndpoints": "自訂端點",
             "callbackUrl": "回呼網址（新增到第三方平台設定中）",
             "copy": "複製",
-            "copied": "已複製"
+            "copied": "已複製",
+            "iconMode": "圖示",
+            "iconModeDefault": "預設",
+            "iconModeAuto": "自動獲取 (Favicon)",
+            "iconModeCustom": "自訂 URL",
+            "iconUrlPlaceholder": "https://example.com/icon.png",
+            "iconAutoHint": "將從授權 URL 的網域自動獲取 Favicon",
+            "iconPreview": "預覽"
         },
         "logCleanup": {
             "heading": "日誌清理",

@@ -653,7 +653,14 @@
             "customEndpoints": "自定义端点",
             "callbackUrl": "回调地址（添加到第三方平台配置中）",
             "copy": "复制",
-            "copied": "已复制"
+            "copied": "已复制",
+            "iconMode": "图标",
+            "iconModeDefault": "默认",
+            "iconModeAuto": "自动获取 (Favicon)",
+            "iconModeCustom": "自定义 URL",
+            "iconUrlPlaceholder": "https://example.com/icon.png",
+            "iconAutoHint": "将从授权 URL 的域名自动获取 Favicon",
+            "iconPreview": "预览"
         },
         "logCleanup": {
             "heading": "日志清理",

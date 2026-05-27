@@ -653,7 +653,14 @@
             "customEndpoints": "커스텀 엔드포인트",
             "callbackUrl": "콜백 URL (제공자 설정에 추가하세요)",
             "copy": "복사",
-            "copied": "복사됨"
+            "copied": "복사됨",
+            "iconMode": "아이콘",
+            "iconModeDefault": "기본",
+            "iconModeAuto": "자동 가져오기 (Favicon)",
+            "iconModeCustom": "사용자 지정 URL",
+            "iconUrlPlaceholder": "https://example.com/icon.png",
+            "iconAutoHint": "인증 URL 도메인에서 Favicon을 자동으로 가져옵니다",
+            "iconPreview": "미리보기"
         },
         "logCleanup": {
             "heading": "로그 정리",

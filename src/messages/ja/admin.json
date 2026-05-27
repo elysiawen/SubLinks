@@ -653,7 +653,14 @@
             "customEndpoints": "カスタムエンドポイント",
             "callbackUrl": "コールバックURL（プロバイダーの設定に追加してください）",
             "copy": "コピー",
-            "copied": "コピーしました"
+            "copied": "コピーしました",
+            "iconMode": "アイコン",
+            "iconModeDefault": "デフォルト",
+            "iconModeAuto": "自動取得 (Favicon)",
+            "iconModeCustom": "カスタム URL",
+            "iconUrlPlaceholder": "https://example.com/icon.png",
+            "iconAutoHint": "認証 URL のドメインから Favicon を自動取得します",
+            "iconPreview": "プレビュー"
         },
         "logCleanup": {
             "heading": "ログクリーンアップ",
