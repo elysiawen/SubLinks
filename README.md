@@ -12,7 +12,7 @@ A modern subscription management platform for proxy services. Manage upstream pr
 - **Custom Routing Rules** — Build rule sets with a visual editor (GUI + advanced YAML mode) for domain, IP, and keyword-based routing.
 - **Dependency Warnings** — Automatically detect when selected proxy groups/rules reference nodes from unselected upstream sources.
 - **User Management** — Admin panel for user CRUD, subscription limits, and per-user configuration.
-- **Authentication** — Password login, 2FA (TOTP), Passkey (WebAuthn), and QR code login for client apps.
+- **Authentication** — Password login, 2FA (TOTP), Passkey (WebAuthn), QR code login, and OAuth third-party login (Google, GitHub, custom providers).
 - **Session Management** — View and revoke active web sessions and client app tokens.
 - **UA Filtering** — Blacklist/whitelist user agents at the application level (per-request, configurable rules).
 - **Multi-language** — Chinese, English, and Japanese UI with `next-intl`. Cookie-based locale switching.
