@@ -7,7 +7,14 @@
         "wrongPassword": "Incorrect password",
         "twoFactorInvalid": "Invalid verification code",
         "twoFactorRequired": "2fa_required",
-        "passkeyNotFound": "Passkey not found"
+        "passkeyNotFound": "Passkey not found",
+        "invalidCallback": "Invalid OAuth callback",
+        "invalidState": "Invalid or expired OAuth state",
+        "providerNotFound": "OAuth provider not found",
+        "accountNotLinked": "No account linked. Please register first or contact admin.",
+        "oauthFailed": "OAuth authentication failed",
+        "notLoggedIn": "Please log in first",
+        "sessionExpired": "Session expired, please log in again"
     },
     "user": {
         "notLoggedIn": "Not logged in",

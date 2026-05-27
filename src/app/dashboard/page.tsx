@@ -2,6 +2,7 @@ import { getUserSubscriptions } from '@/lib/sub-actions';
 import { getUpstreamSources } from '@/lib/config-actions';
 import { getUserAccessLogs, getUserApiCount24h } from '@/lib/log-actions';
 import { requireSession } from '@/lib/require-session';
+import { getBaseUrl } from '@/lib/utils';
 import OverviewClient from './overview-client';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
     const sources = await getUpstreamSources();
     const accessLogs = await getUserAccessLogs(3);
     const apiCount24h = await getUserApiCount24h();
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    const baseUrl = getBaseUrl();
 
     const totalSubs = subs.length;
     const enabledSubs = subs.filter(sub => sub.enabled !== false).length;

@@ -5,6 +5,7 @@ import TwoFactorSection from './components/TwoFactorSection';
 import PasswordSection from './components/PasswordSection';
 import DangerZoneSection from './components/DangerZoneSection';
 import PasskeySection from './components/PasskeySection';
+import OAuthSection from './components/OAuthSection';
 import { useTranslations } from 'next-intl';
 
 interface SettingsClientProps {
@@ -42,6 +43,9 @@ export default function SettingsClient({
 
             {/* Passkey Section */}
             <PasskeySection />
+
+            {/* OAuth Section */}
+            <OAuthSection />
 
             {/* Password Section */}
             <PasswordSection />

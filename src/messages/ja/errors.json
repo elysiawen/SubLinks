@@ -7,7 +7,14 @@
         "wrongPassword": "パスワードが正しくありません",
         "twoFactorInvalid": "検証コードが正しくありません",
         "twoFactorRequired": "2fa_required",
-        "passkeyNotFound": "Passkeyが見つかりません"
+        "passkeyNotFound": "Passkeyが見つかりません",
+        "invalidCallback": "無効なOAuthコールバック",
+        "invalidState": "無効または期限切れのOAuth状態",
+        "providerNotFound": "OAuthプロバイダーが見つかりません",
+        "accountNotLinked": "アカウントが連携されていません。先に登録するか管理者に連絡してください。",
+        "oauthFailed": "OAuth認証に失敗しました",
+        "notLoggedIn": "先にログインしてください",
+        "sessionExpired": "セッションが期限切れです。再度ログインしてください"
     },
     "user": {
         "notLoggedIn": "ログインしていません",

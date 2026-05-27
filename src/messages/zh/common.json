@@ -186,6 +186,7 @@
         "password": "密码",
         "qr": "扫码",
         "passkey": "Passkey",
+        "oauth": "OAuth",
         "active": "活跃"
     },
     "subscriptionForm": {

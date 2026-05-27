@@ -186,6 +186,7 @@
         "password": "パスワード",
         "qr": "QRコード",
         "passkey": "Passkey",
+        "oauth": "OAuth",
         "active": "アクティブ"
     },
     "subscriptionForm": {

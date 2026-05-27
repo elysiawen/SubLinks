@@ -78,5 +78,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/api/s/:path*', '/api/client/:path*', '/admin/:path*', '/dashboard/:path*', '/auth/login'],
+    matcher: ['/api/s/:path*', '/api/client/:path*', '/api/oauth/:path*', '/admin/:path*', '/dashboard/:path*', '/auth/login', '/auth/oauth-confirm'],
 }

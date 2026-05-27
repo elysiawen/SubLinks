@@ -186,6 +186,7 @@
         "password": "Password",
         "qr": "QR Code",
         "passkey": "Passkey",
+        "oauth": "OAuth",
         "active": "active"
     },
     "subscriptionForm": {

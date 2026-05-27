@@ -18,6 +18,17 @@ export function generateToken(length = 16) {
 
 export const BLOCKED_UAS = ['MicroMessenger', 'QQ/'];
 
+/** Server-side: env var → localhost fallback */
+export function getBaseUrl(): string {
+    return (process.env.NEXT_PUBLIC_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
+/** Client-side: env var (build-time inlined) → window.location.origin */
+export function getClientBaseUrl(): string {
+    if (process.env.NEXT_PUBLIC_URL) return process.env.NEXT_PUBLIC_URL.replace(/\/$/, '');
+    return typeof window !== 'undefined' ? window.location.origin : '';
+}
+
 export function formatDate(timestamp: number, locale?: string): string {
     const localeMap: Record<string, string> = { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', 'zh-TW': 'zh-TW', ko: 'ko-KR' };
     const resolved = localeMap[locale || ''] || 'en-US';
@@ -45,7 +56,7 @@ export function getFullAvatarUrl(avatar: string | null | undefined, baseUrl?: st
     }
 
     // Get base URL from environment or use default
-    const base = baseUrl || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    const base = baseUrl || getBaseUrl();
 
     // Ensure avatar path starts with /
     const path = avatar.startsWith('/') ? avatar : `/${avatar}`;

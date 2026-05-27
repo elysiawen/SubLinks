@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getBaseUrl } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes (max for Pro plan, will be capped at 10s for Hobby)
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
             };
 
             try {
-                const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+                const baseUrl = getBaseUrl();
 
                 // Handle single subscription rebuild
                 if (singleToken) {

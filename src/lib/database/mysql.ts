@@ -1,5 +1,5 @@
 import { createPool, Pool } from 'mysql2/promise';
-import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, UpstreamSource, APIAccessLog, WebAccessLog, SystemLog, PasskeyCredentials } from './interface';
+import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, UpstreamSource, APIAccessLog, WebAccessLog, SystemLog, PasskeyCredentials, OAuthProvider, UserOAuthBinding } from './interface';
 import { nanoid } from 'nanoid';
 import { randomUUID } from 'crypto';
 import { getLocation } from '../ip-location';
@@ -371,6 +371,36 @@ export default class MysqlDatabase implements IDatabase {
             SET @query = IF(@exist_aaguid=0, 'ALTER TABLE passkeys ADD COLUMN aaguid VARCHAR(36)', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
+
+            CREATE TABLE IF NOT EXISTS oauth_providers (
+                id VARCHAR(255) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                icon VARCHAR(255),
+                client_id VARCHAR(255) NOT NULL,
+                client_secret VARCHAR(255) NOT NULL,
+                authorization_url VARCHAR(512),
+                token_url VARCHAR(512),
+                user_info_url VARCHAR(512),
+                scope VARCHAR(512),
+                enabled BOOLEAN DEFAULT TRUE,
+                created_at BIGINT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_oauth_bindings (
+                id VARCHAR(255) PRIMARY KEY,
+                user_id CHAR(36) NOT NULL,
+                provider_id VARCHAR(255) NOT NULL,
+                provider_user_id VARCHAR(255) NOT NULL,
+                provider_username VARCHAR(255),
+                provider_avatar TEXT,
+                access_token TEXT,
+                refresh_token TEXT,
+                token_expires_at BIGINT,
+                created_at BIGINT NOT NULL,
+                INDEX idx_oauth_bindings_user (user_id),
+                UNIQUE INDEX idx_oauth_bindings_provider_user (provider_id, provider_user_id)
+            );
         `;
 
         await this.pool.query(sql);
@@ -1802,5 +1832,137 @@ export default class MysqlDatabase implements IDatabase {
             [threshold]
         );
         return result.affectedRows || 0;
+    }
+
+    // OAuth Provider operations
+    async getOAuthProviders(): Promise<OAuthProvider[]> {
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM oauth_providers ORDER BY created_at ASC');
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            type: row.type,
+            icon: row.icon,
+            clientId: row.client_id,
+            clientSecret: row.client_secret,
+            authorizationUrl: row.authorization_url,
+            tokenUrl: row.token_url,
+            userInfoUrl: row.user_info_url,
+            scope: row.scope,
+            enabled: row.enabled,
+            createdAt: row.created_at
+        }));
+    }
+
+    async getOAuthProvider(id: string): Promise<OAuthProvider | null> {
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM oauth_providers WHERE id = ?', [id]);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        return {
+            id: row.id,
+            name: row.name,
+            type: row.type,
+            icon: row.icon,
+            clientId: row.client_id,
+            clientSecret: row.client_secret,
+            authorizationUrl: row.authorization_url,
+            tokenUrl: row.token_url,
+            userInfoUrl: row.user_info_url,
+            scope: row.scope,
+            enabled: row.enabled,
+            createdAt: row.created_at
+        };
+    }
+
+    async setOAuthProvider(id: string, data: OAuthProvider): Promise<void> {
+        await this.pool.query(
+            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                 name = VALUES(name), type = VALUES(type), icon = VALUES(icon),
+                 client_id = VALUES(client_id), client_secret = VALUES(client_secret),
+                 authorization_url = VALUES(authorization_url), token_url = VALUES(token_url),
+                 user_info_url = VALUES(user_info_url), scope = VALUES(scope), enabled = VALUES(enabled)`,
+            [id, data.name, data.type, data.icon, data.clientId, data.clientSecret,
+             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.createdAt]
+        );
+    }
+
+    async deleteOAuthProvider(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM user_oauth_bindings WHERE provider_id = ?', [id]);
+        await this.pool.query('DELETE FROM oauth_providers WHERE id = ?', [id]);
+    }
+
+    // User OAuth Binding operations
+    async getUserOAuthBindings(userId: string): Promise<UserOAuthBinding[]> {
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM user_oauth_bindings WHERE user_id = ?', [userId]);
+        return rows.map(row => ({
+            id: row.id,
+            userId: row.user_id,
+            providerId: row.provider_id,
+            providerUserId: row.provider_user_id,
+            providerUsername: row.provider_username,
+            providerAvatar: row.provider_avatar,
+            accessToken: row.access_token,
+            refreshToken: row.refresh_token,
+            tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
+            createdAt: row.created_at
+        }));
+    }
+
+    async getOAuthBinding(providerId: string, providerUserId: string): Promise<UserOAuthBinding | null> {
+        const [rows] = await this.pool.query<any[]>(
+            'SELECT * FROM user_oauth_bindings WHERE provider_id = ? AND provider_user_id = ?',
+            [providerId, providerUserId]
+        );
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        return {
+            id: row.id,
+            userId: row.user_id,
+            providerId: row.provider_id,
+            providerUserId: row.provider_user_id,
+            providerUsername: row.provider_username,
+            providerAvatar: row.provider_avatar,
+            accessToken: row.access_token,
+            refreshToken: row.refresh_token,
+            tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
+            createdAt: row.created_at
+        };
+    }
+
+    async getOAuthBindingById(id: string): Promise<UserOAuthBinding | null> {
+        const [rows] = await this.pool.query<any[]>('SELECT * FROM user_oauth_bindings WHERE id = ?', [id]);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        return {
+            id: row.id,
+            userId: row.user_id,
+            providerId: row.provider_id,
+            providerUserId: row.provider_user_id,
+            providerUsername: row.provider_username,
+            providerAvatar: row.provider_avatar,
+            accessToken: row.access_token,
+            refreshToken: row.refresh_token,
+            tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
+            createdAt: row.created_at
+        };
+    }
+
+    async setOAuthBinding(id: string, data: UserOAuthBinding): Promise<void> {
+        await this.pool.query(
+            `INSERT INTO user_oauth_bindings (id, user_id, provider_id, provider_user_id, provider_username, provider_avatar, access_token, refresh_token, token_expires_at, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                 user_id = VALUES(user_id), provider_id = VALUES(provider_id),
+                 provider_user_id = VALUES(provider_user_id), provider_username = VALUES(provider_username),
+                 provider_avatar = VALUES(provider_avatar), access_token = VALUES(access_token),
+                 refresh_token = VALUES(refresh_token), token_expires_at = VALUES(token_expires_at)`,
+            [id, data.userId, data.providerId, data.providerUserId, data.providerUsername,
+             data.providerAvatar, data.accessToken, data.refreshToken, data.tokenExpiresAt, data.createdAt]
+        );
+    }
+
+    async deleteOAuthBinding(id: string): Promise<void> {
+        await this.pool.query('DELETE FROM user_oauth_bindings WHERE id = ?', [id]);
     }
 }

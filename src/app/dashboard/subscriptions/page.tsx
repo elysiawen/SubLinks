@@ -1,6 +1,7 @@
 import { getUserSubscriptions } from '@/lib/sub-actions';
 import { getGroupSets, getRuleSets, getProxyGroups, getUpstreamSources, getProxySourceMap } from '@/lib/config-actions';
 import { requireSession } from '@/lib/require-session';
+import { getBaseUrl } from '@/lib/utils';
 import SubscriptionsClient from './client';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,7 @@ export default async function SubscriptionsPage() {
     if (!user) return null;
 
     const subs = await getUserSubscriptions();
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    const baseUrl = getBaseUrl();
 
     const groups = await getGroupSets();
     const rules = await getRuleSets();

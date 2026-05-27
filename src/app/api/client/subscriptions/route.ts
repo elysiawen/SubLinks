@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken, extractBearerToken } from '@/lib/jwt-client';
 import { tApi } from '@/lib/api-i18n';
+import { getBaseUrl } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         const formattedSubscriptions = subscriptions.map(sub => ({
             token: sub.token,
             name: sub.remark || 'Unnamed Subscription', // Use remark as name
-            url: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/s/${sub.token}`,
+            url: `${getBaseUrl()}/api/s/${sub.token}`,
             enabled: sub.enabled,
             createdAt: sub.createdAt,
         }));

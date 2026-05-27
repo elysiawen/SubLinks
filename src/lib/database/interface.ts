@@ -43,7 +43,7 @@ export interface Session {
     ua?: string;         // User Agent
     deviceInfo?: string; // Parsed device info
     lastActive?: number; // Last active timestamp
-    loginMethod?: 'password' | 'qr' | 'passkey'; // Login method
+    loginMethod?: 'password' | 'qr' | 'passkey' | 'oauth'; // Login method
 }
 
 export interface RefreshToken {
@@ -176,6 +176,9 @@ export interface GlobalConfig {
 
     // New UA filtering configuration
     uaFilter?: UaFilterConfig;  // Global UA filter config
+
+    // OAuth configuration
+    oauthAllowAutoCreate?: boolean; // Allow OAuth auto-create accounts
 }
 
 // Structured upstream data types
@@ -225,6 +228,36 @@ export interface PasskeyCredentials {
 export interface PasskeyProfile extends PasskeyCredentials {
     providerName?: string; // Resolved provider name (e.g. "iCloud Keychain")
     providerIcon?: string; // Resolved provider icon (base64 SVG)
+}
+
+// OAuth Provider
+export interface OAuthProvider {
+    id: string;
+    name: string;              // Display name
+    type: 'google' | 'github' | 'custom';
+    icon?: string;             // Icon identifier
+    clientId: string;
+    clientSecret: string;
+    authorizationUrl?: string; // Required for custom
+    tokenUrl?: string;         // Required for custom
+    userInfoUrl?: string;      // Required for custom
+    scope?: string;
+    enabled: boolean;
+    createdAt: number;
+}
+
+// User OAuth Binding
+export interface UserOAuthBinding {
+    id: string;
+    userId: string;
+    providerId: string;
+    providerUserId: string;    // Third-party user ID
+    providerUsername?: string; // Third-party display name
+    providerAvatar?: string;   // Third-party avatar URL
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiresAt?: number;
+    createdAt: number;
 }
 
 // Database interface
@@ -349,5 +382,18 @@ export interface IDatabase {
     getUserPasskeys(userId: string): Promise<PasskeyCredentials[]>;
     deletePasskey(id: string, userId: string): Promise<void>;
     updatePasskeyCounter(id: string, counter: number): Promise<void>;
+
+    // OAuth Provider operations
+    getOAuthProviders(): Promise<OAuthProvider[]>;
+    getOAuthProvider(id: string): Promise<OAuthProvider | null>;
+    setOAuthProvider(id: string, data: OAuthProvider): Promise<void>;
+    deleteOAuthProvider(id: string): Promise<void>;
+
+    // User OAuth Binding operations
+    getUserOAuthBindings(userId: string): Promise<UserOAuthBinding[]>;
+    getOAuthBinding(providerId: string, providerUserId: string): Promise<UserOAuthBinding | null>;
+    getOAuthBindingById(id: string): Promise<UserOAuthBinding | null>;
+    setOAuthBinding(id: string, data: UserOAuthBinding): Promise<void>;
+    deleteOAuthBinding(id: string): Promise<void>;
 }
 

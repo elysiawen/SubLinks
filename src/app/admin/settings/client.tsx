@@ -13,6 +13,7 @@ import UserLimitsPanel from './components/UserLimitsPanel';
 import NetworkSettingsPanel from './components/NetworkSettingsPanel';
 import AppearanceSettingsPanel from './components/AppearanceSettingsPanel';
 import StorageSettingsPanel from './components/StorageSettingsPanel';
+import OAuthSettingsPanel from './components/OAuthSettingsPanel';
 
 export default function AdminSettingsClient({ config }: { config: any }) {
     const t = useTranslations('admin.settings');
@@ -40,6 +41,9 @@ export default function AdminSettingsClient({ config }: { config: any }) {
 
             {/* Storage Settings */}
             <StorageSettingsPanel config={config} />
+
+            {/* OAuth Settings */}
+            <OAuthSettingsPanel allowAutoCreate={config.oauthAllowAutoCreate ?? false} />
 
             {/* Announcement Banner Settings */}
             <AnnouncementPanel initialValue={config.announcement || ''} />

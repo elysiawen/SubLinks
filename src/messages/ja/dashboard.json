@@ -139,6 +139,20 @@
             "deleteSuccess": "削除しました",
             "deleteFailed": "削除に失敗しました"
         },
+        "oauth": {
+            "title": "サードパーティアカウント",
+            "description": "サードパーティアカウントを連携して簡単ログイン",
+            "noBindings": "まだアカウントが連携されていません",
+            "bound": "連携済み",
+            "unbind": "連携解除",
+            "confirmUnbind": "{provider} の連携を解除しますか？",
+            "unbindSuccess": "連携を解除しました",
+            "bindFailed": "連携に失敗しました",
+            "bindSuccess": "連携が完了しました",
+            "availableProviders": "利用可能なプロバイダー",
+            "bindProvider": "{provider} を連携",
+            "noProvidersAvailable": "利用可能なサードパーティログインプロバイダーがありません"
+        },
         "dangerZone": {
             "heading": "⚠️ 危険ゾーン",
             "description": "このゾーンの操作は元に戻せません。十分ご注意ください",

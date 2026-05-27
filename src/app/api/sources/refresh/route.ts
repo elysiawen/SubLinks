@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { refreshUpstreamSource } from '@/lib/config-actions';
+import { getBaseUrl } from '@/lib/utils';
 
 export const maxDuration = 60;
 
@@ -184,7 +185,7 @@ async function handleRefresh(request: NextRequest, body: any) {
         // 7. Optional: Precache subscriptions
         let precacheResults = { success: 0, failed: 0 };
         if (precache && affectedSubs.length > 0) {
-            const baseUrl = process.env.NEXT_PUBLIC_URL || request.nextUrl.origin;
+            const baseUrl = getBaseUrl();
             console.log(`Starting precache for ${affectedSubs.length} subscriptions using base URL: ${baseUrl}`);
 
             // Create an array of promises

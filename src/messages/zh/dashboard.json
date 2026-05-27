@@ -139,6 +139,20 @@
             "deleteSuccess": "删除成功",
             "deleteFailed": "删除失败"
         },
+        "oauth": {
+            "title": "第三方账户",
+            "description": "关联第三方账户以快速登录",
+            "noBindings": "尚未关联任何账户",
+            "bound": "已绑定",
+            "unbind": "解绑",
+            "confirmUnbind": "确定要解绑 {provider} 吗？",
+            "unbindSuccess": "已解绑",
+            "bindFailed": "绑定失败",
+            "bindSuccess": "绑定成功",
+            "availableProviders": "可绑定的平台",
+            "bindProvider": "绑定 {provider}",
+            "noProvidersAvailable": "暂无可用的第三方登录平台"
+        },
         "dangerZone": {
             "heading": "⚠️ 危险区域",
             "description": "此区域的操作不可逆，请谨慎操作",

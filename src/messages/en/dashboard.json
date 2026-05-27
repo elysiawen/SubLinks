@@ -139,6 +139,20 @@
             "deleteSuccess": "Deleted successfully",
             "deleteFailed": "Delete failed"
         },
+        "oauth": {
+            "title": "Third-Party Accounts",
+            "description": "Link third-party accounts for quick login",
+            "noBindings": "No accounts linked yet",
+            "bound": "Linked",
+            "unbind": "Unlink",
+            "confirmUnbind": "Are you sure you want to unlink {provider}?",
+            "unbindSuccess": "Account unlinked",
+            "bindFailed": "Failed to link account",
+            "bindSuccess": "Account linked successfully",
+            "availableProviders": "Available providers",
+            "bindProvider": "Link {provider}",
+            "noProvidersAvailable": "No third-party login providers available"
+        },
         "dangerZone": {
             "heading": "⚠️ Danger Zone",
             "description": "Actions in this zone are irreversible, proceed with caution",

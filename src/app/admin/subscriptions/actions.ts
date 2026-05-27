@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { generateToken } from '@/lib/utils';
+import { generateToken, getBaseUrl } from '@/lib/utils';
 import { SubData } from '@/lib/database/interface';
 
 // Helper to check admin
@@ -158,7 +158,7 @@ export async function rebuildSubscriptionCache(token: string) {
         await db.deleteCache(`cache:subscription:${token}`);
 
         // 2. Precache (Fetch)
-        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl();
         const response = await fetch(`${baseUrl}/api/s/${token}`, {
             method: 'HEAD',
             headers: {
@@ -209,7 +209,7 @@ export async function precacheAllSubscriptions(force: boolean = false) {
         }
 
         // Trigger cache generation for each subscription by making a request
-        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl();
         const results = await Promise.allSettled(
             allSubs.map(async (sub) => {
                 try {

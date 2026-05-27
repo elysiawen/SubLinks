@@ -81,7 +81,7 @@ export default function AdminShell({
                         </div>
 
                         {/* Content Area */}
-                        <main className="flex-1 overflow-y-auto w-full">
+                        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
                             <div key={pathname} className="p-4 md:p-8 max-w-6xl mx-auto animate-slide-in-up">
                                 {children}
                             </div>

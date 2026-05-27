@@ -186,6 +186,7 @@
         "password": "비밀번호",
         "qr": "QR 코드",
         "passkey": "패스키",
+        "oauth": "OAuth",
         "active": "활성"
     },
     "subscriptionForm": {

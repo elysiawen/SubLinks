@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid';
 
 const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 
-export async function createSession(username: string, role: string, ip?: string, ua?: string, loginMethod?: 'password' | 'qr' | 'passkey') {
+export async function createSession(username: string, role: string, ip?: string, ua?: string, loginMethod?: 'password' | 'qr' | 'passkey' | 'oauth') {
     const sessionId = nanoid(32);
     // Get user to obtain userId
     const user = await db.getUser(username);

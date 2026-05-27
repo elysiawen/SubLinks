@@ -221,3 +221,43 @@ export async function clearLogs(days: number = 30, logTypes: string[] = ['api', 
     revalidatePath('/admin/settings');
     return { success: true };
 }
+
+// OAuth Provider management
+export async function saveOAuthProvider(id: string | null, data: {
+    name: string;
+    type: 'google' | 'github' | 'custom';
+    icon?: string;
+    clientId: string;
+    clientSecret: string;
+    authorizationUrl?: string;
+    tokenUrl?: string;
+    userInfoUrl?: string;
+    scope?: string;
+    enabled: boolean;
+}) {
+    await requireAdmin();
+    const providerId = id || crypto.randomUUID().replace(/-/g, '').slice(0, 21);
+    await db.setOAuthProvider(providerId, {
+        ...data,
+        id: providerId,
+        createdAt: Date.now()
+    });
+    revalidatePath('/admin/settings');
+    return { success: true, id: providerId };
+}
+
+export async function deleteOAuthProvider(id: string) {
+    await requireAdmin();
+    await db.deleteOAuthProvider(id);
+    revalidatePath('/admin/settings');
+}
+
+export async function updateOAuthAllowAutoCreate(allow: boolean) {
+    await requireAdmin();
+    const existingConfig = await db.getGlobalConfig();
+    await db.setGlobalConfig({
+        ...existingConfig,
+        oauthAllowAutoCreate: allow,
+    });
+    revalidatePath('/admin/settings');
+}

@@ -139,6 +139,20 @@
             "deleteSuccess": "삭제되었습니다",
             "deleteFailed": "삭제 실패"
         },
+        "oauth": {
+            "title": "서드파티 계정",
+            "description": "서드파티 계정을 연동하여 빠르게 로그인",
+            "noBindings": "아직 연동된 계정이 없습니다",
+            "bound": "연동됨",
+            "unbind": "연동 해제",
+            "confirmUnbind": "{provider} 연동을 해제하시겠습니까?",
+            "unbindSuccess": "연동이 해제되었습니다",
+            "bindFailed": "연동에 실패했습니다",
+            "bindSuccess": "연동이 완료되었습니다",
+            "availableProviders": "사용 가능한 제공자",
+            "bindProvider": "{provider} 연동",
+            "noProvidersAvailable": "사용 가능한 서드파티 로그인 제공자가 없습니다"
+        },
         "dangerZone": {
             "heading": "⚠️ 위험 구역",
             "description": "이 구역의 작업은 되돌릴 수 없습니다. 주의하세요",

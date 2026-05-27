@@ -1,9 +1,10 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ConfirmProvider';
+import { useToast } from '@/components/ToastProvider';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTranslations } from 'next-intl';
@@ -106,14 +107,26 @@ const SidebarSubItem = ({ href, label, isActive, onItemClick }: { href: string; 
 
 export default function DashboardLayoutClient({ children, username, role, nickname, avatar, sessionInvalid }: DashboardLayoutClientProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { confirm } = useConfirm();
+    const { success: toastSuccess } = useToast();
     const t = useTranslations('dashboard.sidebar');
     const tCommon = useTranslations('common.status');
+    const tAuth = useTranslations('auth.login');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const loginToastShown = useRef(false);
 
     useEffect(() => {
         if (sessionInvalid) {
             window.location.href = `/auth/logout?callbackUrl=${encodeURIComponent(pathname)}`;
+        }
+
+        if (!loginToastShown.current && searchParams.get('login') === '1') {
+            loginToastShown.current = true;
+            toastSuccess(tAuth('loginSuccess'));
+            const url = new URL(window.location.href);
+            url.searchParams.delete('login');
+            window.history.replaceState({}, '', url.pathname + url.search);
         }
     }, [sessionInvalid, pathname]);
     // Initialize with open submenus if current path matches

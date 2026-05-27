@@ -7,7 +7,14 @@
         "wrongPassword": "密码错误",
         "twoFactorInvalid": "两步验证码错误",
         "twoFactorRequired": "2fa_required",
-        "passkeyNotFound": "通行密钥不存在"
+        "passkeyNotFound": "通行密钥不存在",
+        "invalidCallback": "无效的 OAuth 回调",
+        "invalidState": "无效或过期的 OAuth 状态",
+        "providerNotFound": "未找到 OAuth 提供商",
+        "accountNotLinked": "未关联账户，请先注册或联系管理员",
+        "oauthFailed": "OAuth 认证失败",
+        "notLoggedIn": "请先登录",
+        "sessionExpired": "会话已过期，请重新登录"
     },
     "user": {
         "notLoggedIn": "未登录",

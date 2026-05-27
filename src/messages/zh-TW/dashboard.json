@@ -139,6 +139,20 @@
             "deleteSuccess": "刪除成功",
             "deleteFailed": "刪除失敗"
         },
+        "oauth": {
+            "title": "第三方帳戶",
+            "description": "關聯第三方帳戶以快速登入",
+            "noBindings": "尚未關聯任何帳戶",
+            "bound": "已綁定",
+            "unbind": "解除綁定",
+            "confirmUnbind": "確定要解除綁定 {provider} 嗎？",
+            "unbindSuccess": "已解除綁定",
+            "bindFailed": "綁定失敗",
+            "bindSuccess": "綁定成功",
+            "availableProviders": "可綁定的平台",
+            "bindProvider": "綁定 {provider}",
+            "noProvidersAvailable": "暫無可用的第三方登入平台"
+        },
         "dangerZone": {
             "heading": "⚠️ 危險區域",
             "description": "此區域的操作不可逆，請謹慎操作",
