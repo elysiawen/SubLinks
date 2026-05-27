@@ -46,6 +46,16 @@ export default class PostgresDatabase implements IDatabase {
     private async initTables() {
         const client = await this.pool.connect();
         try {
+            // Helper to run a statement and log but not abort on error
+            const safeQuery = async (sql: string) => {
+                try {
+                    await client.query(sql);
+                } catch (e: any) {
+                    console.warn(`[DB] initTables statement warning: ${e.message}`);
+                }
+            };
+
+            // 1. Create tables
             await client.query(`
                 CREATE TABLE IF NOT EXISTS global_config (
                     key VARCHAR(255) PRIMARY KEY,
@@ -62,15 +72,6 @@ export default class PostgresDatabase implements IDatabase {
                     max_subscriptions INTEGER,
                     created_at BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-                
-                -- Ensure all required columns exist in users
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT '';
-                ALTER TABLE users ALTER COLUMN token_version TYPE VARCHAR(64);
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT FALSE;
 
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     token VARCHAR(255) PRIMARY KEY,
@@ -85,15 +86,6 @@ export default class PostgresDatabase implements IDatabase {
                     auto_disabled BOOLEAN DEFAULT FALSE,
                     created_at BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_subscriptions_username ON subscriptions(username);
-
-                -- Ensure columns exist (must be before index creation for existing databases)
-                ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS user_id UUID;
-                ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS auto_disabled BOOLEAN DEFAULT FALSE;
-                CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
-
-                -- Backfill user_id from username
-                UPDATE subscriptions SET user_id = (SELECT id FROM users WHERE users.username = subscriptions.username) WHERE user_id IS NULL AND EXISTS (SELECT 1 FROM users WHERE users.username = subscriptions.username);
 
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
@@ -102,24 +94,6 @@ export default class PostgresDatabase implements IDatabase {
                     created_at BIGINT NOT NULL DEFAULT 0,
                     expires_at BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
-                CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
-                
-                -- Ensure all required columns exist in sessions
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id UUID;
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT '';
-                ALTER TABLE sessions ALTER COLUMN token_version TYPE VARCHAR(64);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS nickname VARCHAR(100);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT;
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip VARCHAR(45);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ua TEXT;
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_info VARCHAR(255);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_active BIGINT DEFAULT 0;
-                
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
-                ALTER TABLE sessions ADD COLUMN IF NOT EXISTS login_method VARCHAR(50);
-                ALTER TABLE sessions ALTER COLUMN username DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS refresh_tokens (
                     id VARCHAR(255) PRIMARY KEY,
@@ -133,20 +107,12 @@ export default class PostgresDatabase implements IDatabase {
                     expires_at BIGINT NOT NULL,
                     last_active BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
-                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
-                CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
-
-                ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255);
-                ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS isp VARCHAR(255);
-                ALTER TABLE refresh_tokens ALTER COLUMN username DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS cache (
                     key VARCHAR(255) PRIMARY KEY,
                     value TEXT NOT NULL,
                     expires_at BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_cache_expires ON cache(expires_at);
 
                 CREATE TABLE IF NOT EXISTS proxies (
                     id VARCHAR(255) PRIMARY KEY,
@@ -158,7 +124,6 @@ export default class PostgresDatabase implements IDatabase {
                     source VARCHAR(255) NOT NULL,
                     created_at BIGINT NOT NULL DEFAULT 0
                 );
-                CREATE INDEX IF NOT EXISTS idx_proxies_source ON proxies(source);
 
                 CREATE TABLE IF NOT EXISTS proxy_groups (
                     id VARCHAR(255) PRIMARY KEY,
@@ -170,7 +135,6 @@ export default class PostgresDatabase implements IDatabase {
                     priority INTEGER NOT NULL DEFAULT 0,
                     created_at BIGINT NOT NULL DEFAULT 0
                 );
-                CREATE INDEX IF NOT EXISTS idx_proxy_groups_source ON proxy_groups(source);
 
                 CREATE TABLE IF NOT EXISTS rules (
                     id VARCHAR(255) PRIMARY KEY,
@@ -179,7 +143,6 @@ export default class PostgresDatabase implements IDatabase {
                     priority INTEGER NOT NULL DEFAULT 0,
                     created_at BIGINT NOT NULL DEFAULT 0
                 );
-                CREATE INDEX IF NOT EXISTS idx_rules_source ON rules(source);
 
                 CREATE TABLE IF NOT EXISTS upstream_config (
                     key VARCHAR(255) PRIMARY KEY,
@@ -216,10 +179,6 @@ export default class PostgresDatabase implements IDatabase {
                     api_type VARCHAR(255),
                     request_method VARCHAR(255)
                 );
-                CREATE INDEX IF NOT EXISTS idx_api_logs_token ON api_access_logs(token);
-                CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_access_logs(timestamp);
-                ALTER TABLE api_access_logs ADD COLUMN IF NOT EXISTS user_id UUID;
-                CREATE INDEX IF NOT EXISTS idx_api_logs_user_id ON api_access_logs(user_id);
 
                 CREATE TABLE IF NOT EXISTS web_access_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -231,9 +190,6 @@ export default class PostgresDatabase implements IDatabase {
                     status INTEGER NOT NULL,
                     timestamp BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_web_logs_timestamp ON web_access_logs(timestamp);
-                ALTER TABLE web_access_logs ADD COLUMN IF NOT EXISTS user_id UUID;
-                CREATE INDEX IF NOT EXISTS idx_web_logs_user_id ON web_access_logs(user_id);
 
                 CREATE TABLE IF NOT EXISTS system_logs (
                     id VARCHAR(255) PRIMARY KEY,
@@ -243,7 +199,6 @@ export default class PostgresDatabase implements IDatabase {
                     status VARCHAR(50) NOT NULL,
                     timestamp BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_system_logs_timestamp ON system_logs(timestamp);
 
                 CREATE TABLE IF NOT EXISTS upstream_sources (
                     id SERIAL PRIMARY KEY,
@@ -258,19 +213,6 @@ export default class PostgresDatabase implements IDatabase {
                     created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000,
                     updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT * 1000
                 );
-                CREATE INDEX IF NOT EXISTS idx_upstream_sources_name ON upstream_sources(name);
-                CREATE INDEX IF NOT EXISTS idx_upstream_sources_is_default ON upstream_sources(is_default);
-
-                -- Add ua_policy and custom_ua_filter columns to upstream_sources if they don't exist
-                -- Drop legacy ua_policy and custom_ua_filter columns
-                -- Add enabled column if not exists
-                   ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE;
-
-                -- Add type column for static sources (default 'url' for existing sources)
-                   ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'url';
-
-                -- Make url column nullable for static sources
-                   ALTER TABLE upstream_sources ALTER COLUMN url DROP NOT NULL;
 
                 CREATE TABLE IF NOT EXISTS passkeys (
                     id VARCHAR(255) PRIMARY KEY,
@@ -283,10 +225,6 @@ export default class PostgresDatabase implements IDatabase {
                     created_at BIGINT NOT NULL,
                     last_used BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_passkeys_user ON passkeys(user_id);
-                
-                -- Ensure aaguid column exists
-                ALTER TABLE passkeys ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36);
 
                 CREATE TABLE IF NOT EXISTS oauth_providers (
                     id VARCHAR(255) PRIMARY KEY,
@@ -315,9 +253,70 @@ export default class PostgresDatabase implements IDatabase {
                     token_expires_at BIGINT,
                     created_at BIGINT NOT NULL
                 );
-                CREATE INDEX IF NOT EXISTS idx_oauth_bindings_user ON user_oauth_bindings(user_id);
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_bindings_provider_user ON user_oauth_bindings(provider_id, provider_user_id);
             `);
+
+            // 2. Add missing columns (must be before index creation for existing databases)
+            await safeQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT ''`);
+            await safeQuery(`ALTER TABLE users ALTER COLUMN token_version TYPE VARCHAR(64)`);
+            await safeQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(100)`);
+            await safeQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT`);
+            await safeQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
+            await safeQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT FALSE`);
+
+            await safeQuery(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS user_id UUID`);
+            await safeQuery(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS auto_disabled BOOLEAN DEFAULT FALSE`);
+
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id UUID`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_version VARCHAR(64) DEFAULT ''`);
+            await safeQuery(`ALTER TABLE sessions ALTER COLUMN token_version TYPE VARCHAR(64)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS nickname VARCHAR(100)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip VARCHAR(45)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ua TEXT`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS device_info VARCHAR(255)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_active BIGINT DEFAULT 0`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS isp VARCHAR(255)`);
+            await safeQuery(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS login_method VARCHAR(50)`);
+
+            await safeQuery(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255)`);
+            await safeQuery(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS isp VARCHAR(255)`);
+
+            await safeQuery(`ALTER TABLE api_access_logs ADD COLUMN IF NOT EXISTS user_id UUID`);
+            await safeQuery(`ALTER TABLE web_access_logs ADD COLUMN IF NOT EXISTS user_id UUID`);
+
+            await safeQuery(`ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE`);
+            await safeQuery(`ALTER TABLE upstream_sources ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'url'`);
+            await safeQuery(`ALTER TABLE upstream_sources ALTER COLUMN url DROP NOT NULL`);
+
+            await safeQuery(`ALTER TABLE passkeys ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36)`);
+
+            // 3. Backfill user_id from username
+            await safeQuery(`UPDATE subscriptions SET user_id = (SELECT id FROM users WHERE users.username = subscriptions.username) WHERE user_id IS NULL AND EXISTS (SELECT 1 FROM users WHERE users.username = subscriptions.username)`);
+
+            // 4. Create indexes (after columns are guaranteed to exist)
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_subscriptions_username ON subscriptions(username)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_cache_expires ON cache(expires_at)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_proxies_source ON proxies(source)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_proxy_groups_source ON proxy_groups(source)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_rules_source ON rules(source)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_api_logs_token ON api_access_logs(token)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_access_logs(timestamp)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_api_logs_user_id ON api_access_logs(user_id)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_web_logs_timestamp ON web_access_logs(timestamp)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_web_logs_user_id ON web_access_logs(user_id)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_system_logs_timestamp ON system_logs(timestamp)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_upstream_sources_name ON upstream_sources(name)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_upstream_sources_is_default ON upstream_sources(is_default)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_passkeys_user ON passkeys(user_id)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_oauth_bindings_user ON user_oauth_bindings(user_id)`);
+            await safeQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_bindings_provider_user ON user_oauth_bindings(provider_id, provider_user_id)`);
 
         } finally {
             client.release();
@@ -410,8 +409,8 @@ export default class PostgresDatabase implements IDatabase {
     async deleteUser(username: string): Promise<void> {
         const userResult = await this.pool.query('SELECT id FROM users WHERE username = $1', [username]);
         const userId = userResult.rows[0]?.id;
-        await this.pool.query('DELETE FROM sessions WHERE username = $1', [username]);
         if (userId) {
+            await this.pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
             await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
             await this.pool.query('DELETE FROM passkeys WHERE user_id = $1', [userId]);
             await this.pool.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);

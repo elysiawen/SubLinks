@@ -150,7 +150,6 @@ export default class MysqlDatabase implements IDatabase {
                 ua TEXT,
                 device_info VARCHAR(255),
                 last_active BIGINT DEFAULT 0,
-                INDEX idx_sessions_username (username),
                 INDEX idx_sessions_expires (expires_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             
@@ -173,9 +172,6 @@ export default class MysqlDatabase implements IDatabase {
             SET @query = IF(@exist_login_method=0, 'ALTER TABLE sessions ADD COLUMN login_method VARCHAR(50)', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
-
-            -- Make sessions.username nullable (no longer primary identifier)
-            ALTER TABLE sessions MODIFY COLUMN username VARCHAR(255);
 
             -- Change token_version from INTEGER to VARCHAR for nanoid support
             ALTER TABLE users MODIFY COLUMN token_version VARCHAR(64) DEFAULT '';
@@ -207,9 +203,6 @@ export default class MysqlDatabase implements IDatabase {
             SET @query = IF(@exist_rt_isp=0, 'ALTER TABLE refresh_tokens ADD COLUMN isp VARCHAR(255)', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
-
-            -- Make refresh_tokens.username nullable (no longer primary identifier)
-            ALTER TABLE refresh_tokens MODIFY COLUMN username VARCHAR(255);
 
             CREATE TABLE IF NOT EXISTS custom_config (
                 id VARCHAR(255) PRIMARY KEY,
@@ -494,8 +487,8 @@ export default class MysqlDatabase implements IDatabase {
     async deleteUser(username: string): Promise<void> {
         const [userRows] = await this.pool.query<any[]>('SELECT id FROM users WHERE username = ?', [username]);
         const userId = userRows[0]?.id;
-        await this.pool.query('DELETE FROM sessions WHERE username = ?', [username]);
         if (userId) {
+            await this.pool.query('DELETE FROM sessions WHERE user_id = ?', [userId]);
             await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
             await this.pool.query('DELETE FROM passkeys WHERE user_id = ?', [userId]);
             await this.pool.query('DELETE FROM subscriptions WHERE user_id = ?', [userId]);
