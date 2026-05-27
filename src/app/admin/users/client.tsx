@@ -33,7 +33,7 @@ export default function AdminUsersClient({
     const [loading, setLoading] = useState(false);
     const [isAddingUser, setIsAddingUser] = useState(false);
     const [editingRules, setEditingRules] = useState<{ username: string, rules: string } | null>(null);
-    const [editingUser, setEditingUser] = useState<{ id: string, username: string, newUsername: string, newPassword: string, nickname: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
+    const [editingUser, setEditingUser] = useState<{ id: string, username: string, newUsername: string, newPassword: string, nickname: string, role: string, useGlobalLimit: boolean, customLimit: number, avatar?: string, totpEnabled: boolean } | null>(null);
     const [editingUsername, setEditingUsername] = useState(false);
 
     // Passkey State
@@ -172,7 +172,8 @@ export default function AdminUsersClient({
             editingUser.username,
             editingUser.newUsername,
             editingUser.newPassword || undefined,
-            editingUser.nickname || undefined
+            editingUser.nickname || undefined,
+            editingUser.role
         );
 
         // Update subscription limit
@@ -358,6 +359,7 @@ export default function AdminUsersClient({
                                                     newUsername: user.username,
                                                     newPassword: '',
                                                     nickname: user.nickname || '',
+                                                    role: user.role,
                                                     useGlobalLimit: user.maxSubscriptions === null,
                                                     customLimit: user.maxSubscriptions || globalMaxSubs,
                                                     avatar: user.avatar,
@@ -463,6 +465,7 @@ export default function AdminUsersClient({
                                                 newUsername: user.username,
                                                 newPassword: '',
                                                 nickname: user.nickname || '',
+                                                role: user.role,
                                                 useGlobalLimit: user.maxSubscriptions === null,
                                                 customLimit: user.maxSubscriptions || globalMaxSubs,
                                                 avatar: user.avatar,
@@ -590,6 +593,17 @@ export default function AdminUsersClient({
                                 onChange={e => editingUser && setEditingUser({ ...editingUser, nickname: e.target.value })}
                                 placeholder={t('nicknamePlaceholder')}
                             />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-text-secondary mb-2">{t('role')}</label>
+                            <select
+                                className="w-full border border-border-input rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                value={editingUser.role}
+                                onChange={e => editingUser && setEditingUser({ ...editingUser, role: e.target.value })}
+                            >
+                                <option value="user">{t('roleUser')}</option>
+                                <option value="admin">{t('roleAdmin')}</option>
+                            </select>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-text-secondary mb-2">{t('newPassword')}</label>

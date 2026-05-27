@@ -462,6 +462,14 @@ export default class MysqlDatabase implements IDatabase {
     }
 
     async deleteUser(username: string): Promise<void> {
+        const [userRows] = await this.pool.query<any[]>('SELECT id FROM users WHERE username = ?', [username]);
+        const userId = userRows[0]?.id;
+        await this.pool.query('DELETE FROM sessions WHERE username = ?', [username]);
+        if (userId) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+            await this.pool.query('DELETE FROM passkeys WHERE user_id = ?', [userId]);
+            await this.pool.query('DELETE FROM subscriptions WHERE user_id = ?', [userId]);
+        }
         await this.pool.query('DELETE FROM users WHERE username = ?', [username]);
     }
 

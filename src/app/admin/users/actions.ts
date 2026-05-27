@@ -55,7 +55,8 @@ export async function createUser(formData: FormData) {
         status,
         maxSubscriptions: null, // null = follow global settings
         nickname: nickname || undefined,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        tokenVersion: nanoid(16)
     });
 
     // Check subscription limit before creating default subscription
@@ -123,7 +124,7 @@ export async function updateUserMaxSubscriptions(username: string, maxSubscripti
     }
 }
 
-export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string, nickname?: string) {
+export async function updateUser(oldUsername: string, newUsername: string, newPassword?: string, nickname?: string, role?: string) {
     await requireAdmin();
     newUsername = newUsername.trim();
     if (!newUsername) return { error: 'usernameEmpty' };
@@ -138,10 +139,13 @@ export async function updateUser(oldUsername: string, newUsername: string, newPa
         await db.renameUser(oldUsername, newUsername);
     }
 
-    // Update password/nickname fields
+    // Update password/nickname/role fields
     if (newPassword) {
         user.password = await hashPassword(newPassword);
         user.tokenVersion = nanoid(16);
+    }
+    if (role) {
+        user.role = role;
     }
     user.nickname = nickname || undefined;
     user.username = newUsername;

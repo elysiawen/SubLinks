@@ -6,7 +6,8 @@
         "accountDisabled": "Account has been disabled",
         "wrongPassword": "Incorrect password",
         "twoFactorInvalid": "Invalid verification code",
-        "twoFactorRequired": "2fa_required"
+        "twoFactorRequired": "2fa_required",
+        "passkeyNotFound": "Passkey not found"
     },
     "user": {
         "notLoggedIn": "Not logged in",

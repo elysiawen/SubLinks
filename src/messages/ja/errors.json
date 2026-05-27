@@ -6,7 +6,8 @@
         "accountDisabled": "アカウントが無効になっています",
         "wrongPassword": "パスワードが正しくありません",
         "twoFactorInvalid": "検証コードが正しくありません",
-        "twoFactorRequired": "2fa_required"
+        "twoFactorRequired": "2fa_required",
+        "passkeyNotFound": "Passkeyが見つかりません"
     },
     "user": {
         "notLoggedIn": "ログインしていません",

@@ -193,12 +193,15 @@ export async function verifyPasskeyLogin(response: any, flowId: string) {
     const passkey = await db.getPasskey(passkeyId);
 
     if (!passkey) {
-        return { error: 'Passkey not found' };
+        return { error: 'passkeyNotFound' };
     }
 
     const user = await db.getUserById(passkey.userId);
     if (!user) {
-        return { error: 'User not found' };
+        return { error: 'userNotFound' };
+    }
+    if (user.status !== 'active') {
+        return { error: 'accountDisabled' };
     }
 
     const headersList = await headers();

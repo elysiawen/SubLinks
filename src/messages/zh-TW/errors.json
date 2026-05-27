@@ -6,7 +6,8 @@
         "accountDisabled": "帳號已被停用",
         "wrongPassword": "密碼錯誤",
         "twoFactorInvalid": "兩步驗證碼錯誤",
-        "twoFactorRequired": "2fa_required"
+        "twoFactorRequired": "2fa_required",
+        "passkeyNotFound": "通行金鑰不存在"
     },
     "user": {
         "notLoggedIn": "未登入",

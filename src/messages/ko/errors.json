@@ -6,7 +6,8 @@
         "accountDisabled": "계정이 비활성화되었습니다",
         "wrongPassword": "비밀번호가 틀렸습니다",
         "twoFactorInvalid": "인증 코드가 올바르지 않습니다",
-        "twoFactorRequired": "2fa_required"
+        "twoFactorRequired": "2fa_required",
+        "passkeyNotFound": "패스키를 찾을 수 없습니다"
     },
     "user": {
         "notLoggedIn": "로그인되지 않음",

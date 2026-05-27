@@ -128,6 +128,8 @@ export async function refreshUpstreamSource(
 // --- Refresh API Key Management ---
 
 export async function updateRefreshApiKey(apiKey: string | null) {
+    const session = await getCurrentUserSession();
+    if (!session || session.role !== 'admin') throw new Error('requireAdmin');
     const config = await db.getGlobalConfig();
     await db.setGlobalConfig({
         ...config,

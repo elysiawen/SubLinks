@@ -17,11 +17,17 @@ export async function createSession(username: string, role: string, ip?: string,
     // Parse UA if present
     const deviceInfo = ua ? ua : undefined; // TODO: Parse with uap-node if needed later
 
+    // Ensure user has a tokenVersion; generate and persist one if missing
+    const tokenVersion = user.tokenVersion || nanoid(16);
+    if (!user.tokenVersion) {
+        await db.setUser(username, { ...user, tokenVersion });
+    }
+
     await db.createSession(sessionId, {
         userId: user.id,
         username,
         role,
-        tokenVersion: user.tokenVersion || nanoid(16),
+        tokenVersion,
         nickname: user.nickname,
         avatar: user.avatar,
         ip,
@@ -57,8 +63,8 @@ export async function getSession(sessionId: string, currentIp?: string) {
         return null;
     }
 
-    // Update session nickname if it changed in database
-    if (session.nickname !== user.nickname || session.avatar !== user.avatar) {
+    // Update session if user data changed in database
+    if (session.nickname !== user.nickname || session.avatar !== user.avatar || session.role !== user.role) {
         await db.createSession(sessionId, {
             userId: user.id,
             username: user.username,
@@ -70,6 +76,7 @@ export async function getSession(sessionId: string, currentIp?: string) {
         // Update the session object to return the latest data
         session.nickname = user.nickname;
         session.avatar = user.avatar;
+        session.role = user.role;
     }
 
     return session;

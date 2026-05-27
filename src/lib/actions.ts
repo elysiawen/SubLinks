@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { createSession, verifyPassword, hashPassword } from '@/lib/auth';
+import { nanoid } from 'nanoid';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -29,7 +30,8 @@ export async function login(prevState: any, formData: FormData) {
                 role: 'admin',
                 status: 'active',
                 maxSubscriptions: null, // null = follow global settings
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                tokenVersion: nanoid(16)
             });
         } else {
             return { error: 'systemInit' };
@@ -165,7 +167,8 @@ export async function checkQrStatus(token: string) {
     if (data.status === 'confirmed' && data.userId) {
         // Login the user
         const user = await db.getUserById(data.userId);
-        if (!user) return { status: 'error', message: 'User not found' };
+        if (!user) return { status: 'error', message: 'userNotFound' };
+        if (user.status !== 'active') return { status: 'error', message: 'accountDisabled' };
 
         const headersList = await headers();
         const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';

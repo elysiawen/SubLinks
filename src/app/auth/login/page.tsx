@@ -19,6 +19,7 @@ function PasskeyLogin() {
     const { error: toastError, info, success: toastSuccess } = useToast();
     const t = useTranslations('auth.passkey');
     const tLogin = useTranslations('auth.login');
+    const tErrors = useTranslations('errors.auth');
 
     const handleLogin = async () => {
         setLoading(true);
@@ -52,11 +53,11 @@ function PasskeyLogin() {
 
             if (isNotAllowed) {
                 info(t('userCancelled'));
-            } else if (err.message === 'Passkey not found') {
-                toastError(t('notFound'));
+            } else if (err.message === 'passkeyNotFound') {
+                toastError(tErrors('passkeyNotFound'));
             } else {
                 console.error(err);
-                toastError(err.message || tLogin('loginFailed'));
+                toastError(tErrors(err.message) || tLogin('loginFailed'));
             }
         } finally {
             setLoading(false);

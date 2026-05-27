@@ -378,6 +378,14 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async deleteUser(username: string): Promise<void> {
+        const userResult = await this.pool.query('SELECT id FROM users WHERE username = $1', [username]);
+        const userId = userResult.rows[0]?.id;
+        await this.pool.query('DELETE FROM sessions WHERE username = $1', [username]);
+        if (userId) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+            await this.pool.query('DELETE FROM passkeys WHERE user_id = $1', [userId]);
+            await this.pool.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);
+        }
         await this.pool.query('DELETE FROM users WHERE username = $1', [username]);
     }
 
