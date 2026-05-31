@@ -243,6 +243,7 @@ export interface OAuthProvider {
     userInfoUrl?: string;      // Required for custom
     scope?: string;
     enabled: boolean;
+    forceConsent?: boolean;    // Whether to force consent screen on login (default: true)
     createdAt: number;
 }
 

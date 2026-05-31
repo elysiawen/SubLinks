@@ -377,8 +377,15 @@ export default class MysqlDatabase implements IDatabase {
                 user_info_url VARCHAR(512),
                 scope VARCHAR(512),
                 enabled BOOLEAN DEFAULT TRUE,
+                force_consent BOOLEAN DEFAULT TRUE,
                 created_at BIGINT NOT NULL
             );
+
+            -- Ensure force_consent column exists (Migration)
+            SELECT count(*) INTO @exist_force_consent FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'oauth_providers' AND column_name = 'force_consent';
+            SET @query = IF(@exist_force_consent=0, 'ALTER TABLE oauth_providers ADD COLUMN force_consent TINYINT(1) DEFAULT 1', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
 
             CREATE TABLE IF NOT EXISTS user_oauth_bindings (
                 id VARCHAR(255) PRIMARY KEY,
@@ -1842,6 +1849,7 @@ export default class MysqlDatabase implements IDatabase {
             userInfoUrl: row.user_info_url,
             scope: row.scope,
             enabled: row.enabled,
+            forceConsent: row.force_consent,
             createdAt: row.created_at
         }));
     }
@@ -1862,21 +1870,23 @@ export default class MysqlDatabase implements IDatabase {
             userInfoUrl: row.user_info_url,
             scope: row.scope,
             enabled: row.enabled,
+            forceConsent: row.force_consent,
             createdAt: row.created_at
         };
     }
 
     async setOAuthProvider(id: string, data: OAuthProvider): Promise<void> {
         await this.pool.query(
-            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                  name = VALUES(name), type = VALUES(type), icon = VALUES(icon),
                  client_id = VALUES(client_id), client_secret = VALUES(client_secret),
                  authorization_url = VALUES(authorization_url), token_url = VALUES(token_url),
-                 user_info_url = VALUES(user_info_url), scope = VALUES(scope), enabled = VALUES(enabled)`,
+                 user_info_url = VALUES(user_info_url), scope = VALUES(scope), enabled = VALUES(enabled),
+                 force_consent = VALUES(force_consent)`,
             [id, data.name, data.type, data.icon, data.clientId, data.clientSecret,
-             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.createdAt]
+             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.createdAt]
         );
     }
 

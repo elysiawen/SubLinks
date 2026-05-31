@@ -660,7 +660,9 @@
             "iconModeCustom": "自定义 URL",
             "iconUrlPlaceholder": "https://example.com/icon.png",
             "iconAutoHint": "将从授权 URL 的域名自动获取 Favicon",
-            "iconPreview": "预览"
+            "iconPreview": "预览",
+            "forceConsent": "强制授权确认",
+            "forceConsentDesc": "开启后，用户每次通过此提供商登录时都需要重新授权"
         },
         "logCleanup": {
             "heading": "日志清理",

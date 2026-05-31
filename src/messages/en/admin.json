@@ -660,7 +660,9 @@
             "iconModeCustom": "Custom URL",
             "iconUrlPlaceholder": "https://example.com/icon.png",
             "iconAutoHint": "Will auto-fetch favicon from the authorization URL domain",
-            "iconPreview": "Preview"
+            "iconPreview": "Preview",
+            "forceConsent": "Force consent",
+            "forceConsentDesc": "When enabled, users must re-authorize every time they log in via this provider"
         },
         "logCleanup": {
             "heading": "Log Cleanup",

@@ -660,7 +660,9 @@
             "iconModeCustom": "사용자 지정 URL",
             "iconUrlPlaceholder": "https://example.com/icon.png",
             "iconAutoHint": "인증 URL 도메인에서 Favicon을 자동으로 가져옵니다",
-            "iconPreview": "미리보기"
+            "iconPreview": "미리보기",
+            "forceConsent": "동의 강제",
+            "forceConsentDesc": "활성화하면 사용자가 이 제공자로 로그인할 때마다 재인증이 필요합니다"
         },
         "logCleanup": {
             "heading": "로그 정리",

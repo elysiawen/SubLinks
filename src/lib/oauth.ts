@@ -37,17 +37,21 @@ export async function getOAuthAuthorizeUrl(provider: OAuthProvider, state: strin
 
     if (!authUrl) throw new Error('authorizationUrl not configured');
 
-    const params = new URLSearchParams({
+    const params: Record<string, string> = {
         client_id: provider.clientId,
         redirect_uri: `${getBaseUrl()}/api/oauth/callback`,
         response_type: 'code',
         scope: provider.scope || '',
         state,
         access_type: 'offline',
-        prompt: 'consent'
-    });
+    };
+    if (provider.forceConsent !== false) {
+        params.prompt = 'consent';
+    }
 
-    return `${authUrl}?${params.toString()}`;
+    const searchParams = new URLSearchParams(params);
+
+    return `${authUrl}?${searchParams.toString()}`;
 }
 
 export async function exchangeCodeForToken(provider: OAuthProvider, code: string): Promise<{ access_token: string; refresh_token?: string; expires_in?: number }> {

@@ -24,7 +24,7 @@ function IconPreview({ type, icon, authorizationUrl, size = 'w-9 h-9' }: { type:
 
 function getProviderBg(type: string) {
     if (type === 'google') return 'bg-white border border-gray-200 dark:border-gray-600';
-    if (type === 'github') return 'bg-gray-900 dark:bg-gray-700';
+    if (type === 'github') return 'bg-gray-900 text-white dark:bg-gray-700';
     return 'bg-muted border border-border';
 }
 
@@ -63,7 +63,7 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
             name: editing.name || '', type: editing.type || 'custom', icon: JSON.stringify(iconConfig),
             clientId: editing.clientId, clientSecret: editing.clientSecret,
             authorizationUrl: editing.authorizationUrl, tokenUrl: editing.tokenUrl, userInfoUrl: editing.userInfoUrl,
-            scope: editing.scope, enabled: editing.enabled ?? true
+            scope: editing.scope, enabled: editing.enabled ?? true, forceConsent: editing.forceConsent ?? true
         });
         setSaving(false);
 
@@ -88,11 +88,11 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
 
     const handleToggleEnabled = async (p: OAuthProvider) => {
         const { saveOAuthProvider } = await import('../actions');
-        await saveOAuthProvider(p.id, { name: p.name, type: p.type, icon: p.icon, clientId: p.clientId, clientSecret: p.clientSecret, authorizationUrl: p.authorizationUrl, tokenUrl: p.tokenUrl, userInfoUrl: p.userInfoUrl, scope: p.scope, enabled: !p.enabled });
+        await saveOAuthProvider(p.id, { name: p.name, type: p.type, icon: p.icon, clientId: p.clientId, clientSecret: p.clientSecret, authorizationUrl: p.authorizationUrl, tokenUrl: p.tokenUrl, userInfoUrl: p.userInfoUrl, scope: p.scope, enabled: !p.enabled, forceConsent: p.forceConsent });
         loadProviders();
     };
 
-    const startAdd = () => { setEditing({ type: 'custom', name: '', scope: '', enabled: true } as Partial<OAuthProvider>); setIsAdding(true); setIconMode('default'); setIconUrl(''); };
+    const startAdd = () => { setEditing({ type: 'custom', name: '', scope: '', enabled: true, forceConsent: true } as Partial<OAuthProvider>); setIsAdding(true); setIconMode('default'); setIconUrl(''); };
 
     const startEdit = (p: OAuthProvider) => {
         setEditing(p); setIsAdding(false);
@@ -268,6 +268,15 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
                         <div>
                             <label className="block text-sm text-text-secondary mb-1">{t('scope')}</label>
                             <input type="text" value={editing.scope || ''} onChange={e => setEditing({ ...editing, scope: e.target.value })} className="w-full border border-border-input rounded px-3 py-2 text-sm bg-card text-text-primary" placeholder="openid email profile" />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="min-w-0 mr-3">
+                                <p className="text-sm font-medium text-text-primary">{t('forceConsent')}</p>
+                                <p className="text-xs text-text-tertiary">{t('forceConsentDesc')}</p>
+                            </div>
+                            <button type="button" onClick={() => setEditing({ ...editing, forceConsent: !editing.forceConsent })} className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editing.forceConsent !== false ? 'bg-accent-button' : 'bg-border-strong'}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editing.forceConsent !== false ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
                         </div>
 
                         {editing.type === 'custom' && (

@@ -660,7 +660,9 @@
             "iconModeCustom": "カスタム URL",
             "iconUrlPlaceholder": "https://example.com/icon.png",
             "iconAutoHint": "認証 URL のドメインから Favicon を自動取得します",
-            "iconPreview": "プレビュー"
+            "iconPreview": "プレビュー",
+            "forceConsent": "同意を強制",
+            "forceConsentDesc": "有効にすると、ユーザーはこのプロバイダーでログインするたびに再認証が必要になります"
         },
         "logCleanup": {
             "heading": "ログクリーンアップ",

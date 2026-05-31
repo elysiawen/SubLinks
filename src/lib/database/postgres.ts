@@ -238,6 +238,7 @@ export default class PostgresDatabase implements IDatabase {
                     user_info_url VARCHAR(512),
                     scope VARCHAR(512),
                     enabled BOOLEAN DEFAULT TRUE,
+                    force_consent BOOLEAN DEFAULT TRUE,
                     created_at BIGINT NOT NULL
                 );
 
@@ -290,6 +291,8 @@ export default class PostgresDatabase implements IDatabase {
             await safeQuery(`ALTER TABLE upstream_sources ALTER COLUMN url DROP NOT NULL`);
 
             await safeQuery(`ALTER TABLE passkeys ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36)`);
+
+            await safeQuery(`ALTER TABLE oauth_providers ADD COLUMN IF NOT EXISTS force_consent BOOLEAN DEFAULT TRUE`);
 
             // 3. Backfill user_id from username
             await safeQuery(`UPDATE subscriptions SET user_id = (SELECT id FROM users WHERE users.username = subscriptions.username) WHERE user_id IS NULL AND EXISTS (SELECT 1 FROM users WHERE users.username = subscriptions.username)`);
@@ -2111,6 +2114,7 @@ export default class PostgresDatabase implements IDatabase {
             userInfoUrl: row.user_info_url,
             scope: row.scope,
             enabled: row.enabled,
+            forceConsent: row.force_consent,
             createdAt: row.created_at
         }));
     }
@@ -2131,21 +2135,23 @@ export default class PostgresDatabase implements IDatabase {
             userInfoUrl: row.user_info_url,
             scope: row.scope,
             enabled: row.enabled,
+            forceConsent: row.force_consent,
             createdAt: row.created_at
         };
     }
 
     async setOAuthProvider(id: string, data: OAuthProvider): Promise<void> {
         await this.pool.query(
-            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
              ON CONFLICT (id) DO UPDATE SET
                  name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
                  client_id = EXCLUDED.client_id, client_secret = EXCLUDED.client_secret,
                  authorization_url = EXCLUDED.authorization_url, token_url = EXCLUDED.token_url,
-                 user_info_url = EXCLUDED.user_info_url, scope = EXCLUDED.scope, enabled = EXCLUDED.enabled`,
+                 user_info_url = EXCLUDED.user_info_url, scope = EXCLUDED.scope, enabled = EXCLUDED.enabled,
+                 force_consent = EXCLUDED.force_consent`,
             [id, data.name, data.type, data.icon, data.clientId, data.clientSecret,
-             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.createdAt]
+             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.createdAt]
         );
     }
 

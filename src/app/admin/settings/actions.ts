@@ -234,6 +234,7 @@ export async function saveOAuthProvider(id: string | null, data: {
     userInfoUrl?: string;
     scope?: string;
     enabled: boolean;
+    forceConsent?: boolean;
 }) {
     await requireAdmin();
     const providerId = id || crypto.randomUUID().replace(/-/g, '').slice(0, 21);

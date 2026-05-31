@@ -29,7 +29,7 @@ interface BindingInfo {
 function getProviderBg(type: string) {
     switch (type) {
         case 'google': return 'bg-white border border-gray-200 dark:border-gray-600';
-        case 'github': return 'bg-gray-900 dark:bg-gray-700';
+        case 'github': return 'bg-gray-900 text-white dark:bg-gray-700';
         default: return 'bg-muted border border-border';
     }
 }
