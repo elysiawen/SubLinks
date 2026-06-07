@@ -14,7 +14,8 @@
         "accountNotLinked": "未关联账户，请先注册或联系管理员",
         "oauthFailed": "OAuth 认证失败",
         "notLoggedIn": "请先登录",
-        "sessionExpired": "会话已过期，请重新登录"
+        "sessionExpired": "会话已过期，请重新登录",
+        "expired": "已过期，请重试"
     },
     "user": {
         "notLoggedIn": "未登录",

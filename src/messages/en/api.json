@@ -24,6 +24,11 @@
     "deviceRevoked": "Device session has been revoked. Please re-login.",
     "qrAlreadyConfirmed": "Already confirmed",
     "loginConfirmed": "Login confirmed",
-    "loginRejected": "Login rejected"
+    "loginRejected": "Login rejected",
+    "deviceCodeRequired": "Device code is required",
+    "deviceCodeExpired": "Device code has expired. Please try again.",
+    "deviceCodeInvalid": "Invalid or expired device code",
+    "deviceCodeDenied": "Authorization request was denied by the user",
+    "deviceCodeLimitReached": "Too many concurrent device codes. Please try again later."
   }
 }

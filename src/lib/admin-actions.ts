@@ -53,6 +53,7 @@ export async function getAllSessionsList(page: number = 1, limit: number = 20, s
         isp: s.isp,
         ua: s.ua || 'unknown',
         deviceInfo: s.deviceInfo || 'Client App',
+        loginMethod: s.loginMethod,
         lastActive: s.lastActive || s.createdAt,
         current: false
     }));

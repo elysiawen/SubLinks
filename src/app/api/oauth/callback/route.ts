@@ -58,9 +58,24 @@ export async function GET(request: NextRequest) {
                 providerAvatar: userInfo.avatar || existingBinding.providerAvatar
             });
 
-            // Create session
             const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
             const ua = request.headers.get('user-agent') || 'unknown';
+
+            // Device flow: create session then redirect to confirm page
+            if (stateData.deviceCode) {
+                const sessionId = await createSession(user.username, user.role, ip, ua, 'device');
+                const response = NextResponse.redirect(new URL(`/auth/device-confirm?code=${stateData.deviceCode}`, request.url));
+                response.cookies.set(COOKIE_NAME, sessionId, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    path: '/',
+                    maxAge: 7 * 24 * 60 * 60
+                });
+                return response;
+            }
+
+            // Normal flow: create session
             const sessionId = await createSession(user.username, user.role, ip, ua, 'oauth');
 
             const response = NextResponse.redirect(new URL('/dashboard?login=1', request.url));
@@ -123,7 +138,10 @@ export async function GET(request: NextRequest) {
                 tokenExpiresAt: tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : undefined
             });
 
-            return NextResponse.redirect(new URL(`/auth/oauth-confirm?token=${tempToken}`, request.url));
+            const confirmUrl = stateData.deviceCode
+                ? `/auth/oauth-confirm?token=${tempToken}&device=${stateData.deviceCode}`
+                : `/auth/oauth-confirm?token=${tempToken}`;
+            return NextResponse.redirect(new URL(confirmUrl, request.url));
         }
 
         // Auto-create not allowed

@@ -24,6 +24,11 @@
     "deviceRevoked": "デバイスセッションが取り消されました。再度ログインしてください。",
     "qrAlreadyConfirmed": "すでに確認済みです",
     "loginConfirmed": "ログインが確認されました",
-    "loginRejected": "ログインが拒否されました"
+    "loginRejected": "ログインが拒否されました",
+    "deviceCodeRequired": "デバイスコードが必要です",
+    "deviceCodeExpired": "デバイスコードの有効期限が切れました。再試行してください。",
+    "deviceCodeInvalid": "無効または期限切れのデバイスコード",
+    "deviceCodeDenied": "ユーザーが認証リクエストを拒否しました",
+    "deviceCodeLimitReached": "同時デバイスコード数の上限に達しました。しばらくしてからもう一度お試しください。"
   }
 }

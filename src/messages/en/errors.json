@@ -14,7 +14,8 @@
         "accountNotLinked": "No account linked. Please register first or contact admin.",
         "oauthFailed": "OAuth authentication failed",
         "notLoggedIn": "Please log in first",
-        "sessionExpired": "Session expired, please log in again"
+        "sessionExpired": "Session expired, please log in again",
+        "expired": "Expired, please try again"
     },
     "user": {
         "notLoggedIn": "Not logged in",

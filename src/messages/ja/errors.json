@@ -14,7 +14,8 @@
         "accountNotLinked": "アカウントが連携されていません。先に登録するか管理者に連絡してください。",
         "oauthFailed": "OAuth認証に失敗しました",
         "notLoggedIn": "先にログインしてください",
-        "sessionExpired": "セッションが期限切れです。再度ログインしてください"
+        "sessionExpired": "セッションが期限切れです。再度ログインしてください",
+        "expired": "期限切れです。再試行してください"
     },
     "user": {
         "notLoggedIn": "ログインしていません",

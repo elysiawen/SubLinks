@@ -12,7 +12,7 @@ A modern subscription management platform for proxy services. Manage upstream pr
 - **Custom Routing Rules** — Build rule sets with a visual editor (GUI + advanced YAML mode) for domain, IP, and keyword-based routing.
 - **Dependency Warnings** — Automatically detect when selected proxy groups/rules reference nodes from unselected upstream sources.
 - **User Management** — Admin panel for user CRUD, subscription limits, and per-user configuration.
-- **Authentication** — Password login, 2FA (TOTP), Passkey (WebAuthn), QR code login, and OAuth third-party login (Google, GitHub, custom providers).
+- **Authentication** — Password login, 2FA (TOTP), Passkey (WebAuthn), QR code login, OAuth third-party login (Google, GitHub, custom providers), and device code flow for client apps.
 - **Session Management** — View and revoke active web sessions and client app tokens.
 - **UA Filtering** — Blacklist/whitelist user agents at the application level (per-request, configurable rules).
 - **Multi-language** — Chinese, English, and Japanese UI with `next-intl`. Cookie-based locale switching.
@@ -154,6 +154,8 @@ src/
 | POST | `/api/client/auth/qr/scan` | Generate QR login session |
 | POST | `/api/client/auth/qr/confirm` | Confirm QR login |
 | POST | `/api/client/auth/qr/reject` | Reject QR login |
+| POST | `/api/client/auth/device/authorize` | Device code flow — get device code |
+| POST | `/api/client/auth/device/token` | Device code flow — poll for tokens |
 
 ## Adding a New Language
 

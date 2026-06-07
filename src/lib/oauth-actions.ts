@@ -28,11 +28,11 @@ export async function getAllOAuthProviders(): Promise<OAuthProvider[]> {
 }
 
 // Get OAuth authorize URL (client-side use)
-export async function getOAuthAuthorizeUrl(providerId: string, bindMode = false): Promise<{ url?: string; error?: string }> {
+export async function getOAuthAuthorizeUrl(providerId: string, bindMode = false, deviceCode?: string): Promise<{ url?: string; error?: string }> {
     const provider = await db.getOAuthProvider(providerId);
     if (!provider || !provider.enabled) return { error: 'providerNotFound' };
 
-    const state = await generateOAuthState(providerId, bindMode);
+    const state = await generateOAuthState(providerId, bindMode, deviceCode);
     const { getOAuthAuthorizeUrl: buildUrl } = await import('@/lib/oauth');
     const url = await buildUrl(provider, state, bindMode);
     return { url };

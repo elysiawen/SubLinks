@@ -24,6 +24,11 @@
         "deviceRevoked": "裝置會話已被撤銷，請重新登入",
         "qrAlreadyConfirmed": "已確認",
         "loginConfirmed": "登入已確認",
-        "loginRejected": "登入已拒絕"
+        "loginRejected": "登入已拒絕",
+        "deviceCodeRequired": "缺少裝置碼",
+        "deviceCodeExpired": "裝置碼已過期，請重試",
+        "deviceCodeInvalid": "無效或過期的裝置碼",
+        "deviceCodeDenied": "使用者拒絕了授權請求",
+    "deviceCodeLimitReached": "併發裝置碼數量已達上限，請稍後再試"
     }
 }

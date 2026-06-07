@@ -346,5 +346,6 @@ https://your-project.vercel.app/api/sources/refresh?key=YOUR_REFRESH_API_KEY
 2. ✅ 添加上游源
 3. ✅ 创建订阅
 4. ✅ 在 Clash 中使用
+5. ✅ 客户端可通过设备码授权登录
 
 享受您的订阅管理系统吧！🚀

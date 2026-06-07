@@ -178,7 +178,7 @@ export async function generatePasskeyLoginOptions(username?: string) {
     return { options, flowId };
 }
 
-export async function verifyPasskeyLogin(response: any, flowId: string) {
+export async function verifyPasskeyLogin(response: any, flowId: string, deviceCode?: string) {
     if (!response || !flowId) {
         return { error: 'Missing parameters' };
     }
@@ -231,11 +231,40 @@ export async function verifyPasskeyLogin(response: any, flowId: string) {
             await db.updatePasskeyCounter(passkey.id, newCounter);
             await db.deleteCache(`passkey:login:flow:${flowId}`);
 
-            // Create Session
-            const sessionId = randomUUID();
             const ip = headersList.get('x-forwarded-for') || 'unknown';
             const ua = headersList.get('user-agent') || 'unknown';
 
+            // Device flow: create session then redirect to confirm page
+            if (deviceCode) {
+                const sessionId = randomUUID();
+                await db.createSession(sessionId, {
+                    userId: user.id,
+                    username: user.username,
+                    role: user.role,
+                    tokenVersion: user.tokenVersion || nanoid(16),
+                    nickname: user.nickname,
+                    avatar: user.avatar,
+                    ip,
+                    ua,
+                    deviceInfo: ua,
+                    lastActive: Date.now(),
+                    loginMethod: 'device'
+                }, 7 * 24 * 60 * 60);
+
+                const cookieStore = await cookies();
+                cookieStore.set('auth_session', sessionId, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    path: '/',
+                    maxAge: 7 * 24 * 60 * 60
+                });
+
+                return { success: true, deviceFlow: true };
+            }
+
+            // Normal flow: create session
+            const sessionId = randomUUID();
             await db.createSession(sessionId, {
                 userId: user.id,
                 username: user.username,
@@ -245,7 +274,7 @@ export async function verifyPasskeyLogin(response: any, flowId: string) {
                 avatar: user.avatar,
                 ip,
                 ua,
-                deviceInfo: ua, // Use UA for parsing
+                deviceInfo: ua,
                 lastActive: Date.now(),
                 loginMethod: 'passkey'
             }, 7 * 24 * 60 * 60);

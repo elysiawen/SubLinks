@@ -43,7 +43,7 @@ export interface Session {
     ua?: string;         // User Agent
     deviceInfo?: string; // Parsed device info
     lastActive?: number; // Last active timestamp
-    loginMethod?: 'password' | 'qr' | 'passkey' | 'oauth'; // Login method
+    loginMethod?: 'password' | 'qr' | 'passkey' | 'oauth' | 'device'; // Login method
 }
 
 export interface RefreshToken {
@@ -56,6 +56,7 @@ export interface RefreshToken {
     isp?: string;        // ISP Name
     ua?: string;
     deviceInfo?: string; // e.g., "Chrome on Windows"
+    loginMethod?: string; // e.g., "password", "device"
     createdAt: number;
     expiresAt: number;
     lastActive: number;
@@ -375,6 +376,7 @@ export interface IDatabase {
     cleanupLogs(retentionDays: number, logTypes?: string[]): Promise<void>;
     deleteAllLogs(): Promise<void>;
     cleanupQrCache(): Promise<void>;
+    cleanupDeviceCache(): Promise<void>;
     cleanupExpiredPasskeyCache(): Promise<number>;
 
     // Passkey operations

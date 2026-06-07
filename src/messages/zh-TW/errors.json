@@ -14,7 +14,8 @@
         "accountNotLinked": "未關聯帳戶，請先註冊或聯繫管理員",
         "oauthFailed": "OAuth 認證失敗",
         "notLoggedIn": "請先登入",
-        "sessionExpired": "工作階段已過期，請重新登入"
+        "sessionExpired": "工作階段已過期，請重新登入",
+        "expired": "已過期，請重試"
     },
     "user": {
         "notLoggedIn": "未登入",

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
-import { createAccessToken, createRefreshToken } from '@/lib/jwt-client';
-import { nanoid } from 'nanoid';
-import { getFullAvatarUrl } from '@/lib/utils';
+import { createClientTokensForUser } from '@/lib/device-auth-helpers';
 import { tApi } from '@/lib/api-i18n';
 
 export const runtime = 'nodejs';
@@ -80,44 +78,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Create tokens — only store userId + tokenVersion, user info fetched from DB on demand
-        const fullAvatarUrl = getFullAvatarUrl(user.avatar);
-
-        // Generate refresh token ID first so we can embed it in the access token
-        const refreshTokenDbId = nanoid(32);
-
-        const refreshToken = await createRefreshToken({
-            userId: user.id,
-            tokenVersion: user.tokenVersion || nanoid(16)
-        });
-
-        const accessToken = await createAccessToken({
-            userId: user.id,
-            tokenVersion: user.tokenVersion || nanoid(16),
-            refreshTokenId: refreshTokenDbId
-        });
-
-        // Store Refresh Token in DB
+        // Create tokens and store refresh token in DB
         const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
         const ua = request.headers.get('user-agent') || 'unknown';
-        const REFRESH_TTL_SEC = 365 * 24 * 60 * 60; // 1 year (Match logic in jwt-client)
 
-        try {
-            await db.createRefreshToken({
-                id: refreshTokenDbId,
-                userId: user.id,
-                username: user.username,
-                token: refreshToken,
-                ip,
-                ua,
-                deviceInfo: customDeviceInfo || ua,
-                createdAt: Date.now(),
-                expiresAt: Date.now() + REFRESH_TTL_SEC * 1000,
-                lastActive: Date.now()
-            });
-        } catch (e) {
-            console.error('Failed to store refresh token:', e);
-        }
+        const tokens = await createClientTokensForUser(user, ip, ua, customDeviceInfo, 'password');
 
         // Log successful login
         await db.createSystemLog({
@@ -130,15 +95,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            user: {
-                id: user.id,
-                username: user.username,
-                role: user.role,
-                nickname: user.nickname,
-                avatar: fullAvatarUrl || user.avatar // Return full URL
-            },
-            accessToken,
-            refreshToken
+            ...tokens
         });
     } catch (error) {
         console.error('Login error:', error);

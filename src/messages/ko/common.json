@@ -171,6 +171,7 @@
         "clientAPI": "클라이언트 API",
         "webTag": "Web",
         "apiTag": "API",
+        "deviceAuth": "브라우저 인증",
         "searchAdmin": "사용자명, IP 또는 기기 이름 검색...",
         "searchUser": "IP 또는 기기 이름 검색...",
         "loading": "보안 세션 데이터 가져오는 중...",
@@ -187,6 +188,7 @@
         "qr": "QR 코드",
         "passkey": "패스키",
         "oauth": "OAuth",
+        "device": "브라우저 인증",
         "active": "활성"
     },
     "subscriptionForm": {

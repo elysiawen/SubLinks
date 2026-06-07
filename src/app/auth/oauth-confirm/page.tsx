@@ -10,6 +10,7 @@ function OAuthConfirmContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
+    const deviceCode = searchParams.get('device');
     const t = useTranslations('auth.oauthConfirm');
     const { success, error } = useToast();
 
@@ -43,11 +44,14 @@ function OAuthConfirmContent() {
         if (!token || !username.trim()) return;
 
         setSubmitting(true);
-        const result = await confirmOAuthCreateAccount(token, username.trim());
+        const result = await confirmOAuthCreateAccount(token, username.trim(), deviceCode || undefined);
         setSubmitting(false);
 
         if (result.error) {
             error(result.error);
+        } else if ('deviceFlow' in result && result.deviceFlow) {
+            success(t('accountCreated'));
+            router.push(`/auth/device-confirm?code=${deviceCode}`);
         } else {
             success(t('accountCreated'));
             router.push('/dashboard');

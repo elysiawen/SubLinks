@@ -171,6 +171,7 @@
         "clientAPI": "Client API",
         "webTag": "Web",
         "apiTag": "API",
+        "deviceAuth": "Browser Auth",
         "searchAdmin": "Search username, IP or device name...",
         "searchUser": "Search IP or device name...",
         "loading": "Fetching secure session data...",
@@ -187,6 +188,7 @@
         "qr": "QR Code",
         "passkey": "Passkey",
         "oauth": "OAuth",
+        "device": "Browser Auth",
         "active": "active"
     },
     "subscriptionForm": {

@@ -103,6 +103,7 @@ export default class PostgresDatabase implements IDatabase {
                     ip VARCHAR(45),
                     ua TEXT,
                     device_info VARCHAR(255),
+                    login_method VARCHAR(50),
                     created_at BIGINT NOT NULL,
                     expires_at BIGINT NOT NULL,
                     last_active BIGINT NOT NULL
@@ -282,6 +283,7 @@ export default class PostgresDatabase implements IDatabase {
 
             await safeQuery(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_location VARCHAR(255)`);
             await safeQuery(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS isp VARCHAR(255)`);
+            await safeQuery(`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS login_method VARCHAR(50)`);
 
             await safeQuery(`ALTER TABLE api_access_logs ADD COLUMN IF NOT EXISTS user_id UUID`);
             await safeQuery(`ALTER TABLE web_access_logs ADD COLUMN IF NOT EXISTS user_id UUID`);
@@ -709,6 +711,7 @@ export default class PostgresDatabase implements IDatabase {
                 isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
+                loginMethod: row.login_method || undefined,
                 createdAt: parseInt(row.created_at),
                 expiresAt: parseInt(row.expires_at),
                 lastActive: parseInt(row.last_active)
@@ -736,11 +739,11 @@ export default class PostgresDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, login_method, created_at, expires_at, last_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
             [
                 token.id, token.userId, token.token,
-                token.ip, location, isp, token.ua, token.deviceInfo,
+                token.ip, location, isp, token.ua, token.deviceInfo, token.loginMethod || null,
                 token.createdAt, token.expiresAt, token.lastActive
             ]
         );
@@ -792,6 +795,7 @@ export default class PostgresDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
+            loginMethod: row.login_method || undefined,
             createdAt: parseInt(row.created_at),
             expiresAt: parseInt(row.expires_at),
             lastActive: parseInt(row.last_active)
@@ -839,6 +843,7 @@ export default class PostgresDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
+            loginMethod: row.login_method || undefined,
             createdAt: parseInt(row.created_at),
             expiresAt: parseInt(row.expires_at),
             lastActive: parseInt(row.last_active)
@@ -1902,6 +1907,11 @@ export default class PostgresDatabase implements IDatabase {
     async cleanupQrCache(): Promise<void> {
         const threshold = Date.now() - 1 * 60 * 1000;
         await this.pool.query('DELETE FROM cache WHERE key LIKE \'qr:%\' AND expires_at < $1', [threshold]);
+    }
+
+    async cleanupDeviceCache(): Promise<void> {
+        const threshold = Date.now() - 5 * 60 * 1000;
+        await this.pool.query('DELETE FROM cache WHERE key LIKE \'device:%\' AND expires_at < $1', [threshold]);
     }
 
     async deleteAllLogs(): Promise<void> {

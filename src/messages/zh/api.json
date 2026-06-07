@@ -24,6 +24,11 @@
     "deviceRevoked": "设备会话已被撤销，请重新登录",
     "qrAlreadyConfirmed": "已确认",
     "loginConfirmed": "登录已确认",
-    "loginRejected": "登录已拒绝"
+    "loginRejected": "登录已拒绝",
+    "deviceCodeRequired": "缺少设备码",
+    "deviceCodeExpired": "设备码已过期，请重试",
+    "deviceCodeInvalid": "无效或过期的设备码",
+    "deviceCodeDenied": "用户拒绝了授权请求",
+    "deviceCodeLimitReached": "并发设备码数量已达上限，请稍后再试"
   }
 }

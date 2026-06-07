@@ -54,7 +54,8 @@ export function middleware(request: NextRequest) {
     }
 
     // If we are on login page and already logged in, redirect to dashboard
-    if (path === '/auth/login' && hasSession) {
+    // Exception: if deviceCode is present (device flow), stay on login page for auto-authorize
+    if (path === '/auth/login' && hasSession && !request.nextUrl.searchParams.has('deviceCode')) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

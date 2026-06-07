@@ -15,12 +15,13 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from 'next-intl';
 import type { OAuthProvider } from '@/lib/database/interface';
 
-function PasskeyLogin() {
+function PasskeyLogin({ deviceCode }: { deviceCode?: string }) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { error: toastError, info, success: toastSuccess } = useToast();
     const t = useTranslations('auth.passkey');
     const tLogin = useTranslations('auth.login');
+    const tDevice = useTranslations('auth.device');
     const tErrors = useTranslations('errors.auth');
 
     const handleLogin = async () => {
@@ -34,9 +35,16 @@ function PasskeyLogin() {
 
             const authResp = await startAuthentication({ optionsJSON: res.options });
 
-            const verifyRes = await verifyPasskeyLogin(authResp, res.flowId!);
+            const verifyRes = await verifyPasskeyLogin(authResp, res.flowId!, deviceCode);
             if (verifyRes.error) {
                 throw new Error(verifyRes.error);
+            }
+
+            if ('deviceFlow' in verifyRes && verifyRes.deviceFlow) {
+                setTimeout(() => {
+                    router.push(`/auth/device-confirm?code=${deviceCode}`);
+                }, 500);
+                return;
             }
 
             toastSuccess(tLogin('loginSuccess'));
@@ -92,7 +100,7 @@ function PasskeyLogin() {
     );
 }
 
-function OAuthLoginButtons({ providers }: { providers: OAuthProvider[] }) {
+function OAuthLoginButtons({ providers, deviceCode }: { providers: OAuthProvider[]; deviceCode?: string }) {
     const [loading, setLoading] = useState<string | null>(null);
     const t = useTranslations('auth.oauth');
     const { error: toastError } = useToast();
@@ -101,7 +109,7 @@ function OAuthLoginButtons({ providers }: { providers: OAuthProvider[] }) {
         setLoading(providerId);
         try {
             const { getOAuthAuthorizeUrl } = await import('@/lib/oauth-actions');
-            const result = await getOAuthAuthorizeUrl(providerId);
+            const result = await getOAuthAuthorizeUrl(providerId, false, deviceCode);
             if (result.error) {
                 toastError(result.error);
                 setLoading(null);
@@ -323,7 +331,7 @@ function QrCodeLogin() {
     );
 }
 
-function PasswordLogin() {
+function PasswordLogin({ deviceCode }: { deviceCode?: string }) {
     const [state, formAction, isPending] = useActionState(login, null);
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl');
@@ -331,6 +339,7 @@ function PasswordLogin() {
     const { error: toastError, success: toastSuccess } = useToast();
     const router = useRouter();
     const t = useTranslations('auth');
+    const tDevice = useTranslations('auth.device');
     const tErrors = useTranslations('errors.auth');
 
     const [show2FAModal, setShow2FAModal] = useState(false);
@@ -344,12 +353,18 @@ function PasswordLogin() {
         } else if (state?.error) {
             toastError(tErrors(state.error));
         } else if (state?.success) {
-            toastSuccess(t('login.loginSuccess'));
-            setTimeout(() => {
-                router.push(state.callbackUrl || '/dashboard');
-            }, 500);
+            if (state.deviceFlow) {
+                setTimeout(() => {
+                    router.push(`/auth/device-confirm?code=${state.deviceCode || deviceCode}`);
+                }, 500);
+            } else {
+                toastSuccess(t('login.loginSuccess'));
+                setTimeout(() => {
+                    router.push(state.callbackUrl || '/dashboard');
+                }, 500);
+            }
         }
-    }, [state, toastError, toastSuccess, router, t, tErrors]);
+    }, [state, toastError, toastSuccess, router, t, tDevice, tErrors]);
 
     const handleSubmit = () => {
         if (!username.trim() || !password.trim()) {
@@ -387,6 +402,9 @@ function PasswordLogin() {
                 )}
 
                 <input type="hidden" name="code" value={code} />
+                {deviceCode && (
+                    <input type="hidden" name="deviceCode" value={deviceCode} />
+                )}
 
                 <div className="space-y-4">
                     <div>
@@ -491,14 +509,25 @@ function PasswordLogin() {
     );
 }
 
-function LoginBox({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
+function LoginBox({ oauthProviders, currentUserId }: { oauthProviders: OAuthProvider[]; currentUserId?: string }) {
     const [loginMethod, setLoginMethod] = useState<'password' | 'qr'>('password');
     const searchParams = useSearchParams();
+    const deviceCode = searchParams.get('deviceCode') || undefined;
+    const deviceSuccess = searchParams.get('success') === '1';
     const { success: toastSuccess, error: toastError } = useToast();
     const t = useTranslations('auth.login');
+    const tDevice = useTranslations('auth.device');
     const tErrors = useTranslations('errors.auth');
     const logoutToastShown = useRef(false);
     const errorToastShown = useRef(false);
+    const router = useRouter();
+
+    // If already logged in and has deviceCode, redirect to confirm page
+    useEffect(() => {
+        if (deviceCode && currentUserId && !deviceSuccess) {
+            router.replace(`/auth/device-confirm?code=${deviceCode}`);
+        }
+    }, [deviceCode, currentUserId, deviceSuccess, router]);
 
     useEffect(() => {
         const urlError = searchParams.get('error');
@@ -519,10 +548,20 @@ function LoginBox({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
         }
     }, []);
 
+    // Device flow: already logged in, redirecting to confirm page
+    if (deviceCode && currentUserId && !deviceSuccess) {
+        return (
+            <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 flex flex-col items-center justify-center min-h-[300px]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-text-secondary text-sm">{tDevice('checking')}</p>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 flex flex-col">
             <div className="mb-6">
-                <PasskeyLogin />
+                <PasskeyLogin deviceCode={deviceCode} />
 
                 <div className="relative mt-6">
                     <div className="absolute inset-0 flex items-center">
@@ -560,7 +599,7 @@ function LoginBox({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
             <div>
                 {loginMethod === 'password' ? (
                     <div className="animate-fade-in">
-                        <PasswordLogin />
+                        <PasswordLogin deviceCode={deviceCode} />
                     </div>
                 ) : (
                     <div className="animate-fade-in">
@@ -579,15 +618,35 @@ function LoginBox({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
                             <span className="px-2 bg-card text-text-tertiary">{t('thirdPartyLogin')}</span>
                         </div>
                     </div>
-                    <OAuthLoginButtons providers={oauthProviders} />
+                    <OAuthLoginButtons providers={oauthProviders} deviceCode={deviceCode} />
                 </>
             )}
         </div>
     );
 }
 
-export default function LoginContent({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
+function DeviceSubtitle({ fallback, banner }: { fallback: string; banner: string }) {
+    const searchParams = useSearchParams();
+    const deviceCode = searchParams.get('deviceCode');
+
+    if (deviceCode) {
+        return (
+            <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-400/10 dark:to-indigo-400/10 border border-blue-200/60 dark:border-blue-500/20 backdrop-blur-sm">
+                <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                </span>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">{banner}</span>
+            </div>
+        );
+    }
+
+    return <p className="mt-3 text-text-secondary font-medium">{fallback}</p>;
+}
+
+export default function LoginContent({ oauthProviders, currentUserId }: { oauthProviders: OAuthProvider[]; currentUserId?: string }) {
     const t = useTranslations('auth.login');
+    const tDevice = useTranslations('auth.device');
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
@@ -600,9 +659,9 @@ export default function LoginContent({ oauthProviders }: { oauthProviders: OAuth
                     <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
                         SubLinks
                     </h2>
-                    <p className="mt-3 text-text-secondary font-medium">
-                        {t('title')}
-                    </p>
+                    <Suspense fallback={<p className="mt-3 text-text-secondary font-medium">{t('title')}</p>}>
+                        <DeviceSubtitle fallback={t('title')} banner={tDevice('banner')} />
+                    </Suspense>
                 </div>
 
                 <Suspense fallback={
@@ -610,7 +669,7 @@ export default function LoginContent({ oauthProviders }: { oauthProviders: OAuth
                         <div className="text-center text-text-tertiary">{t('loading')}</div>
                     </div>
                 }>
-                    <LoginBox oauthProviders={oauthProviders} />
+                    <LoginBox oauthProviders={oauthProviders} currentUserId={currentUserId} />
                 </Suspense>
 
                 <div className="mt-8 flex flex-col items-center gap-3">

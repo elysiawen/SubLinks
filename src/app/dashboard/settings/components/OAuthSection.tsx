@@ -160,7 +160,7 @@ export default function OAuthSection() {
                                 </div>
                                 <button
                                     onClick={() => handleUnbind(binding.id, binding.providerName)}
-                                    className="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                                    className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
                                 >
                                     {t('unbind')}
                                 </button>

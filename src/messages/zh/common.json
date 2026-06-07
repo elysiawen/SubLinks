@@ -171,6 +171,7 @@
         "clientAPI": "客户端 API",
         "webTag": "Web",
         "apiTag": "API",
+        "deviceAuth": "浏览器授权",
         "searchAdmin": "搜索用户名、IP 或 设备名...",
         "searchUser": "搜索 IP 或 设备名...",
         "loading": "正在获取安全会话数据...",
@@ -187,6 +188,7 @@
         "qr": "扫码",
         "passkey": "Passkey",
         "oauth": "OAuth",
+        "device": "浏览器授权",
         "active": "活跃"
     },
     "subscriptionForm": {

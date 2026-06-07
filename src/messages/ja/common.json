@@ -171,6 +171,7 @@
         "clientAPI": "クライアントAPI",
         "webTag": "Web",
         "apiTag": "API",
+        "deviceAuth": "ブラウザ認証",
         "searchAdmin": "ユーザー名、IP、デバイス名で検索...",
         "searchUser": "IPまたはデバイス名で検索...",
         "loading": "セキュアなセッションデータを取得中...",
@@ -187,6 +188,7 @@
         "qr": "QRコード",
         "passkey": "Passkey",
         "oauth": "OAuth",
+        "device": "ブラウザ認証",
         "active": "アクティブ"
     },
     "subscriptionForm": {

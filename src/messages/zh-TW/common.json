@@ -171,6 +171,7 @@
         "clientAPI": "用戶端 API",
         "webTag": "Web",
         "apiTag": "API",
+        "deviceAuth": "瀏覽器授權",
         "searchAdmin": "搜尋使用者名稱、IP 或裝置名稱...",
         "searchUser": "搜尋 IP 或裝置名稱...",
         "loading": "正在取得安全會話資料...",
@@ -187,6 +188,7 @@
         "qr": "掃碼",
         "passkey": "Passkey",
         "oauth": "OAuth",
+        "device": "瀏覽器授權",
         "active": "活躍"
     },
     "subscriptionForm": {

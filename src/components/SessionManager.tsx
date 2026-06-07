@@ -36,7 +36,7 @@ export interface UnifiedSessionItem {
     deviceInfo?: string; // Parsed device info
     lastActive: number;
     current?: boolean;
-    loginMethod?: 'password' | 'qr' | 'passkey';
+    loginMethod?: 'password' | 'qr' | 'passkey' | 'device' | 'oauth';
 }
 
 export interface UnifiedSessionManagerProps {
@@ -310,11 +310,13 @@ export default function SessionManager({
                                             )}
                                             <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap ${session.type === 'web'
                                                 ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20'
-                                                : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20'
+                                                : session.loginMethod === 'device'
+                                                    ? 'bg-cyan-50 text-cyan-600 border-cyan-100 dark:bg-cyan-500/10 dark:text-cyan-300 dark:border-cyan-500/20'
+                                                    : 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20'
                                                 }`}>
-                                                {session.type === 'web' ? (isAdmin ? t('session.webTag') : t('session.web')) : (isAdmin ? t('session.apiTag') : t('session.clientAPI'))}
+                                                {session.type === 'web' ? (isAdmin ? t('session.webTag') : t('session.web')) : session.loginMethod === 'device' ? t('session.deviceAuth') : (isAdmin ? t('session.apiTag') : t('session.clientAPI'))}
                                             </span>
-                                            {session.loginMethod && (
+                                            {session.loginMethod && session.loginMethod !== 'device' && (
                                                 <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border whitespace-nowrap ${session.loginMethod === 'passkey'
                                                     ? 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20'
                                                     : session.loginMethod === 'qr'

@@ -185,6 +185,7 @@ export default class MysqlDatabase implements IDatabase {
                 ip VARCHAR(45),
                 ua TEXT,
                 device_info VARCHAR(255),
+                login_method VARCHAR(50),
                 created_at BIGINT NOT NULL,
                 expires_at BIGINT NOT NULL,
                 last_active BIGINT NOT NULL,
@@ -201,6 +202,12 @@ export default class MysqlDatabase implements IDatabase {
             -- Ensure isp column exists in refresh_tokens
             SELECT count(*) INTO @exist_rt_isp FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'refresh_tokens' AND column_name = 'isp';
             SET @query = IF(@exist_rt_isp=0, 'ALTER TABLE refresh_tokens ADD COLUMN isp VARCHAR(255)', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Ensure login_method column exists in refresh_tokens
+            SELECT count(*) INTO @exist_rt_lm FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'refresh_tokens' AND column_name = 'login_method';
+            SET @query = IF(@exist_rt_lm=0, 'ALTER TABLE refresh_tokens ADD COLUMN login_method VARCHAR(50)', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
 
@@ -780,9 +787,9 @@ export default class MysqlDatabase implements IDatabase {
         }
 
         await this.pool.query(
-            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, created_at, expires_at, last_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [token.id, token.userId, token.token, token.ip, location, isp, token.ua, token.deviceInfo, token.createdAt, token.expiresAt, token.lastActive]
+            `INSERT INTO refresh_tokens (id, user_id, token, ip, ip_location, isp, ua, device_info, login_method, created_at, expires_at, last_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [token.id, token.userId, token.token, token.ip, location, isp, token.ua, token.deviceInfo, token.loginMethod || null, token.createdAt, token.expiresAt, token.lastActive]
         );
     }
 
@@ -823,6 +830,7 @@ export default class MysqlDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
+            loginMethod: row.login_method || undefined,
             createdAt: Number(row.created_at),
             expiresAt: Number(row.expires_at),
             lastActive: Number(row.last_active)
@@ -865,6 +873,7 @@ export default class MysqlDatabase implements IDatabase {
             isp: row.isp,
             ua: row.ua,
             deviceInfo: row.device_info,
+            loginMethod: row.login_method || undefined,
             createdAt: Number(row.created_at),
             expiresAt: Number(row.expires_at),
             lastActive: Number(row.last_active)
@@ -913,6 +922,7 @@ export default class MysqlDatabase implements IDatabase {
                 isp: row.isp,
                 ua: row.ua,
                 deviceInfo: row.device_info,
+                loginMethod: row.login_method || undefined,
                 createdAt: Number(row.created_at),
                 expiresAt: Number(row.expires_at),
                 lastActive: Number(row.last_active)
@@ -1753,6 +1763,10 @@ export default class MysqlDatabase implements IDatabase {
 
     async cleanupQrCache(): Promise<void> {
         await this.pool.query('DELETE FROM cache WHERE `key` LIKE \'qr:%\' AND expires_at < ?', [Date.now()]);
+    }
+
+    async cleanupDeviceCache(): Promise<void> {
+        await this.pool.query('DELETE FROM cache WHERE `key` LIKE \'device:%\' AND expires_at < ?', [Date.now()]);
     }
 
     async deleteAllLogs(): Promise<void> {

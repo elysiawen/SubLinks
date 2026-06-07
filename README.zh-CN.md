@@ -12,7 +12,7 @@
 - **自定义分流规则** — 可视化规则编辑器（GUI + 高级 YAML 模式），支持域名、IP、关键词路由。
 - **依赖警告** — 自动检测所选策略组/规则是否引用了未勾选的上游源节点。
 - **用户管理** — 管理面板支持用户增删改查、订阅数量限制、用户级配置。
-- **身份认证** — 密码登录、两步验证 (TOTP)、Passkey (WebAuthn)、客户端扫码登录、OAuth 第三方登录（Google、GitHub、自定义提供商）。
+- **身份认证** — 密码登录、两步验证 (TOTP)、Passkey (WebAuthn)、客户端扫码登录、OAuth 第三方登录（Google、GitHub、自定义提供商）、设备码授权登录（适用于客户端应用）。
 - **会话管理** — 查看和撤销活跃的 Web 会话和客户端应用令牌。
 - **UA 过滤** — 应用层 User-Agent 黑名单/白名单过滤，支持多种匹配规则。
 - **多语言** — 中文、英文、日文界面，基于 `next-intl`，通过 Cookie 切换语言。
@@ -154,6 +154,8 @@ src/
 | POST | `/api/client/auth/qr/scan` | 生成扫码登录会话 |
 | POST | `/api/client/auth/qr/confirm` | 确认扫码登录 |
 | POST | `/api/client/auth/qr/reject` | 拒绝扫码登录 |
+| POST | `/api/client/auth/device/authorize` | 设备码授权 — 获取设备码 |
+| POST | `/api/client/auth/device/token` | 设备码授权 — 轮询获取令牌 |
 
 ## 添加新语言
 

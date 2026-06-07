@@ -12,6 +12,7 @@ export async function login(prevState: any, formData: FormData) {
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
     const callbackUrl = formData.get('callbackUrl') as string | null;
+    const deviceCode = formData.get('deviceCode') as string | null;
 
     if (!username || !password) return { error: 'emptyCredentials' };
 
@@ -82,25 +83,37 @@ export async function login(prevState: any, formData: FormData) {
         }
     }
 
-    // 3. Create Session
+    // 3. Create Session or Device Flow Tokens
     const headersList = await headers();
     const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
     const ua = headersList.get('user-agent') || 'unknown';
 
-    const sessionId = await createSession(username, user.role, ip, ua, 'password'); // Pass IP and UA
+    // Device flow: create session then redirect to confirm page
+    if (deviceCode) {
+        const sessionId = await createSession(username, user.role, ip, ua, 'device');
+        (await cookies()).set(COOKIE_NAME, sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60,
+        });
+        return { success: true, deviceFlow: true, deviceCode };
+    }
 
-    // 4. Set Cookie
+    // Normal flow: create session and set cookie
+    const sessionId = await createSession(username, user.role, ip, ua, 'password');
+
     (await cookies()).set(COOKIE_NAME, sessionId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
+        maxAge: 7 * 24 * 60 * 60,
     });
 
-    // 5. Return success status (redirect will be handled by client)
-    return { 
-        success: true, 
+    return {
+        success: true,
         callbackUrl: callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/dashboard'
     };
 }

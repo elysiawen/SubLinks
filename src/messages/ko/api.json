@@ -24,6 +24,11 @@
         "deviceRevoked": "기기 세션이 취소되었습니다. 다시 로그인하세요.",
         "qrAlreadyConfirmed": "이미 확인됨",
         "loginConfirmed": "로그인 확인됨",
-        "loginRejected": "로그인 거부됨"
+        "loginRejected": "로그인 거부됨",
+        "deviceCodeRequired": "기기 코드가 필요합니다",
+        "deviceCodeExpired": "기기 코드가 만료되었습니다. 다시 시도해 주세요.",
+        "deviceCodeInvalid": "유효하지 않거나 만료된 기기 코드",
+        "deviceCodeDenied": "사용자가 인증 요청을 거부했습니다",
+    "deviceCodeLimitReached": "동시 기기 코드 수가 한도에 도달했습니다. 나중에 다시 시도해 주세요."
     }
 }

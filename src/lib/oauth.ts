@@ -149,15 +149,15 @@ export async function fetchOAuthUserInfo(provider: OAuthProvider, accessToken: s
 }
 
 // Generate OAuth state and store in cache
-export async function generateOAuthState(providerId: string, bindMode: boolean): Promise<string> {
+export async function generateOAuthState(providerId: string, bindMode: boolean, deviceCode?: string): Promise<string> {
     const { nanoid } = await import('nanoid');
     const state = nanoid(32);
-    await db.setCache(`oauth:state:${state}`, JSON.stringify({ providerId, bindMode, ts: Date.now() }), OAUTH_STATE_TTL);
+    await db.setCache(`oauth:state:${state}`, JSON.stringify({ providerId, bindMode, deviceCode: deviceCode || null, ts: Date.now() }), OAUTH_STATE_TTL);
     return state;
 }
 
 // Verify and consume OAuth state
-export async function verifyOAuthState(state: string): Promise<{ providerId: string; bindMode: boolean } | null> {
+export async function verifyOAuthState(state: string): Promise<{ providerId: string; bindMode: boolean; deviceCode?: string } | null> {
     const data = await db.getCache(`oauth:state:${state}`);
     if (!data) return null;
     await db.deleteCache(`oauth:state:${state}`);

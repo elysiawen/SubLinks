@@ -13,7 +13,7 @@ export async function getOAuthTempData(token: string) {
     return getTempData(token);
 }
 
-export async function confirmOAuthCreateAccount(token: string, username: string) {
+export async function confirmOAuthCreateAccount(token: string, username: string, deviceCode?: string) {
     if (!token || !username) return { error: 'missingFields' };
 
     // Validate username
@@ -23,6 +23,16 @@ export async function confirmOAuthCreateAccount(token: string, username: string)
 
     const tempData = await getTempData(token);
     if (!tempData) return { error: 'expired' };
+
+    // If device flow, validate device code is still pending
+    if (deviceCode) {
+        const deviceCacheData = await db.getCache(`device:${deviceCode}`);
+        if (!deviceCacheData) return { error: 'expired' };
+        const deviceData = JSON.parse(deviceCacheData);
+        if (deviceData.status !== 'pending' || Date.now() > deviceData.expiresAt) {
+            return { error: 'expired' };
+        }
+    }
 
     // Check if username exists
     if (await db.userExists(username)) {
@@ -65,10 +75,22 @@ export async function confirmOAuthCreateAccount(token: string, username: string)
         createdAt: Date.now()
     });
 
-    // Create session
+    // Device flow: create session and redirect to confirm page
+    if (deviceCode) {
+        const sessionId = await createSession(username, 'user', undefined, undefined, 'device');
+        (await cookies()).set(COOKIE_NAME, sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60
+        });
+        return { success: true, deviceFlow: true };
+    }
+
+    // Normal flow: create session and set cookie
     const sessionId = await createSession(username, 'user', undefined, undefined, 'oauth');
 
-    // Set cookie
     (await cookies()).set(COOKIE_NAME, sessionId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
