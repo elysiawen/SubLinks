@@ -150,7 +150,7 @@ function OAuthLoginButtons({ providers, deviceCode }: { providers: OAuthProvider
     );
 }
 
-function QrCodeLogin() {
+function QrCodeLogin({ deviceCode }: { deviceCode?: string }) {
     const [qrUrl, setQrUrl] = useState<string>('');
     const [status, setStatus] = useState<'loading' | 'pending' | 'scanned' | 'confirmed' | 'expired' | 'error' | 'success' | 'rejected'>('loading');
     const [token, setToken] = useState<string>('');
@@ -216,9 +216,15 @@ function QrCodeLogin() {
                     setStatus('success');
                     if (pollingRef.current) clearInterval(pollingRef.current);
                     success(tLogin('loginSuccess'));
-                    const cb = new URLSearchParams(window.location.search).get('callbackUrl');
-                    router.push(cb && cb.startsWith('/') ? cb : '/dashboard');
-                    router.refresh();
+                    if (deviceCode) {
+                        setTimeout(() => {
+                            router.push(`/auth/device-confirm?code=${deviceCode}`);
+                        }, 500);
+                    } else {
+                        const cb = new URLSearchParams(window.location.search).get('callbackUrl');
+                        router.push(cb && cb.startsWith('/') ? cb : '/dashboard');
+                        router.refresh();
+                    }
                 } else if (res.status === 'expired') {
                     setStatus('expired');
                     if (pollingRef.current) clearInterval(pollingRef.current);
@@ -603,7 +609,7 @@ function LoginBox({ oauthProviders, currentUserId }: { oauthProviders: OAuthProv
                     </div>
                 ) : (
                     <div className="animate-fade-in">
-                        <QrCodeLogin />
+                        <QrCodeLogin deviceCode={deviceCode} />
                     </div>
                 )}
             </div>
