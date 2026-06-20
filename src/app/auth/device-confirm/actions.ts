@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { createClientTokensForUser } from '@/lib/device-auth-helpers';
 
@@ -30,6 +31,21 @@ export async function getDeviceCodeInfo(deviceCode: string) {
             && browserIp !== 'unknown'
             && normalizeIp(clientIp) !== normalizeIp(browserIp);
 
+        // Get current user info from session
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('auth_session')?.value;
+        let currentUser: { username: string; nickname?: string; avatar?: string } | null = null;
+        if (sessionId) {
+            const session = await getSession(sessionId);
+            if (session) {
+                currentUser = {
+                    username: session.username,
+                    nickname: session.nickname,
+                    avatar: session.avatar,
+                };
+            }
+        }
+
         return {
             success: true,
             clientDeviceInfo: data.clientDeviceInfo || null,
@@ -37,6 +53,7 @@ export async function getDeviceCodeInfo(deviceCode: string) {
             clientUa: data.clientUa || null,
             browserIp,
             ipMismatch,
+            currentUser,
         };
     } catch {
         return { error: 'expired' };
@@ -109,4 +126,14 @@ export async function denyDeviceAuthorization(deviceCode: string): Promise<{ suc
     }), 300);
 
     return { success: true };
+}
+
+export async function switchAccount(deviceCode: string) {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (sessionId) {
+        await db.deleteSession(sessionId);
+    }
+    cookieStore.delete('auth_session');
+    redirect(`/auth/login?callbackUrl=/auth/device-confirm?code=${encodeURIComponent(deviceCode)}`);
 }

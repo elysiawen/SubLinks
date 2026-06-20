@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ToastProvider';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { getDeviceCodeInfo, confirmDeviceAuthorization, denyDeviceAuthorization } from './actions';
+import { getDeviceCodeInfo, confirmDeviceAuthorization, denyDeviceAuthorization, switchAccount } from './actions';
 
 function parseUA(ua: string) {
     if (!ua || ua === 'unknown') return { browser: 'Unknown', os: '', isMobile: false };
@@ -28,13 +27,14 @@ function parseUA(ua: string) {
 }
 
 export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string }) {
-    const router = useRouter();
     const { success: toastSuccess, error: toastError } = useToast();
     const t = useTranslations('auth.deviceConfirm');
     const tDevice = useTranslations('auth.device');
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
+    const [denying, setDenying] = useState(false);
     const [done, setDone] = useState(false);
+    const [denied, setDenied] = useState(false);
     const [countdown, setCountdown] = useState(5);
     const [error, setError] = useState<string | null>(null);
     const [deviceInfo, setDeviceInfo] = useState<{
@@ -43,6 +43,11 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
         clientUa: string | null;
         browserIp: string | null;
         ipMismatch: boolean;
+    } | null>(null);
+    const [userInfo, setUserInfo] = useState<{
+        username: string;
+        nickname?: string;
+        avatar?: string;
     } | null>(null);
 
     useEffect(() => {
@@ -62,6 +67,9 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
                     browserIp: result.browserIp || null,
                     ipMismatch: result.ipMismatch || false,
                 });
+                if (result.currentUser) {
+                    setUserInfo(result.currentUser);
+                }
             }
             setLoading(false);
         });
@@ -94,6 +102,18 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
         } else {
             setDone(true);
             toastSuccess(tDevice('loginSuccess'));
+        }
+    };
+
+    const handleDeny = async () => {
+        setDenying(true);
+        const result = await denyDeviceAuthorization(deviceCode);
+        setDenying(false);
+
+        if (result.error) {
+            toastError(result.error);
+        } else {
+            setDenied(true);
         }
     };
 
@@ -154,6 +174,37 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
         );
     }
 
+    // Denied
+    if (denied) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 px-4 animate-fade-in">
+                <div className="max-w-md w-full">
+                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong overflow-hidden">
+                        <div className="bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-yellow-500/10 dark:from-orange-400/10 dark:via-amber-400/5 dark:to-yellow-400/10 p-10 pb-5 flex flex-col items-center min-h-[300px]">
+                            <div className="flex-1 flex flex-col items-center justify-center">
+                                <div className="relative mb-6">
+                                    <div className="relative w-20 h-20 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30 animate-zoom-in">
+                                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-2">{t('deniedTitle')}</h3>
+                                <p className="text-text-tertiary text-sm text-center">{t('deniedDesc')}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-text-tertiary">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <span>{tDevice('secureHint')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // Confirm page
     const uaInfo = deviceInfo?.clientUa ? parseUA(deviceInfo.clientUa) : null;
 
@@ -188,18 +239,37 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
                         </div>
                     )}
 
-                    {/* Device info */}
+                    {/* User info header */}
                     <div className="mb-6">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-text-primary">{t('requestTitle')}</h3>
+                            {/* Avatar */}
+                            {userInfo?.avatar ? (
+                                <img
+                                    src={userInfo.avatar}
+                                    alt={userInfo.nickname || userInfo.username}
+                                    className="w-12 h-12 rounded-xl object-cover shadow-lg ring-2 ring-border-strong"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                    <span className="text-white font-bold text-lg">
+                                        {(userInfo?.nickname || userInfo?.username || '?').charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-text-primary truncate">
+                                    {t('signInAs', { name: userInfo?.nickname || userInfo?.username || '' })}
+                                </h3>
                                 <p className="text-xs text-text-tertiary">{t('requestDesc')}</p>
                             </div>
+                            <button
+                                onClick={async () => {
+                                    await switchAccount(deviceCode);
+                                }}
+                                className="shrink-0 text-xs text-text-tertiary hover:text-accent-foreground transition-colors px-2 py-1 rounded-lg hover:bg-muted"
+                            >
+                                {t('switchAccount')}
+                            </button>
                         </div>
 
                         <div className="space-y-3 bg-muted/30 rounded-xl p-4 border border-border">
@@ -235,7 +305,7 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
                                     <div>
                                         <p className="text-xs text-text-tertiary">{t('platform')}</p>
                                         <p className="text-sm text-text-primary font-medium">
-                                            {uaInfo.browser}{uaInfo.os ? ` · ${uaInfo.os}` : ''}{uaInfo.isMobile ? ` · ${t('mobile')}` : ''}
+                                            {[uaInfo.browser, uaInfo.os, uaInfo.isMobile && t('mobile')].filter(Boolean).join(' · ')}
                                         </p>
                                     </div>
                                 </div>
@@ -254,13 +324,19 @@ export default function DeviceConfirmClient({ deviceCode }: { deviceCode: string
                     {/* Buttons */}
                     <div className="flex gap-3">
                         <button
-                            onClick={async () => {
-                                await denyDeviceAuthorization(deviceCode);
-                                router.push('/dashboard');
-                            }}
-                            className="flex-1 py-3 px-4 rounded-xl border border-border-strong text-text-secondary hover:bg-muted transition-colors font-medium"
+                            onClick={handleDeny}
+                            disabled={denying || confirming}
+                            className="flex-1 py-3 px-4 rounded-xl border border-border-strong text-text-secondary hover:bg-muted hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.97]"
                         >
-                            {t('deny')}
+                            {denying ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    {t('denying')}
+                                </>
+                            ) : t('deny')}
                         </button>
                         <button
                             onClick={handleConfirm}
