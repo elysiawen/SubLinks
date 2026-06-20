@@ -159,7 +159,7 @@ export async function generateQrToken() {
     return { token, expiresAt };
 }
 
-export async function checkQrStatus(token: string) {
+export async function checkQrStatus(token: string, deviceCode?: string) {
     if (!token) return { status: 'error' };
 
     const cacheData = await db.getCache(`qr:${token}`);
@@ -188,7 +188,9 @@ export async function checkQrStatus(token: string) {
         const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
         const ua = headersList.get('user-agent') || 'unknown';
 
-        const sessionId = await createSession(user.username, user.role, ip, ua, 'qr');
+        // For device flow, mark the session as 'device' so it gets cleaned up after authorization
+        const loginMethod = deviceCode ? 'device' : 'qr';
+        const sessionId = await createSession(user.username, user.role, ip, ua, loginMethod);
 
         (await cookies()).set(COOKIE_NAME, sessionId, {
             httpOnly: true,

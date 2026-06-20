@@ -104,6 +104,13 @@ export async function confirmDeviceAuthorization(deviceCode: string): Promise<{ 
         user: tokens.user,
     }), 300);
 
+    // If the session was created just for device flow, destroy it to prevent
+    // the browser from staying logged in. Only the client gets the tokens.
+    if (session.loginMethod === 'device') {
+        await db.deleteSession(sessionId);
+        cookieStore.delete('auth_session');
+    }
+
     return { success: true };
 }
 
@@ -124,6 +131,17 @@ export async function denyDeviceAuthorization(deviceCode: string): Promise<{ suc
         status: 'denied',
         deniedAt: Date.now(),
     }), 300);
+
+    // If the session was created just for device flow, destroy it
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('auth_session')?.value;
+    if (sessionId) {
+        const session = await getSession(sessionId);
+        if (session && session.loginMethod === 'device') {
+            await db.deleteSession(sessionId);
+            cookieStore.delete('auth_session');
+        }
+    }
 
     return { success: true };
 }

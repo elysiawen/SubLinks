@@ -205,7 +205,7 @@ function QrCodeLogin({ deviceCode }: { deviceCode?: string }) {
             }
 
             try {
-                const res = await checkQrStatus(token);
+                const res = await checkQrStatus(token, deviceCode);
 
                 if (res.status === 'scanned') {
                     if (status !== 'scanned') setStatus('scanned');
@@ -515,25 +515,15 @@ function PasswordLogin({ deviceCode }: { deviceCode?: string }) {
     );
 }
 
-function LoginBox({ oauthProviders, currentUserId }: { oauthProviders: OAuthProvider[]; currentUserId?: string }) {
+function LoginBox({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
     const [loginMethod, setLoginMethod] = useState<'password' | 'qr'>('password');
     const searchParams = useSearchParams();
     const deviceCode = searchParams.get('deviceCode') || undefined;
-    const deviceSuccess = searchParams.get('success') === '1';
     const { success: toastSuccess, error: toastError } = useToast();
     const t = useTranslations('auth.login');
-    const tDevice = useTranslations('auth.device');
     const tErrors = useTranslations('errors.auth');
     const logoutToastShown = useRef(false);
     const errorToastShown = useRef(false);
-    const router = useRouter();
-
-    // If already logged in and has deviceCode, redirect to confirm page
-    useEffect(() => {
-        if (deviceCode && currentUserId && !deviceSuccess) {
-            router.replace(`/auth/device-confirm?code=${deviceCode}`);
-        }
-    }, [deviceCode, currentUserId, deviceSuccess, router]);
 
     useEffect(() => {
         const urlError = searchParams.get('error');
@@ -553,16 +543,6 @@ function LoginBox({ oauthProviders, currentUserId }: { oauthProviders: OAuthProv
             window.history.replaceState({}, '', url.pathname + url.search);
         }
     }, []);
-
-    // Device flow: already logged in, redirecting to confirm page
-    if (deviceCode && currentUserId && !deviceSuccess) {
-        return (
-            <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 flex flex-col items-center justify-center min-h-[300px]">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-                <p className="text-text-secondary text-sm">{tDevice('checking')}</p>
-            </div>
-        );
-    }
 
     return (
         <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 flex flex-col">
@@ -650,7 +630,7 @@ function DeviceSubtitle({ fallback, banner }: { fallback: string; banner: string
     return <p className="mt-3 text-text-secondary font-medium">{fallback}</p>;
 }
 
-export default function LoginContent({ oauthProviders, currentUserId }: { oauthProviders: OAuthProvider[]; currentUserId?: string }) {
+export default function LoginContent({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
     const t = useTranslations('auth.login');
     const tDevice = useTranslations('auth.device');
 
@@ -675,7 +655,7 @@ export default function LoginContent({ oauthProviders, currentUserId }: { oauthP
                         <div className="text-center text-text-tertiary">{t('loading')}</div>
                     </div>
                 }>
-                    <LoginBox oauthProviders={oauthProviders} currentUserId={currentUserId} />
+                    <LoginBox oauthProviders={oauthProviders} />
                 </Suspense>
 
                 <div className="mt-8 flex flex-col items-center gap-3">

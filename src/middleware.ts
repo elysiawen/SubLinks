@@ -59,6 +59,16 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
+    // If visiting device-confirm page without session, redirect to login with deviceCode
+    if (path === '/auth/device-confirm' && !hasSession) {
+        const code = request.nextUrl.searchParams.get('code');
+        const url = new URL('/auth/login', request.url);
+        if (code) {
+            url.searchParams.set('deviceCode', code);
+        }
+        return NextResponse.redirect(url);
+    }
+
     const response = NextResponse.next();
 
     // Refresh session cookie if user is logged in (Rolling Expiration)
@@ -79,5 +89,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/api/s/:path*', '/api/client/:path*', '/api/oauth/:path*', '/admin/:path*', '/dashboard/:path*', '/auth/login', '/auth/oauth-confirm'],
+    matcher: ['/api/s/:path*', '/api/client/:path*', '/api/oauth/:path*', '/admin/:path*', '/dashboard/:path*', '/auth/login', '/auth/device-confirm', '/auth/oauth-confirm'],
 }
