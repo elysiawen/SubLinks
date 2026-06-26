@@ -32,7 +32,18 @@ export async function getOAuthAuthorizeUrl(providerId: string, bindMode = false,
     const provider = await db.getOAuthProvider(providerId);
     if (!provider || !provider.enabled) return { error: 'providerNotFound' };
 
-    const state = await generateOAuthState(providerId, bindMode, deviceCode);
+    // In bind mode, include session ID in state so callback can identify user even without cookie
+    let sessionId: string | undefined;
+    if (bindMode) {
+        const session = await getCurrentSession();
+        if (session) {
+            // Get the actual session ID from cookie
+            const cookieStore = await cookies();
+            sessionId = cookieStore.get(COOKIE_NAME)?.value;
+        }
+    }
+
+    const state = await generateOAuthState(providerId, bindMode, deviceCode, sessionId);
     const { getOAuthAuthorizeUrl: buildUrl } = await import('@/lib/oauth');
     const url = await buildUrl(provider, state, bindMode);
     return { url };

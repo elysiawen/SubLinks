@@ -633,35 +633,139 @@ function DeviceSubtitle({ fallback, banner }: { fallback: string; banner: string
 export default function LoginContent({ oauthProviders }: { oauthProviders: OAuthProvider[] }) {
     const t = useTranslations('auth.login');
     const tDevice = useTranslations('auth.device');
+    const searchParams = useSearchParams();
+    const deviceCode = searchParams.get('deviceCode');
+    const isDeviceFlow = !!deviceCode;
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden animate-fade-in">
+        <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 animate-fade-in">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
             <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
-            <div className="max-w-md w-full relative z-10 transition-all duration-300">
-                <div className="text-center mb-8">
-                    <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
-                        SubLinks
-                    </h2>
-                    <Suspense fallback={<p className="mt-3 text-text-secondary font-medium">{t('title')}</p>}>
-                        <DeviceSubtitle fallback={t('title')} banner={tDevice('banner')} />
-                    </Suspense>
-                </div>
+            {/* Language switcher - top right */}
+            <div className="relative z-20 flex justify-end p-4">
+                <LanguageSwitcher dropDown align="right" />
+            </div>
 
-                <Suspense fallback={
-                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-border-strong p-8 min-h-[300px] flex items-center justify-center">
-                        <div className="text-center text-text-tertiary">{t('loading')}</div>
+            {/* Main content */}
+            <div className="flex-1 flex items-center justify-center px-6 py-8">
+                <div className="relative z-10 w-full max-w-[1100px] mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-32">
+                    {/* Left side - Brand and features / Device auth info */}
+                    <div className="hidden lg:flex flex-1 flex-col justify-center animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
+                        {isDeviceFlow ? (
+                            /* Device flow left side */
+                            <div className="mb-10">
+                                <div className="inline-flex items-center gap-3 mb-8">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                                        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                            <line x1="8" y1="21" x2="16" y2="21" />
+                                            <line x1="12" y1="17" x2="12" y2="21" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400 tracking-wider uppercase">Device Authorization</span>
+                                </div>
+                                <h1 className="text-4xl lg:text-5xl font-bold text-foreground leading-[1.1] tracking-tight mb-6">
+                                    <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                        SubLinks
+                                    </span>
+                                </h1>
+                                <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8">
+                                    {tDevice('description')}
+                                </p>
+
+                                <div className="space-y-4">
+                                    {[
+                                        { icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', label: '安全授权', desc: '令牌通过加密通道传输' },
+                                        { icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', label: '临时会话', desc: '授权后浏览器不会保持登录' },
+                                        { icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: '即时生效', desc: '客户端立即获取访问令牌' },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-background/50 border border-border/50">
+                                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                                                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d={item.icon} />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-semibold text-foreground mb-1">{item.label}</h3>
+                                                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            /* Normal login left side */
+                            <div className="mb-10">
+                                <div className="inline-flex items-center gap-3 mb-8">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                                        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400 tracking-wider uppercase">Proxy Subscription Platform</span>
+                                </div>
+                                <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] tracking-tight mb-6">
+                                    <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                        SubLinks
+                                    </span>
+                                </h1>
+                                <p className="text-lg text-muted-foreground leading-relaxed max-w-md">
+                                    现代化的代理订阅管理平台，轻松管理节点源、生成订阅链接、自定义路由规则
+                                </p>
+                            </div>
+                        )}
+
+                        {!isDeviceFlow && (
+                            <div className="grid grid-cols-2 gap-4">
+                                {[
+                                    { icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', label: '节点源管理', desc: '支持 URL / YAML 导入' },
+                                    { icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1', label: '订阅链接', desc: 'Clash / Mihomo 兼容' },
+                                    { icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', label: '多种认证', desc: 'Passkey / OAuth / 2FA' },
+                                    { icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4', label: '自定义规则', desc: '可视化路由规则编辑' },
+                                ].map((item, i) => (
+                                    <div key={i} className="p-4 rounded-xl bg-background/50 border border-border/50 hover:border-border hover:bg-background/80 transition-all duration-300 group">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mb-3 group-hover:from-blue-500/20 group-hover:to-indigo-500/20 transition-colors duration-300">
+                                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d={item.icon} />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-sm font-semibold text-foreground mb-1">{item.label}</h3>
+                                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                }>
-                    <LoginBox oauthProviders={oauthProviders} />
-                </Suspense>
 
-                <div className="mt-8 flex flex-col items-center gap-3">
-                    <LanguageSwitcher />
-                    <p className="text-center text-sm text-text-tertiary">Powered by Next.js • Secure & Fast</p>
+                    {/* Right side - Login form */}
+                    <div className="w-full max-w-[400px] animate-slide-in-up" style={{ animationDelay: '0.25s' }}>
+                        {/* Mobile title - shown only on small screens */}
+                        <div className="lg:hidden text-center mb-8">
+                            <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+                                SubLinks
+                            </h2>
+                            <Suspense fallback={<p className="mt-3 text-text-secondary font-medium">{t('title')}</p>}>
+                                <DeviceSubtitle fallback={isDeviceFlow ? tDevice('description') : t('title')} banner={tDevice('banner')} />
+                            </Suspense>
+                        </div>
+
+                        <Suspense fallback={
+                            <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-lg shadow-black/[0.04] dark:shadow-black/20 min-h-[300px] flex items-center justify-center">
+                                <div className="text-center text-text-tertiary">{t('loading')}</div>
+                            </div>
+                        }>
+                            <LoginBox oauthProviders={oauthProviders} />
+                        </Suspense>
+                    </div>
                 </div>
+            </div>
+
+            {/* Footer */}
+            <div className="relative z-10 py-6 text-center">
+                <p className="text-sm text-text-tertiary">Powered by Next.js • Secure & Fast</p>
             </div>
         </div>
     )

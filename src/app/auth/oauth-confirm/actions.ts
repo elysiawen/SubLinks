@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db';
-import { getOAuthTempData as getTempData, storeOAuthTempData } from '@/lib/oauth';
+import { getOAuthTempData as getTempData, peekOAuthTempData as peekTempData, storeOAuthTempData } from '@/lib/oauth';
 import { createSession } from '@/lib/auth';
 import { hashPassword } from '@/lib/auth';
 import { nanoid } from 'nanoid';
@@ -10,7 +10,7 @@ import { cookies } from 'next/headers';
 const COOKIE_NAME = 'auth_session';
 
 export async function getOAuthTempData(token: string) {
-    return getTempData(token);
+    return peekTempData(token);
 }
 
 export async function confirmOAuthCreateAccount(token: string, username: string, deviceCode?: string) {

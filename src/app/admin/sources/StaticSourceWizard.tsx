@@ -118,7 +118,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
 
     const stableProxyGroups = useMemo(() => {
         try {
-            const parsed = yaml.load(groupsText) as any[] || [];
+            const parsed = yaml.load(groupsText, { schema: yaml.DEFAULT_SCHEMA }) as any[] || [];
             return parsed.map((g: any) => ({ name: g.name, type: g.type, source: sourceName }));
         } catch (e) {
             return [];
@@ -177,7 +177,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
             setGroups(prev => [...prev, ...incomingGroups]);
 
             // Also update groupsText for GroupEditor
-            const currentGroups = yaml.load(groupsText) as any[] || [];
+            const currentGroups = yaml.load(groupsText, { schema: yaml.DEFAULT_SCHEMA }) as any[] || [];
             const mergedGroups = [...currentGroups, ...incomingGroups];
             setGroupsText(yaml.dump(mergedGroups));
         }
@@ -219,7 +219,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
         setSaving(true);
         try {
             // Parse groupsText back to array
-            const finalGroupsArr = yaml.load(groupsText) as any[] || [];
+            const finalGroupsArr = yaml.load(groupsText, { schema: yaml.DEFAULT_SCHEMA }) as any[] || [];
             if (finalGroupsArr.length === 0) {
                 error(t('atLeastOneGroup'));
                 setSaving(false);
@@ -510,7 +510,7 @@ export function StaticSourceWizardContent({ initialName = '', onNameChange, exis
                                     {t('groupConfigLabel')}
                                 </div>
                                 <div className="text-sm text-indigo-600 font-black pl-2.5 border-l-2 border-indigo-100 group-hover:border-indigo-400 transition-colors">
-                                    {(yaml.load(groupsText) as any[] || []).length} <span className="text-[10px] font-medium text-text-quaternary ml-1">{t('visualGroups')}</span>
+                                    {(yaml.load(groupsText, { schema: yaml.DEFAULT_SCHEMA }) as any[] || []).length} <span className="text-[10px] font-medium text-text-quaternary ml-1">{t('visualGroups')}</span>
                                 </div>
                             </div>
 

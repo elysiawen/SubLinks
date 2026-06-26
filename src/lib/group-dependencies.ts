@@ -25,7 +25,7 @@ export function getGroupDependencies(
     const { proxySourceMap = {}, availableProxies = [], availableSources = [] } = options;
 
     try {
-        const parsed = yaml.load(content) as any;
+        const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as any;
         const groups = Array.isArray(parsed) ? parsed : [parsed];
         const sources = new Set<string>();
         let hasDynamicFilter = false;

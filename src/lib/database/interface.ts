@@ -245,6 +245,7 @@ export interface OAuthProvider {
     scope?: string;
     enabled: boolean;
     forceConsent?: boolean;    // Whether to force consent screen on login (default: true)
+    allowAutoCreate?: boolean; // Allow auto-create accounts for this provider (default: false)
     createdAt: number;
 }
 
@@ -340,19 +341,19 @@ export interface IDatabase {
     // Structured upstream data operations
     // Proxies
     saveProxies(proxies: Proxy[]): Promise<void>;
-    getProxies(source?: string): Promise<Proxy[]>;
+    getProxies(source?: string | string[]): Promise<Proxy[]>;
     clearProxies(source: string): Promise<void>;
     deleteProxy(id: string): Promise<void>;
 
     // Proxy Groups
     saveProxyGroups(groups: ProxyGroup[]): Promise<void>;
-    getProxyGroups(source?: string): Promise<ProxyGroup[]>;
+    getProxyGroups(source?: string | string[]): Promise<ProxyGroup[]>;
     clearProxyGroups(source: string): Promise<void>;
     deleteProxyGroup(id: string): Promise<void>;
 
     // Rules
     saveRules(rules: Rule[]): Promise<void>;
-    getRules(source?: string): Promise<Rule[]>;
+    getRules(source?: string | string[]): Promise<Rule[]>;
     clearRules(source: string): Promise<void>;
     deleteRule(id: string): Promise<void>;
 

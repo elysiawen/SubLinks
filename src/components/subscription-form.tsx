@@ -145,7 +145,7 @@ export default function SubscriptionForm({
             const selectedSet = configSets.groups.find(g => g.id === groupId);
             if (selectedSet) {
                 try {
-                    const doc = yaml.load(selectedSet.content) as any;
+                    const doc = yaml.load(selectedSet.content, { schema: yaml.DEFAULT_SCHEMA }) as any;
                     if (Array.isArray(doc)) {
                         extraGroups = doc.map((g: any) => String(g.name)).filter(Boolean);
                     } else if (doc && typeof doc === 'object') {

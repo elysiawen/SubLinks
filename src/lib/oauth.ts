@@ -149,15 +149,15 @@ export async function fetchOAuthUserInfo(provider: OAuthProvider, accessToken: s
 }
 
 // Generate OAuth state and store in cache
-export async function generateOAuthState(providerId: string, bindMode: boolean, deviceCode?: string): Promise<string> {
+export async function generateOAuthState(providerId: string, bindMode: boolean, deviceCode?: string, sessionId?: string): Promise<string> {
     const { nanoid } = await import('nanoid');
     const state = nanoid(32);
-    await db.setCache(`oauth:state:${state}`, JSON.stringify({ providerId, bindMode, deviceCode: deviceCode || null, ts: Date.now() }), OAUTH_STATE_TTL);
+    await db.setCache(`oauth:state:${state}`, JSON.stringify({ providerId, bindMode, deviceCode: deviceCode || null, sessionId: sessionId || null, ts: Date.now() }), OAUTH_STATE_TTL);
     return state;
 }
 
 // Verify and consume OAuth state
-export async function verifyOAuthState(state: string): Promise<{ providerId: string; bindMode: boolean; deviceCode?: string } | null> {
+export async function verifyOAuthState(state: string): Promise<{ providerId: string; bindMode: boolean; deviceCode?: string; sessionId?: string } | null> {
     const data = await db.getCache(`oauth:state:${state}`);
     if (!data) return null;
     await db.deleteCache(`oauth:state:${state}`);
@@ -184,7 +184,7 @@ export async function storeOAuthTempData(data: {
     return token;
 }
 
-// Retrieve temporary OAuth data for confirm page
+// Retrieve temporary OAuth data for confirm page (reads and deletes)
 export async function getOAuthTempData(token: string): Promise<{
     providerId: string;
     providerUserId: string;
@@ -197,6 +197,25 @@ export async function getOAuthTempData(token: string): Promise<{
     const data = await db.getCache(`oauth:temp:${token}`);
     if (!data) return null;
     await db.deleteCache(`oauth:temp:${token}`);
+    try {
+        return JSON.parse(data);
+    } catch {
+        return null;
+    }
+}
+
+// Peek at temporary OAuth data without deleting (for page display)
+export async function peekOAuthTempData(token: string): Promise<{
+    providerId: string;
+    providerUserId: string;
+    providerUsername?: string;
+    providerAvatar?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiresAt?: number;
+} | null> {
+    const data = await db.getCache(`oauth:temp:${token}`);
+    if (!data) return null;
     try {
         return JSON.parse(data);
     } catch {

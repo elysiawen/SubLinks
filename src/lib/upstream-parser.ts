@@ -17,7 +17,7 @@ export async function parseAndStoreUpstream(
         let isRawList = false;
 
         try {
-            config = yaml.load(yamlContent);
+            config = yaml.load(yamlContent, { schema: yaml.DEFAULT_SCHEMA });
         } catch (e) {
             // Not valid YAML, treat as raw list
             config = yamlContent;
@@ -164,7 +164,7 @@ export function parseContentPreview(content: string): {
         let config: any = null;
 
         try {
-            config = yaml.load(content);
+            config = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA });
         } catch (e) {
             config = content;
         }

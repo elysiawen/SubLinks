@@ -1,11 +1,19 @@
 import { db } from './db';
 import yaml from 'js-yaml';
-import type { SubData } from './database/interface';
+import type { SubData, User, UpstreamSource } from './database/interface';
+
+interface BuildOptions {
+    user?: User;
+    upstreamSources?: UpstreamSource[];
+}
 
 /**
  * Build subscription YAML from database structured data
  */
-export async function buildSubscriptionYaml(sub: SubData & { token: string }): Promise<string | null> {
+export async function buildSubscriptionYaml(
+    sub: SubData & { token: string },
+    options?: BuildOptions
+): Promise<string | null> {
     try {
         console.log('📋 Building subscription for:', sub.remark || sub.token);
         console.log('   Custom rules:', sub.customRules ? `${sub.customRules.split('\n').length} lines` : 'none');
@@ -13,8 +21,8 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         const config: any = {};
 
-        // 1. Get enabled status of sources
-        const allSources = await db.getUpstreamSources();
+        // 1. Get enabled status of sources (use provided data or fetch from DB)
+        const allSources = options?.upstreamSources ?? await db.getUpstreamSources();
         const enabledSources = new Set(allSources.filter(s => s.enabled !== false).map(s => s.name));
 
         // Calculate effective sources (user selected AND enabled)
@@ -37,11 +45,11 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         // 1.1 Pre-fetch custom groups (Logic for implicit sources removed per user request)
         let groups: any[] | null = null;
         if (sub.groupId && sub.groupId !== 'default') {
-            const user = await db.getUser(sub.username);
+            const user = options?.user ?? await db.getUser(sub.username);
             if (user) {
                 const customGroup = await db.getCustomGroup(sub.groupId, user.id);
                 if (customGroup) {
-                    const customGroups = yaml.load(customGroup.content);
+                    const customGroups = yaml.load(customGroup.content, { schema: yaml.DEFAULT_SCHEMA });
                     if (Array.isArray(customGroups)) {
                         groups = customGroups;
                     }
@@ -58,11 +66,8 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
         const upstreamConfig = await db.getUpstreamConfig(configSources);
         Object.assign(config, upstreamConfig);
 
-        // 2. Get Proxies - filter by PROXY sources
-        let allProxies = await db.getProxies();
-
-        // Filter by proxy sources (explicit only)
-        allProxies = allProxies.filter(p => proxySources.includes(p.source));
+        // 2. Get Proxies - filter by PROXY sources (pushed to SQL)
+        let allProxies = await db.getProxies(proxySources);
         console.log(`   ✓ Filtered proxies to ${allProxies.length} from proxy sources`);
 
         // Format proxies with proper field ordering
@@ -123,10 +128,8 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         // 3. Get Proxy Groups (If not already fetched as custom)
         if (!groups) {
-            // Use upstream groups - filter by effective sources
-            let upstreamGroups = await db.getProxyGroups();
-
-            upstreamGroups = upstreamGroups.filter(g => effectiveSources.includes(g.source));
+            // Use upstream groups - filter by effective sources (pushed to SQL)
+            let upstreamGroups = await db.getProxyGroups(effectiveSources);
             console.log(`   ✓ Filtered groups to ${upstreamGroups.length} from effective sources`);
 
             // Deduplicate groups by name (in case multiple sources have same group names)
@@ -166,7 +169,17 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
                         expandedProxies.push(...matchedProxies);
                     } else if (proxyName.startsWith('REGEX:')) {
                         try {
-                            const regex = new RegExp(proxyName.substring(6));
+                            const pattern = proxyName.substring(6);
+                            // Guard against ReDoS: reject overly long or nested quantifier patterns
+                            if (pattern.length > 200) {
+                                console.warn(`Regex pattern too long in group ${g.name}: ${pattern.length} chars`);
+                                continue;
+                            }
+                            if (/\([^)]*[+*][^)]*\)[+*]/.test(pattern)) {
+                                console.warn(`Potentially dangerous regex (nested quantifiers) in group ${g.name}: ${pattern}`);
+                                continue;
+                            }
+                            const regex = new RegExp(pattern);
                             const matchedProxies = allProxies
                                 .filter(p => regex.test(p.config.name))
                                 .map(p => p.config.name);
@@ -225,22 +238,20 @@ export async function buildSubscriptionYaml(sub: SubData & { token: string }): P
 
         // Then add rule set or upstream rules
         if (sub.ruleId && sub.ruleId !== 'default') {
-            // Use custom rule set - get userId from subscription owner
-            const user = await db.getUser(sub.username);
+            // Use custom rule set - get userId from subscription owner (reuse cached user)
+            const user = options?.user ?? await db.getUser(sub.username);
             if (user) {
                 const customRule = await db.getCustomRule(sub.ruleId, user.id);
                 if (customRule) {
-                    const customRules = yaml.load(customRule.content);
+                    const customRules = yaml.load(customRule.content, { schema: yaml.DEFAULT_SCHEMA });
                     if (Array.isArray(customRules)) {
                         rules.push(...customRules);
                     }
                 }
             }
         } else {
-            // Use upstream rules - filter by effective sources
-            let upstreamRules = await db.getRules();
-
-            upstreamRules = upstreamRules.filter(r => effectiveSources.includes(r.source));
+            // Use upstream rules - filter by effective sources (pushed to SQL)
+            let upstreamRules = await db.getRules(effectiveSources);
             console.log(`   ✓ Filtered rules to ${upstreamRules.length} from effective sources`);
 
             rules.push(...upstreamRules.map(r => r.ruleText));

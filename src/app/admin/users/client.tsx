@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Pencil } from 'lucide-react';
 import { useErrors } from '@/lib/use-errors';
-import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey } from './actions';
+import { createUser, deleteUser, updateUserStatus, updateUser, updateUserMaxSubscriptions, adminUploadAvatar, adminDeleteAvatar, resetUser2FA, adminGetUserPasskeys, adminDeletePasskey, adminGetUserOAuthBindings, adminDeleteOAuthBinding } from './actions';
 import { useToast } from '@/components/ToastProvider';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -40,6 +40,10 @@ export default function AdminUsersClient({
     const [userPasskeys, setUserPasskeys] = useState<any[]>([]);
     const [loadingPasskeys, setLoadingPasskeys] = useState(false);
 
+    // OAuth Bindings State
+    const [userOAuthBindings, setUserOAuthBindings] = useState<any[]>([]);
+    const [loadingOAuthBindings, setLoadingOAuthBindings] = useState(false);
+
     // Avatar State
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [showCropper, setShowCropper] = useState(false);
@@ -74,6 +78,21 @@ export default function AdminUsersClient({
         }
     }, [editingUser?.id]);
 
+    // OAuth Bindings Management
+    useEffect(() => {
+        if (editingUser?.id) {
+            setLoadingOAuthBindings(true);
+            adminGetUserOAuthBindings(editingUser.id).then(res => {
+                if (res.success) {
+                    setUserOAuthBindings(res.bindings || []);
+                }
+                setLoadingOAuthBindings(false);
+            });
+        } else {
+            setUserOAuthBindings([]);
+        }
+    }, [editingUser?.id]);
+
     const handleDeletePasskey = async (passkeyId: string) => {
         if (!editingUser) return;
         if (await confirm(t('confirmDeletePasskey'), { confirmColor: 'red' })) {
@@ -82,6 +101,19 @@ export default function AdminUsersClient({
                 // Remove from local state
                 setUserPasskeys(prev => prev.filter(pk => pk.id !== passkeyId));
                 success(t('passkeyDeleted'));
+            } else {
+                error(res.error ? tError(res.error) : t('deleteFailed'));
+            }
+        }
+    };
+
+    const handleDeleteOAuthBinding = async (bindingId: string) => {
+        if (!editingUser) return;
+        if (await confirm(t('confirmUnbindOAuth'), { confirmColor: 'red' })) {
+            const res = await adminDeleteOAuthBinding(bindingId);
+            if (res.success) {
+                setUserOAuthBindings(prev => prev.filter(b => b.id !== bindingId));
+                success(t('oauthUnbound'));
             } else {
                 error(res.error ? tError(res.error) : t('deleteFailed'));
             }
@@ -652,6 +684,46 @@ export default function AdminUsersClient({
                             ) : (
                                 <div className="text-center py-4 bg-muted rounded-lg border border-border border-dashed">
                                     <span className="text-sm text-text-tertiary">{t('noPasskeys')}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="border-t border-border-strong pt-4">
+                            <label className="block text-sm font-semibold text-text-secondary mb-3">{t('oauthBindings')}</label>
+                            {loadingOAuthBindings ? (
+                                <div className="text-center py-4 text-text-tertiary text-sm">{t('loading')}</div>
+                            ) : userOAuthBindings.length > 0 ? (
+                                <div className="space-y-2">
+                                    {userOAuthBindings.map((binding: any) => (
+                                        <div key={binding.id} className="flex items-center justify-between p-3 bg-muted border border-border rounded-lg">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-full bg-card border border-border-strong flex items-center justify-center text-sm shrink-0">
+                                                    {binding.providerType === 'google' ? '🔵' : binding.providerType === 'github' ? '⚫' : '🔗'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-medium text-text-primary truncate">
+                                                        {binding.providerName}
+                                                    </div>
+                                                    <div className="text-xs text-text-tertiary truncate">
+                                                        {binding.providerUsername || binding.providerUserId}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteOAuthBinding(binding.id)}
+                                                className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors shrink-0"
+                                                title={t('unbindOAuth')}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 bg-muted rounded-lg border border-border border-dashed">
+                                    <span className="text-sm text-text-tertiary">{t('noOAuthBindings')}</span>
                                 </div>
                             )}
                         </div>

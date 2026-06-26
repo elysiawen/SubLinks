@@ -2,6 +2,39 @@ import { db } from './db';
 import yaml from 'js-yaml';
 import { parseAndStoreUpstream } from './upstream-parser';
 
+/**
+ * Validate that a URL is safe to fetch (not pointing to internal/private addresses)
+ * Prevents SSRF attacks when fetching upstream sources
+ */
+function isAllowedUpstreamUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        // Only allow HTTP and HTTPS
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+        const hostname = parsed.hostname.toLowerCase();
+
+        // Block localhost variants
+        if (hostname === 'localhost' || hostname === '0.0.0.0') return false;
+
+        // Block IPv4 loopback and private ranges
+        if (/^127\./.test(hostname)) return false;           // 127.x.x.x
+        if (/^10\./.test(hostname)) return false;             // 10.x.x.x
+        if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return false; // 172.16-31.x.x
+        if (/^192\.168\./.test(hostname)) return false;       // 192.168.x.x
+        if (/^169\.254\./.test(hostname)) return false;       // AWS metadata / link-local
+
+        // Block IPv6 loopback and private
+        if (hostname === '::1' || hostname === '[::1]') return false;
+        if (hostname.startsWith('fc') || hostname.startsWith('fd')) return false; // ULA
+        if (hostname.startsWith('fe80')) return false;        // link-local
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export interface Proxy {
     name: string;
     type: string;
@@ -87,6 +120,29 @@ export async function refreshSingleUpstreamSource(
             const config = await db.getGlobalConfig();
             const userAgent = config.upstreamUserAgent || 'Clash/Vercel-Sub-Manager';
 
+            // SSRF protection: validate URL before fetching
+            if (!isAllowedUpstreamUrl(sourceUrl)) {
+                const errorMsg = `   ❌ Source [${sourceName}] rejected: URL points to internal/private address`;
+                console.error(errorMsg);
+                if (logger) logger(errorMsg, 'error');
+
+                await db.createSystemLog({
+                    category: 'error',
+                    message: `Upstream source URL rejected (SSRF protection): ${sourceName}`,
+                    status: 'failure',
+                    details: { url: sourceUrl, trigger: options.trigger },
+                    timestamp: Date.now()
+                });
+
+                await db.updateUpstreamSource(sourceName, {
+                    lastUpdated: Date.now(),
+                    status: 'failure',
+                    error: 'URL rejected: internal/private address not allowed'
+                });
+
+                return false;
+            }
+
             const res = await fetch(sourceUrl, {
                 headers: {
                     'User-Agent': userAgent
@@ -116,7 +172,37 @@ export async function refreshSingleUpstreamSource(
                 return false;
             }
 
+            // Limit response size to 50MB to prevent OOM from malicious upstreams
+            const MAX_UPSTREAM_SIZE = 50 * 1024 * 1024;
+            const contentLength = res.headers.get('content-length');
+            if (contentLength && parseInt(contentLength) > MAX_UPSTREAM_SIZE) {
+                const errorMsg = `   ❌ Source [${sourceName}] rejected: response too large (${(parseInt(contentLength) / 1024 / 1024).toFixed(1)}MB)`;
+                console.error(errorMsg);
+                if (logger) logger(errorMsg, 'error');
+
+                await db.updateUpstreamSource(sourceName, {
+                    lastUpdated: Date.now(),
+                    status: 'failure',
+                    error: 'Response too large'
+                });
+
+                return false;
+            }
+
             const content = await res.text();
+            if (content.length > MAX_UPSTREAM_SIZE) {
+                const errorMsg = `   ❌ Source [${sourceName}] rejected: response body too large (${(content.length / 1024 / 1024).toFixed(1)}MB)`;
+                console.error(errorMsg);
+                if (logger) logger(errorMsg, 'error');
+
+                await db.updateUpstreamSource(sourceName, {
+                    lastUpdated: Date.now(),
+                    status: 'failure',
+                    error: 'Response body too large'
+                });
+
+                return false;
+            }
 
             // Parse traffic info from header
             // Format: upload=123; download=456; total=789; expire=1234567890
@@ -151,9 +237,12 @@ export async function refreshSingleUpstreamSource(
             console.log(clearMsg);
             if (logger) logger(clearMsg, 'info');
 
-            await db.clearProxies(sourceName);
-            await db.clearProxyGroups(sourceName);
-            await db.clearRules(sourceName);
+            // Parallelize independent clears
+            await Promise.all([
+                db.clearProxies(sourceName),
+                db.clearProxyGroups(sourceName),
+                db.clearRules(sourceName)
+            ]);
 
             // Parse and store with source name
             await parseAndStoreUpstream(content, sourceName, logger);
@@ -191,9 +280,8 @@ export async function refreshSingleUpstreamSource(
             console.log(cacheMsg);
             if (logger) logger(cacheMsg, 'info');
             const affectedSubs = await db.getSubscriptionsBySource(sourceName);
-            for (const sub of affectedSubs) {
-                await db.clearSubscriptionCache(sub.token);
-            }
+            // Clear all caches in parallel
+            await Promise.all(affectedSubs.map(sub => db.clearSubscriptionCache(sub.token)));
 
             return true;
         } catch (e) {

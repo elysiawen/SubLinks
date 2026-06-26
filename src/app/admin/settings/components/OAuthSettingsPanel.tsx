@@ -11,7 +11,7 @@ import { parseIconConfig } from '@/lib/oauth-icon';
 import type { OAuthProvider } from '@/lib/database/interface';
 
 interface Props {
-    allowAutoCreate: boolean;
+    allowAutoCreate?: boolean; // deprecated, kept for backward compat
 }
 
 function IconPreview({ type, icon, authorizationUrl, size = 'w-9 h-9' }: { type: string; icon?: string; authorizationUrl?: string; size?: string }) {
@@ -36,7 +36,6 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
     const [providers, setProviders] = useState<OAuthProvider[]>([]);
     const [editing, setEditing] = useState<Partial<OAuthProvider> | null>(null);
     const [isAdding, setIsAdding] = useState(false);
-    const [autoCreate, setAutoCreate] = useState(allowAutoCreate);
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
     const [iconMode, setIconMode] = useState<'default' | 'auto' | 'custom'>('default');
@@ -63,7 +62,8 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
             name: editing.name || '', type: editing.type || 'custom', icon: JSON.stringify(iconConfig),
             clientId: editing.clientId, clientSecret: editing.clientSecret,
             authorizationUrl: editing.authorizationUrl, tokenUrl: editing.tokenUrl, userInfoUrl: editing.userInfoUrl,
-            scope: editing.scope, enabled: editing.enabled ?? true, forceConsent: editing.forceConsent ?? true
+            scope: editing.scope, enabled: editing.enabled ?? true, forceConsent: editing.forceConsent ?? true,
+            allowAutoCreate: editing.allowAutoCreate ?? false
         });
         setSaving(false);
 
@@ -80,19 +80,13 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
         }
     };
 
-    const handleToggleAutoCreate = async () => {
-        const v = !autoCreate; setAutoCreate(v);
-        const { updateOAuthAllowAutoCreate } = await import('../actions');
-        await updateOAuthAllowAutoCreate(v); success(t('saved'));
-    };
-
     const handleToggleEnabled = async (p: OAuthProvider) => {
         const { saveOAuthProvider } = await import('../actions');
-        await saveOAuthProvider(p.id, { name: p.name, type: p.type, icon: p.icon, clientId: p.clientId, clientSecret: p.clientSecret, authorizationUrl: p.authorizationUrl, tokenUrl: p.tokenUrl, userInfoUrl: p.userInfoUrl, scope: p.scope, enabled: !p.enabled, forceConsent: p.forceConsent });
+        await saveOAuthProvider(p.id, { name: p.name, type: p.type, icon: p.icon, clientId: p.clientId, clientSecret: p.clientSecret, authorizationUrl: p.authorizationUrl, tokenUrl: p.tokenUrl, userInfoUrl: p.userInfoUrl, scope: p.scope, enabled: !p.enabled, forceConsent: p.forceConsent, allowAutoCreate: p.allowAutoCreate });
         loadProviders();
     };
 
-    const startAdd = () => { setEditing({ type: 'custom', name: '', scope: '', enabled: true, forceConsent: true } as Partial<OAuthProvider>); setIsAdding(true); setIconMode('default'); setIconUrl(''); };
+    const startAdd = () => { setEditing({ type: 'custom', name: '', scope: '', enabled: true, forceConsent: true, allowAutoCreate: false } as Partial<OAuthProvider>); setIsAdding(true); setIconMode('default'); setIconUrl(''); };
 
     const startEdit = (p: OAuthProvider) => {
         setEditing(p); setIsAdding(false);
@@ -113,17 +107,6 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
     return (
         <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-text-primary mb-4">🔐 {t('heading')}</h3>
-
-            {/* Auto-create */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-4">
-                <div className="min-w-0 mr-3">
-                    <p className="text-sm font-medium text-text-primary">{t('allowAutoCreate')}</p>
-                    <p className="text-xs text-text-tertiary">{t('allowAutoCreateDesc')}</p>
-                </div>
-                <button onClick={handleToggleAutoCreate} className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoCreate ? 'bg-accent-button' : 'bg-border-strong'}`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoCreate ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-            </div>
 
             {/* Callback URL */}
             <div className="mb-4">
@@ -163,7 +146,12 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
                             <IconPreview type={p.type} icon={p.icon} authorizationUrl={p.authorizationUrl} />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-text-primary truncate">{p.name}</p>
-                                <p className="text-xs text-text-tertiary">{p.enabled ? t('enabled') : t('disabled')}</p>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-xs text-text-tertiary">{p.enabled ? t('enabled') : t('disabled')}</p>
+                                    {p.allowAutoCreate && (
+                                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-green-50 dark:bg-green-500/15 text-green-600 dark:text-green-400">Auto</span>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => handleToggleEnabled(p)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${p.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
@@ -276,6 +264,15 @@ export default function OAuthSettingsPanel({ allowAutoCreate }: Props) {
                             </div>
                             <button type="button" onClick={() => setEditing({ ...editing, forceConsent: !editing.forceConsent })} className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editing.forceConsent !== false ? 'bg-accent-button' : 'bg-border-strong'}`}>
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editing.forceConsent !== false ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="min-w-0 mr-3">
+                                <p className="text-sm font-medium text-text-primary">{t('allowAutoCreate')}</p>
+                                <p className="text-xs text-text-tertiary">{t('allowAutoCreateDesc')}</p>
+                            </div>
+                            <button type="button" onClick={() => setEditing({ ...editing, allowAutoCreate: !editing.allowAutoCreate })} className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editing.allowAutoCreate ? 'bg-accent-button' : 'bg-border-strong'}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editing.allowAutoCreate ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
                         </div>
 

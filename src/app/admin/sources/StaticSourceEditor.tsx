@@ -263,7 +263,7 @@ export default function StaticSourceEditor({ sourceName, open, onClose, onUpdate
         if (!groupsText.trim()) { error(t('enterGroupContent')); return; }
         setSavingGroups(true);
         try {
-            const parsed = yaml.load(groupsText) as any;
+            const parsed = yaml.load(groupsText, { schema: yaml.DEFAULT_SCHEMA }) as any;
             const parsedArray = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
             if (parsedArray.length === 0) { error(t('keepOneGroup')); setSavingGroups(false); return; }
             const result = await saveStaticSourceGroups(sourceName, parsedArray.map((g: any) => ({ name: g.name, type: g.type, proxies: g.proxies || [] })));

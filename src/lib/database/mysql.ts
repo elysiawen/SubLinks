@@ -3,6 +3,12 @@ import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, Prox
 import { nanoid } from 'nanoid';
 import { randomUUID } from 'crypto';
 import { getLocation } from '../ip-location';
+import { encryptToken, decryptToken } from '../crypto';
+
+/** Escape LIKE special characters to prevent wildcard injection */
+function escapeLikePattern(s: string): string {
+    return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
 
 export default class MysqlDatabase implements IDatabase {
     private pool: Pool;
@@ -150,7 +156,8 @@ export default class MysqlDatabase implements IDatabase {
                 ua TEXT,
                 device_info VARCHAR(255),
                 last_active BIGINT DEFAULT 0,
-                INDEX idx_sessions_expires (expires_at)
+                INDEX idx_sessions_expires (expires_at),
+                INDEX idx_sessions_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             
             -- Ensure ip_location column exists
@@ -385,12 +392,19 @@ export default class MysqlDatabase implements IDatabase {
                 scope VARCHAR(512),
                 enabled BOOLEAN DEFAULT TRUE,
                 force_consent BOOLEAN DEFAULT TRUE,
+                allow_auto_create BOOLEAN DEFAULT FALSE,
                 created_at BIGINT NOT NULL
             );
 
             -- Ensure force_consent column exists (Migration)
             SELECT count(*) INTO @exist_force_consent FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'oauth_providers' AND column_name = 'force_consent';
             SET @query = IF(@exist_force_consent=0, 'ALTER TABLE oauth_providers ADD COLUMN force_consent TINYINT(1) DEFAULT 1', 'SELECT "Column already exists"');
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+
+            -- Ensure allow_auto_create column exists (Migration)
+            SELECT count(*) INTO @exist_allow_auto_create FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'oauth_providers' AND column_name = 'allow_auto_create';
+            SET @query = IF(@exist_allow_auto_create=0, 'ALTER TABLE oauth_providers ADD COLUMN allow_auto_create TINYINT(1) DEFAULT 0', 'SELECT "Column already exists"');
             PREPARE stmt FROM @query;
             EXECUTE stmt;
 
@@ -499,15 +513,26 @@ export default class MysqlDatabase implements IDatabase {
     }
 
     async deleteUser(username: string): Promise<void> {
-        const [userRows] = await this.pool.query<any[]>('SELECT id FROM users WHERE username = ?', [username]);
-        const userId = userRows[0]?.id;
-        if (userId) {
-            await this.pool.query('DELETE FROM sessions WHERE user_id = ?', [userId]);
-            await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
-            await this.pool.query('DELETE FROM passkeys WHERE user_id = ?', [userId]);
-            await this.pool.query('DELETE FROM subscriptions WHERE user_id = ?', [userId]);
+        await this.ensureInitialized();
+        const connection = await this.pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            const [userRows] = await connection.query<any[]>('SELECT id FROM users WHERE username = ?', [username]);
+            const userId = userRows[0]?.id;
+            if (userId) {
+                await connection.query('DELETE FROM sessions WHERE user_id = ?', [userId]);
+                await connection.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+                await connection.query('DELETE FROM passkeys WHERE user_id = ?', [userId]);
+                await connection.query('DELETE FROM subscriptions WHERE user_id = ?', [userId]);
+            }
+            await connection.query('DELETE FROM users WHERE username = ?', [username]);
+            await connection.commit();
+        } catch (e) {
+            await connection.rollback();
+            throw e;
+        } finally {
+            connection.release();
         }
-        await this.pool.query('DELETE FROM users WHERE username = ?', [username]);
     }
 
     async getAllUsers(page: number = 1, limit: number = 20, search?: string): Promise<PaginatedResult<User & { username: string }>> {
@@ -519,7 +544,7 @@ export default class MysqlDatabase implements IDatabase {
 
         if (search) {
             query += ' WHERE username LIKE ? OR nickname LIKE ?';
-            params.push(`%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
         }
 
         query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
@@ -724,7 +749,7 @@ export default class MysqlDatabase implements IDatabase {
 
         if (search) {
             query += ' AND (u.username LIKE ? OR s.nickname LIKE ? OR s.ip LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
         }
 
         query += ' ORDER BY s.last_active DESC LIMIT ? OFFSET ?';
@@ -858,8 +883,10 @@ export default class MysqlDatabase implements IDatabase {
 
     async getUserRefreshTokens(userId: string): Promise<RefreshToken[]> {
         await this.ensureInitialized();
-        // Cleanup
-        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
+        }
 
         const [rows] = await this.pool.query<any[]>(`SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id WHERE r.user_id = ? ORDER BY r.last_active DESC`, [userId]);
 
@@ -884,15 +911,17 @@ export default class MysqlDatabase implements IDatabase {
         await this.ensureInitialized();
         const offset = (page - 1) * limit;
 
-        // Cleanup first
-        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < ?', [Date.now()]);
+        }
 
         let query = `SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id`;
         let params: any[] = [];
 
         if (search) {
             query += ' WHERE u.username LIKE ? OR r.ip LIKE ?';
-            params.push(`%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
         }
 
         query += ' ORDER BY r.last_active DESC LIMIT ? OFFSET ?';
@@ -1023,7 +1052,7 @@ export default class MysqlDatabase implements IDatabase {
             const searchClause = ' WHERE s.username LIKE ? OR s.remark LIKE ? OR s.token LIKE ?';
             query += searchClause;
             countQuery += searchClause;
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
@@ -1346,13 +1375,18 @@ export default class MysqlDatabase implements IDatabase {
         }
     }
 
-    async getProxies(source?: string): Promise<Proxy[]> {
+    async getProxies(source?: string | string[]): Promise<Proxy[]> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM proxies';
         let params: any[] = [];
         if (source) {
-            query += ' WHERE source = ?';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ` WHERE source IN (${source.map(() => '?').join(',')})`;
+                params.push(...source);
+            } else {
+                query += ' WHERE source = ?';
+                params.push(source);
+            }
         }
         const [rows] = await this.pool.query<any[]>(query, params);
         return rows.map(row => ({
@@ -1416,13 +1450,18 @@ export default class MysqlDatabase implements IDatabase {
         }
     }
 
-    async getProxyGroups(source?: string): Promise<ProxyGroup[]> {
+    async getProxyGroups(source?: string | string[]): Promise<ProxyGroup[]> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM proxy_groups';
         let params: any[] = [];
         if (source) {
-            query += ' WHERE source = ?';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ` WHERE source IN (${source.map(() => '?').join(',')})`;
+                params.push(...source);
+            } else {
+                query += ' WHERE source = ?';
+                params.push(source);
+            }
         }
         query += ' ORDER BY priority DESC'; // Higher priority first
         const [rows] = await this.pool.query<any[]>(query, params);
@@ -1487,13 +1526,18 @@ export default class MysqlDatabase implements IDatabase {
         }
     }
 
-    async getRules(source?: string): Promise<Rule[]> {
+    async getRules(source?: string | string[]): Promise<Rule[]> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM rules';
         let params: any[] = [];
         if (source) {
-            query += ' WHERE source = ?';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ` WHERE source IN (${source.map(() => '?').join(',')})`;
+                params.push(...source);
+            } else {
+                query += ' WHERE source = ?';
+                params.push(source);
+            }
         }
         query += ' ORDER BY priority DESC';
         const [rows] = await this.pool.query<any[]>(query, params);
@@ -1608,7 +1652,7 @@ export default class MysqlDatabase implements IDatabase {
         if (search) {
             conditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?)');
             countConditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.token LIKE ? OR u.nickname LIKE ? OR s.remark LIKE ?)');
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
@@ -1671,7 +1715,7 @@ export default class MysqlDatabase implements IDatabase {
         if (search) {
             conditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.path LIKE ?)');
             countConditions.push('(u.username LIKE ? OR l.username LIKE ? OR l.ip LIKE ? OR l.path LIKE ?)');
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
 
@@ -1722,7 +1766,7 @@ export default class MysqlDatabase implements IDatabase {
             const searchClause = ' WHERE message LIKE ? OR category LIKE ?';
             query += searchClause;
             countQuery += searchClause;
-            params.push(`%${search}%`, `%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`, `%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`, `%${search}%`);
         }
         query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
@@ -1864,6 +1908,7 @@ export default class MysqlDatabase implements IDatabase {
             scope: row.scope,
             enabled: row.enabled,
             forceConsent: row.force_consent,
+            allowAutoCreate: row.allow_auto_create,
             createdAt: row.created_at
         }));
     }
@@ -1885,22 +1930,23 @@ export default class MysqlDatabase implements IDatabase {
             scope: row.scope,
             enabled: row.enabled,
             forceConsent: row.force_consent,
+            allowAutoCreate: row.allow_auto_create,
             createdAt: row.created_at
         };
     }
 
     async setOAuthProvider(id: string, data: OAuthProvider): Promise<void> {
         await this.pool.query(
-            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, allow_auto_create, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                  name = VALUES(name), type = VALUES(type), icon = VALUES(icon),
                  client_id = VALUES(client_id), client_secret = VALUES(client_secret),
                  authorization_url = VALUES(authorization_url), token_url = VALUES(token_url),
                  user_info_url = VALUES(user_info_url), scope = VALUES(scope), enabled = VALUES(enabled),
-                 force_consent = VALUES(force_consent)`,
+                 force_consent = VALUES(force_consent), allow_auto_create = VALUES(allow_auto_create)`,
             [id, data.name, data.type, data.icon, data.clientId, data.clientSecret,
-             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.createdAt]
+             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.allowAutoCreate ?? false, data.createdAt]
         );
     }
 
@@ -1919,8 +1965,8 @@ export default class MysqlDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         }));
@@ -1940,8 +1986,8 @@ export default class MysqlDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         };
@@ -1958,14 +2004,17 @@ export default class MysqlDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         };
     }
 
     async setOAuthBinding(id: string, data: UserOAuthBinding): Promise<void> {
+        const encryptedAccessToken = data.accessToken ? (encryptToken(data.accessToken) ?? data.accessToken) : data.accessToken;
+        const encryptedRefreshToken = data.refreshToken ? (encryptToken(data.refreshToken) ?? data.refreshToken) : data.refreshToken;
+
         await this.pool.query(
             `INSERT INTO user_oauth_bindings (id, user_id, provider_id, provider_user_id, provider_username, provider_avatar, access_token, refresh_token, token_expires_at, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1975,7 +2024,7 @@ export default class MysqlDatabase implements IDatabase {
                  provider_avatar = VALUES(provider_avatar), access_token = VALUES(access_token),
                  refresh_token = VALUES(refresh_token), token_expires_at = VALUES(token_expires_at)`,
             [id, data.userId, data.providerId, data.providerUserId, data.providerUsername,
-             data.providerAvatar, data.accessToken, data.refreshToken, data.tokenExpiresAt, data.createdAt]
+             data.providerAvatar, encryptedAccessToken, encryptedRefreshToken, data.tokenExpiresAt, data.createdAt]
         );
     }
 

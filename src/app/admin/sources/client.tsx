@@ -287,6 +287,9 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         if (shouldRefresh) {
             success(t('successSaved'));
             await handleStreamRefresh(sourceName);
+            setLoadingSaveAndUpdate(false);
+            resetForm();
+            setIsAdding(false);
         } else {
             setLoadingSave(false);
             resetForm();
@@ -345,10 +348,12 @@ export default function UpstreamSourcesClient({ sources: initialSources, current
         const sourceName = formName.trim();
 
         if (shouldRefresh) {
-            // Don't close modal, keep loading
             success(t('successSaved'));
             await handleStreamRefresh(sourceName);
-            // handleStreamRefresh will reload page
+            setLoadingSaveAndUpdate(false);
+            resetForm();
+            setEditingSource(null);
+            setIsAdding(false);
         } else {
             setLoadingSave(false);
             resetForm();

@@ -2,6 +2,12 @@ import { Pool, PoolClient } from 'pg';
 import { IDatabase, User, Session, SubData, ConfigSet, GlobalConfig, Proxy, ProxyGroup, Rule, PaginatedResult, RefreshToken, PasskeyCredentials, OAuthProvider, UserOAuthBinding } from './interface';
 import { nanoid } from 'nanoid';
 import { getLocation } from '../ip-location';
+import { encryptToken, decryptToken } from '../crypto';
+
+/** Escape LIKE/ILIKE special characters to prevent wildcard injection */
+function escapeLikePattern(s: string): string {
+    return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
 
 export default class PostgresDatabase implements IDatabase {
     private pool: Pool;
@@ -240,6 +246,7 @@ export default class PostgresDatabase implements IDatabase {
                     scope VARCHAR(512),
                     enabled BOOLEAN DEFAULT TRUE,
                     force_consent BOOLEAN DEFAULT TRUE,
+                    allow_auto_create BOOLEAN DEFAULT FALSE,
                     created_at BIGINT NOT NULL
                 );
 
@@ -295,6 +302,7 @@ export default class PostgresDatabase implements IDatabase {
             await safeQuery(`ALTER TABLE passkeys ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36)`);
 
             await safeQuery(`ALTER TABLE oauth_providers ADD COLUMN IF NOT EXISTS force_consent BOOLEAN DEFAULT TRUE`);
+            await safeQuery(`ALTER TABLE oauth_providers ADD COLUMN IF NOT EXISTS allow_auto_create BOOLEAN DEFAULT FALSE`);
 
             // 3. Backfill user_id from username
             await safeQuery(`UPDATE subscriptions SET user_id = (SELECT id FROM users WHERE users.username = subscriptions.username) WHERE user_id IS NULL AND EXISTS (SELECT 1 FROM users WHERE users.username = subscriptions.username)`);
@@ -304,6 +312,7 @@ export default class PostgresDatabase implements IDatabase {
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_subscriptions_username ON subscriptions(username)`);
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`);
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)`);
+            await safeQuery(`CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`);
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)`);
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token)`);
             await safeQuery(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at)`);
@@ -412,15 +421,26 @@ export default class PostgresDatabase implements IDatabase {
     }
 
     async deleteUser(username: string): Promise<void> {
-        const userResult = await this.pool.query('SELECT id FROM users WHERE username = $1', [username]);
-        const userId = userResult.rows[0]?.id;
-        if (userId) {
-            await this.pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
-            await this.pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
-            await this.pool.query('DELETE FROM passkeys WHERE user_id = $1', [userId]);
-            await this.pool.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);
+        await this.ensureInitialized();
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+            const userResult = await client.query('SELECT id FROM users WHERE username = $1', [username]);
+            const userId = userResult.rows[0]?.id;
+            if (userId) {
+                await client.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+                await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+                await client.query('DELETE FROM passkeys WHERE user_id = $1', [userId]);
+                await client.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);
+            }
+            await client.query('DELETE FROM users WHERE username = $1', [username]);
+            await client.query('COMMIT');
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
         }
-        await this.pool.query('DELETE FROM users WHERE username = $1', [username]);
     }
 
     async getAllUsers(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<User & { username: string }>> {
@@ -435,7 +455,7 @@ export default class PostgresDatabase implements IDatabase {
         if (search) {
             query += ' WHERE username ILIKE $1';
             countQuery += ' WHERE username ILIKE $1';
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`);
         }
 
@@ -513,8 +533,10 @@ export default class PostgresDatabase implements IDatabase {
         await this.ensureInitialized();
 
         try {
-            // Clean up expired sessions
-            await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+            // Probabilistic cleanup: 1% chance to clean expired sessions (avoids write amplification)
+            if (Math.random() < 0.1) {
+                await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+            }
 
             const result = await this.pool.query(
                 `SELECT s.*, u.username as username FROM sessions s
@@ -605,8 +627,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async getUserSessions(userId: string): Promise<Session[]> {
         await this.ensureInitialized();
-        // Cleanup first
-        await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        }
 
         const result = await this.pool.query(
             `SELECT s.*, u.username as username FROM sessions s
@@ -635,7 +659,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async getAllSessions(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<Session & { sessionId: string }>> {
         await this.ensureInitialized();
-        await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM sessions WHERE expires_at < $1', [Date.now()]);
+        }
 
         let query = `SELECT s.*, u.username as username FROM sessions s LEFT JOIN users u ON s.user_id = u.id`;
         let countQuery = 'SELECT COUNT(*) FROM sessions s LEFT JOIN users u ON s.user_id = u.id';
@@ -644,7 +671,7 @@ export default class PostgresDatabase implements IDatabase {
         if (search) {
             query += ' WHERE (u.username ILIKE $1 OR s.ip ILIKE $1 OR s.ua ILIKE $1 OR s.nickname ILIKE $1)';
             countQuery += ' WHERE (u.username ILIKE $1 OR s.ip ILIKE $1 OR s.ua ILIKE $1 OR s.nickname ILIKE $1)';
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
         }
 
         query += ` ORDER BY s.last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -679,7 +706,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async getAllRefreshTokens(page: number = 1, limit: number = 10, search?: string): Promise<PaginatedResult<RefreshToken>> {
         await this.ensureInitialized();
-        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        }
 
         let query = `SELECT r.*, u.username as username FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id`;
         let countQuery = 'SELECT COUNT(*) FROM refresh_tokens r LEFT JOIN users u ON r.user_id = u.id';
@@ -688,7 +718,7 @@ export default class PostgresDatabase implements IDatabase {
         if (search) {
             query += ' WHERE (u.username ILIKE $1 OR r.ip ILIKE $1 OR r.ua ILIKE $1 OR r.device_info ILIKE $1)';
             countQuery += ' WHERE (u.username ILIKE $1 OR r.ip ILIKE $1 OR r.ua ILIKE $1 OR r.device_info ILIKE $1)';
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
         }
 
         query += ` ORDER BY r.last_active DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -751,8 +781,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async getRefreshToken(tokenString: string, currentIp?: string, currentUa?: string): Promise<RefreshToken | null> {
         await this.ensureInitialized();
-        // Cleanup expired
-        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        }
 
         const result = await this.pool.query(
             `SELECT r.*, u.username as username FROM refresh_tokens r
@@ -823,8 +855,10 @@ export default class PostgresDatabase implements IDatabase {
 
     async getUserRefreshTokens(userId: string): Promise<RefreshToken[]> {
         await this.ensureInitialized();
-        // Cleanup expired
-        await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        // Probabilistic cleanup
+        if (Math.random() < 0.1) {
+            await this.pool.query('DELETE FROM refresh_tokens WHERE expires_at < $1', [Date.now()]);
+        }
 
         const result = await this.pool.query(
             `SELECT r.*, u.username as username FROM refresh_tokens r
@@ -909,7 +943,7 @@ export default class PostgresDatabase implements IDatabase {
             const searchClause = ' WHERE s.username ILIKE $1 OR s.remark ILIKE $1 OR s.token ILIKE $1 OR s.selected_sources::text ILIKE $1';
             query += searchClause;
             countQuery += searchClause;
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`);
         }
 
@@ -1464,10 +1498,20 @@ export default class PostgresDatabase implements IDatabase {
     async saveProxies(proxies: Proxy[]): Promise<void> {
         if (proxies.length === 0) return;
 
-        for (const proxy of proxies) {
+        // Batch insert in chunks of 500
+        const chunkSize = 500;
+        for (let i = 0; i < proxies.length; i += chunkSize) {
+            const chunk = proxies.slice(i, i + chunkSize);
+            const values: any[] = [];
+            const placeholders = chunk.map((proxy, idx) => {
+                const base = idx * 8;
+                values.push(proxy.id, proxy.name, proxy.type, proxy.server, proxy.port, JSON.stringify(proxy.config), proxy.source, proxy.createdAt);
+                return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8})`;
+            }).join(', ');
+
             await this.pool.query(
                 `INSERT INTO proxies (id, name, type, server, port, config, source, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                 VALUES ${placeholders}
                  ON CONFLICT (id) DO UPDATE SET
                      name = EXCLUDED.name,
                      type = EXCLUDED.type,
@@ -1475,19 +1519,24 @@ export default class PostgresDatabase implements IDatabase {
                      port = EXCLUDED.port,
                      config = EXCLUDED.config,
                      source = EXCLUDED.source`,
-                [proxy.id, proxy.name, proxy.type, proxy.server, proxy.port, JSON.stringify(proxy.config), proxy.source, proxy.createdAt]
+                values
             );
         }
     }
 
-    async getProxies(source?: string): Promise<Proxy[]> {
+    async getProxies(source?: string | string[]): Promise<Proxy[]> {
         await this.ensureInitialized();
         let query = 'SELECT * FROM proxies';
         const params: any[] = [];
 
         if (source) {
-            query += ' WHERE source = $1';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ' WHERE source = ANY($1)';
+                params.push(source);
+            } else {
+                query += ' WHERE source = $1';
+                params.push(source);
+            }
         }
 
         const result = await this.pool.query(query, params);
@@ -1515,10 +1564,20 @@ export default class PostgresDatabase implements IDatabase {
     async saveProxyGroups(groups: ProxyGroup[]): Promise<void> {
         if (groups.length === 0) return;
 
-        for (const group of groups) {
+        // Batch insert in chunks of 500
+        const chunkSize = 500;
+        for (let i = 0; i < groups.length; i += chunkSize) {
+            const chunk = groups.slice(i, i + chunkSize);
+            const values: any[] = [];
+            const placeholders = chunk.map((group, idx) => {
+                const base = idx * 8;
+                values.push(group.id, group.name, group.type, JSON.stringify(group.proxies), JSON.stringify(group.config), group.source, group.priority, group.createdAt);
+                return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8})`;
+            }).join(', ');
+
             await this.pool.query(
                 `INSERT INTO proxy_groups (id, name, type, proxies, config, source, priority, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                 VALUES ${placeholders}
                  ON CONFLICT (id) DO UPDATE SET
                      name = EXCLUDED.name,
                      type = EXCLUDED.type,
@@ -1526,18 +1585,23 @@ export default class PostgresDatabase implements IDatabase {
                      config = EXCLUDED.config,
                      source = EXCLUDED.source,
                      priority = EXCLUDED.priority`,
-                [group.id, group.name, group.type, JSON.stringify(group.proxies), JSON.stringify(group.config), group.source, group.priority, group.createdAt]
+                values
             );
         }
     }
 
-    async getProxyGroups(source?: string): Promise<ProxyGroup[]> {
+    async getProxyGroups(source?: string | string[]): Promise<ProxyGroup[]> {
         let query = 'SELECT * FROM proxy_groups';
         const params: any[] = [];
 
         if (source) {
-            query += ' WHERE source = $1';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ' WHERE source = ANY($1)';
+                params.push(source);
+            } else {
+                query += ' WHERE source = $1';
+                params.push(source);
+            }
         }
 
         query += ' ORDER BY priority ASC, created_at ASC';
@@ -1590,13 +1654,18 @@ export default class PostgresDatabase implements IDatabase {
         }
     }
 
-    async getRules(source?: string): Promise<Rule[]> {
+    async getRules(source?: string | string[]): Promise<Rule[]> {
         let query = 'SELECT * FROM rules';
         const params: any[] = [];
 
         if (source) {
-            query += ' WHERE id = $1';
-            params.push(source);
+            if (Array.isArray(source)) {
+                query += ' WHERE source = ANY($1)';
+                params.push(source);
+            } else {
+                query += ' WHERE source = $1';
+                params.push(source);
+            }
         }
 
         const result = await this.pool.query(query, params);
@@ -1732,7 +1801,7 @@ export default class PostgresDatabase implements IDatabase {
         if (search) {
             conditions.push(`(l.token ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex})`);
             countConditions.push(`(l.token ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex} OR s.remark ILIKE $${paramIndex})`);
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`);
             paramIndex++;
         }
@@ -1809,7 +1878,7 @@ export default class PostgresDatabase implements IDatabase {
         if (search) {
             conditions.push(`(l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex})`);
             countConditions.push(`(l.path ILIKE $${paramIndex} OR l.ip ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR l.username ILIKE $${paramIndex} OR l.ua ILIKE $${paramIndex} OR u.nickname ILIKE $${paramIndex})`);
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`);
             paramIndex++;
         }
@@ -1862,7 +1931,7 @@ export default class PostgresDatabase implements IDatabase {
             const searchClause = ` WHERE message ILIKE $${paramIndex} OR category ILIKE $${paramIndex}`;
             query += searchClause;
             countQuery += searchClause;
-            params.push(`%${search}%`);
+            params.push(`%${escapeLikePattern(search)}%`);
             countParams.push(`%${search}%`);
             paramIndex++;
         }
@@ -2125,6 +2194,7 @@ export default class PostgresDatabase implements IDatabase {
             scope: row.scope,
             enabled: row.enabled,
             forceConsent: row.force_consent,
+            allowAutoCreate: row.allow_auto_create,
             createdAt: row.created_at
         }));
     }
@@ -2146,22 +2216,23 @@ export default class PostgresDatabase implements IDatabase {
             scope: row.scope,
             enabled: row.enabled,
             forceConsent: row.force_consent,
+            allowAutoCreate: row.allow_auto_create,
             createdAt: row.created_at
         };
     }
 
     async setOAuthProvider(id: string, data: OAuthProvider): Promise<void> {
         await this.pool.query(
-            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            `INSERT INTO oauth_providers (id, name, type, icon, client_id, client_secret, authorization_url, token_url, user_info_url, scope, enabled, force_consent, allow_auto_create, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
              ON CONFLICT (id) DO UPDATE SET
                  name = EXCLUDED.name, type = EXCLUDED.type, icon = EXCLUDED.icon,
                  client_id = EXCLUDED.client_id, client_secret = EXCLUDED.client_secret,
                  authorization_url = EXCLUDED.authorization_url, token_url = EXCLUDED.token_url,
                  user_info_url = EXCLUDED.user_info_url, scope = EXCLUDED.scope, enabled = EXCLUDED.enabled,
-                 force_consent = EXCLUDED.force_consent`,
+                 force_consent = EXCLUDED.force_consent, allow_auto_create = EXCLUDED.allow_auto_create`,
             [id, data.name, data.type, data.icon, data.clientId, data.clientSecret,
-             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.createdAt]
+             data.authorizationUrl, data.tokenUrl, data.userInfoUrl, data.scope, data.enabled, data.forceConsent ?? true, data.allowAutoCreate ?? false, data.createdAt]
         );
     }
 
@@ -2180,8 +2251,8 @@ export default class PostgresDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         }));
@@ -2201,8 +2272,8 @@ export default class PostgresDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         };
@@ -2219,14 +2290,25 @@ export default class PostgresDatabase implements IDatabase {
             providerUserId: row.provider_user_id,
             providerUsername: row.provider_username,
             providerAvatar: row.provider_avatar,
-            accessToken: row.access_token,
-            refreshToken: row.refresh_token,
+            accessToken: row.access_token ? decryptToken(row.access_token) : row.access_token,
+            refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : row.refresh_token,
             tokenExpiresAt: row.token_expires_at ? parseInt(row.token_expires_at) : undefined,
             createdAt: row.created_at
         };
     }
 
     async setOAuthBinding(id: string, data: UserOAuthBinding): Promise<void> {
+        const encryptedAccessToken = data.accessToken ? (encryptToken(data.accessToken) ?? data.accessToken) : data.accessToken;
+        const encryptedRefreshToken = data.refreshToken ? (encryptToken(data.refreshToken) ?? data.refreshToken) : data.refreshToken;
+
+        console.log('[DB setOAuthBinding]', {
+            id,
+            hasAccessToken: !!data.accessToken,
+            hasRefreshToken: !!data.refreshToken,
+            encryptedAT: encryptedAccessToken ? encryptedAccessToken.substring(0, 30) + '...' : null,
+            encryptedRT: encryptedRefreshToken ? encryptedRefreshToken.substring(0, 30) + '...' : null,
+        });
+
         await this.pool.query(
             `INSERT INTO user_oauth_bindings (id, user_id, provider_id, provider_user_id, provider_username, provider_avatar, access_token, refresh_token, token_expires_at, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -2236,7 +2318,7 @@ export default class PostgresDatabase implements IDatabase {
                  provider_avatar = EXCLUDED.provider_avatar, access_token = EXCLUDED.access_token,
                  refresh_token = EXCLUDED.refresh_token, token_expires_at = EXCLUDED.token_expires_at`,
             [id, data.userId, data.providerId, data.providerUserId, data.providerUsername,
-             data.providerAvatar, data.accessToken, data.refreshToken, data.tokenExpiresAt, data.createdAt]
+             data.providerAvatar, encryptedAccessToken, encryptedRefreshToken, data.tokenExpiresAt, data.createdAt]
         );
     }
 

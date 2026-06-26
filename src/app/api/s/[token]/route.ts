@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { tApi } from '@/lib/api-i18n';
 import { buildSubscriptionYaml } from '@/lib/subscription-builder';
+import { checkUaFilter } from '@/lib/ua-filter';
+import { refreshSingleUpstreamSource } from '@/lib/analysis';
 
 // Runtime must be nodejs for database clients
 export const runtime = 'nodejs';
@@ -70,9 +72,11 @@ export async function GET(
         return new NextResponse('User Account Suspended', { status: 403 });
     }
 
-    // 2. Get Global Config and Upstream Sources
-    const config = await db.getGlobalConfig();
-    const upstreamSources = await db.getUpstreamSources();
+    // 2. Get Global Config and Upstream Sources (parallel)
+    const [config, upstreamSources] = await Promise.all([
+        db.getGlobalConfig(),
+        db.getUpstreamSources()
+    ]);
 
     if (upstreamSources.length === 0) {
         await logAccess(500);
@@ -91,27 +95,18 @@ export async function GET(
         return new NextResponse('Configuration Error: No Upstream Sources Selected. Please edit the subscription to select at least one source.', { status: 400 });
     }
 
-    if (selectedSourceNames.length > 0 && upstreamSources.length > 0) {
-        const selectedSources = upstreamSources.filter(s => selectedSourceNames.includes(s.name));
+    // Calculate effective cache duration from selected sources
+    const selectedSources = upstreamSources.filter(s => selectedSourceNames.includes(s.name));
+    const sourceDurations = selectedSources.map(s => s.cacheDuration).filter(d => d !== undefined) as number[];
+    const finiteDurations = sourceDurations.filter(d => d > 0);
 
-        // Use minimum cache duration from selected sources if available
-        const sourceDurations = selectedSources.map(s => s.cacheDuration).filter(d => d !== undefined) as number[];
-
-        // Handle infinite cache (0) mixed with finite durations
-        // If we have mixed 0 and non-0, the subscription should expire based on the SHORTEST finite duration.
-        // If all are 0, then it is infinite.
-        const finiteDurations = sourceDurations.filter(d => d > 0);
-
-        if (finiteDurations.length > 0) {
-            effectiveCacheDuration = Math.min(...finiteDurations);
-        } else if (sourceDurations.some(d => d === 0)) {
-            effectiveCacheDuration = 0; // All sources are infinite
-        }
-
+    if (finiteDurations.length > 0) {
+        effectiveCacheDuration = Math.min(...finiteDurations);
+    } else if (sourceDurations.some(d => d === 0)) {
+        effectiveCacheDuration = 0; // All sources are infinite
     }
 
     // 4. User Agent Check (New flexible filter system)
-    const { checkUaFilter } = await import('@/lib/ua-filter');
     const ua = request.headers.get('user-agent') || '';
     const isInternalRequest = request.headers.get('x-internal-system-precache') === 'true';
 
@@ -135,9 +130,8 @@ export async function GET(
     let totalQuota = 0;
     let minExpire = 0;
 
-    const activeSources = upstreamSources.filter(s => sub.selectedSources?.includes(s.name));
-
-    for (const source of activeSources) {
+    // Reuse selectedSources (already filtered above) for traffic stats
+    for (const source of selectedSources) {
         if (source.traffic) {
             totalUpload += source.traffic.upload || 0;
             totalDownload += source.traffic.download || 0;
@@ -157,16 +151,12 @@ export async function GET(
     const cacheDuration = effectiveCacheDuration;
     const cacheKey = `cache:subscription:${token}`;
 
-    // Check freshness for each selected source individually
-    const sourcesToCheck = upstreamSources.length > 0 && selectedSourceNames.length > 0
-        ? upstreamSources.filter(s => selectedSourceNames.includes(s.name))
-        : upstreamSources;
-
+    // Check freshness for each selected source individually (reuse selectedSources)
     const now = Date.now();
     const staleSources: string[] = [];
 
     try {
-        for (const source of sourcesToCheck) {
+        for (const source of selectedSources) {
             // cacheDuration: 0 means never expire. If undefined, default to 24h as safety legacy fallback? 
             // User requested "Must configure". Let's say if NOT 0 and NOT defined -> 24h default?
             // User said: "must configure cache time, if 0 then cache does not expire"
@@ -209,7 +199,6 @@ export async function GET(
 
         if (staleSources.length > 0) {
             console.log(`🔄 Found ${staleSources.length} stale sources: ${staleSources.join(', ')}. Triggering refresh...`);
-            const { refreshSingleUpstreamSource } = await import('@/lib/analysis');
 
             // Refresh stale sources in parallel
             await Promise.all(staleSources.map(async (sourceName) => {
@@ -251,7 +240,10 @@ export async function GET(
 
     // 6. Build subscription YAML from structured database data
     try {
-        const finalYaml = await buildSubscriptionYaml(sub);
+        const finalYaml = await buildSubscriptionYaml(sub, {
+            user,
+            upstreamSources
+        });
 
         if (finalYaml === null) {
             console.warn(`⚠️ [API] Subscription build blocked: All selected sources disabled (Token: ${token})`);

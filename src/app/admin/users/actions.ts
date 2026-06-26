@@ -341,3 +341,36 @@ export async function adminDeletePasskey(passkeyId: string, userId: string) {
         return { error: 'deletePasskeyFailed' };
     }
 }
+
+export async function adminGetUserOAuthBindings(userId: string) {
+    await requireAdmin();
+    try {
+        const bindings = await db.getUserOAuthBindings(userId);
+        const providers = await db.getOAuthProviders();
+        const enriched = bindings.map(binding => {
+            const provider = providers.find(p => p.id === binding.providerId);
+            return {
+                ...binding,
+                providerName: provider?.name || 'Unknown',
+                providerType: provider?.type || 'custom',
+                providerIcon: provider?.icon
+            };
+        });
+        return { success: true, bindings: enriched };
+    } catch (error) {
+        console.error('Failed to fetch user OAuth bindings:', error);
+        return { error: 'getOAuthBindingsFailed' };
+    }
+}
+
+export async function adminDeleteOAuthBinding(bindingId: string) {
+    await requireAdmin();
+    try {
+        await db.deleteOAuthBinding(bindingId);
+        revalidatePath('/admin/users');
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to delete OAuth binding:', error);
+        return { error: 'deleteOAuthBindingFailed' };
+    }
+}
