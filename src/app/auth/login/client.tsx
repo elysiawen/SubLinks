@@ -643,8 +643,8 @@ export default function LoginContent({ oauthProviders }: { oauthProviders: OAuth
             <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-indigo-200 dark:opacity-10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
-            {/* Language switcher - top right */}
-            <div className="relative z-20 flex justify-end p-4">
+            {/* Language switcher - top right (desktop only) */}
+            <div className="relative z-20 hidden md:flex justify-end p-4">
                 <LanguageSwitcher dropDown align="right" />
             </div>
 
@@ -761,6 +761,11 @@ export default function LoginContent({ oauthProviders }: { oauthProviders: OAuth
                         </Suspense>
                     </div>
                 </div>
+            </div>
+
+            {/* Language switcher - bottom center (mobile only) */}
+            <div className="relative z-20 flex md:hidden justify-center pb-2">
+                <LanguageSwitcher dropDown={false} />
             </div>
 
             {/* Footer */}
